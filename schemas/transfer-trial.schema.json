@@ -1,0 +1,116 @@
+{
+  "$id": "https://schemas.padawan.local/v1/transfer-trial.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contamination_checks": {
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "title": "Contamination Checks",
+      "type": "object"
+    },
+    "control_attempt_id": {
+      "minLength": 1,
+      "title": "Control Attempt Id",
+      "type": "string"
+    },
+    "control_condition": {
+      "minLength": 1,
+      "title": "Control Condition",
+      "type": "string"
+    },
+    "control_grade_id": {
+      "minLength": 1,
+      "title": "Control Grade Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "delayed_retest_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Delayed Retest At"
+    },
+    "inherited_state_id": {
+      "minLength": 1,
+      "title": "Inherited State Id",
+      "type": "string"
+    },
+    "item_id": {
+      "minLength": 1,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "source_intervention_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Intervention Id"
+    },
+    "source_lesson_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Lesson Id"
+    },
+    "transfer_trial_id": {
+      "minLength": 1,
+      "title": "Transfer Trial Id",
+      "type": "string"
+    },
+    "treatment_attempt_id": {
+      "minLength": 1,
+      "title": "Treatment Attempt Id",
+      "type": "string"
+    },
+    "treatment_condition": {
+      "minLength": 1,
+      "title": "Treatment Condition",
+      "type": "string"
+    },
+    "treatment_grade_id": {
+      "minLength": 1,
+      "title": "Treatment Grade Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "transfer_trial_id",
+    "inherited_state_id",
+    "item_id",
+    "treatment_condition",
+    "control_condition",
+    "treatment_attempt_id",
+    "control_attempt_id",
+    "treatment_grade_id",
+    "control_grade_id",
+    "contamination_checks",
+    "created_at"
+  ],
+  "title": "TransferTrialRecord",
+  "type": "object"
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "contract_version": "1.0.0",
+  "generated_by": "scripts/generate_schemas.py",
+  "schemas": [
+    {
+      "name": "attempt",
+      "schema": "attempt.schema.json",
+      "sha256": "ed1e0cff1f6bf3284c791d7f7bf6790090cd7d743aa2436b887286b7a4edb93c"
+    },
+    {
+      "name": "compacted-state",
+      "schema": "compacted-state.schema.json",
+      "sha256": "557707ad62e692f84ba7b7e98962112bef07f20c2aea87e8fef65b521961fede"
+    },
+    {
+      "name": "competency",
+      "schema": "competency.schema.json",
+      "sha256": "11eb9b67c3820e4997a1cd990e74976e7ee421af780037650ea98afdffac5690"
+    },
+    {
+      "name": "corpus-item",
+      "schema": "corpus-item.schema.json",
+      "sha256": "dd89ab7c0fd3c5b24ea9681dcbb0f0604d57f1f45e40e7c5593cd6948333e14c"
+    },
+    {
+      "name": "developmental-episode",
+      "schema": "developmental-episode.schema.json",
+      "sha256": "2a03da5f6ba94b4ab3b9b45767f6c7cd49307f31caf8ae2c24bf075c58da1abf"
+    },
+    {
+      "name": "exposure",
+      "schema": "exposure.schema.json",
+      "sha256": "949f4a06f304d23aacc4a130320aa7e56fbd054d6cdec2423a5ba35ceeb7bb16"
+    },
+    {
+      "name": "grade",
+      "schema": "grade.schema.json",
+      "sha256": "9c1f66e729cd5d016f1930756da1d305e7ec7819bd0d18700446d42f9514165d"
+    },
+    {
+      "name": "lesson",
+      "schema": "lesson.schema.json",
+      "sha256": "f19ef34e59fd3161d72d60bd6d433f32f931387333814632002d42bb301b7c34"
+    },
+    {
+      "name": "state-fork",
+      "schema": "state-fork.schema.json",
+      "sha256": "3cb5cc085c522f9108a37bbe307219f04125e3c2054e829b2cea329c0de61d64"
+    },
+    {
+      "name": "student-state",
+      "schema": "student-state.schema.json",
+      "sha256": "97817e5a406bcf36569e5fcc658a933ecb11b43a70c1d5809f2d0d5906bf39b1"
+    },
+    {
+      "name": "teacher-intervention",
+      "schema": "teacher-intervention.schema.json",
+      "sha256": "08303fc95a672c797212aa72f8874fb9a09b6837ce04d9b735ff6cbde74473df"
+    },
+    {
+      "name": "transfer-trial",
+      "schema": "transfer-trial.schema.json",
+      "sha256": "d0db6caa42ed103bfe9e72cefc147c0a9e50570bccbddc9afa50471e894ed467"
+    }
+  ]
+}

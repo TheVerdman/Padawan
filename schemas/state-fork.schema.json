@@ -1,0 +1,65 @@
+{
+  "$id": "https://schemas.padawan.local/v1/state-fork.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "control_branch_id": {
+      "minLength": 1,
+      "title": "Control Branch Id",
+      "type": "string"
+    },
+    "control_state_id": {
+      "minLength": 1,
+      "title": "Control State Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "fork_id": {
+      "minLength": 1,
+      "title": "Fork Id",
+      "type": "string"
+    },
+    "intervention": {
+      "additionalProperties": true,
+      "title": "Intervention",
+      "type": "object"
+    },
+    "parent_state_id": {
+      "minLength": 1,
+      "title": "Parent State Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "treatment_branch_id": {
+      "minLength": 1,
+      "title": "Treatment Branch Id",
+      "type": "string"
+    },
+    "treatment_state_id": {
+      "minLength": 1,
+      "title": "Treatment State Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "fork_id",
+    "parent_state_id",
+    "treatment_state_id",
+    "control_state_id",
+    "treatment_branch_id",
+    "control_branch_id",
+    "intervention",
+    "created_at"
+  ],
+  "title": "StateForkRecord",
+  "type": "object"
+}

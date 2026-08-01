@@ -1,0 +1,323 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "CommentValidationStatus": {
+      "enum": [
+        "accepted",
+        "rejected",
+        "review_required"
+      ],
+      "title": "CommentValidationStatus",
+      "type": "string"
+    },
+    "EvidenceCitation": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_id": {
+          "minLength": 1,
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "prior_lesson_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prior Lesson Id"
+        },
+        "private_span_end": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Private Span End"
+        },
+        "private_span_start": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Private Span Start"
+        },
+        "public_step_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Public Step Id"
+        }
+      },
+      "required": [
+        "evidence_id"
+      ],
+      "title": "EvidenceCitation",
+      "type": "object"
+    },
+    "TeacherMode": {
+      "enum": [
+        "socratic_hint",
+        "diagnostic_critique",
+        "general_principle",
+        "minimal_repair",
+        "full_demonstration",
+        "contrastive_explanation",
+        "micro_curriculum",
+        "metacognitive_feedback"
+      ],
+      "title": "TeacherMode",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/teacher-intervention.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "citations": {
+      "items": {
+        "$ref": "#/$defs/EvidenceCitation"
+      },
+      "title": "Citations",
+      "type": "array"
+    },
+    "claimed_first_consequential_error": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Claimed First Consequential Error"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "episode_id": {
+      "minLength": 1,
+      "title": "Episode Id",
+      "type": "string"
+    },
+    "error_class": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Class"
+    },
+    "estimated_cost_usd": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Estimated Cost Usd"
+    },
+    "exact_prompt_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "expected_transfer_scope": {
+      "minLength": 1,
+      "title": "Expected Transfer Scope",
+      "type": "string"
+    },
+    "intervention_id": {
+      "minLength": 1,
+      "title": "Intervention Id",
+      "type": "string"
+    },
+    "latency_ms": {
+      "title": "Latency Ms",
+      "type": "number"
+    },
+    "lesson": {
+      "minLength": 1,
+      "title": "Lesson",
+      "type": "string"
+    },
+    "mode": {
+      "$ref": "#/$defs/TeacherMode"
+    },
+    "model_id": {
+      "minLength": 1,
+      "title": "Model Id",
+      "type": "string"
+    },
+    "provider": {
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "raw_response_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "repair": {
+      "minLength": 1,
+      "title": "Repair",
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "response_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Response Id"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "targeted_attempt_id": {
+      "minLength": 1,
+      "title": "Targeted Attempt Id",
+      "type": "string"
+    },
+    "token_usage": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Token Usage",
+      "type": "object"
+    },
+    "validation_errors": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Validation Errors",
+      "type": "array"
+    },
+    "validation_status": {
+      "$ref": "#/$defs/CommentValidationStatus"
+    }
+  },
+  "required": [
+    "intervention_id",
+    "episode_id",
+    "targeted_attempt_id",
+    "provider",
+    "model_id",
+    "mode",
+    "exact_prompt_ref",
+    "raw_response_ref",
+    "citations",
+    "lesson",
+    "repair",
+    "expected_transfer_scope",
+    "confidence",
+    "validation_status",
+    "request_id",
+    "token_usage",
+    "latency_ms",
+    "created_at"
+  ],
+  "title": "TeacherInterventionRecord",
+  "type": "object"
+}

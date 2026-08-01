@@ -1,0 +1,589 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "Capability": {
+      "additionalProperties": false,
+      "properties": {
+        "availability": {
+          "$ref": "#/$defs/CapabilityAvailability"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "availability",
+        "reason"
+      ],
+      "title": "Capability",
+      "type": "object"
+    },
+    "CapabilityAvailability": {
+      "enum": [
+        "available",
+        "unavailable",
+        "unknown"
+      ],
+      "title": "CapabilityAvailability",
+      "type": "string"
+    },
+    "ChannelSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "enum": [
+            "private_reasoning",
+            "public_derivation",
+            "final_answer",
+            "tool"
+          ],
+          "title": "Channel",
+          "type": "string"
+        },
+        "end_token": {
+          "minimum": 0,
+          "title": "End Token",
+          "type": "integer"
+        },
+        "source": {
+          "enum": [
+            "runtime",
+            "provider",
+            "parser"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "start_token": {
+          "minimum": 0,
+          "title": "Start Token",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "channel",
+        "start_token",
+        "end_token",
+        "source"
+      ],
+      "title": "ChannelSpan",
+      "type": "object"
+    },
+    "ObservationRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Artifact Refs",
+          "type": "array"
+        },
+        "call_id": {
+          "minLength": 1,
+          "title": "Call Id",
+          "type": "string"
+        },
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "success": {
+          "title": "Success",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "call_id",
+        "content",
+        "success"
+      ],
+      "title": "ObservationRecord",
+      "type": "object"
+    },
+    "RuntimeCapabilities": {
+      "additionalProperties": false,
+      "properties": {
+        "cancellation": {
+          "$ref": "#/$defs/Capability"
+        },
+        "gpu_telemetry": {
+          "$ref": "#/$defs/Capability"
+        },
+        "logprobs": {
+          "$ref": "#/$defs/Capability"
+        },
+        "private_reasoning": {
+          "$ref": "#/$defs/Capability"
+        },
+        "reasoning_boundaries": {
+          "$ref": "#/$defs/Capability"
+        },
+        "responses_api": {
+          "$ref": "#/$defs/Capability"
+        },
+        "router_telemetry": {
+          "$ref": "#/$defs/Capability"
+        },
+        "streaming": {
+          "$ref": "#/$defs/Capability"
+        },
+        "token_ids": {
+          "$ref": "#/$defs/Capability"
+        }
+      },
+      "required": [
+        "responses_api",
+        "streaming",
+        "cancellation",
+        "logprobs",
+        "token_ids",
+        "private_reasoning",
+        "reasoning_boundaries",
+        "gpu_telemetry",
+        "router_telemetry"
+      ],
+      "title": "RuntimeCapabilities",
+      "type": "object"
+    },
+    "SamplingConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "max_output_tokens": {
+          "exclusiveMinimum": 0,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "stop": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Stop",
+          "type": "array"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "top_logprobs": {
+          "anyOf": [
+            {
+              "maximum": 20,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Logprobs"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        }
+      },
+      "required": [
+        "max_output_tokens"
+      ],
+      "title": "SamplingConfiguration",
+      "type": "object"
+    },
+    "ToolCallRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "call_id": {
+          "minLength": 1,
+          "title": "Call Id",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "raw_arguments": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Arguments"
+        }
+      },
+      "required": [
+        "call_id",
+        "name",
+        "arguments"
+      ],
+      "title": "ToolCallRecord",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/attempt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "attempt_id": {
+      "minLength": 1,
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "capabilities": {
+      "$ref": "#/$defs/RuntimeCapabilities"
+    },
+    "channel_spans": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ChannelSpan"
+      },
+      "title": "Channel Spans",
+      "type": "array"
+    },
+    "checkpoint_id": {
+      "minLength": 1,
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "episode_id": {
+      "minLength": 1,
+      "title": "Episode Id",
+      "type": "string"
+    },
+    "final_answer": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Final Answer"
+    },
+    "gpu_telemetry": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Gpu Telemetry"
+    },
+    "input_token_ids": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Input Token Ids"
+    },
+    "item_id": {
+      "minLength": 1,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "model_id": {
+      "minLength": 1,
+      "title": "Model Id",
+      "type": "string"
+    },
+    "observations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ObservationRecord"
+      },
+      "title": "Observations",
+      "type": "array"
+    },
+    "output_token_ids": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Output Token Ids"
+    },
+    "private_reasoning_ref": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "public_derivation": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Public Derivation"
+    },
+    "raw_generation_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "rendered_messages": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Rendered Messages",
+      "type": "array"
+    },
+    "rendered_prompt": {
+      "minLength": 1,
+      "title": "Rendered Prompt",
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "response_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Response Id"
+    },
+    "runtime_id": {
+      "minLength": 1,
+      "title": "Runtime Id",
+      "type": "string"
+    },
+    "runtime_version": {
+      "minLength": 1,
+      "title": "Runtime Version",
+      "type": "string"
+    },
+    "sampling": {
+      "$ref": "#/$defs/SamplingConfiguration"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state_after_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "State After Id"
+    },
+    "state_before_id": {
+      "minLength": 1,
+      "title": "State Before Id",
+      "type": "string"
+    },
+    "stop_reason": {
+      "minLength": 1,
+      "title": "Stop Reason",
+      "type": "string"
+    },
+    "timing_ms": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Timing Ms",
+      "type": "object"
+    },
+    "token_logprobs": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Token Logprobs"
+    },
+    "tool_calls": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ToolCallRecord"
+      },
+      "title": "Tool Calls",
+      "type": "array"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "episode_id",
+    "item_id",
+    "state_before_id",
+    "rendered_messages",
+    "rendered_prompt",
+    "raw_generation_ref",
+    "timing_ms",
+    "stop_reason",
+    "request_id",
+    "model_id",
+    "checkpoint_id",
+    "runtime_id",
+    "runtime_version",
+    "sampling",
+    "capabilities",
+    "created_at"
+  ],
+  "title": "AttemptRecord",
+  "type": "object"
+}

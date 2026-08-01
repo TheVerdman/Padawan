@@ -1,0 +1,35 @@
+name: padawan
+
+services:
+  postgres:
+    image: postgres:16.4-bookworm
+    environment:
+      POSTGRES_DB: padawan
+      POSTGRES_USER: padawan
+      POSTGRES_PASSWORD: padawan-local-only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U padawan -d padawan"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - padawan-postgres:/var/lib/postgresql/data
+
+  migrate:
+    build:
+      context: .
+    command: ["db", "migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PADAWAN_DATABASE_URL: postgresql+psycopg://padawan:padawan-local-only@postgres:5432/padawan
+      PADAWAN_ARTIFACT_ROOT: /var/lib/padawan/artifacts
+    volumes:
+      - padawan-artifacts:/var/lib/padawan/artifacts
+
+volumes:
+  padawan-postgres:
+  padawan-artifacts:

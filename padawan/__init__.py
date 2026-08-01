@@ -1,0 +1,6 @@
+"""Padawan: an evidence-governed developmental research operating system."""
+
+from padawan.models.contracts import SCHEMA_VERSION
+
+__all__ = ["SCHEMA_VERSION"]
+__version__ = "0.1.0"

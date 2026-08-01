@@ -1,0 +1,256 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "CorpusPool": {
+      "enum": [
+        "curriculum",
+        "rotating_shadow",
+        "sealed_anchor",
+        "quarantine"
+      ],
+      "title": "CorpusPool",
+      "type": "string"
+    },
+    "ItemStatus": {
+      "enum": [
+        "active",
+        "leased",
+        "retired",
+        "quarantined"
+      ],
+      "title": "ItemStatus",
+      "type": "string"
+    },
+    "VerifierSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "parameters": {
+          "additionalProperties": true,
+          "title": "Parameters",
+          "type": "object"
+        },
+        "verifier_type": {
+          "minLength": 1,
+          "title": "Verifier Type",
+          "type": "string"
+        },
+        "verifier_version": {
+          "minLength": 1,
+          "title": "Verifier Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "verifier_type",
+        "verifier_version",
+        "parameters"
+      ],
+      "title": "VerifierSpec",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/corpus-item.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "competency_id": {
+      "minLength": 1,
+      "title": "Competency Id",
+      "type": "string"
+    },
+    "contamination_scope": {
+      "enum": [
+        "item",
+        "instance_group",
+        "template_family",
+        "lineage"
+      ],
+      "title": "Contamination Scope",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "difficulty": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Difficulty",
+      "type": "number"
+    },
+    "expected_answer": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Answer"
+    },
+    "generation_seed": {
+      "title": "Generation Seed",
+      "type": "integer"
+    },
+    "generator_version": {
+      "minLength": 1,
+      "title": "Generator Version",
+      "type": "string"
+    },
+    "instance_group_id": {
+      "minLength": 1,
+      "title": "Instance Group Id",
+      "type": "string"
+    },
+    "item_id": {
+      "minLength": 1,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "license": {
+      "minLength": 1,
+      "title": "License",
+      "type": "string"
+    },
+    "pool": {
+      "$ref": "#/$defs/CorpusPool"
+    },
+    "prompt": {
+      "minLength": 1,
+      "title": "Prompt",
+      "type": "string"
+    },
+    "retired_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Retired At"
+    },
+    "retirement_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Retirement Reason"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "minLength": 1,
+      "title": "Source",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ItemStatus",
+      "default": "active"
+    },
+    "template_family_id": {
+      "minLength": 1,
+      "title": "Template Family Id",
+      "type": "string"
+    },
+    "verifier_spec": {
+      "$ref": "#/$defs/VerifierSpec"
+    }
+  },
+  "required": [
+    "competency_id",
+    "template_family_id",
+    "instance_group_id",
+    "item_id",
+    "generation_seed",
+    "generator_version",
+    "difficulty",
+    "prompt",
+    "verifier_spec",
+    "pool",
+    "source",
+    "license",
+    "contamination_scope",
+    "created_at"
+  ],
+  "title": "CorpusItemRecord",
+  "type": "object"
+}

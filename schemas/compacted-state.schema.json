@@ -1,0 +1,143 @@
+{
+  "$defs": {
+    "Hypothesis": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "hypothesis_id": {
+          "minLength": 1,
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "hypothesis_id",
+        "statement",
+        "confidence"
+      ],
+      "title": "Hypothesis",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/compacted-state.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "compacted_state_id": {
+      "minLength": 1,
+      "title": "Compacted State Id",
+      "type": "string"
+    },
+    "confidence_notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Confidence Notes",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "dropped": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Dropped",
+      "type": "array"
+    },
+    "failed_strategies": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Failed Strategies",
+      "type": "array"
+    },
+    "provenance_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Provenance Refs",
+      "type": "array"
+    },
+    "replay_input_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Replay Input Digest",
+      "type": "string"
+    },
+    "source_episode_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Episode Ids",
+      "type": "array"
+    },
+    "state_id": {
+      "minLength": 1,
+      "title": "State Id",
+      "type": "string"
+    },
+    "trigger": {
+      "enum": [
+        "token_budget",
+        "episode_count",
+        "memory_pressure",
+        "manual",
+        "experiment"
+      ],
+      "title": "Trigger",
+      "type": "string"
+    },
+    "unresolved_hypotheses": {
+      "items": {
+        "$ref": "#/$defs/Hypothesis"
+      },
+      "title": "Unresolved Hypotheses",
+      "type": "array"
+    },
+    "validated_lessons": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Validated Lessons",
+      "type": "array"
+    }
+  },
+  "required": [
+    "compacted_state_id",
+    "state_id",
+    "source_episode_ids",
+    "validated_lessons",
+    "unresolved_hypotheses",
+    "failed_strategies",
+    "confidence_notes",
+    "provenance_refs",
+    "dropped",
+    "trigger",
+    "replay_input_digest",
+    "created_at"
+  ],
+  "title": "CompactedStateRecord",
+  "type": "object"
+}

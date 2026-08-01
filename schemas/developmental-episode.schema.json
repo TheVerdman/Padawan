@@ -1,0 +1,307 @@
+{
+  "$defs": {
+    "MemoryWriteRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "enum": [
+            "write",
+            "update",
+            "invalidate",
+            "rollback",
+            "none"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "lesson_id": {
+          "minLength": 1,
+          "title": "Lesson Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "lesson_id",
+        "action",
+        "reason"
+      ],
+      "title": "MemoryWriteRecord",
+      "type": "object"
+    },
+    "StudentOutcome": {
+      "enum": [
+        "robust_success",
+        "correct_with_invalid_process",
+        "correct_by_shortcut",
+        "correct_by_guess",
+        "partial_progress",
+        "execution_error",
+        "reasoning_error",
+        "task_misunderstanding",
+        "tool_use_error",
+        "answer_extraction_error",
+        "refusal",
+        "timeout",
+        "malformed_output"
+      ],
+      "title": "StudentOutcome",
+      "type": "string"
+    },
+    "SystemOutcome": {
+      "enum": [
+        "grader_defect",
+        "item_defect",
+        "sibling_mismatch",
+        "contamination",
+        "retrieval_defect",
+        "compaction_loss",
+        "provider_failure",
+        "runtime_failure",
+        "state_corruption",
+        "retirement_failure",
+        "update_regression"
+      ],
+      "title": "SystemOutcome",
+      "type": "string"
+    },
+    "TeachingOutcome": {
+      "enum": [
+        "successful_diagnosis",
+        "successful_repair",
+        "successful_transfer",
+        "revision_only_success",
+        "no_effect",
+        "misunderstood_intervention",
+        "copied_answer_without_transfer",
+        "harmful_intervention",
+        "unsupported_critique",
+        "contradiction_of_evidence",
+        "excessive_answer_leakage"
+      ],
+      "title": "TeachingOutcome",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/developmental-episode.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "consolidation_proposal_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Consolidation Proposal Ids",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "diagnosis_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Diagnosis Ids",
+      "type": "array"
+    },
+    "episode_id": {
+      "minLength": 1,
+      "title": "Episode Id",
+      "type": "string"
+    },
+    "exposure_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Exposure Ids",
+      "type": "array"
+    },
+    "grade_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Grade Id"
+    },
+    "initial_attempt_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Initial Attempt Id"
+    },
+    "intervention_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Intervention Id"
+    },
+    "memory_writes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MemoryWriteRecord"
+      },
+      "title": "Memory Writes",
+      "type": "array"
+    },
+    "pedagogical_metrics": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Pedagogical Metrics",
+      "type": "object"
+    },
+    "provenance_event_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Provenance Event Ids",
+      "type": "array"
+    },
+    "retirement_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Retirement Ids",
+      "type": "array"
+    },
+    "revision_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Revision Id"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "active",
+        "complete",
+        "failed",
+        "review_required"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "student_outcome": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StudentOutcome"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "student_state_after_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Student State After Id"
+    },
+    "student_state_before_id": {
+      "minLength": 1,
+      "title": "Student State Before Id",
+      "type": "string"
+    },
+    "system_outcomes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SystemOutcome"
+      },
+      "title": "System Outcomes",
+      "type": "array"
+    },
+    "task_item_id": {
+      "minLength": 1,
+      "title": "Task Item Id",
+      "type": "string"
+    },
+    "teaching_outcome": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TeachingOutcome"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "transfer_trial_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Transfer Trial Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "episode_id",
+    "student_state_before_id",
+    "task_item_id",
+    "pedagogical_metrics",
+    "provenance_event_ids",
+    "status",
+    "created_at"
+  ],
+  "title": "DevelopmentalEpisode",
+  "type": "object"
+}

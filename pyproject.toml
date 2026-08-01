@@ -1,0 +1,85 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "padawan-research"
+version = "0.1.0"
+description = "Persistent, evidence-governed research operating system for open-weight student agents"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+license = "Apache-2.0"
+authors = [{ name = "Andrew Verdiramo" }]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "alembic>=1.16,<2",
+  "aiosqlite>=0.21,<1",
+  "httpx>=0.28,<1",
+  "pydantic>=2.11,<3",
+  "pydantic-settings>=2.10,<3",
+  "psycopg[binary]>=3.2,<4",
+  "sqlalchemy[asyncio]>=2.0.51,<3",
+  "structlog>=25.4,<26",
+  "sympy>=1.14,<2",
+  "typer>=0.16,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "hypothesis>=6.135,<7",
+  "mypy>=1.16,<2",
+  "pytest>=8.4,<10",
+  "pytest-asyncio>=1.0,<2",
+  "ruff>=0.12,<1",
+]
+
+[project.scripts]
+padawan = "padawan.cli.app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["padawan"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"migrations" = "padawan/_migrations"
+
+[tool.pytest.ini_options]
+addopts = ["-ra", "--strict-config", "--strict-markers"]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+  "postgres: requires PADAWAN_TEST_POSTGRES_URL",
+  "live: requires a real model endpoint and credentials",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "N", "SIM", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"migrations/versions/*.py" = ["E501"]
+"padawan/cli/*.py" = ["B008"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+packages = ["padawan"]
+
+[[tool.mypy.overrides]]
+module = ["sympy", "sympy.*"]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+branch = true
+source = ["padawan"]

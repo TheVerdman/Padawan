@@ -1,0 +1,161 @@
+{
+  "$defs": {
+    "LessonStatus": {
+      "enum": [
+        "candidate",
+        "validated",
+        "invalidated",
+        "retired",
+        "review_required"
+      ],
+      "title": "LessonStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/lesson.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "applicability": {
+      "minLength": 1,
+      "title": "Applicability",
+      "type": "string"
+    },
+    "branch_id": {
+      "minLength": 1,
+      "title": "Branch Id",
+      "type": "string"
+    },
+    "competency_id": {
+      "minLength": 1,
+      "title": "Competency Id",
+      "type": "string"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "error_class": {
+      "minLength": 1,
+      "title": "Error Class",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "exclusions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Exclusions",
+      "type": "array"
+    },
+    "failed_transfer_count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Failed Transfer Count",
+      "type": "integer"
+    },
+    "general_rule": {
+      "minLength": 1,
+      "title": "General Rule",
+      "type": "string"
+    },
+    "harmful_retrieval_count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Harmful Retrieval Count",
+      "type": "integer"
+    },
+    "lesson_id": {
+      "minLength": 1,
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_episode_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Episode Ids",
+      "type": "array"
+    },
+    "state_lineage_id": {
+      "minLength": 1,
+      "title": "State Lineage Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/LessonStatus"
+    },
+    "successful_transfer_count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Successful Transfer Count",
+      "type": "integer"
+    },
+    "supersedes_version": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Supersedes Version"
+    },
+    "teacher_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Teacher Id"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "lesson_id",
+    "version",
+    "competency_id",
+    "error_class",
+    "general_rule",
+    "applicability",
+    "exclusions",
+    "evidence_ids",
+    "source_episode_ids",
+    "confidence",
+    "state_lineage_id",
+    "branch_id",
+    "status",
+    "created_at"
+  ],
+  "title": "LessonRecord",
+  "type": "object"
+}

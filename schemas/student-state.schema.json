@@ -1,0 +1,207 @@
+{
+  "$defs": {
+    "CompetencyEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "competency_id": {
+          "minLength": 1,
+          "title": "Competency Id",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "mean": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Mean",
+          "type": "number"
+        },
+        "observations": {
+          "minimum": 0,
+          "title": "Observations",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "competency_id",
+        "mean",
+        "confidence",
+        "observations"
+      ],
+      "title": "CompetencyEstimate",
+      "type": "object"
+    },
+    "Hypothesis": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "hypothesis_id": {
+          "minLength": 1,
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "hypothesis_id",
+        "statement",
+        "confidence"
+      ],
+      "title": "Hypothesis",
+      "type": "object"
+    },
+    "LifecycleStatus": {
+      "enum": [
+        "active",
+        "experimental",
+        "canonical",
+        "archived",
+        "revoked"
+      ],
+      "title": "LifecycleStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/student-state.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active_experiment_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Active Experiment Id"
+    },
+    "branch_id": {
+      "minLength": 1,
+      "title": "Branch Id",
+      "type": "string"
+    },
+    "checkpoint_id": {
+      "minLength": 1,
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "compacted_working_state": {
+      "additionalProperties": true,
+      "title": "Compacted Working State",
+      "type": "object"
+    },
+    "competency_estimates": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CompetencyEstimate"
+      },
+      "title": "Competency Estimates",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "creation_reason": {
+      "minLength": 1,
+      "title": "Creation Reason",
+      "type": "string"
+    },
+    "lesson_memory_refs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Lesson Memory Refs",
+      "type": "array"
+    },
+    "lifecycle_status": {
+      "$ref": "#/$defs/LifecycleStatus"
+    },
+    "parent_state_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent State Id"
+    },
+    "runtime_id": {
+      "minLength": 1,
+      "title": "Runtime Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "State Hash",
+      "type": "string"
+    },
+    "state_id": {
+      "minLength": 1,
+      "title": "State Id",
+      "type": "string"
+    },
+    "student_id": {
+      "minLength": 1,
+      "title": "Student Id",
+      "type": "string"
+    },
+    "unresolved_hypotheses": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Hypothesis"
+      },
+      "title": "Unresolved Hypotheses",
+      "type": "array"
+    }
+  },
+  "required": [
+    "state_id",
+    "student_id",
+    "checkpoint_id",
+    "runtime_id",
+    "branch_id",
+    "compacted_working_state",
+    "state_hash",
+    "creation_reason",
+    "lifecycle_status",
+    "created_at"
+  ],
+  "title": "StudentStateRecord",
+  "type": "object"
+}

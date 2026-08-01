@@ -1,0 +1,105 @@
+{
+  "$defs": {
+    "TeacherMode": {
+      "enum": [
+        "socratic_hint",
+        "diagnostic_critique",
+        "general_principle",
+        "minimal_repair",
+        "full_demonstration",
+        "contrastive_explanation",
+        "micro_curriculum",
+        "metacognitive_feedback"
+      ],
+      "title": "TeacherMode",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/competency.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "competency_id": {
+      "minLength": 1,
+      "title": "Competency Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "description": {
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "difficulty_calibration": {
+      "additionalProperties": true,
+      "title": "Difficulty Calibration",
+      "type": "object"
+    },
+    "grader_requirements": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Grader Requirements",
+      "type": "array"
+    },
+    "parent_competency_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Competency Id"
+    },
+    "permissible_teacher_modes": {
+      "items": {
+        "$ref": "#/$defs/TeacherMode"
+      },
+      "title": "Permissible Teacher Modes",
+      "type": "array"
+    },
+    "prerequisite_competency_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Prerequisite Competency Ids",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "competency_id",
+    "title",
+    "description",
+    "grader_requirements",
+    "permissible_teacher_modes",
+    "difficulty_calibration",
+    "created_at"
+  ],
+  "title": "CompetencyRecord",
+  "type": "object"
+}

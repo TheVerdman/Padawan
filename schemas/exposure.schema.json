@@ -1,0 +1,121 @@
+{
+  "$defs": {
+    "ExposureType": {
+      "enum": [
+        "prompt",
+        "answer",
+        "critique",
+        "repair",
+        "metadata",
+        "retrieval",
+        "training"
+      ],
+      "title": "ExposureType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/exposure.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "answer_exposed": {
+      "title": "Answer Exposed",
+      "type": "boolean"
+    },
+    "checkpoint_id": {
+      "minLength": 1,
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "critique_exposed": {
+      "title": "Critique Exposed",
+      "type": "boolean"
+    },
+    "episode_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Episode Id"
+    },
+    "exposure_id": {
+      "minLength": 1,
+      "title": "Exposure Id",
+      "type": "string"
+    },
+    "exposure_type": {
+      "$ref": "#/$defs/ExposureType"
+    },
+    "instance_group_id": {
+      "minLength": 1,
+      "title": "Instance Group Id",
+      "type": "string"
+    },
+    "item_id": {
+      "minLength": 1,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "metadata_exposed": {
+      "title": "Metadata Exposed",
+      "type": "boolean"
+    },
+    "prompt_exposed": {
+      "title": "Prompt Exposed",
+      "type": "boolean"
+    },
+    "repair_exposed": {
+      "title": "Repair Exposed",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state_id": {
+      "minLength": 1,
+      "title": "State Id",
+      "type": "string"
+    },
+    "student_id": {
+      "minLength": 1,
+      "title": "Student Id",
+      "type": "string"
+    },
+    "template_family_id": {
+      "minLength": 1,
+      "title": "Template Family Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "exposure_id",
+    "student_id",
+    "checkpoint_id",
+    "state_id",
+    "item_id",
+    "template_family_id",
+    "instance_group_id",
+    "exposure_type",
+    "prompt_exposed",
+    "answer_exposed",
+    "critique_exposed",
+    "repair_exposed",
+    "metadata_exposed",
+    "created_at"
+  ],
+  "title": "ExposureRecord",
+  "type": "object"
+}

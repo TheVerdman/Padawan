@@ -1,0 +1,698 @@
+from __future__ import annotations
+
+import asyncio
+import inspect
+import json
+import os
+from collections.abc import Awaitable, Callable
+from dataclasses import asdict, is_dataclass
+from enum import Enum
+from pathlib import Path
+from typing import Any, cast
+
+import typer
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import func, select
+
+from padawan.adapters.heirloom.exporter import HeirloomAuditExporter
+from padawan.agent.loop import AutonomousResearchLoop
+from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore
+from padawan.config.composition import (
+    StudentProvider,
+    TeacherProvider,
+    build_live_application,
+)
+from padawan.config.logging import configure_logging
+from padawan.config.settings import Settings
+from padawan.corpus.algebra import AlgebraCorpusGenerator, AlgebraFamily
+from padawan.corpus.registry import CorpusRegistry
+from padawan.episodes.store import EpisodeStore
+from padawan.experiments.engine import ExperimentEngine
+from padawan.governance.manifests import CommandManifest, ManifestWriter, now
+from padawan.governance.policy import ExportPolicy
+from padawan.models.contracts import CorpusPool, TeacherMode
+from padawan.models.database import Database
+from padawan.models.tables import (
+    CorpusItemRow,
+    InstanceGroupRow,
+    LessonVersionRow,
+    StudentRow,
+    TemplateFamilyRow,
+)
+from padawan.orchestration.state_machine import RunStore
+from padawan.provenance.ledger import ProvenanceLedger
+from padawan.reporting.service import ReportingService
+from padawan.state.store import StateStore
+
+app = typer.Typer(
+    name="padawan",
+    help="Evidence-governed persistent student research system.",
+    no_args_is_help=True,
+)
+db_app = typer.Typer(help="Database lifecycle.")
+corpus_app = typer.Typer(help="Governed corpus operations.")
+corpus_generate_app = typer.Typer(help="Generate deterministic corpus inventory.")
+supervisor_app = typer.Typer(help="Autonomous research supervisor.")
+worker_app = typer.Typer(help="Durable worker actions.")
+experiment_app = typer.Typer(help="State-forked experiments.")
+episode_app = typer.Typer(help="Developmental episode inspection.")
+state_app = typer.Typer(help="Persistent student-state operations.")
+memory_app = typer.Typer(help="Versioned lesson memory.")
+report_app = typer.Typer(help="Research reports.")
+provenance_app = typer.Typer(help="Cryptographic provenance.")
+export_app = typer.Typer(help="Policy-governed exports.")
+
+app.add_typer(db_app, name="db")
+app.add_typer(corpus_app, name="corpus")
+corpus_app.add_typer(corpus_generate_app, name="generate")
+app.add_typer(supervisor_app, name="supervisor")
+app.add_typer(worker_app, name="worker")
+app.add_typer(experiment_app, name="experiment")
+app.add_typer(episode_app, name="episode")
+app.add_typer(state_app, name="state")
+app.add_typer(memory_app, name="memory")
+app.add_typer(report_app, name="report")
+app.add_typer(provenance_app, name="provenance")
+app.add_typer(export_app, name="export")
+
+
+@app.callback()
+def root(
+    ctx: typer.Context,
+    json_output: bool = typer.Option(False, "--json", help="Emit machine-readable JSON."),
+) -> None:
+    settings = Settings()
+    configure_logging(settings.log_level)
+    ctx.ensure_object(dict)
+    ctx.obj["json"] = json_output
+    ctx.obj["settings"] = settings
+
+
+@db_app.command("migrate")
+def db_migrate(ctx: typer.Context, revision: str = typer.Option("head", "--revision")) -> None:
+    settings = _settings(ctx)
+
+    def operation() -> dict[str, Any]:
+        configuration = Config()
+        configuration.set_main_option("script_location", str(_migration_root()))
+        configuration.set_main_option("sqlalchemy.url", settings.database_url)
+        command.upgrade(configuration, revision)
+        return {"database_url": _redact_database_url(settings.database_url), "revision": revision}
+
+    _run_command(ctx, "db migrate", operation)
+
+
+@corpus_generate_app.command("algebra")
+def corpus_generate_algebra(
+    ctx: typer.Context,
+    pool: CorpusPool = typer.Option(CorpusPool.CURRICULUM, "--pool"),
+    seed: int = typer.Option(20260801, "--seed"),
+    groups_per_family: int = typer.Option(2, "--groups-per-family", min=1),
+    siblings_per_group: int = typer.Option(3, "--siblings-per-group", min=2),
+    family: list[AlgebraFamily] | None = typer.Option(None, "--family"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        settings = _settings(ctx)
+        database = Database(settings.database_url)
+        generator = AlgebraCorpusGenerator()
+        registry = CorpusRegistry()
+        selected = tuple(family) if family else None
+        try:
+            records = generator.generate(
+                pool=pool,
+                seed=seed,
+                groups_per_family=groups_per_family,
+                siblings_per_group=siblings_per_group,
+                families=selected,
+            )
+            async with database.transaction() as session:
+                for competency in generator.competencies():
+                    await registry.register_competency(session, competency)
+                stored = await registry.register_items(session, records)
+            return {
+                "generated": len(records),
+                "registered": len(stored),
+                "pool": pool.value,
+                "families": sorted({record.template_family_id for record in records}),
+                "seed": seed,
+            }
+        finally:
+            await database.close()
+
+    _run_command(ctx, "corpus generate algebra", operation)
+
+
+@corpus_app.command("validate")
+def corpus_validate(ctx: typer.Context) -> None:
+    async def operation() -> dict[str, Any]:
+        database = Database(_settings(ctx).database_url)
+        try:
+            async with database.transaction() as session:
+                errors = await CorpusRegistry().validate_inventory(session)
+            if errors:
+                raise ValueError("; ".join(errors))
+            return {"valid": True, "errors": []}
+        finally:
+            await database.close()
+
+    _run_command(ctx, "corpus validate", operation)
+
+
+@corpus_app.command("inspect")
+def corpus_inspect(ctx: typer.Context, limit: int = typer.Option(20, "--limit", min=1)) -> None:
+    async def operation() -> dict[str, Any]:
+        database = Database(_settings(ctx).database_url)
+        try:
+            async with database.transaction() as session:
+                counts = dict(
+                    (
+                        await session.execute(
+                            select(CorpusItemRow.status, func.count()).group_by(
+                                CorpusItemRow.status
+                            )
+                        )
+                    )
+                    .tuples()
+                    .all()
+                )
+                pool_counts = dict(
+                    (
+                        await session.execute(
+                            select(CorpusItemRow.pool, func.count()).group_by(CorpusItemRow.pool)
+                        )
+                    )
+                    .tuples()
+                    .all()
+                )
+                items = (
+                    await session.scalars(
+                        select(CorpusItemRow)
+                        .order_by(CorpusItemRow.created_at, CorpusItemRow.item_id)
+                        .limit(limit)
+                    )
+                ).all()
+                family_count = await session.scalar(
+                    select(func.count()).select_from(TemplateFamilyRow)
+                )
+                group_count = await session.scalar(
+                    select(func.count()).select_from(InstanceGroupRow)
+                )
+            return {
+                "items_by_status": counts,
+                "items_by_pool": pool_counts,
+                "template_families": int(family_count or 0),
+                "instance_groups": int(group_count or 0),
+                "items": [
+                    {
+                        "item_id": row.item_id,
+                        "pool": row.pool,
+                        "status": row.status,
+                        "instance_group_id": row.instance_group_id,
+                        "difficulty": row.difficulty,
+                    }
+                    for row in items
+                ],
+            }
+        finally:
+            await database.close()
+
+    _run_command(ctx, "corpus inspect", operation)
+
+
+@supervisor_app.command("run")
+def supervisor_run(
+    ctx: typer.Context,
+    student_id: str = typer.Option("inkling-small-research", "--student-id"),
+    episode_budget: int = typer.Option(1, "--episode-budget", min=1),
+    experiment_seed: int = typer.Option(20260801, "--seed"),
+    student_provider: StudentProvider = typer.Option("inkling", "--student-provider"),
+    teacher_provider: TeacherProvider = typer.Option("openai", "--teacher-provider"),
+    student_model: str | None = typer.Option(None, "--student-model"),
+    teacher_model: str | None = typer.Option(None, "--teacher-model"),
+    compatible_base_url: str | None = typer.Option(None, "--compatible-base-url"),
+    allow_legacy_student_fallback: bool = typer.Option(False, "--allow-legacy-student-fallback"),
+    bootstrap: bool = typer.Option(False, "--bootstrap"),
+) -> None:
+    _run_command(
+        ctx,
+        "supervisor run",
+        lambda: _live_research_run(
+            settings=_settings(ctx),
+            student_id=student_id,
+            episode_budget=episode_budget,
+            experiment_seed=experiment_seed,
+            student_provider=student_provider,
+            teacher_provider=teacher_provider,
+            student_model=student_model,
+            teacher_model=teacher_model,
+            compatible_base_url=compatible_base_url,
+            allow_legacy_student_fallback=allow_legacy_student_fallback,
+            bootstrap=bootstrap,
+        ),
+    )
+
+
+@worker_app.command("run")
+def worker_run(
+    ctx: typer.Context,
+    action_budget: int = typer.Option(1, "--action-budget", min=1),
+    student_provider: StudentProvider = typer.Option("inkling", "--student-provider"),
+    teacher_provider: TeacherProvider = typer.Option("openai", "--teacher-provider"),
+    student_model: str | None = typer.Option(None, "--student-model"),
+    teacher_model: str | None = typer.Option(None, "--teacher-model"),
+    compatible_base_url: str | None = typer.Option(None, "--compatible-base-url"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        application = await build_live_application(
+            _settings(ctx),
+            student_provider=student_provider,
+            teacher_provider=teacher_provider,
+            student_model=student_model,
+            teacher_model=teacher_model,
+            compatible_base_url=compatible_base_url,
+        )
+        try:
+            completed = await application.supervisor.run(budget=action_budget)
+            return {"durable_actions_completed": completed, "action_budget": action_budget}
+        finally:
+            await application.close()
+
+    _run_command(ctx, "worker run", operation)
+
+
+@supervisor_app.command("pause")
+def supervisor_pause(ctx: typer.Context, run_id: str) -> None:
+    async def operation() -> dict[str, Any]:
+        database = Database(_settings(ctx).database_url)
+        try:
+            async with database.transaction() as session:
+                await RunStore().pause(session, run_id=run_id)
+            return {"run_id": run_id, "paused": True}
+        finally:
+            await database.close()
+
+    _run_command(ctx, "supervisor pause", operation)
+
+
+@supervisor_app.command("resume")
+def supervisor_resume(ctx: typer.Context, run_id: str) -> None:
+    async def operation() -> dict[str, Any]:
+        database = Database(_settings(ctx).database_url)
+        try:
+            async with database.transaction() as session:
+                await RunStore().resume(session, run_id=run_id)
+            return {"run_id": run_id, "paused": False}
+        finally:
+            await database.close()
+
+    _run_command(ctx, "supervisor resume", operation)
+
+
+@experiment_app.command("run")
+def experiment_run(
+    ctx: typer.Context,
+    student_id: str = typer.Option("inkling-small-research", "--student-id"),
+    blocks: int = typer.Option(1, "--blocks", min=1),
+    seed: int = typer.Option(20260801, "--seed"),
+    student_provider: StudentProvider = typer.Option("inkling", "--student-provider"),
+    teacher_provider: TeacherProvider = typer.Option("openai", "--teacher-provider"),
+    student_model: str | None = typer.Option(None, "--student-model"),
+    teacher_model: str | None = typer.Option(None, "--teacher-model"),
+    compatible_base_url: str | None = typer.Option(None, "--compatible-base-url"),
+    bootstrap: bool = typer.Option(False, "--bootstrap"),
+) -> None:
+    _run_command(
+        ctx,
+        "experiment run",
+        lambda: _live_research_run(
+            settings=_settings(ctx),
+            student_id=student_id,
+            episode_budget=blocks,
+            experiment_seed=seed,
+            student_provider=student_provider,
+            teacher_provider=teacher_provider,
+            student_model=student_model,
+            teacher_model=teacher_model,
+            compatible_base_url=compatible_base_url,
+            allow_legacy_student_fallback=False,
+            bootstrap=bootstrap,
+        ),
+    )
+
+
+@episode_app.command("inspect")
+def episode_inspect(ctx: typer.Context, episode_id: str) -> None:
+    async def operation() -> dict[str, object]:
+        settings = _settings(ctx)
+        database = Database(settings.database_url)
+        try:
+            store = EpisodeStore(ArtifactCatalog(LocalArtifactStore(settings.artifact_root)))
+            async with database.transaction() as session:
+                return await store.inspect(session, episode_id=episode_id)
+        finally:
+            await database.close()
+
+    _run_command(ctx, "episode inspect", operation)
+
+
+@state_app.command("inspect")
+def state_inspect(
+    ctx: typer.Context,
+    state_id: str | None = typer.Option(None, "--state-id"),
+    student_id: str | None = typer.Option(None, "--student-id"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        if not state_id and not student_id:
+            raise ValueError("provide --state-id or --student-id")
+        database = Database(_settings(ctx).database_url)
+        states = StateStore()
+        try:
+            async with database.transaction() as session:
+                resolved = state_id
+                if resolved is None and student_id:
+                    student = await session.get(StudentRow, student_id)
+                    if student is None or student.canonical_state_id is None:
+                        raise KeyError(student_id)
+                    resolved = student.canonical_state_id
+                if resolved is None:
+                    raise AssertionError("state resolution failed")
+                record = await states.get(session, state_id=resolved)
+                lineage = await states.lineage(session, state_id=resolved)
+            return {"state": record.model_dump(mode="json"), "lineage": lineage}
+        finally:
+            await database.close()
+
+    _run_command(ctx, "state inspect", operation)
+
+
+@state_app.command("fork")
+def state_fork(
+    ctx: typer.Context,
+    state_id: str,
+    experiment_id: str = typer.Option(..., "--experiment-id"),
+    treatment: str = typer.Option("frontier_teacher_critique", "--treatment"),
+    control: str = typer.Option("no_intervention", "--control"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        database = Database(_settings(ctx).database_url)
+        try:
+            async with database.transaction() as session:
+                fork = await StateStore().fork(
+                    session,
+                    parent_state_id=state_id,
+                    experiment_id=experiment_id,
+                    intervention={"treatment_condition": treatment, "control_condition": control},
+                )
+            return fork.model_dump(mode="json")
+        finally:
+            await database.close()
+
+    _run_command(ctx, "state fork", operation)
+
+
+@memory_app.command("inspect")
+def memory_inspect(
+    ctx: typer.Context,
+    lesson_id: str | None = typer.Option(None, "--lesson-id"),
+    limit: int = typer.Option(50, "--limit", min=1),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        database = Database(_settings(ctx).database_url)
+        try:
+            async with database.transaction() as session:
+                query = select(LessonVersionRow).order_by(
+                    LessonVersionRow.lesson_id, LessonVersionRow.version.desc()
+                )
+                if lesson_id:
+                    query = query.where(LessonVersionRow.lesson_id == lesson_id)
+                rows = (await session.scalars(query.limit(limit))).all()
+            return {"lesson_versions": [row.record_json for row in rows]}
+        finally:
+            await database.close()
+
+    _run_command(ctx, "memory inspect", operation)
+
+
+@report_app.command("experiment")
+def report_experiment(ctx: typer.Context, experiment_id: str) -> None:
+    async def operation() -> dict[str, Any]:
+        database = Database(_settings(ctx).database_url)
+        try:
+            service = ReportingService(database, ExperimentEngine(StateStore()))
+            return await service.experiment(experiment_id)
+        finally:
+            await database.close()
+
+    _run_command(ctx, "report experiment", operation)
+
+
+@report_app.command("operations")
+def report_operations(ctx: typer.Context) -> None:
+    async def operation() -> dict[str, Any]:
+        database = Database(_settings(ctx).database_url)
+        try:
+            return await ReportingService(database, ExperimentEngine(StateStore())).operations()
+        finally:
+            await database.close()
+
+    _run_command(ctx, "report operations", operation)
+
+
+@provenance_app.command("verify")
+def provenance_verify(
+    ctx: typer.Context, stream_id: str = typer.Option("global", "--stream-id")
+) -> None:
+    async def operation() -> dict[str, Any]:
+        settings = _settings(ctx)
+        database = Database(settings.database_url)
+        try:
+            ledger = ProvenanceLedger(
+                code_revision=settings.code_revision, environment=settings.environment
+            )
+            async with database.transaction() as session:
+                result = await ledger.verify(session, stream_id=stream_id)
+            if not result.valid:
+                raise ValueError("provenance verification failed: " + "; ".join(result.errors))
+            return asdict(result)
+        finally:
+            await database.close()
+
+    _run_command(ctx, "provenance verify", operation)
+
+
+@export_app.command("heirloom")
+def export_heirloom(
+    ctx: typer.Context,
+    episode_id: str,
+    output_root: Path = typer.Option(..., "--output-root"),
+    hmac_key_env: str = typer.Option("PADAWAN_EXPORT_HMAC_KEY", "--hmac-key-env"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        secret = os.environ.get(hmac_key_env)
+        if secret is None:
+            raise ValueError(f"{hmac_key_env} is required for opaque audit identifiers")
+        exporter = HeirloomAuditExporter(
+            database=Database(_settings(ctx).database_url),
+            policy=ExportPolicy(),
+            audit_hmac_key=secret.encode(),
+        )
+        try:
+            result = await exporter.export(episode_id=episode_id, output_root=output_root)
+            return cast(dict[str, Any], _jsonable(result))
+        finally:
+            await exporter.database.close()
+
+    _run_command(ctx, "export heirloom", operation)
+
+
+async def _live_research_run(
+    *,
+    settings: Settings,
+    student_id: str,
+    episode_budget: int,
+    experiment_seed: int,
+    student_provider: StudentProvider,
+    teacher_provider: TeacherProvider,
+    student_model: str | None,
+    teacher_model: str | None,
+    compatible_base_url: str | None,
+    allow_legacy_student_fallback: bool,
+    bootstrap: bool,
+) -> dict[str, Any]:
+    application = await build_live_application(
+        settings,
+        student_provider=student_provider,
+        teacher_provider=teacher_provider,
+        student_model=student_model,
+        teacher_model=teacher_model,
+        compatible_base_url=compatible_base_url,
+        allow_legacy_student_fallback=allow_legacy_student_fallback,
+    )
+    try:
+        selected_model = (
+            student_model
+            or (settings.inkling_model if student_provider == "inkling" else None)
+            or (settings.openai_model if student_provider == "openai" else None)
+            or settings.compatible_model
+        )
+        if selected_model is None:
+            raise ValueError("student model cannot be resolved")
+        async with application.database.transaction() as session:
+            student = await session.get(StudentRow, student_id)
+            if student is None:
+                await application.states.create_student(
+                    session,
+                    student_id=student_id,
+                    checkpoint_id=selected_model,
+                    runtime_id=student_provider,
+                    initial_working_state={
+                        "institution": "padawan",
+                        "policy": "clean item, continuous student",
+                    },
+                )
+            if bootstrap:
+                generator = AlgebraCorpusGenerator()
+                for competency in generator.competencies():
+                    await application.registry.register_competency(session, competency)
+                items = generator.generate(
+                    pool=CorpusPool.CURRICULUM,
+                    seed=experiment_seed,
+                    groups_per_family=max(1, episode_budget),
+                    siblings_per_group=3,
+                )
+                await application.registry.register_items(session, items)
+        loop = AutonomousResearchLoop(
+            database=application.database,
+            runs=application.runs,
+            supervisor=application.supervisor,
+            student_id=student_id,
+        )
+        result = await loop.run(
+            episode_budget=episode_budget,
+            experiment_seed=experiment_seed,
+            teacher_mode=TeacherMode.DIAGNOSTIC_CRITIQUE,
+        )
+        return cast(dict[str, Any], _jsonable(result))
+    finally:
+        await application.close()
+
+
+def _run_command(
+    ctx: typer.Context,
+    command_name: str,
+    operation: Callable[[], object],
+) -> None:
+    settings = _settings(ctx)
+    started = now()
+    writer = ManifestWriter(LocalArtifactStore(settings.artifact_root))
+    try:
+        result_or_awaitable: object = operation()
+        if inspect.isawaitable(result_or_awaitable):
+            result: object = asyncio.run(_await_value(cast(Awaitable[object], result_or_awaitable)))
+        else:
+            result = result_or_awaitable
+        result_data = cast(dict[str, Any], _jsonable(result))
+        manifest = CommandManifest(
+            command=command_name,
+            status="complete",
+            started_at=started,
+            completed_at=now(),
+            configuration=_manifest_configuration(ctx, settings),
+            result=result_data,
+            error=None,
+        )
+        reference = writer.write(manifest, known_secrets=_known_secrets(settings))
+        _emit(ctx, {**result_data, "manifest": reference.model_dump(mode="json")})
+    except Exception as exc:
+        error = {"type": type(exc).__name__, "message": str(exc)}
+        manifest = CommandManifest(
+            command=command_name,
+            status="failed",
+            started_at=started,
+            completed_at=now(),
+            configuration=_manifest_configuration(ctx, settings),
+            result={},
+            error=error,
+        )
+        reference = writer.write(manifest, known_secrets=_known_secrets(settings))
+        _emit(ctx, {"error": error, "manifest": reference.model_dump(mode="json")}, error=True)
+        raise typer.Exit(code=1) from exc
+
+
+async def _await_value(value: Awaitable[object]) -> object:
+    return await value
+
+
+def _emit(ctx: typer.Context, value: dict[str, Any], *, error: bool = False) -> None:
+    if bool(ctx.obj.get("json")):
+        typer.echo(json.dumps(_jsonable(value), sort_keys=True), err=error)
+    else:
+        typer.echo(json.dumps(_jsonable(value), sort_keys=True, indent=2), err=error)
+
+
+def _settings(ctx: typer.Context) -> Settings:
+    return cast(Settings, ctx.obj["settings"])
+
+
+def _jsonable(value: Any) -> Any:
+    if is_dataclass(value) and not isinstance(value, type):
+        return _jsonable(asdict(value))
+    if isinstance(value, dict):
+        return {str(key): _jsonable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, Enum):
+        return value.value
+    if hasattr(value, "model_dump"):
+        return value.model_dump(mode="json")
+    return value
+
+
+def _known_secrets(settings: Settings) -> tuple[str, ...]:
+    values = []
+    for secret in (
+        settings.openai_api_key,
+        settings.anthropic_api_key,
+        settings.compatible_api_key,
+    ):
+        if secret is not None:
+            values.append(secret.get_secret_value())
+    return tuple(values)
+
+
+def _manifest_configuration(ctx: typer.Context, settings: Settings) -> dict[str, object]:
+    return {
+        **settings.redacted_manifest(),
+        "invocation": cast(dict[str, object], _jsonable(dict(ctx.params))),
+    }
+
+
+def _redact_database_url(value: str) -> str:
+    if "@" not in value or "://" not in value:
+        return value
+    scheme, rest = value.split("://", 1)
+    return f"{scheme}://[REDACTED]@{rest.split('@', 1)[1]}"
+
+
+def _repository_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _migration_root() -> Path:
+    package_data = Path(__file__).resolve().parents[1] / "_migrations"
+    repository_data = _repository_root() / "migrations"
+    for candidate in (package_data, repository_data):
+        if (candidate / "env.py").is_file() and (candidate / "versions").is_dir():
+            return candidate
+    raise FileNotFoundError("Padawan Alembic migration resources are not installed")
+
+
+def main() -> None:
+    app()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,13 @@
+.git
+.github
+.venv
+artifacts
+runs
+*.sqlite3*
+__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+tests
+docs
+schemas
