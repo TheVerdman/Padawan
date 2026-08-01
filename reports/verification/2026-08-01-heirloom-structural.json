@@ -1,0 +1,27 @@
+{
+  "format": "padawan.heirloom_integration_verification",
+  "version": 1,
+  "verified_at": "2026-08-01",
+  "heirloom_revision": "6116fda2f5399175b7cb48bb81fcda32680cdc63",
+  "source": "focused deterministic integration fixture; not a live model episode",
+  "validator_exit_code": 0,
+  "validator_stdout": "validated padawan episodes=1 sft_eligible=0 smft_eligible=0 max_guidance_level=1",
+  "heirloom_report": {
+    "episode_summaries": [
+      {
+        "eligible_for_sft": false,
+        "eligible_for_smft": false,
+        "episode_id": "padawan_episode-run-export",
+        "guidance_level": 1
+      }
+    ],
+    "episodes": 1,
+    "format": "heirloom.padawan_validation_report",
+    "max_guidance_level": 1,
+    "sft_eligible": 0,
+    "smft_eligible": 0,
+    "status": "passed",
+    "version": 0
+  },
+  "interpretation": "Heirloom validated JSONL shape, references, hashes, and restrictive eligibility. This is structural interoperability evidence and does not prove Padawan algebra semantics."
+}

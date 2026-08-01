@@ -1,0 +1,54 @@
+{
+  "format": "padawan.live_pilot_attempt_report",
+  "version": 1,
+  "report_completed_at": "2026-08-01T19:22:46Z",
+  "status": "blocked_before_episode",
+  "claim_live_episode_completed": false,
+  "live_episode_ids": [],
+  "live_model_calls": 0,
+  "requested_design": {
+    "blocks": 2,
+    "bootstrap_inventory": true,
+    "seed": 20260801,
+    "student_id": "inkling-small-research",
+    "student_provider": "inkling",
+    "student_model": "w8a16-balanced-v1",
+    "teacher_provider": "openai",
+    "teacher_protocol": "responses"
+  },
+  "preflight": {
+    "inkling_repository_revision": "aa0a70e40ddab8f5fb00f111814ae9a3073e952a",
+    "inkling_repository_clean": true,
+    "inkling_models_endpoint": "http://127.0.0.1:8000/v1/models",
+    "inkling_models_endpoint_http_status": 0,
+    "inkling_models_endpoint_error": "connection refused",
+    "openai_api_key_configured": false,
+    "openai_model_configured": false,
+    "anthropic_api_key_configured": false,
+    "anthropic_model_configured": false,
+    "compatible_endpoint_configured": false
+  },
+  "command_attempts": [
+    {
+      "manifest_id": "manifest-2556f6e41663eb5d529ccebd",
+      "manifest_sha256": "020f89235b2fb72ae38e9c9be341b7e46cb38e8efa8c717dab0850ecc9740125",
+      "started_at": "2026-08-01T19:22:20.284400+00:00",
+      "exit_code": 1,
+      "error_type": "ValueError",
+      "error": "OpenAI teacher requires a model and API key"
+    },
+    {
+      "manifest_id": "manifest-150cc978defc0a092cb9a978",
+      "manifest_sha256": "2db8015edab346702da351ddcd62503707d5888fb1601fb257aa5acb026143b3",
+      "started_at": "2026-08-01T19:22:30.755963+00:00",
+      "exit_code": 1,
+      "error_type": "ValueError",
+      "error": "OpenAI teacher requires a model and API key"
+    }
+  ],
+  "blockers": [
+    "No Inkling HTTP serving process was reachable on the configured loopback endpoint.",
+    "No OpenAI or Anthropic teacher credential and model were configured."
+  ],
+  "interpretation": "The real provider composition and CLI were invoked without mocks. Configuration governance stopped both attempts before any episode or external model call. These attempts are infrastructure/configuration evidence, not live pedagogical evidence."
+}

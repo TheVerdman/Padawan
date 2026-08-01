@@ -1,0 +1,29 @@
+# Evidence hierarchy
+
+Padawan resolves conflicting claims in this order:
+
+1. deterministic environment evidence (SymPy, executable tests, formal or tool results);
+2. observable actions and tool observations;
+3. private generated reasoning, only when the runtime exposes it;
+4. public explanation;
+5. teacher interpretation.
+
+The hierarchy is an authority rule, not a weighted vote. A high-confidence teacher cannot override
+a symbolic counterexample. `AlgebraGrader` parses the public derivation, checks each feasible
+transformation with SymPy, and records the first objectively invalid step. The comment validator
+then requires the teacher to cite real evidence and rejects contradictory localization, unsupported
+certainty, malformed repairs, and mode-specific leakage.
+
+Evidence records are immutable and content-backed. Provider bytes and rendered inputs remain raw
+artifacts; normalized grades and interventions refer to them but do not replace them. Provenance
+events commit hashes of the normalized event payload and link events in order. Neither a stored
+provider assertion nor a manually supplied validation boolean counts as verification.
+
+Model judgment remains useful where deterministic evidence ends: diagnosing a misconception,
+proposing a general principle, or choosing a pedagogical presentation. Its downstream value is
+measured by revision, unseen transfer, delayed retention when available, cost, latency, and harm—not
+by the teacher's self-confidence or a preference-model score.
+
+If evidence is malformed or authorities conflict, Padawan either retries the teacher with validator
+feedback, records a failed episode, or closes the run as `REVIEW_REQUIRED`. It never averages
+objective truth with model opinion.

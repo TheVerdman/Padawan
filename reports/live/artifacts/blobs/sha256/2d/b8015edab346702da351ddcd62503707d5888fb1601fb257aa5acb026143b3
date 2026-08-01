@@ -1,0 +1,52 @@
+{
+  "command": "experiment run",
+  "completed_at": "2026-08-01T19:22:30.756280+00:00",
+  "configuration": {
+    "anthropic_api_key_configured": false,
+    "anthropic_base_url": "https://api.anthropic.com",
+    "anthropic_model": null,
+    "artifact_root": "reports/live/artifacts",
+    "code_revision": "uncommitted-2026-08-01",
+    "compatible_api_key_configured": false,
+    "compatible_base_url": null,
+    "compatible_model": null,
+    "database_url": "sqlite+aiosqlite:///./reports/live/pilot.sqlite3",
+    "environment": "development",
+    "export_private_reasoning": false,
+    "external_retry_attempts": 3,
+    "external_timeout_seconds": 120.0,
+    "heartbeat_seconds": 15,
+    "inkling_base_url": "http://127.0.0.1:8000",
+    "inkling_model": null,
+    "inkling_runtime_revision": "aa0a70e40ddab8f5fb00f111814ae9a3073e952a",
+    "inkling_tensor_parallel_size": 4,
+    "invocation": {
+      "blocks": 2,
+      "bootstrap": true,
+      "compatible_base_url": null,
+      "seed": 20260801,
+      "student_id": "inkling-small-research",
+      "student_model": "w8a16-balanced-v1",
+      "student_provider": "inkling",
+      "teacher_model": null,
+      "teacher_provider": "openai"
+    },
+    "lease_seconds": 300,
+    "log_level": "INFO",
+    "openai_api_key_configured": false,
+    "openai_base_url": "https://api.openai.com",
+    "openai_model": null,
+    "raw_artifact_retention_days": null,
+    "worker_id": "local-worker"
+  },
+  "error": {
+    "message": "OpenAI teacher requires a model and API key",
+    "type": "ValueError"
+  },
+  "format": "padawan.command_manifest",
+  "manifest_id": "manifest-150cc978defc0a092cb9a978",
+  "result": {},
+  "started_at": "2026-08-01T19:22:30.755963+00:00",
+  "status": "failed",
+  "version": 1
+}
