@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install ".[dev]"
+      - run: ruff format --check .
+      - run: ruff check .
+      - run: mypy padawan
+      - run: python scripts/generate_schemas.py --check
+      - run: pytest -m "not postgres and not live"
+      - run: padawan --help
+
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.4-bookworm
+        env:
+          POSTGRES_DB: padawan_test
+          POSTGRES_USER: padawan
+          POSTGRES_PASSWORD: ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U padawan -d padawan_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      PADAWAN_TEST_POSTGRES_URL: postgresql+psycopg://padawan:ci-only@127.0.0.1:5432/padawan_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install ".[dev]"
+      - run: pytest -m postgres

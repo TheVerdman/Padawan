@@ -1,0 +1,65 @@
+from __future__ import annotations
+
+import json
+
+from typer.testing import CliRunner
+
+from padawan.artifacts.store import LocalArtifactStore
+from padawan.cli.app import app
+from padawan.models.contracts import ArtifactRef
+
+
+def test_cli_database_corpus_and_operations_json(tmp_path, monkeypatch) -> None:
+    database_path = tmp_path / "cli.sqlite3"
+    artifact_root = tmp_path / "artifacts"
+    monkeypatch.setenv("PADAWAN_DATABASE_URL", f"sqlite+aiosqlite:///{database_path}")
+    monkeypatch.setenv("PADAWAN_ARTIFACT_ROOT", str(artifact_root))
+    runner = CliRunner()
+
+    migrated = runner.invoke(app, ["--json", "db", "migrate"])
+    assert migrated.exit_code == 0, migrated.output
+    assert json.loads(migrated.stdout)["revision"] == "head"
+
+    generated = runner.invoke(
+        app,
+        [
+            "--json",
+            "corpus",
+            "generate",
+            "algebra",
+            "--groups-per-family",
+            "1",
+            "--siblings-per-group",
+            "3",
+            "--seed",
+            "41",
+        ],
+    )
+    assert generated.exit_code == 0, generated.output
+    assert json.loads(generated.stdout)["registered"] == 24
+
+    validated = runner.invoke(app, ["--json", "corpus", "validate"])
+    inspected = runner.invoke(app, ["--json", "corpus", "inspect", "--limit", "2"])
+    operations = runner.invoke(app, ["--json", "report", "operations"])
+    assert validated.exit_code == inspected.exit_code == operations.exit_code == 0
+    assert json.loads(validated.stdout)["valid"] is True
+    assert len(json.loads(inspected.stdout)["items"]) == 2
+    assert json.loads(operations.stdout)["format"] == "padawan.operations_report"
+    assert len(list((artifact_root / "blobs" / "sha256").glob("*/*"))) == 5
+
+
+def test_cli_failure_has_nonzero_exit_and_manifest(tmp_path, monkeypatch) -> None:
+    database_path = tmp_path / "missing.sqlite3"
+    artifact_root = tmp_path / "artifacts"
+    monkeypatch.setenv("PADAWAN_DATABASE_URL", f"sqlite+aiosqlite:///{database_path}")
+    monkeypatch.setenv("PADAWAN_ARTIFACT_ROOT", str(artifact_root))
+
+    result = CliRunner().invoke(app, ["--json", "episode", "inspect", "missing"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stderr)
+    assert payload["error"]["type"] in {"OperationalError", "ProgrammingError"}
+    assert payload["manifest"]["digest"].startswith("sha256:")
+    manifest_ref = ArtifactRef.model_validate(payload["manifest"], strict=False)
+    manifest = json.loads(LocalArtifactStore(artifact_root).read_text(manifest_ref))
+    assert manifest["configuration"]["invocation"]["episode_id"] == "missing"
