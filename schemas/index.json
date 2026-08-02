@@ -4,6 +4,41 @@
   "generated_by": "scripts/generate_schemas.py",
   "schemas": [
     {
+      "name": "appellate-closed-record",
+      "schema": "appellate-closed-record.schema.json",
+      "sha256": "0ee571401f1ef3d2782e929de532deaed437e45acb85c5c58f597a6a69b768b9"
+    },
+    {
+      "name": "appellate-court-pack",
+      "schema": "appellate-court-pack.schema.json",
+      "sha256": "d07911f02c05fe541b05e3aed6c65655cbca0389d37550e1f0b80a4b9425279c"
+    },
+    {
+      "name": "appellate-currentness-assessment",
+      "schema": "appellate-currentness-assessment.schema.json",
+      "sha256": "5cbaaa357049a10150626897044debbef87e932431a592c3cdbd56fefb788007"
+    },
+    {
+      "name": "appellate-scenario-manifest",
+      "schema": "appellate-scenario-manifest.schema.json",
+      "sha256": "80362065b42f2f2b9de730d957c2f6300b4c02bde19835fafa4f2321bdff07a6"
+    },
+    {
+      "name": "appellate-semantic-assessment",
+      "schema": "appellate-semantic-assessment.schema.json",
+      "sha256": "9a7ab0fd65582122a8385cf95661bd25bb37fc6f50a1ea013753a726363ec313"
+    },
+    {
+      "name": "appellate-submission",
+      "schema": "appellate-submission.schema.json",
+      "sha256": "b124b7d231b9769ee765d5acca134fa6326f435e1b35bd29671cddba1859444d"
+    },
+    {
+      "name": "appellate-verification-bundle",
+      "schema": "appellate-verification-bundle.schema.json",
+      "sha256": "622a5bced108e01d50fda3490e007f1288f313918b14fda8db41920439d2ad27"
+    },
+    {
       "name": "attempt",
       "schema": "attempt.schema.json",
       "sha256": "43f572769b056bdb88afceb5555e2dc100cace51a5257dc6df29a6fd60f9f72f"

@@ -6,8 +6,8 @@ graders outrank model opinion, every external response is retained, state-forked
 the same student cognition, and both successful and failed episodes remain research data.
 
 This repository implements the durable core, one complete bounded symbolic-algebra research
-workflow, a kernel-backed Lean mathematics verifier track, and a hard-gated Magellan agentic
-environment protocol:
+workflow, kernel-backed Lean mathematics, closed-record appellate briefing, and a hard-gated
+Magellan agentic environment protocol:
 
 - PostgreSQL-targeted SQLAlchemy persistence with SQLite for local development;
 - immutable student states and transactional treatment/control forks;
@@ -15,6 +15,8 @@ environment protocol:
 - local and GCS content-addressed artifact stores plus append-only cryptographic provenance;
 - a SymPy item generator and deterministic public-step grader;
 - a pinned Lean 4.32.2/Mathlib 4.32.2 corpus and sandboxed kernel verifier;
+- a pinned Fourth Circuit appellate pack with synthetic records, typed briefs and claim maps,
+  deterministic rule/citation/quotation/leakage gates, and evidence-bound semantic adjudication;
 - Magellan scenario, environment, world, plan/tool trace, approval, replay, reward, and training
   eligibility contracts with a deterministic verifier;
 - Responses-API-first OpenAI and OpenAI-compatible adapters, an Inkling/vLLM adapter, and an
@@ -37,13 +39,16 @@ endpoint and real teacher credentials are configured; unavailable integrations a
 failures rather than converted into passing evidence.
 
 The current scope is explicit: algebra has the complete autonomous developmental workflow; Lean
-mathematics and Magellan Improvement have governed corpus generation and real evidence verifiers
-but not live workflows. Magellan's audited tree does not yet satisfy Padawan's isolation,
+mathematics, appellate briefing, and Magellan Improvement have governed corpus generation and real
+evidence verifiers but not live workflows. The appellate pack is deliberately closed and reports
+authority currentness as unknown because no dependable citator is configured. Magellan's audited
+tree does not yet satisfy Padawan's isolation,
 authorization, durable replay, approval, or Responses requirements, so this repository reports it
 as blocked rather than fabricating a sandbox result. GCS is operational, and delayed-retention/
 interference scheduling is durable and tested. Live target outcomes still require the Inkling
-endpoint; appellate briefing and parameter updates remain subsequent gates. Training compilation
-is operational as an internal, restricted artifact path, but no external trainer is bundled.
+endpoint; a live appellate student/adjudicator workflow and parameter updates remain subsequent
+gates. Training compilation is operational as an internal, restricted artifact path, but no
+external trainer is bundled.
 No S3 backend is planned for the current GCS deployment. Parameter calls fail as unsupported rather
 than degrading to a no-op.
 The first real-provider pilot attempt is documented in
@@ -78,6 +83,10 @@ Lean and Magellan setup/verification are documented in [operations](docs/operati
 verified Padawan boundary and the still-blocked external acceptance gate. The
 [R2.7a compiler report](reports/verification/2026-08-01-r2-7a-training-compiler.md) records the
 rights-aware product boundary and its verification scope.
+The [appellate briefing contract](docs/appellate-briefing.md) documents the closed court pack,
+verification layers, currentness boundary, and offline training eligibility.
+The [R2.6 verification report](reports/verification/2026-08-02-r2-6-appellate-briefing.md) records
+the software acceptance evidence and remaining live gates.
 
 Start with the [Round 2 plan](docs/round-2-plan.md), [architecture](docs/architecture.md),
 [data model](docs/data-model.md), [experiment semantics](docs/experiment-semantics.md), and

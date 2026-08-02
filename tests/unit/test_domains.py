@@ -33,6 +33,7 @@ def test_builtin_registry_validates_real_algebra_items() -> None:
     assert registry.get("math.algebra").spec.version == "1.0.0"
     assert [spec.domain_id for spec in registry.installed()] == [
         "agent.magellan_improvement",
+        "legal.appellate.fourth_circuit",
         "math.algebra",
         "math.lean",
     ]

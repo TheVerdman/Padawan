@@ -7,6 +7,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from padawan.corpus.algebra import AlgebraCorpusGenerator, AlgebraFamily
+from padawan.domains.legal.appellate import AppellateCorpusGenerator, AppellateScenarioFamily
 from padawan.experiments.engine import MatchedBlock, assign_blocks
 from padawan.models.contracts import CorpusItemRecord, CorpusPool, RunState
 from padawan.models.tables import RunRow
@@ -40,6 +41,41 @@ def test_algebra_generation_is_deterministic_valid_and_serializable(
     )
     assert first == second
     assert len({item.item_id for item in first}) == 3
+    assert len({item.instance_group_id for item in first}) == 1
+    for item in first:
+        assert CorpusItemRecord.model_validate_json(item.model_dump_json()) == item
+
+
+@given(
+    seed=st.integers(min_value=-(2**31), max_value=2**31 - 1),
+    family=st.sampled_from(list(AppellateScenarioFamily)),
+)
+@settings(max_examples=30, deadline=None)
+def test_appellate_generation_is_deterministic_closed_and_serializable(
+    seed: int, family: AppellateScenarioFamily
+) -> None:
+    generator = AppellateCorpusGenerator()
+    created_at = datetime(2026, 8, 2, tzinfo=UTC)
+    first = generator.generate(
+        pool=CorpusPool.CURRICULUM,
+        seed=seed,
+        groups_per_family=1,
+        siblings_per_group=2,
+        families=(family,),
+        created_at=created_at,
+    )
+    second = generator.generate(
+        pool=CorpusPool.CURRICULUM,
+        seed=seed,
+        groups_per_family=1,
+        siblings_per_group=2,
+        families=(family,),
+        created_at=created_at,
+    )
+
+    assert first == second
+    assert len(first) == 2
+    assert len({item.item_id for item in first}) == 2
     assert len({item.instance_group_id for item in first}) == 1
     for item in first:
         assert CorpusItemRecord.model_validate_json(item.model_dump_json()) == item

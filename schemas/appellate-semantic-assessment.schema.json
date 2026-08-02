@@ -1,0 +1,254 @@
+{
+  "$defs": {
+    "AppellateAdverseAuthorityAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_id": {
+          "minLength": 1,
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "authority_passage_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Authority Passage Ids",
+          "type": "array"
+        },
+        "disposition": {
+          "$ref": "#/$defs/VerifierDisposition"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "record_fact_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Record Fact Ids",
+          "type": "array"
+        },
+        "treatment_claim_id": {
+          "minLength": 1,
+          "title": "Treatment Claim Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authority_id",
+        "treatment_claim_id",
+        "disposition",
+        "authority_passage_ids",
+        "rationale"
+      ],
+      "title": "AppellateAdverseAuthorityAssessment",
+      "type": "object"
+    },
+    "AppellateClaimAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "applicability": {
+          "$ref": "#/$defs/VerifierDisposition"
+        },
+        "authority_passage_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Authority Passage Ids",
+          "type": "array"
+        },
+        "claim_id": {
+          "minLength": 1,
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "proposition": {
+          "minLength": 1,
+          "title": "Proposition",
+          "type": "string"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "record_fact_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Record Fact Ids",
+          "type": "array"
+        },
+        "rule_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Rule Ids",
+          "type": "array"
+        },
+        "support": {
+          "$ref": "#/$defs/VerifierDisposition"
+        }
+      },
+      "required": [
+        "claim_id",
+        "proposition",
+        "support",
+        "applicability",
+        "rationale"
+      ],
+      "title": "AppellateClaimAssessment",
+      "type": "object"
+    },
+    "AppellateCoverageAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "disposition": {
+          "$ref": "#/$defs/VerifierDisposition"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "disposition",
+        "claim_ids",
+        "rationale"
+      ],
+      "title": "AppellateCoverageAssessment",
+      "type": "object"
+    },
+    "SemanticAssessmentMethod": {
+      "enum": [
+        "human",
+        "governed_model",
+        "hybrid"
+      ],
+      "title": "SemanticAssessmentMethod",
+      "type": "string"
+    },
+    "VerifierDisposition": {
+      "enum": [
+        "verified",
+        "rejected",
+        "unknown",
+        "infrastructure_failure"
+      ],
+      "title": "VerifierDisposition",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/appellate-semantic-assessment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adjudicator_id": {
+      "minLength": 1,
+      "title": "Adjudicator Id",
+      "type": "string"
+    },
+    "adverse_authority_assessments": {
+      "items": {
+        "$ref": "#/$defs/AppellateAdverseAuthorityAssessment"
+      },
+      "title": "Adverse Authority Assessments",
+      "type": "array"
+    },
+    "assessment_id": {
+      "minLength": 1,
+      "title": "Assessment Id",
+      "type": "string"
+    },
+    "claim_assessments": {
+      "items": {
+        "$ref": "#/$defs/AppellateClaimAssessment"
+      },
+      "minItems": 1,
+      "title": "Claim Assessments",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "issue_coverage": {
+      "$ref": "#/$defs/AppellateCoverageAssessment"
+    },
+    "method": {
+      "$ref": "#/$defs/SemanticAssessmentMethod"
+    },
+    "model_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model Id"
+    },
+    "preservation_coverage": {
+      "$ref": "#/$defs/AppellateCoverageAssessment"
+    },
+    "remedy_coverage": {
+      "$ref": "#/$defs/AppellateCoverageAssessment"
+    },
+    "research_role": {
+      "const": "adjudicator",
+      "default": "adjudicator",
+      "title": "Research Role",
+      "type": "string"
+    },
+    "scenario_id": {
+      "minLength": 1,
+      "title": "Scenario Id",
+      "type": "string"
+    },
+    "submission_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Submission Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "scenario_id",
+    "submission_digest",
+    "adjudicator_id",
+    "method",
+    "claim_assessments",
+    "adverse_authority_assessments",
+    "issue_coverage",
+    "preservation_coverage",
+    "remedy_coverage",
+    "created_at"
+  ],
+  "title": "AppellateSemanticAssessment",
+  "type": "object"
+}

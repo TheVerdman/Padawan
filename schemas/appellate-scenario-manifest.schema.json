@@ -1,0 +1,333 @@
+{
+  "$defs": {
+    "AppellateBriefType": {
+      "enum": [
+        "appellant_principal"
+      ],
+      "title": "AppellateBriefType",
+      "type": "string"
+    },
+    "AppellateClaimKind": {
+      "enum": [
+        "jurisdiction",
+        "issue",
+        "record_fact",
+        "procedural_history",
+        "preservation",
+        "legal_rule",
+        "standard_of_review",
+        "application",
+        "counterargument",
+        "remedy"
+      ],
+      "title": "AppellateClaimKind",
+      "type": "string"
+    },
+    "AppellateClosedRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "documents": {
+          "items": {
+            "$ref": "#/$defs/AppellateRecordDocument"
+          },
+          "minItems": 1,
+          "title": "Documents",
+          "type": "array"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/AppellateRecordFact"
+          },
+          "minItems": 1,
+          "title": "Facts",
+          "type": "array"
+        },
+        "record_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Record Digest",
+          "type": "string"
+        },
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "source_kind": {
+          "const": "synthetic",
+          "default": "synthetic",
+          "title": "Source Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "documents",
+        "facts",
+        "record_digest"
+      ],
+      "title": "AppellateClosedRecord",
+      "type": "object"
+    },
+    "AppellateRecordDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "minLength": 1,
+          "title": "Document Id",
+          "type": "string"
+        },
+        "pages": {
+          "items": {
+            "$ref": "#/$defs/AppellateRecordPage"
+          },
+          "minItems": 1,
+          "title": "Pages",
+          "type": "array"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_id",
+        "title",
+        "pages"
+      ],
+      "title": "AppellateRecordDocument",
+      "type": "object"
+    },
+    "AppellateRecordFact": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_id": {
+          "minLength": 1,
+          "title": "Fact Id",
+          "type": "string"
+        },
+        "page_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Page Ids",
+          "type": "array"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fact_id",
+        "statement",
+        "page_ids"
+      ],
+      "title": "AppellateRecordFact",
+      "type": "object"
+    },
+    "AppellateRecordPage": {
+      "additionalProperties": false,
+      "properties": {
+        "appendix_page": {
+          "minimum": 1,
+          "title": "Appendix Page",
+          "type": "integer"
+        },
+        "content_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Digest",
+          "type": "string"
+        },
+        "page_id": {
+          "minLength": 1,
+          "title": "Page Id",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page_id",
+        "appendix_page",
+        "text",
+        "content_digest"
+      ],
+      "title": "AppellateRecordPage",
+      "type": "object"
+    },
+    "AppellateScenarioFamily": {
+      "enum": [
+        "ambiguous_video",
+        "conclusive_video",
+        "preservation_transfer"
+      ],
+      "title": "AppellateScenarioFamily",
+      "type": "string"
+    },
+    "BriefSectionKind": {
+      "enum": [
+        "cover",
+        "table_of_contents",
+        "table_of_authorities",
+        "jurisdictional_statement",
+        "issues_presented",
+        "statement_of_case",
+        "summary_of_argument",
+        "argument",
+        "conclusion",
+        "certificate_of_compliance",
+        "certificate_of_service"
+      ],
+      "title": "BriefSectionKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/appellate-scenario-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "brief_type": {
+      "$ref": "#/$defs/AppellateBriefType"
+    },
+    "competency_id": {
+      "minLength": 1,
+      "title": "Competency Id",
+      "type": "string"
+    },
+    "court_pack_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Court Pack Digest",
+      "type": "string"
+    },
+    "court_pack_id": {
+      "minLength": 1,
+      "title": "Court Pack Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "exercise_word_limit": {
+      "maximum": 13000,
+      "minimum": 100,
+      "title": "Exercise Word Limit",
+      "type": "integer"
+    },
+    "family": {
+      "$ref": "#/$defs/AppellateScenarioFamily"
+    },
+    "issue": {
+      "minLength": 1,
+      "title": "Issue",
+      "type": "string"
+    },
+    "procedural_posture": {
+      "minLength": 1,
+      "title": "Procedural Posture",
+      "type": "string"
+    },
+    "record": {
+      "$ref": "#/$defs/AppellateClosedRecord"
+    },
+    "requested_relief": {
+      "minLength": 1,
+      "title": "Requested Relief",
+      "type": "string"
+    },
+    "required_adverse_authority_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Required Adverse Authority Ids",
+      "type": "array"
+    },
+    "required_claim_kinds": {
+      "items": {
+        "$ref": "#/$defs/AppellateClaimKind"
+      },
+      "minItems": 1,
+      "title": "Required Claim Kinds",
+      "type": "array"
+    },
+    "required_sections": {
+      "items": {
+        "$ref": "#/$defs/BriefSectionKind"
+      },
+      "minItems": 1,
+      "title": "Required Sections",
+      "type": "array"
+    },
+    "restricted_sentence_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Restricted Sentence Digests",
+      "type": "array"
+    },
+    "scenario_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Scenario Digest",
+      "type": "string"
+    },
+    "scenario_id": {
+      "minLength": 1,
+      "title": "Scenario Id",
+      "type": "string"
+    },
+    "seed": {
+      "title": "Seed",
+      "type": "integer"
+    },
+    "split": {
+      "minLength": 1,
+      "title": "Split",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "scenario_id",
+    "version",
+    "family",
+    "competency_id",
+    "split",
+    "seed",
+    "court_pack_id",
+    "court_pack_digest",
+    "brief_type",
+    "procedural_posture",
+    "issue",
+    "requested_relief",
+    "exercise_word_limit",
+    "required_sections",
+    "required_claim_kinds",
+    "required_adverse_authority_ids",
+    "record",
+    "environment_fingerprint",
+    "scenario_digest",
+    "created_at"
+  ],
+  "title": "AppellateScenarioManifest",
+  "type": "object"
+}

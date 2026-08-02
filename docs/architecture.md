@@ -2,9 +2,9 @@
 
 Padawan is an independent process and database. It coordinates model runtimes; it is not embedded
 in a checkpoint server, a teacher provider, Heirloom, or VECL-QB. Symbolic algebra is the complete
-autonomous research path; Lean mathematics and Magellan Improvement are installed
-corpus/verifier packages with explicit external execution gates. State, evidence, orchestration,
-and adapter boundaries remain model-neutral.
+autonomous research path; Lean mathematics, appellate briefing, and Magellan Improvement are
+installed corpus/verifier packages with explicit external execution gates. State, evidence,
+orchestration, and adapter boundaries remain model-neutral.
 
 ## Runtime composition
 
@@ -20,6 +20,7 @@ domain cannot masquerade as a complete autonomous workflow. The authorities rema
 | domain registry | `DomainRegistry` | versioned domain packages and workflow capability boundary |
 | algebra verifier | `AlgebraGrader` | deterministic SymPy outcome and first-invalid-step evidence |
 | Lean verifier | `LeanVerifier` | pinned, sandboxed Lean-kernel proof authority |
+| appellate verifier | `AppellateBriefVerifier` | closed-pack rule, record, citation, quotation, leakage, and separately adjudicated semantic evidence |
 | Magellan verifier | `MagellanScenarioVerifier` | isolated-world, authorization, trace, and replay authority |
 | teacher | `TeacherService` plus provider adapter | structured intervention generation |
 | comment validation | `CommentValidator` | evidence, contradiction, span, and leakage checks |
@@ -41,11 +42,12 @@ Provider and research role are orthogonal: OpenAI is a baseline or teacher, whil
 explicit compatible open-weight runtime are target candidates. Role is persisted through student
 state, run, attempt, and episode records; baseline runs cannot consolidate target memory.
 
-`DomainRegistry` installs `math.algebra@1.0.0`, `math.lean@1.0.0`, and
-`agent.magellan_improvement@1.0.0`. Algebra owns its full durable handler under
-`padawan.domains.algebra`. Lean and Magellan own deterministic matched corpus generation and
-verification but intentionally have no `build_workflow`; selecting either as the live autonomous
-domain fails explicitly until its real execution and developmental workflow exists.
+`DomainRegistry` installs `math.algebra@1.0.0`, `math.lean@1.0.0`,
+`legal.appellate.fourth_circuit@1.0.0`, and `agent.magellan_improvement@1.0.0`. Algebra owns its full
+durable handler under `padawan.domains.algebra`. Lean, appellate, and Magellan own deterministic
+matched corpus generation and verification but intentionally have no `build_workflow`; selecting
+one as the live autonomous domain fails explicitly until its real execution and developmental
+workflow exists.
 
 ## Durable action loop
 

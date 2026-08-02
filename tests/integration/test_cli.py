@@ -9,7 +9,12 @@ from typer.testing import CliRunner
 from padawan.artifacts.store import LocalArtifactStore
 from padawan.cli.app import app
 from padawan.domains.contracts import VerifierDisposition, VerifierResult
+from padawan.domains.legal.appellate import (
+    AppellateCorpusGenerator,
+    AppellateScenarioFamily,
+)
 from padawan.models.contracts import ArtifactRef
+from tests.appellate_helpers import NOW, build_submission
 
 
 def test_cli_database_corpus_and_operations_json(tmp_path, monkeypatch) -> None:
@@ -59,6 +64,26 @@ def test_cli_database_corpus_and_operations_json(tmp_path, monkeypatch) -> None:
     assert lean_generated.exit_code == 0, lean_generated.output
     assert json.loads(lean_generated.stdout)["registered"] == 4
 
+    appellate_generated = runner.invoke(
+        app,
+        [
+            "--json",
+            "corpus",
+            "generate",
+            "appellate",
+            "--groups-per-family",
+            "1",
+            "--siblings-per-group",
+            "2",
+            "--seed",
+            "41",
+        ],
+    )
+    assert appellate_generated.exit_code == 0, appellate_generated.output
+    appellate_payload = json.loads(appellate_generated.stdout)
+    assert appellate_payload["registered"] == 6
+    assert appellate_payload["currentness_capability"] == "unknown_without_citator"
+
     validated = runner.invoke(app, ["--json", "corpus", "validate"])
     inspected = runner.invoke(app, ["--json", "corpus", "inspect", "--limit", "2"])
     operations = runner.invoke(app, ["--json", "report", "operations"])
@@ -66,7 +91,7 @@ def test_cli_database_corpus_and_operations_json(tmp_path, monkeypatch) -> None:
     assert json.loads(validated.stdout)["valid"] is True
     assert len(json.loads(inspected.stdout)["items"]) == 2
     assert json.loads(operations.stdout)["format"] == "padawan.operations_report"
-    assert len(list((artifact_root / "blobs" / "sha256").glob("*/*"))) == 6
+    assert len(list((artifact_root / "blobs" / "sha256").glob("*/*"))) == 7
 
 
 def test_cli_failure_has_nonzero_exit_and_manifest(tmp_path, monkeypatch) -> None:
@@ -164,6 +189,46 @@ def test_cli_lean_verification_emits_hard_gate(tmp_path, monkeypatch) -> None:
     payload = json.loads(result.stdout)
     assert payload["verification"]["disposition"] == "verified"
     assert payload["hard_gate"]["passed"] is True
+
+
+def test_cli_appellate_verification_preserves_semantic_and_currentness_unknown(
+    tmp_path, monkeypatch
+) -> None:
+    artifact_root = tmp_path / "artifacts"
+    monkeypatch.setenv("PADAWAN_ARTIFACT_ROOT", str(artifact_root))
+    scenario = AppellateCorpusGenerator().scenario(
+        family=AppellateScenarioFamily.AMBIGUOUS_VIDEO,
+        seed=79,
+        split="curriculum",
+        created_at=NOW,
+    )
+    submission = build_submission(scenario)
+    scenario_file = tmp_path / "scenario.json"
+    submission_file = tmp_path / "submission.json"
+    scenario_file.write_text(scenario.model_dump_json(), encoding="utf-8")
+    submission_file.write_text(submission.model_dump_json(), encoding="utf-8")
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "--json",
+            "verify",
+            "appellate",
+            "--scenario-file",
+            str(scenario_file),
+            "--submission-file",
+            str(submission_file),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.stdout)
+    assert all(gate["passed"] for gate in payload["hard_gates"])
+    dispositions = {
+        item["verifier_id"]: item["disposition"] for item in payload["verifier_results"]
+    }
+    assert dispositions["appellate.proposition_support"] == "unknown"
+    assert dispositions["appellate.currentness"] == "unknown"
 
 
 def test_cli_magellan_assessment_is_read_only_and_redacts_repository_path(

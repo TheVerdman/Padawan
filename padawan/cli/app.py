@@ -36,6 +36,15 @@ from padawan.domains.lean_math import (
     LeanProofTask,
     LeanVerifier,
 )
+from padawan.domains.legal.appellate import (
+    AppellateBriefVerifier,
+    AppellateCorpusGenerator,
+    AppellateScenarioFamily,
+    AppellateScenarioManifest,
+    AppellateSemanticAssessment,
+    AppellateSubmission,
+    build_fourth_circuit_pack,
+)
 from padawan.domains.magellan_improvement import (
     MagellanEnvironmentAssessment,
     MagellanEnvironmentInspector,
@@ -265,6 +274,51 @@ def corpus_generate_magellan(
     _run_command(ctx, "corpus generate magellan", operation)
 
 
+@corpus_generate_app.command("appellate")
+def corpus_generate_appellate(
+    ctx: typer.Context,
+    pool: CorpusPool = typer.Option(CorpusPool.CURRICULUM, "--pool"),
+    seed: int = typer.Option(20260802, "--seed"),
+    groups_per_family: int = typer.Option(1, "--groups-per-family", min=1),
+    siblings_per_group: int = typer.Option(2, "--siblings-per-group", min=2),
+    family: list[AppellateScenarioFamily] | None = typer.Option(None, "--family"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        settings = _settings(ctx)
+        database = Database(settings.database_url)
+        generator = AppellateCorpusGenerator()
+        registry = CorpusRegistry()
+        selected = tuple(family) if family else None
+        try:
+            records = generator.generate(
+                pool=pool,
+                seed=seed,
+                groups_per_family=groups_per_family,
+                siblings_per_group=siblings_per_group,
+                families=selected,
+            )
+            async with database.transaction() as session:
+                for competency in generator.competencies():
+                    await registry.register_competency(session, competency)
+                stored = await registry.register_items(session, records)
+            pack = build_fourth_circuit_pack()
+            return {
+                "domain_id": "legal.appellate.fourth_circuit",
+                "court_pack_id": pack.pack_id,
+                "court_pack_digest": pack.pack_digest,
+                "currentness_capability": "unknown_without_citator",
+                "generated": len(records),
+                "registered": len(stored),
+                "pool": pool.value,
+                "families": sorted({record.template_family_id for record in records}),
+                "seed": seed,
+            }
+        finally:
+            await database.close()
+
+    _run_command(ctx, "corpus generate appellate", operation)
+
+
 @verify_app.command("lean")
 def verify_lean(
     ctx: typer.Context,
@@ -308,6 +362,62 @@ def verify_magellan_environment(ctx: typer.Context) -> None:
         return assessment.model_dump(mode="json")
 
     _run_command(ctx, "verify magellan-environment", operation)
+
+
+@verify_app.command("appellate")
+def verify_appellate(
+    ctx: typer.Context,
+    scenario_file: Path = typer.Option(
+        ...,
+        "--scenario-file",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+    ),
+    submission_file: Path = typer.Option(
+        ...,
+        "--submission-file",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+    ),
+    semantic_assessment_file: Path | None = typer.Option(
+        None,
+        "--semantic-assessment-file",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+    ),
+) -> None:
+    def operation() -> dict[str, Any]:
+        scenario = AppellateScenarioManifest.model_validate_json(
+            scenario_file.read_text(encoding="utf-8"), strict=False
+        )
+        submission = AppellateSubmission.model_validate_json(
+            submission_file.read_text(encoding="utf-8"), strict=False
+        )
+        assessment = (
+            AppellateSemanticAssessment.model_validate_json(
+                semantic_assessment_file.read_text(encoding="utf-8"), strict=False
+            )
+            if semantic_assessment_file is not None
+            else None
+        )
+        bundle = AppellateBriefVerifier().verify(
+            pack=build_fourth_circuit_pack(),
+            scenario=scenario,
+            submission=submission,
+            semantic_assessment=assessment,
+        )
+        return bundle.model_dump(mode="json")
+
+    _run_command(ctx, "verify appellate", operation)
 
 
 @corpus_app.command("validate")

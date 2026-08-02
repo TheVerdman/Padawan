@@ -1,0 +1,143 @@
+{
+  "$defs": {
+    "AppellateRecordDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "minLength": 1,
+          "title": "Document Id",
+          "type": "string"
+        },
+        "pages": {
+          "items": {
+            "$ref": "#/$defs/AppellateRecordPage"
+          },
+          "minItems": 1,
+          "title": "Pages",
+          "type": "array"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_id",
+        "title",
+        "pages"
+      ],
+      "title": "AppellateRecordDocument",
+      "type": "object"
+    },
+    "AppellateRecordFact": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_id": {
+          "minLength": 1,
+          "title": "Fact Id",
+          "type": "string"
+        },
+        "page_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Page Ids",
+          "type": "array"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fact_id",
+        "statement",
+        "page_ids"
+      ],
+      "title": "AppellateRecordFact",
+      "type": "object"
+    },
+    "AppellateRecordPage": {
+      "additionalProperties": false,
+      "properties": {
+        "appendix_page": {
+          "minimum": 1,
+          "title": "Appendix Page",
+          "type": "integer"
+        },
+        "content_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Digest",
+          "type": "string"
+        },
+        "page_id": {
+          "minLength": 1,
+          "title": "Page Id",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page_id",
+        "appendix_page",
+        "text",
+        "content_digest"
+      ],
+      "title": "AppellateRecordPage",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/appellate-closed-record.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "documents": {
+      "items": {
+        "$ref": "#/$defs/AppellateRecordDocument"
+      },
+      "minItems": 1,
+      "title": "Documents",
+      "type": "array"
+    },
+    "facts": {
+      "items": {
+        "$ref": "#/$defs/AppellateRecordFact"
+      },
+      "minItems": 1,
+      "title": "Facts",
+      "type": "array"
+    },
+    "record_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Record Digest",
+      "type": "string"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "source_kind": {
+      "const": "synthetic",
+      "default": "synthetic",
+      "title": "Source Kind",
+      "type": "string"
+    }
+  },
+  "required": [
+    "record_id",
+    "documents",
+    "facts",
+    "record_digest"
+  ],
+  "title": "AppellateClosedRecord",
+  "type": "object"
+}

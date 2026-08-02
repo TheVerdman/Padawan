@@ -107,8 +107,29 @@ The internal training-product compiler and source-rights boundary are implemente
   artifact, row contract, digest, count, bundle identity, and database snapshot.
 
 R2.7a does not train a model or publish a dataset. The empirical release study still depends on a
-real Inkling endpoint and an externally produced checkpoint. The appellate pack is also still
-pending.
+real Inkling endpoint and an externally produced checkpoint.
+
+## R2.6 software checkpoint — 2026-08-02
+
+The first closed-record appellate package is implemented:
+
+- one content-addressed Fourth Circuit pack pins declared rule dates, official source snapshots,
+  a three-opinion closed authority corpus, coverage limits, and a governing-law cutoff;
+- three deterministic transfer families generate matched synthetic joint appendices without live
+  client material;
+- typed submissions bind every substantive paragraph to claims and exact record, rule, and
+  authority locators;
+- pack/task/rule/claim-map/record/authority/quotation/leakage hard gates are lexicographic and
+  cannot be compensated by semantic or stylistic reward;
+- support, applicability, adverse-authority treatment, and issue/preservation/remedy coverage use
+  a separate digest-bound semantic adjudication contract;
+- the pack has no citator and therefore emits `unknown`, never a good-law claim, for currentness;
+- target curriculum successes can be RLVR/SFT eligible after adjudication, while baseline, teacher,
+  shadow, sealed, unadjudicated, and hard-failed briefs remain excluded as policy requires.
+
+R2.6 is complete as a corpus/verifier software package, not as a live developmental workflow. It
+does not run Inkling, call an adjudicator, research outside the closed pack, file a brief, or replace
+professional legal judgment.
 
 ## Round 2 thesis
 

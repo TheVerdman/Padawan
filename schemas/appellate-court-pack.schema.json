@@ -1,0 +1,366 @@
+{
+  "$defs": {
+    "AppellateRule": {
+      "additionalProperties": false,
+      "properties": {
+        "citation": {
+          "minLength": 1,
+          "title": "Citation",
+          "type": "string"
+        },
+        "content_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Digest",
+          "type": "string"
+        },
+        "pinpoint": {
+          "minLength": 1,
+          "title": "Pinpoint",
+          "type": "string"
+        },
+        "rule_id": {
+          "minLength": 1,
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "source_id": {
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "verbatim": {
+          "title": "Verbatim",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "rule_id",
+        "source_id",
+        "citation",
+        "pinpoint",
+        "text",
+        "verbatim",
+        "content_digest"
+      ],
+      "title": "AppellateRule",
+      "type": "object"
+    },
+    "AppellateSourceSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "content_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Digest",
+          "type": "string"
+        },
+        "effective_on": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective On"
+        },
+        "observed_on": {
+          "format": "date",
+          "title": "Observed On",
+          "type": "string"
+        },
+        "source_id": {
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_uri": {
+          "pattern": "^https://[^\\s]+$",
+          "title": "Source Uri",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "title",
+        "source_uri",
+        "observed_on",
+        "content_digest"
+      ],
+      "title": "AppellateSourceSnapshot",
+      "type": "object"
+    },
+    "AuthorityCoverageDeclaration": {
+      "additionalProperties": false,
+      "properties": {
+        "absence_interpretation": {
+          "minLength": 1,
+          "title": "Absence Interpretation",
+          "type": "string"
+        },
+        "dependable_citator_source_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Dependable Citator Source Ids",
+          "type": "array"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "globally_complete": {
+          "title": "Globally Complete",
+          "type": "boolean"
+        },
+        "task_complete": {
+          "title": "Task Complete",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "description",
+        "task_complete",
+        "globally_complete",
+        "absence_interpretation"
+      ],
+      "title": "AuthorityCoverageDeclaration",
+      "type": "object"
+    },
+    "AuthorityDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_id": {
+          "minLength": 1,
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "canonical_citation": {
+          "minLength": 1,
+          "title": "Canonical Citation",
+          "type": "string"
+        },
+        "case_name": {
+          "minLength": 1,
+          "title": "Case Name",
+          "type": "string"
+        },
+        "court": {
+          "minLength": 1,
+          "title": "Court",
+          "type": "string"
+        },
+        "decided_on": {
+          "format": "date",
+          "title": "Decided On",
+          "type": "string"
+        },
+        "docket_number": {
+          "minLength": 1,
+          "title": "Docket Number",
+          "type": "string"
+        },
+        "passages": {
+          "items": {
+            "$ref": "#/$defs/AuthorityPassage"
+          },
+          "minItems": 1,
+          "title": "Passages",
+          "type": "array"
+        },
+        "published": {
+          "title": "Published",
+          "type": "boolean"
+        },
+        "source_id": {
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "weight": {
+          "$ref": "#/$defs/AuthorityWeight"
+        }
+      },
+      "required": [
+        "authority_id",
+        "source_id",
+        "case_name",
+        "canonical_citation",
+        "docket_number",
+        "court",
+        "decided_on",
+        "published",
+        "weight",
+        "passages"
+      ],
+      "title": "AuthorityDocument",
+      "type": "object"
+    },
+    "AuthorityPassage": {
+      "additionalProperties": false,
+      "properties": {
+        "content_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Digest",
+          "type": "string"
+        },
+        "official_page": {
+          "minLength": 1,
+          "title": "Official Page",
+          "type": "string"
+        },
+        "passage_id": {
+          "minLength": 1,
+          "title": "Passage Id",
+          "type": "string"
+        },
+        "pinpoint_citation": {
+          "minLength": 1,
+          "title": "Pinpoint Citation",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "verbatim": {
+          "const": true,
+          "default": true,
+          "title": "Verbatim",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "passage_id",
+        "official_page",
+        "pinpoint_citation",
+        "text",
+        "content_digest"
+      ],
+      "title": "AuthorityPassage",
+      "type": "object"
+    },
+    "AuthorityWeight": {
+      "enum": [
+        "supreme_court",
+        "controlling_circuit",
+        "persuasive"
+      ],
+      "title": "AuthorityWeight",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/appellate-court-pack.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authorities": {
+      "items": {
+        "$ref": "#/$defs/AuthorityDocument"
+      },
+      "minItems": 1,
+      "title": "Authorities",
+      "type": "array"
+    },
+    "court": {
+      "minLength": 1,
+      "title": "Court",
+      "type": "string"
+    },
+    "coverage": {
+      "$ref": "#/$defs/AuthorityCoverageDeclaration"
+    },
+    "governing_law_cutoff": {
+      "format": "date",
+      "title": "Governing Law Cutoff",
+      "type": "string"
+    },
+    "jurisdiction": {
+      "minLength": 1,
+      "title": "Jurisdiction",
+      "type": "string"
+    },
+    "local_rules_edition_on": {
+      "format": "date",
+      "title": "Local Rules Edition On",
+      "type": "string"
+    },
+    "national_rules_effective_on": {
+      "format": "date",
+      "title": "National Rules Effective On",
+      "type": "string"
+    },
+    "pack_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Pack Digest",
+      "type": "string"
+    },
+    "pack_id": {
+      "minLength": 1,
+      "title": "Pack Id",
+      "type": "string"
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/AppellateRule"
+      },
+      "minItems": 1,
+      "title": "Rules",
+      "type": "array"
+    },
+    "sealed_sentence_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Sealed Sentence Digests",
+      "type": "array"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/AppellateSourceSnapshot"
+      },
+      "minItems": 1,
+      "title": "Sources",
+      "type": "array"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pack_id",
+    "version",
+    "court",
+    "jurisdiction",
+    "governing_law_cutoff",
+    "national_rules_effective_on",
+    "local_rules_edition_on",
+    "sources",
+    "rules",
+    "authorities",
+    "coverage",
+    "pack_digest"
+  ],
+  "title": "AppellateCourtPack",
+  "type": "object"
+}

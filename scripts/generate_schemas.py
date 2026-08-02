@@ -19,6 +19,15 @@ from padawan.domains.contracts import (
     TrainingEligibilityDecision,
     VerifierResult,
 )
+from padawan.domains.legal.appellate.contracts import (
+    AppellateClosedRecord,
+    AppellateCourtPack,
+    AppellateScenarioManifest,
+    AppellateSemanticAssessment,
+    AppellateSubmission,
+    AppellateVerificationBundle,
+    AuthorityCurrentnessAssessment,
+)
 from padawan.domains.magellan_improvement.contracts import (
     MagellanAgentTrace,
     MagellanEnvironmentAssessment,
@@ -77,6 +86,13 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_ROOT = ROOT / "schemas"
 SCHEMA_BASE = "https://schemas.padawan.local/v1"
 PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
+    ("appellate-closed-record", AppellateClosedRecord),
+    ("appellate-court-pack", AppellateCourtPack),
+    ("appellate-currentness-assessment", AuthorityCurrentnessAssessment),
+    ("appellate-scenario-manifest", AppellateScenarioManifest),
+    ("appellate-semantic-assessment", AppellateSemanticAssessment),
+    ("appellate-submission", AppellateSubmission),
+    ("appellate-verification-bundle", AppellateVerificationBundle),
     ("attempt", AttemptRecord),
     ("checkpoint-comparison", CheckpointComparisonRecord),
     ("checkpoint-decision", CheckpointDecisionRecord),

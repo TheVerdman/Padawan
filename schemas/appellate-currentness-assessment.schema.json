@@ -1,0 +1,68 @@
+{
+  "$defs": {
+    "CurrentnessStatus": {
+      "enum": [
+        "good_law",
+        "negative_treatment",
+        "unknown"
+      ],
+      "title": "CurrentnessStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/appellate-currentness-assessment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "as_of": {
+      "format": "date",
+      "title": "As Of",
+      "type": "string"
+    },
+    "assessment_id": {
+      "minLength": 1,
+      "title": "Assessment Id",
+      "type": "string"
+    },
+    "authority_id": {
+      "minLength": 1,
+      "title": "Authority Id",
+      "type": "string"
+    },
+    "citator_source_id": {
+      "minLength": 1,
+      "title": "Citator Source Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "retrieval_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Retrieval Digest",
+      "type": "string"
+    },
+    "source_uri": {
+      "pattern": "^https://[^\\s]+$",
+      "title": "Source Uri",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/CurrentnessStatus"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "authority_id",
+    "citator_source_id",
+    "status",
+    "as_of",
+    "retrieval_digest",
+    "source_uri",
+    "created_at"
+  ],
+  "title": "AuthorityCurrentnessAssessment",
+  "type": "object"
+}
