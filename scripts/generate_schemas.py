@@ -11,6 +11,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from padawan.domains.contracts import (
+    EnvironmentSnapshot,
+    RewardRecord,
+    TaskManifest,
+    TrainingEligibilityDecision,
+    VerifierResult,
+)
 from padawan.models.contracts import (
     AttemptRecord,
     CompactedStateRecord,
@@ -35,13 +42,18 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("competency", CompetencyRecord),
     ("corpus-item", CorpusItemRecord),
     ("developmental-episode", DevelopmentalEpisode),
+    ("environment-snapshot", EnvironmentSnapshot),
     ("exposure", ExposureRecord),
     ("grade", GradeRecord),
     ("lesson", LessonRecord),
+    ("reward", RewardRecord),
     ("state-fork", StateForkRecord),
     ("student-state", StudentStateRecord),
+    ("task-manifest", TaskManifest),
     ("teacher-intervention", TeacherInterventionRecord),
     ("transfer-trial", TransferTrialRecord),
+    ("training-eligibility", TrainingEligibilityDecision),
+    ("verifier-result", VerifierResult),
 )
 
 

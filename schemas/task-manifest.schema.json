@@ -1,0 +1,78 @@
+{
+  "$id": "https://schemas.padawan.local/v1/task-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "competency_id": {
+      "minLength": 1,
+      "title": "Competency Id",
+      "type": "string"
+    },
+    "corpus_lineage": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Corpus Lineage",
+      "type": "object"
+    },
+    "domain_id": {
+      "minLength": 1,
+      "title": "Domain Id",
+      "type": "string"
+    },
+    "domain_version": {
+      "minLength": 1,
+      "title": "Domain Version",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "freshness_scope": {
+      "minLength": 1,
+      "title": "Freshness Scope",
+      "type": "string"
+    },
+    "license": {
+      "minLength": 1,
+      "title": "License",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "source": {
+      "minLength": 1,
+      "title": "Source",
+      "type": "string"
+    },
+    "split": {
+      "minLength": 1,
+      "title": "Split",
+      "type": "string"
+    },
+    "task_id": {
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "domain_id",
+    "domain_version",
+    "competency_id",
+    "split",
+    "source",
+    "license",
+    "environment_fingerprint",
+    "corpus_lineage",
+    "freshness_scope"
+  ],
+  "title": "TaskManifest",
+  "type": "object"
+}

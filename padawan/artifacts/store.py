@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import re
 import tempfile
@@ -34,6 +35,9 @@ class ArtifactAccessDeniedError(PermissionError):
 
 
 class ArtifactBackend(Protocol):
+    backend_name: str
+    networked: bool
+
     def put_bytes(
         self,
         content: bytes,
@@ -44,6 +48,21 @@ class ArtifactBackend(Protocol):
     ) -> ArtifactRef: ...
 
     def read_bytes(self, reference: ArtifactRef, *, allow_restricted: bool = False) -> bytes: ...
+
+    def put_text(
+        self,
+        text: str,
+        *,
+        media_type: str = "text/plain; charset=utf-8",
+        restricted: bool = False,
+        raw_data: bool = False,
+        redact: bool = False,
+        known_secrets: Iterable[str] = (),
+    ) -> ArtifactRef: ...
+
+    def read_text(self, reference: ArtifactRef, *, allow_restricted: bool = False) -> str: ...
+
+    def storage_metadata(self, reference: ArtifactRef) -> dict[str, object]: ...
 
 
 @dataclass(frozen=True)
@@ -56,6 +75,9 @@ class GarbageCollectionResult:
 
 class LocalArtifactStore:
     """Immutable local SHA-256 store with atomic writes and verified reads."""
+
+    backend_name = "local"
+    networked = False
 
     def __init__(self, root: Path | str) -> None:
         self.root = Path(root).resolve()
@@ -147,6 +169,10 @@ class LocalArtifactStore:
         self.read_bytes(reference, allow_restricted=True)
         return True
 
+    def storage_metadata(self, reference: ArtifactRef) -> dict[str, object]:
+        self.verify(reference)
+        return {"layout": "blobs/sha256/{prefix}/{digest}"}
+
     def collect_garbage(
         self,
         *,
@@ -221,9 +247,13 @@ class ArtifactCatalog:
                 existing.digest != reference.digest
                 or existing.size_bytes != reference.size_bytes
                 or existing.media_type != reference.media_type
+                or existing.restricted != reference.restricted
+                or existing.raw_data != reference.raw_data
+                or existing.storage_backend != self.backend.backend_name
             ):
                 raise ArtifactIntegrityError("catalog record conflicts with artifact reference")
             return existing
+        storage_metadata = await artifact_storage_metadata(self.backend, reference)
         row = ArtifactRow(
             artifact_id=reference.artifact_id,
             digest=reference.digest,
@@ -232,8 +262,8 @@ class ArtifactCatalog:
             size_bytes=reference.size_bytes,
             restricted=reference.restricted,
             raw_data=reference.raw_data,
-            storage_backend="local",
-            metadata_json=metadata or {},
+            storage_backend=self.backend.backend_name,
+            metadata_json={**storage_metadata, **(metadata or {})},
             created_at=datetime.now(UTC),
         )
         session.add(row)
@@ -278,6 +308,78 @@ class ArtifactCatalog:
             .distinct()
         )
         return set(result.scalars())
+
+
+async def artifact_put_bytes(
+    backend: ArtifactBackend,
+    content: bytes,
+    *,
+    media_type: str,
+    restricted: bool = False,
+    raw_data: bool = False,
+) -> ArtifactRef:
+    if backend.networked:
+        return await asyncio.to_thread(
+            backend.put_bytes,
+            content,
+            media_type=media_type,
+            restricted=restricted,
+            raw_data=raw_data,
+        )
+    return backend.put_bytes(
+        content, media_type=media_type, restricted=restricted, raw_data=raw_data
+    )
+
+
+async def artifact_put_text(
+    backend: ArtifactBackend,
+    text: str,
+    *,
+    media_type: str = "text/plain; charset=utf-8",
+    restricted: bool = False,
+    raw_data: bool = False,
+    redact: bool = False,
+    known_secrets: Iterable[str] = (),
+) -> ArtifactRef:
+    if backend.networked:
+        return await asyncio.to_thread(
+            backend.put_text,
+            text,
+            media_type=media_type,
+            restricted=restricted,
+            raw_data=raw_data,
+            redact=redact,
+            known_secrets=known_secrets,
+        )
+    return backend.put_text(
+        text,
+        media_type=media_type,
+        restricted=restricted,
+        raw_data=raw_data,
+        redact=redact,
+        known_secrets=known_secrets,
+    )
+
+
+async def artifact_read_bytes(
+    backend: ArtifactBackend,
+    reference: ArtifactRef,
+    *,
+    allow_restricted: bool = False,
+) -> bytes:
+    if backend.networked:
+        return await asyncio.to_thread(
+            backend.read_bytes, reference, allow_restricted=allow_restricted
+        )
+    return backend.read_bytes(reference, allow_restricted=allow_restricted)
+
+
+async def artifact_storage_metadata(
+    backend: ArtifactBackend, reference: ArtifactRef
+) -> dict[str, object]:
+    if backend.networked:
+        return await asyncio.to_thread(backend.storage_metadata, reference)
+    return backend.storage_metadata(reference)
 
 
 def redact_secrets(text: str, *, known_secrets: Iterable[str] = ()) -> str:

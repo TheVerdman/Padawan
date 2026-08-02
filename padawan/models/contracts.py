@@ -54,6 +54,14 @@ class LifecycleStatus(StrEnum):
     REVOKED = "revoked"
 
 
+class ResearchRole(StrEnum):
+    TARGET = "target"
+    BASELINE = "baseline"
+    TEACHER = "teacher"
+    VERIFIER = "verifier"
+    ADJUDICATOR = "adjudicator"
+
+
 class CapabilityAvailability(StrEnum):
     AVAILABLE = "available"
     UNAVAILABLE = "unavailable"
@@ -259,6 +267,7 @@ class StudentStateRecord(StrictRecord):
     student_id: NonEmpty
     checkpoint_id: NonEmpty
     runtime_id: NonEmpty
+    research_role: ResearchRole = ResearchRole.TARGET
     parent_state_id: str | None = None
     branch_id: NonEmpty
     compacted_working_state: dict[str, Any]
@@ -365,6 +374,7 @@ class AttemptRecord(StrictRecord):
     checkpoint_id: NonEmpty
     runtime_id: NonEmpty
     runtime_version: NonEmpty
+    research_role: ResearchRole = ResearchRole.TARGET
     sampling: SamplingConfiguration
     capabilities: RuntimeCapabilities
     artifacts: tuple[ArtifactRef, ...] = ()
@@ -513,6 +523,7 @@ class DevelopmentalEpisode(StrictRecord):
     episode_id: NonEmpty
     student_state_before_id: NonEmpty
     task_item_id: NonEmpty
+    research_role: ResearchRole = ResearchRole.TARGET
     initial_attempt_id: str | None = None
     grade_id: str | None = None
     diagnosis_ids: tuple[str, ...] = ()

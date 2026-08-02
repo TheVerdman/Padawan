@@ -89,6 +89,7 @@ class EpisodeStore:
             response_id=attempt.response_id,
             model_id=attempt.model_id,
             runtime_id=attempt.runtime_id,
+            research_role=attempt.research_role.value,
             record_json=attempt.model_dump(mode="json"),
             created_at=attempt.created_at,
         )

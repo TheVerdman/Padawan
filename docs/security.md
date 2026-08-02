@@ -16,6 +16,11 @@ payloads. `.env` and runtime artifact directories are ignored by Git. Production
 inject secrets from a dedicated manager and use separate least-privilege database/provider
 identities.
 
+`PADAWAN_ENV_FILE` is a bootstrap-only, explicit selection. Padawan does not scan sibling
+repositories, and the selected path is not written into settings manifests. Process environment
+variables win over dotenv values. Broad file permissions warn in development and fail in
+production. Provider values are neither copied into this repository nor hashed as identifiers.
+
 ## Artifact classification and access
 
 Raw external requests/responses and private traces are stored as `restricted=true, raw_data=true`.
@@ -31,6 +36,13 @@ The local store is an application control, not a multi-tenant security boundary.
 at rest or authenticate operating-system users. Put its root on encrypted storage with restrictive
 directory ownership when traces are sensitive.
 
+The GCS backend uses Application Default Credentials, create-only generations, CRC32C, and
+generation-pinned reads. Existing objects are deduplicated only after immutable metadata and size
+validation, and all returned bytes are rehashed with SHA-256. Bucket/object/generation/checksum
+metadata is evidence, not a credential. Restricted/raw classification cannot be downgraded by a
+second writer. Cloud IAM, retention policy, encryption, audit logging, and lifecycle rules remain
+operator controls outside Padawan.
+
 ## Retention and integrity
 
 Normalized research records, provenance events, student states, and artifact metadata are
@@ -41,15 +53,24 @@ tampering but does not restore missing blobs.
 
 ## Generated content and tools
 
-The implemented algebra workflow does not execute student-generated code and does not expose its
-SymPy grader as a student tool. Future executable environments must run untrusted output in a
-separate sandbox with resource, network, filesystem, and secret isolation. Tool results must be raw
-artifacts plus typed observations; a model's claim that a tool ran is not evidence.
+The algebra workflow does not execute student-generated code and does not expose its SymPy grader
+as a student tool. Lean mathematics is the first executable verifier boundary. It fixes imports and
+the theorem declaration, admits only a tactic term beginning with `by`, rejects command,
+metaprogramming, IO, and markdown/comment escape surfaces, and supplies a minimal environment with
+no provider credentials. The pinned Lean binary runs with wall/CPU/output/file-descriptor limits.
+
+On macOS, required `sandbox-exec` policy denies network access, confines writes to a unique
+per-proof directory, and denies common credential/key directories. Candidate execution invokes
+Lean directly with a pre-resolved pinned `LEAN_PATH`; it cannot ask Lake to update dependencies.
+macOS does not enforce the configured address-space rlimit, so results explicitly record that
+limitation. A missing required sandbox, timeout, signal, output overflow, or dependency drift is an
+infrastructure failure—not an incorrect proof. Only Lean-kernel exit success produces `verified`.
+Other executable domains still require their own independent containment and authorization model.
 
 ## Operational review
 
 Use TLS for remote PostgreSQL and model endpoints, restrict egress to configured providers, rotate
 provider and export keys, and verify provenance before publishing a report. Review-required and
 terminal failures must not be reclassified as success. The system does not currently implement
-database row-level security, encrypted blob storage, S3, or a network service authentication layer;
-operators must not infer those controls from the in-process policy hooks.
+database row-level security, application-managed blob encryption, S3, or a network service
+authentication layer; operators must not infer those controls from the in-process policy hooks.

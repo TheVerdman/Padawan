@@ -1,0 +1,78 @@
+{
+  "$defs": {
+    "TrainingLane": {
+      "enum": [
+        "continued_pretraining",
+        "sft",
+        "preference",
+        "rlvr",
+        "process",
+        "evaluation_only"
+      ],
+      "title": "TrainingLane",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/training-eligibility.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowed_lanes": {
+      "items": {
+        "$ref": "#/$defs/TrainingLane"
+      },
+      "title": "Allowed Lanes",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "excluded_lanes": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/TrainingLane"
+      },
+      "title": "Excluded Lanes",
+      "type": "object"
+    },
+    "policy_id": {
+      "minLength": 1,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "policy_version": {
+      "minLength": 1,
+      "title": "Policy Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "decision_id",
+    "policy_id",
+    "policy_version",
+    "allowed_lanes",
+    "excluded_lanes",
+    "evidence_refs",
+    "created_at"
+  ],
+  "title": "TrainingEligibilityDecision",
+  "type": "object"
+}

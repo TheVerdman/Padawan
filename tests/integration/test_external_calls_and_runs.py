@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from padawan.adapters.base import GenerationRequest
 from padawan.artifacts.store import LocalArtifactStore
-from padawan.models.contracts import RunState, SamplingConfiguration
+from padawan.models.contracts import ResearchRole, RunState, SamplingConfiguration
 from padawan.models.tables import ExternalCallRow, RunRow, RunTransitionRow, WorkerRow
 from padawan.orchestration.external_calls import IdempotentGenerationExecutor
 from padawan.orchestration.state_machine import InvalidTransitionError, RunStore
@@ -143,3 +143,34 @@ async def test_one_active_run_per_student_and_terminal_release(database) -> None
     async with database.transaction() as session:
         second = await runs.create(session, payload=payload)
         assert second != first
+
+
+async def test_run_role_is_immutable_and_active_identity_cannot_cross_roles(database) -> None:
+    runs = RunStore()
+    async with database.transaction() as session:
+        run_id = await runs.create(
+            session,
+            payload={"student_id": "role-bound", "research_role": "target"},
+        )
+        with pytest.raises(ValueError, match="different research role"):
+            await runs.create(
+                session,
+                payload={"student_id": "role-bound", "research_role": "baseline"},
+            )
+        claimed = await runs.claim_next(
+            session,
+            worker_id="worker",
+            lease_for=timedelta(minutes=1),
+        )
+        assert claimed is not None
+        assert claimed.run_id == run_id
+        assert claimed.research_role == ResearchRole.TARGET
+        with pytest.raises(InvalidTransitionError, match="cannot change research role"):
+            await runs.transition(
+                session,
+                run_id=run_id,
+                lease_token=claimed.lease_token,
+                actor="worker",
+                to_state=RunState.ITEMS_LEASED,
+                payload_updates={"research_role": "baseline"},
+            )

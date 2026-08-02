@@ -10,7 +10,7 @@ from padawan.adapters.base import GenerationRequest, GenerationResult
 from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore
 from padawan.corpus.algebra import AlgebraCorpusGenerator, AlgebraFamily
 from padawan.corpus.registry import CorpusRegistry
-from padawan.episodes.runner import AlgebraWorkflowHandler
+from padawan.domains.algebra.workflow import AlgebraWorkflowHandler
 from padawan.episodes.store import EpisodeStore
 from padawan.experiments.engine import ExperimentEngine
 from padawan.grading.algebra import AlgebraGrader
@@ -19,6 +19,7 @@ from padawan.models.contracts import (
     Capability,
     CapabilityAvailability,
     CorpusPool,
+    ResearchRole,
     RuntimeCapabilities,
 )
 from padawan.models.database import Database
@@ -139,7 +140,10 @@ def teacher_response(request: GenerationRequest) -> str:
 
 
 async def build_test_workflow(
-    database: Database, artifact_root: Path
+    database: Database,
+    artifact_root: Path,
+    *,
+    research_role: ResearchRole = ResearchRole.TARGET,
 ) -> tuple[
     AlgebraWorkflowHandler,
     AutonomousSupervisor,
@@ -187,6 +191,7 @@ async def build_test_workflow(
             student_id="student-test",
             checkpoint_id="checkpoint-test",
             runtime_id="runtime-test",
+            research_role=research_role,
             initial_working_state={"prior": "legitimate persistent cognition"},
         )
     handler = AlgebraWorkflowHandler(
@@ -210,6 +215,7 @@ async def build_test_workflow(
         student_runtime_id="runtime-test",
         student_runtime_version="1",
         student_checkpoint_id="checkpoint-test",
+        student_role=research_role,
     )
     supervisor = AutonomousSupervisor(
         database=database,

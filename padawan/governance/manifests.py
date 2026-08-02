@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from padawan.artifacts.store import LocalArtifactStore, redact_secrets
+from padawan.artifacts.store import ArtifactBackend, redact_secrets
 from padawan.models.contracts import ArtifactRef
 from padawan.models.hashing import sha256_digest
 
@@ -41,7 +41,7 @@ class CommandManifest:
 
 
 class ManifestWriter:
-    def __init__(self, artifacts: LocalArtifactStore) -> None:
+    def __init__(self, artifacts: ArtifactBackend) -> None:
         self.artifacts = artifacts
 
     def write(

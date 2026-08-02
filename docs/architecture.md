@@ -1,20 +1,24 @@
 # Architecture
 
 Padawan is an independent process and database. It coordinates model runtimes; it is not embedded
-in a checkpoint server, a teacher provider, Heirloom, or VECL-QB. The implemented research path is
-symbolic algebra, but its state, evidence, orchestration, and adapter boundaries are model-neutral.
+in a checkpoint server, a teacher provider, Heirloom, or VECL-QB. Symbolic algebra is the complete
+autonomous research path; Lean mathematics is a second installed corpus/verifier package. State,
+evidence, orchestration, and adapter boundaries remain model-neutral.
 
 ## Runtime composition
 
 `padawan.config.composition.build_live_application` is the only live composition root. It creates
-one async database engine, local artifact backend, domain authorities, external-call executors, the
-algebra workflow handler, and a supervisor. The authorities remain separate:
+one async database engine, the configured artifact backend, registered domain authorities,
+external-call executors, a domain-selected workflow handler, and a supervisor. A verifier-only
+domain cannot masquerade as a complete autonomous workflow. The authorities remain separate:
 
 | Authority | Implemented owner | Role |
 | --- | --- | --- |
 | student runtime | `adapters.*` | real async generation and capability reporting |
 | corpus | `CorpusRegistry` | lineage, leasing, exposure, retirement, quarantine |
-| grader | `AlgebraGrader` | deterministic SymPy outcome and first-invalid-step evidence |
+| domain registry | `DomainRegistry` | versioned domain packages and workflow capability boundary |
+| algebra verifier | `AlgebraGrader` | deterministic SymPy outcome and first-invalid-step evidence |
+| Lean verifier | `LeanVerifier` | pinned, sandboxed Lean-kernel proof authority |
 | teacher | `TeacherService` plus provider adapter | structured intervention generation |
 | comment validation | `CommentValidator` | evidence, contradiction, span, and leakage checks |
 | state | `StateStore` | immutable lineage, symmetric forks, canonical promotion |
@@ -24,9 +28,18 @@ algebra workflow handler, and a supervisor. The authorities remain separate:
 | governance | `governance.*` | access, retention, export, and command-manifest policy |
 | consolidation | `MemoryConsolidationBackend` | evidence-gated lesson consolidation and rollback |
 
-The OpenAI adapter is fixed to `POST /v1/responses`. OpenAI-compatible and Inkling clients also
+The official OpenAI adapter is fixed to `POST /v1/responses` and has no legacy fallback.
+OpenAI-compatible and Inkling clients also
 start with the Responses protocol; the legacy Chat Completions path is used only when the operator
 explicitly enables compatibility fallback. Anthropic is a distinct `/v1/messages` implementation.
+Provider and research role are orthogonal: OpenAI is a baseline or teacher, while Inkling and an
+explicit compatible open-weight runtime are target candidates. Role is persisted through student
+state, run, attempt, and episode records; baseline runs cannot consolidate target memory.
+
+`DomainRegistry` currently installs `math.algebra@1.0.0` and `math.lean@1.0.0`. Algebra owns its
+full durable handler under `padawan.domains.algebra`. Lean owns deterministic matched corpus
+generation and kernel verification but intentionally has no `build_workflow`; selecting it as the
+live autonomous domain fails explicitly until that developmental workflow exists.
 
 ## Durable action loop
 
@@ -67,8 +80,10 @@ SQLite uses conditional updates and exists for local work and tests. Alembic own
 
 The database stores normalized, indexed records and immutable artifact references. Raw provider
 bytes, exact rendered requests, private traces when actually exposed, and command manifests live in
-the local SHA-256 content-addressed store. Writes use a same-directory temporary file, `fsync`, and
-atomic replacement. Reads recheck URI, size, and digest. Garbage collection defaults to dry-run and
+a SHA-256 content-addressed backend. The local backend uses a same-directory temporary file,
+`fsync`, and atomic replacement. The GCS backend uses create-only generation preconditions, CRC32C,
+generation-pinned reads, and immutable object metadata. Both recheck SHA-256 on read. Networked
+artifact operations are moved off the async worker loop. Garbage collection defaults to dry-run and
 accepts the database-derived referenced digest set.
 
 Provenance is a separate append-only hash chain. Each event commits a canonical payload hash, prior
@@ -85,11 +100,19 @@ recomputes the stream rather than trusting a stored boolean.
   into semantic correctness.
 - VECL-QB is not imported. Its provenance, artifact, and episodic-store ideas were independently
   reimplemented to avoid coupling Padawan to its experimental trainer.
+- GCS uses Application Default Credentials at runtime. Padawan stores no credential path or key and
+  has no S3 symmetry requirement.
+- Lean uses a committed `lean-toolchain`, Lake dependency lock, and exact Mathlib revision. The
+  verifier resolves the pinned closure before sandboxing and invokes Lean directly, so candidate
+  execution cannot trigger Lake dependency updates.
 
 ## Present boundaries
 
-The complete operational workflow is algebra. There is no S3 artifact backend and no parameter
-update implementation. `UnsupportedParameterUpdateBackend` fails explicitly because no backend can
+The complete operational workflow is algebra. Lean corpus generation and proof verification are
+operational, but its teaching/transfer workflow is not. GCS is implemented; S3 is intentionally
+absent. There is no parameter update implementation. `UnsupportedParameterUpdateBackend` fails
+explicitly because no backend can
 yet isolate, evaluate, commit, and restore a real weight update. Delayed-retention timestamps and
 router telemetry are represented by contracts, but no scheduler or instrumented Inkling extension
-currently produces them.
+currently produces them. Appellate briefing remains a planned domain, and Magellan implementation
+is deferred until that codebase is retuned; no Magellan repository is accessed by this slice.

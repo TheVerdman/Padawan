@@ -33,6 +33,17 @@
       "title": "MemoryWriteRecord",
       "type": "object"
     },
+    "ResearchRole": {
+      "enum": [
+        "target",
+        "baseline",
+        "teacher",
+        "verifier",
+        "adjudicator"
+      ],
+      "title": "ResearchRole",
+      "type": "string"
+    },
     "StudentOutcome": {
       "enum": [
         "robust_success",
@@ -195,6 +206,10 @@
       },
       "title": "Provenance Event Ids",
       "type": "array"
+    },
+    "research_role": {
+      "$ref": "#/$defs/ResearchRole",
+      "default": "target"
     },
     "retirement_ids": {
       "default": [],

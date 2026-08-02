@@ -26,7 +26,25 @@ class ConsolidationDecision:
 
 
 class ConsolidationBackend(Protocol):
-    async def propose(self, session: AsyncSession, **kwargs: object) -> ConsolidationDecision: ...
+    async def propose(
+        self,
+        session: AsyncSession,
+        *,
+        student_id: str,
+        state_lineage_id: str,
+        branch_id: str,
+        competency_id: str,
+        error_class: str,
+        general_rule: str,
+        applicability: str,
+        exclusions: tuple[str, ...],
+        evidence_ids: tuple[str, ...],
+        source_episode_ids: tuple[str, ...],
+        successful_transfer_count: int,
+        failed_transfer_count: int,
+        confidence: float,
+        teacher_id: str | None = None,
+    ) -> ConsolidationDecision: ...
 
     async def rollback(
         self, session: AsyncSession, *, snapshot_id: str, source_episode_id: str

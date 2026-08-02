@@ -5,14 +5,15 @@ open-weight student agents. Its core authority is evidence, not a teacher model:
 graders outrank model opinion, every external response is retained, state-forked controls inherit
 the same student cognition, and both successful and failed episodes remain research data.
 
-This repository implements the durable core and one complete bounded symbolic-algebra research
-workflow:
+This repository implements the durable core, one complete bounded symbolic-algebra research
+workflow, and a kernel-backed Lean mathematics verifier track:
 
 - PostgreSQL-targeted SQLAlchemy persistence with SQLite for local development;
 - immutable student states and transactional treatment/control forks;
 - governed corpus lineage, matched-sibling leasing, exposure, contamination, and retirement;
-- an atomic local content-addressed artifact store and append-only cryptographic provenance;
+- local and GCS content-addressed artifact stores plus append-only cryptographic provenance;
 - a SymPy item generator and deterministic public-step grader;
+- a pinned Lean 4.32.2/Mathlib 4.32.2 corpus and sandboxed kernel verifier;
 - Responses-API-first OpenAI and OpenAI-compatible adapters, an Inkling/vLLM adapter, and an
   Anthropic teacher adapter;
 - evidence-citing teacher contracts and deterministic comment validation;
@@ -27,12 +28,16 @@ Live model execution is never replaced by a dummy. A pilot can proceed only when
 endpoint and real teacher credentials are configured; unavailable integrations are recorded as
 failures rather than converted into passing evidence.
 
-The current scope is explicit: algebra is operational; delayed-retention scheduling, an S3 backend,
-and parameter updates are not. Parameter calls fail as unsupported rather than degrading to a no-op.
+The current scope is explicit: algebra has the complete autonomous developmental workflow; Lean
+mathematics has governed corpus generation and a real verifier but not that workflow yet. GCS is
+operational, while delayed-retention scheduling, appellate briefing, and parameter updates remain
+future gates. No S3 backend is planned for the current GCS deployment. Parameter calls fail as
+unsupported rather than degrading to a no-op.
 The first real-provider pilot attempt is documented in
 [reports/live/2026-08-01-pilot-attempt.md](reports/live/2026-08-01-pilot-attempt.md); it was blocked
-before episode creation by an unavailable Inkling server and absent teacher credentials, and is not
-reported as a live success.
+before episode creation by an unavailable Inkling server and by credentials not being selected in
+that process. The later external-env check confirmed both provider key names are available, but no
+provider request was made and the attempt is not reported as a live success.
 
 ## Development
 
@@ -40,7 +45,7 @@ Python 3.12 or 3.13 is required.
 
 ```text
 python3.12 -m venv .venv
-.venv/bin/python -m pip install -e ".[dev]"
+.venv/bin/python -m pip install -e ".[dev,gcs]"
 .venv/bin/alembic upgrade head
 make check
 ```
@@ -52,8 +57,14 @@ The CLI is available as `padawan --help` after installation. The OpenAI implemen
 Responses API and structured outputs; legacy Chat Completions exists only behind an explicit
 compatibility flag for non-OpenAI servers.
 
-Start with [architecture](docs/architecture.md), [data model](docs/data-model.md),
-[experiment semantics](docs/experiment-semantics.md), and [operations](docs/operations.md).
+Lean setup and verification are documented in [operations](docs/operations.md). Magellan work is
+intentionally deferred until its assumptions are retuned; this Round 2 implementation does not
+read or modify that repository. The first slice's local, GCS, and Lean acceptance evidence is in
+[the Round 2 verification report](reports/verification/2026-08-01-round-2-slice.md).
+
+Start with the [Round 2 plan](docs/round-2-plan.md), [architecture](docs/architecture.md),
+[data model](docs/data-model.md), [experiment semantics](docs/experiment-semantics.md), and
+[operations](docs/operations.md).
 
 ## Repository boundaries
 

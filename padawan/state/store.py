@@ -7,7 +7,12 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from padawan.models.contracts import LifecycleStatus, StateForkRecord, StudentStateRecord
+from padawan.models.contracts import (
+    LifecycleStatus,
+    ResearchRole,
+    StateForkRecord,
+    StudentStateRecord,
+)
 from padawan.models.hashing import sha256_digest
 from padawan.models.tables import StateForkRow, StudentRow, StudentStateRow
 
@@ -26,12 +31,18 @@ class StateStore:
         student_id: str,
         checkpoint_id: str,
         runtime_id: str,
+        research_role: ResearchRole = ResearchRole.TARGET,
         initial_working_state: dict[str, Any] | None = None,
     ) -> StudentStateRecord:
         if await session.get(StudentRow, student_id) is not None:
             raise StateInvariantError(f"student already exists: {student_id}")
         timestamp = datetime.now(UTC)
-        student = StudentRow(student_id=student_id, canonical_state_id=None, created_at=timestamp)
+        student = StudentRow(
+            student_id=student_id,
+            research_role=research_role.value,
+            canonical_state_id=None,
+            created_at=timestamp,
+        )
         session.add(student)
         await session.flush()
         branch_id = f"branch-main-{uuid4()}"
@@ -39,6 +50,7 @@ class StateStore:
             student_id=student_id,
             checkpoint_id=checkpoint_id,
             runtime_id=runtime_id,
+            research_role=research_role,
             parent_state_id=None,
             branch_id=branch_id,
             compacted_working_state=initial_working_state or {},
@@ -74,6 +86,7 @@ class StateStore:
             student_id=parent.student_id,
             checkpoint_id=parent.checkpoint_id,
             runtime_id=parent.runtime_id,
+            research_role=ResearchRole(parent.research_role),
             parent_state_id=parent.state_id,
             branch_id=parent.branch_id,
             compacted_working_state=(
@@ -137,6 +150,7 @@ class StateStore:
             student_id=parent.student_id,
             checkpoint_id=parent.checkpoint_id,
             runtime_id=parent.runtime_id,
+            research_role=ResearchRole(parent.research_role),
             parent_state_id=parent.state_id,
             branch_id=treatment_branch,
             compacted_working_state=dict(parent.compacted_working_state),
@@ -152,6 +166,7 @@ class StateStore:
             student_id=parent.student_id,
             checkpoint_id=parent.checkpoint_id,
             runtime_id=parent.runtime_id,
+            research_role=ResearchRole(parent.research_role),
             parent_state_id=parent.state_id,
             branch_id=control_branch,
             compacted_working_state=dict(parent.compacted_working_state),
@@ -228,6 +243,7 @@ class StateStore:
         student_id: str,
         checkpoint_id: str,
         runtime_id: str,
+        research_role: ResearchRole,
         parent_state_id: str | None,
         branch_id: str,
         compacted_working_state: dict[str, Any],
@@ -245,6 +261,7 @@ class StateStore:
             "student_id": student_id,
             "checkpoint_id": checkpoint_id,
             "runtime_id": runtime_id,
+            "research_role": research_role.value,
             "parent_state_id": parent_state_id,
             "branch_id": branch_id,
             "compacted_working_state": compacted_working_state,
@@ -271,6 +288,7 @@ def _record_to_row(record: StudentStateRecord) -> StudentStateRow:
         student_id=record.student_id,
         checkpoint_id=record.checkpoint_id,
         runtime_id=record.runtime_id,
+        research_role=record.research_role.value,
         parent_state_id=record.parent_state_id,
         branch_id=record.branch_id,
         compacted_working_state=record.compacted_working_state,
@@ -294,6 +312,7 @@ def _row_to_record(row: StudentStateRow) -> StudentStateRecord:
             "student_id": row.student_id,
             "checkpoint_id": row.checkpoint_id,
             "runtime_id": row.runtime_id,
+            "research_role": row.research_role,
             "parent_state_id": row.parent_state_id,
             "branch_id": row.branch_id,
             "compacted_working_state": row.compacted_working_state,
@@ -332,6 +351,7 @@ def _inherited_digest(state: StudentStateRecord) -> str:
             "student_id": state.student_id,
             "checkpoint_id": state.checkpoint_id,
             "runtime_id": state.runtime_id,
+            "research_role": state.research_role.value,
             "parent_state_id": state.parent_state_id,
             "compacted_working_state": state.compacted_working_state,
             "lesson_memory_refs": state.lesson_memory_refs,

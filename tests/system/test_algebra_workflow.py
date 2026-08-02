@@ -6,8 +6,9 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 
 from padawan.corpus.algebra import AlgebraCorpusGenerator, AlgebraFamily
-from padawan.models.contracts import CorpusPool, RunState
+from padawan.models.contracts import CorpusPool, ResearchRole, RunState
 from padawan.models.tables import (
+    AttemptRow,
     EpisodeRow,
     ExposureRow,
     ExternalCallRow,
@@ -134,3 +135,48 @@ async def test_validated_lesson_content_reaches_the_next_episode(database, tmp_p
         "Verify the final result against the original algebraic relation."
     )
     assert selected[0]["evidence_ids"]
+
+
+async def test_baseline_role_is_persisted_and_cannot_consolidate_memory(database, tmp_path) -> None:
+    _, supervisor, runs, _, _, state_id = await build_test_workflow(
+        database,
+        tmp_path / "artifacts",
+        research_role=ResearchRole.BASELINE,
+    )
+    async with database.transaction() as session:
+        run_id = await runs.create(
+            session,
+            run_id="run-baseline",
+            payload={
+                "student_id": "student-test",
+                "state_id": state_id,
+                "research_role": ResearchRole.BASELINE.value,
+                "pool": "curriculum",
+                "experiment_seed": 19,
+                "teacher_mode": "diagnostic_critique",
+                "treatment_condition": "frontier_teacher_critique",
+                "control_condition": "no_intervention",
+            },
+        )
+
+    await supervisor.run(budget=256)
+
+    async with database.transaction() as session:
+        run = await session.get(RunRow, run_id)
+        assert run is not None
+        assert run.research_role == ResearchRole.BASELINE.value
+        episode = await session.get(EpisodeRow, f"episode-{run_id}")
+        assert episode is not None
+        assert episode.record_json["research_role"] == ResearchRole.BASELINE.value
+        assert episode.record_json["memory_writes"][0]["action"] == "none"
+        assert episode.record_json["memory_writes"][0]["reason"] == (
+            "baseline roles cannot consolidate target memory"
+        )
+        assert await session.scalar(select(func.count()).select_from(LessonVersionRow)) == 0
+        stored_attempts = (
+            await session.scalars(
+                select(AttemptRow).where(AttemptRow.episode_id == f"episode-{run_id}")
+            )
+        ).all()
+        assert stored_attempts
+        assert all(row.research_role == ResearchRole.BASELINE.value for row in stored_attempts)

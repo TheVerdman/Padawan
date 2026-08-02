@@ -6,7 +6,7 @@
     {
       "name": "attempt",
       "schema": "attempt.schema.json",
-      "sha256": "ed1e0cff1f6bf3284c791d7f7bf6790090cd7d743aa2436b887286b7a4edb93c"
+      "sha256": "af415d6523fb489cb2adf1d883c01bc9500ff38182a083653425ca503164b0b3"
     },
     {
       "name": "compacted-state",
@@ -26,7 +26,12 @@
     {
       "name": "developmental-episode",
       "schema": "developmental-episode.schema.json",
-      "sha256": "2a03da5f6ba94b4ab3b9b45767f6c7cd49307f31caf8ae2c24bf075c58da1abf"
+      "sha256": "e0b424cc17ac646ddae5fdf06f2506fe7cb6967270a2faad5a78224452b3acd8"
+    },
+    {
+      "name": "environment-snapshot",
+      "schema": "environment-snapshot.schema.json",
+      "sha256": "a74f6664d996b54d839019a7446550c2c8e112265821da155559c7626fce1e9c"
     },
     {
       "name": "exposure",
@@ -44,6 +49,11 @@
       "sha256": "f19ef34e59fd3161d72d60bd6d433f32f931387333814632002d42bb301b7c34"
     },
     {
+      "name": "reward",
+      "schema": "reward.schema.json",
+      "sha256": "4f218c9fbf4b7f2e9adf60e4a24277663c56a257e631d458e4112c1d4ba9da18"
+    },
+    {
       "name": "state-fork",
       "schema": "state-fork.schema.json",
       "sha256": "3cb5cc085c522f9108a37bbe307219f04125e3c2054e829b2cea329c0de61d64"
@@ -51,7 +61,12 @@
     {
       "name": "student-state",
       "schema": "student-state.schema.json",
-      "sha256": "97817e5a406bcf36569e5fcc658a933ecb11b43a70c1d5809f2d0d5906bf39b1"
+      "sha256": "4edf300fc87895496e3eac90a114d614b9d70a952bfad2d01ba48e632bef1b77"
+    },
+    {
+      "name": "task-manifest",
+      "schema": "task-manifest.schema.json",
+      "sha256": "02b76c9825325365de4f250993d0e3b239e9a529f4ad60126a8c7bef023c5f84"
     },
     {
       "name": "teacher-intervention",
@@ -62,6 +77,16 @@
       "name": "transfer-trial",
       "schema": "transfer-trial.schema.json",
       "sha256": "d0db6caa42ed103bfe9e72cefc147c0a9e50570bccbddc9afa50471e894ed467"
+    },
+    {
+      "name": "training-eligibility",
+      "schema": "training-eligibility.schema.json",
+      "sha256": "a7bba8c0df5a968c10d68027e38a978d40456b2b4b5dd30b884c0cc49e293b2c"
+    },
+    {
+      "name": "verifier-result",
+      "schema": "verifier-result.schema.json",
+      "sha256": "a96187b61bb9f8bcc64e3d2260fac3b7f288e1814d290ec1668b07e757e52283"
     }
   ]
 }

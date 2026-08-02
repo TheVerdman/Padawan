@@ -4,6 +4,9 @@
 .pytest_cache/
 .ruff_cache/
 .venv/
+.tools/
+/lean/.lake/
+/lean/build/
 __pycache__/
 *.egg-info/
 *.py[cod]

@@ -9,7 +9,7 @@ from uuid import uuid4
 from pydantic import ValidationError
 
 from padawan.adapters.base import GenerationRequest, GenerationResult
-from padawan.artifacts.store import LocalArtifactStore
+from padawan.artifacts.store import ArtifactBackend, artifact_put_bytes, artifact_put_text
 from padawan.models.contracts import (
     ArtifactRef,
     AttemptRecord,
@@ -70,7 +70,7 @@ class TeacherService:
         self,
         *,
         client: TeacherClient,
-        artifacts: LocalArtifactStore,
+        artifacts: ArtifactBackend,
         validator: CommentValidator | None = None,
     ) -> None:
         self.client = client
@@ -90,7 +90,8 @@ class TeacherService:
         correction_errors: tuple[str, ...] = ()
         for attempt_number in range(1, max_attempts + 1):
             prompt = _build_prompt(context, correction_errors=correction_errors)
-            prompt_ref = self.artifacts.put_text(
+            prompt_ref = await artifact_put_text(
+                self.artifacts,
                 prompt,
                 media_type="application/json; charset=utf-8",
                 restricted=context.private_reasoning is not None,
@@ -119,7 +120,8 @@ class TeacherService:
                 store=False,
             )
             response = await self.client.generate(request)
-            raw_ref = self.artifacts.put_bytes(
+            raw_ref = await artifact_put_bytes(
+                self.artifacts,
                 response.raw_response,
                 media_type="application/json",
                 restricted=True,

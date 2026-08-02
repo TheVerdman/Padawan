@@ -1,0 +1,167 @@
+{
+  "$defs": {
+    "HardGateResult": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "$ref": "#/$defs/VerifierDisposition"
+        },
+        "evidence_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "gate_id": {
+          "minLength": 1,
+          "title": "Gate Id",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "gate_id",
+        "passed",
+        "disposition",
+        "evidence_refs",
+        "reason"
+      ],
+      "title": "HardGateResult",
+      "type": "object"
+    },
+    "RewardComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "missing_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Missing Reason"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "weight": {
+          "title": "Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "component_id",
+        "value",
+        "weight",
+        "evidence_refs"
+      ],
+      "title": "RewardComponent",
+      "type": "object"
+    },
+    "VerifierDisposition": {
+      "enum": [
+        "verified",
+        "rejected",
+        "unknown",
+        "infrastructure_failure"
+      ],
+      "title": "VerifierDisposition",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/reward.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "components": {
+      "items": {
+        "$ref": "#/$defs/RewardComponent"
+      },
+      "title": "Components",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "derived_utility": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Derived Utility"
+    },
+    "hard_gates": {
+      "items": {
+        "$ref": "#/$defs/HardGateResult"
+      },
+      "title": "Hard Gates",
+      "type": "array"
+    },
+    "policy_id": {
+      "minLength": 1,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "policy_version": {
+      "minLength": 1,
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "reward_id": {
+      "minLength": 1,
+      "title": "Reward Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "reward_id",
+    "policy_id",
+    "policy_version",
+    "hard_gates",
+    "components",
+    "derived_utility",
+    "created_at"
+  ],
+  "title": "RewardRecord",
+  "type": "object"
+}

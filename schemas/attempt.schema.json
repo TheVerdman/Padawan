@@ -158,6 +158,17 @@
       "title": "ObservationRecord",
       "type": "object"
     },
+    "ResearchRole": {
+      "enum": [
+        "target",
+        "baseline",
+        "teacher",
+        "verifier",
+        "adjudicator"
+      ],
+      "title": "ResearchRole",
+      "type": "string"
+    },
     "RuntimeCapabilities": {
       "additionalProperties": false,
       "properties": {
@@ -480,6 +491,10 @@
       "minLength": 1,
       "title": "Request Id",
       "type": "string"
+    },
+    "research_role": {
+      "$ref": "#/$defs/ResearchRole",
+      "default": "target"
     },
     "response_id": {
       "anyOf": [

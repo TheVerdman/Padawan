@@ -7,7 +7,14 @@ from typing import Any, Literal
 from sqlalchemy import select
 
 from padawan.adapters.base import GenerationRequest, GenerationResult
-from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore, redact_secrets
+from padawan.artifacts.store import (
+    ArtifactBackend,
+    ArtifactCatalog,
+    artifact_put_bytes,
+    artifact_put_text,
+    artifact_read_bytes,
+    redact_secrets,
+)
 from padawan.corpus.registry import CorpusRegistry
 from padawan.episodes.store import EpisodeStore
 from padawan.experiments.engine import ExperimentEngine, MatchedBlock
@@ -23,6 +30,7 @@ from padawan.models.contracts import (
     GradeRecord,
     LifecycleStatus,
     MemoryWriteRecord,
+    ResearchRole,
     RevisionRecord,
     RunState,
     SamplingConfiguration,
@@ -54,7 +62,7 @@ from padawan.teaching.service import (
     TeacherExhaustedError,
     TeacherService,
 )
-from padawan.updates.backends import MemoryConsolidationBackend
+from padawan.updates.backends import ConsolidationBackend, ConsolidationDecision
 
 
 class InventoryExhaustedError(RuntimeError):
@@ -91,7 +99,7 @@ class AlgebraWorkflowHandler:
         self,
         *,
         database: Database,
-        artifacts: LocalArtifactStore,
+        artifacts: ArtifactBackend,
         registry: CorpusRegistry,
         states: StateStore,
         episodes: EpisodeStore,
@@ -102,10 +110,11 @@ class AlgebraWorkflowHandler:
         teacher_calls: IdempotentGenerationExecutor,
         teacher_provider: str,
         memory: LessonMemory,
-        memory_backend: MemoryConsolidationBackend,
+        memory_backend: ConsolidationBackend,
         student_runtime_id: str,
         student_runtime_version: str,
         student_checkpoint_id: str,
+        student_role: ResearchRole = ResearchRole.TARGET,
         lease_for: timedelta = timedelta(hours=2),
     ) -> None:
         self.database = database
@@ -125,9 +134,13 @@ class AlgebraWorkflowHandler:
         self.student_runtime_id = student_runtime_id
         self.student_runtime_version = student_runtime_version
         self.student_checkpoint_id = student_checkpoint_id
+        self.student_role = student_role
         self.lease_for = lease_for
 
     async def handle(self, run: ClaimedRun) -> WorkResult:
+        run_role = ResearchRole(str(run.payload.get("research_role", ResearchRole.TARGET.value)))
+        if run_role != run.research_role or run_role != self.student_role:
+            raise RuntimeError("persisted, payload, and runtime research roles must match")
         handlers = {
             RunState.CREATED: self._lease_items,
             RunState.ITEMS_LEASED: self._snapshot_state,
@@ -319,7 +332,7 @@ class AlgebraWorkflowHandler:
             provider="student_runtime",
             request=request,
         )
-        attempt = self._attempt_from_generation(
+        attempt = await self._attempt_from_generation(
             generation,
             episode_id=str(run.payload["episode_id"]),
             item=item,
@@ -352,7 +365,9 @@ class AlgebraWorkflowHandler:
         attempt = await self._load_attempt(str(run.payload["cold_attempt_id"]))
         grade = self.grader.grade(
             attempt_id=attempt.attempt_id,
-            response=self.artifacts.read_bytes(attempt.raw_generation_ref, allow_restricted=True)
+            response=await artifact_read_bytes(
+                self.artifacts, attempt.raw_generation_ref, allow_restricted=True
+            )
             if attempt.public_derivation is None
             else attempt.public_derivation,
             expected_answer=dict(item["expected_answer"]),
@@ -585,7 +600,7 @@ class AlgebraWorkflowHandler:
             provider="student_runtime",
             request=request,
         )
-        attempt = self._attempt_from_generation(
+        attempt = await self._attempt_from_generation(
             generation,
             episode_id=str(run.payload["episode_id"]),
             item=item,
@@ -735,7 +750,7 @@ class AlgebraWorkflowHandler:
             provider="student_runtime",
             request=control_request,
         )
-        treatment_attempt = self._attempt_from_generation(
+        treatment_attempt = await self._attempt_from_generation(
             treatment_generation,
             episode_id=str(run.payload["episode_id"]),
             item=treatment_item,
@@ -743,7 +758,7 @@ class AlgebraWorkflowHandler:
             request=treatment_request,
             label="transfer-treatment",
         )
-        control_attempt = self._attempt_from_generation(
+        control_attempt = await self._attempt_from_generation(
             control_generation,
             episode_id=str(run.payload["episode_id"]),
             item=control_item,
@@ -868,25 +883,35 @@ class AlgebraWorkflowHandler:
         control_success = control_grade.outcome == GradeOutcome.CORRECT
         item = run.payload["leases"][0]["item"]
         async with self.database.transaction() as session:
-            decision = await self.memory_backend.propose(
-                session,
-                student_id=str(run.payload["student_id"]),
-                state_lineage_id=str(run.payload["student_id"]),
-                branch_id=str(run.payload["treatment_branch_id"]),
-                competency_id=str(item["competency_id"]),
-                error_class=intervention.error_class or "teacher_diagnosed",
-                general_rule=intervention.lesson,
-                applicability=intervention.expected_transfer_scope,
-                exclusions=(),
-                evidence_ids=tuple(
-                    evidence.evidence_id for evidence in (*treatment_grade.evidence,)
-                ),
-                source_episode_ids=(str(run.payload["episode_id"]),),
-                successful_transfer_count=int(treatment_success and not control_success),
-                failed_transfer_count=int(not treatment_success),
-                confidence=intervention.confidence,
-                teacher_id=intervention.model_id,
-            )
+            if self.student_role == ResearchRole.BASELINE:
+                decision = ConsolidationDecision(
+                    proposal_id=f"baseline-no-consolidation-{run.run_id}",
+                    accepted=False,
+                    reason="baseline roles cannot consolidate target memory",
+                    before_snapshot_id=None,
+                    after_snapshot_id=None,
+                    lesson_id=None,
+                )
+            else:
+                decision = await self.memory_backend.propose(
+                    session,
+                    student_id=str(run.payload["student_id"]),
+                    state_lineage_id=str(run.payload["student_id"]),
+                    branch_id=str(run.payload["treatment_branch_id"]),
+                    competency_id=str(item["competency_id"]),
+                    error_class=intervention.error_class or "teacher_diagnosed",
+                    general_rule=intervention.lesson,
+                    applicability=intervention.expected_transfer_scope,
+                    exclusions=(),
+                    evidence_ids=tuple(
+                        evidence.evidence_id for evidence in (*treatment_grade.evidence,)
+                    ),
+                    source_episode_ids=(str(run.payload["episode_id"]),),
+                    successful_transfer_count=int(treatment_success and not control_success),
+                    failed_transfer_count=int(not treatment_success),
+                    confidence=intervention.confidence,
+                    teacher_id=intervention.model_id,
+                )
             event_id = await self._event(
                 session,
                 run,
@@ -1074,6 +1099,7 @@ class AlgebraWorkflowHandler:
                 episode_id=str(run.payload["episode_id"]),
                 student_state_before_id=str(run.payload["state_id"]),
                 task_item_id=str(run.payload["leases"][0]["item"]["item_id"]),
+                research_role=self.student_role,
                 initial_attempt_id=str(run.payload["cold_attempt_id"]),
                 grade_id=str(run.payload["cold_grade_id"]),
                 diagnosis_ids=(),
@@ -1359,7 +1385,7 @@ class AlgebraWorkflowHandler:
             await self.registry.release_lease(session, token=token, owner=run.run_id)
             released_tokens.add(token)
 
-    def _attempt_from_generation(
+    async def _attempt_from_generation(
         self,
         generation: GenerationResult,
         *,
@@ -1369,20 +1395,23 @@ class AlgebraWorkflowHandler:
         request: GenerationRequest,
         label: str,
     ) -> AttemptRecord:
-        raw_response = self.artifacts.put_bytes(
+        raw_response = await artifact_put_bytes(
+            self.artifacts,
             generation.raw_response,
             media_type="application/json",
             restricted=True,
             raw_data=True,
         )
-        raw_request = self.artifacts.put_bytes(
+        raw_request = await artifact_put_bytes(
+            self.artifacts,
             generation.raw_request,
             media_type="application/json",
             restricted=True,
             raw_data=True,
         )
         private_ref = (
-            self.artifacts.put_text(
+            await artifact_put_text(
+                self.artifacts,
                 generation.private_reasoning,
                 media_type="text/plain; charset=utf-8",
                 restricted=True,
@@ -1432,6 +1461,7 @@ class AlgebraWorkflowHandler:
             checkpoint_id=self.student_checkpoint_id,
             runtime_id=self.student_runtime_id,
             runtime_version=self.student_runtime_version,
+            research_role=self.student_role,
             sampling=request.sampling,
             capabilities=generation.capabilities,
             artifacts=(raw_request,),

@@ -2,7 +2,7 @@
 
 Padawan resolves conflicting claims in this order:
 
-1. deterministic environment evidence (SymPy, executable tests, formal or tool results);
+1. deterministic environment evidence (Lean kernel, SymPy, executable tests, formal or tool results);
 2. observable actions and tool observations;
 3. private generated reasoning, only when the runtime exposes it;
 4. public explanation;
@@ -13,6 +13,12 @@ a symbolic counterexample. `AlgebraGrader` parses the public derivation, checks 
 transformation with SymPy, and records the first objectively invalid step. The comment validator
 then requires the teacher to cite real evidence and rejects contradictory localization, unsupported
 certainty, malformed repairs, and mode-specific leakage.
+
+For Lean mathematics, the pinned kernel's final exit status is the correctness gate. A proof-policy
+rejection and a kernel proof rejection are both hard failures but remain distinguishable; a missing
+toolchain, dependency drift, sandbox failure, timeout, signal, or output overflow is infrastructure
+failure and cannot be scored as student error. Tactic-state or teacher judgments may later provide
+process components, but cannot compensate for a final kernel rejection.
 
 Evidence records are immutable and content-backed. Provider bytes and rendered inputs remain raw
 artifacts; normalized grades and interventions refer to them but do not replace them. Provenance

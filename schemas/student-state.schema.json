@@ -81,6 +81,17 @@
       ],
       "title": "LifecycleStatus",
       "type": "string"
+    },
+    "ResearchRole": {
+      "enum": [
+        "target",
+        "baseline",
+        "teacher",
+        "verifier",
+        "adjudicator"
+      ],
+      "title": "ResearchRole",
+      "type": "string"
     }
   },
   "$id": "https://schemas.padawan.local/v1/student-state.schema.json",
@@ -154,6 +165,10 @@
       ],
       "default": null,
       "title": "Parent State Id"
+    },
+    "research_role": {
+      "$ref": "#/$defs/ResearchRole",
+      "default": "target"
     },
     "runtime_id": {
       "minLength": 1,

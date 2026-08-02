@@ -1,3 +1,3 @@
-from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore
+from padawan.artifacts.store import ArtifactBackend, ArtifactCatalog, LocalArtifactStore
 
-__all__ = ["ArtifactCatalog", "LocalArtifactStore"]
+__all__ = ["ArtifactBackend", "ArtifactCatalog", "LocalArtifactStore"]

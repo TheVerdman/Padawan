@@ -5,7 +5,7 @@ from typing import Any
 
 from sqlalchemy import select
 
-from padawan.models.contracts import RunState, TeacherMode
+from padawan.models.contracts import ResearchRole, RunState, TeacherMode
 from padawan.models.database import Database
 from padawan.models.tables import RunRow, StudentRow
 from padawan.orchestration.state_machine import RunStore
@@ -44,11 +44,13 @@ class AutonomousResearchLoop:
         runs: RunStore,
         supervisor: AutonomousSupervisor,
         student_id: str,
+        research_role: ResearchRole = ResearchRole.TARGET,
     ) -> None:
         self.database = database
         self.runs = runs
         self.supervisor = supervisor
         self.student_id = student_id
+        self.research_role = research_role
 
     async def run(
         self,
@@ -108,14 +110,19 @@ class AutonomousResearchLoop:
                 .limit(1)
             )
             if existing is not None:
+                if existing.research_role != self.research_role.value:
+                    raise ValueError("active run has a different research role")
                 return existing.run_id
             student = await session.get(StudentRow, self.student_id)
             if student is None or student.canonical_state_id is None:
                 raise ValueError(f"student has no canonical state: {self.student_id}")
+            if student.research_role != self.research_role.value:
+                raise ValueError("student identity has a different research role")
             return await self.runs.create(
                 session,
                 payload={
                     "student_id": self.student_id,
+                    "research_role": self.research_role.value,
                     "state_id": student.canonical_state_id,
                     "pool": "curriculum",
                     "experiment_seed": seed,

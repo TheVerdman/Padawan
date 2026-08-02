@@ -8,7 +8,13 @@ from typing import Protocol
 from sqlalchemy import select
 
 from padawan.adapters.base import GenerationRequest, GenerationResult, ModelProviderError
-from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore
+from padawan.artifacts.store import (
+    ArtifactBackend,
+    ArtifactCatalog,
+    artifact_put_bytes,
+    artifact_put_text,
+    artifact_read_bytes,
+)
 from padawan.models.contracts import ArtifactRef, RuntimeCapabilities
 from padawan.models.database import Database
 from padawan.models.hashing import sha256_digest
@@ -26,7 +32,7 @@ class IdempotentGenerationExecutor:
         self,
         *,
         database: Database,
-        artifacts: LocalArtifactStore,
+        artifacts: ArtifactBackend,
         client: GenerationClient,
     ) -> None:
         self.database = database
@@ -53,10 +59,13 @@ class IdempotentGenerationExecutor:
                     if artifact is None:
                         raise RuntimeError("persisted response artifact is missing")
                     reference = _artifact_row_to_reference(artifact)
-                    payload = self.artifacts.read_bytes(reference, allow_restricted=True)
+                    payload = await artifact_read_bytes(
+                        self.artifacts, reference, allow_restricted=True
+                    )
                     return _deserialize_result(payload)
             else:
-                request_ref = self.artifacts.put_text(
+                request_ref = await artifact_put_text(
+                    self.artifacts,
                     request.model_dump_json(),
                     media_type="application/json",
                     restricted=True,
@@ -102,7 +111,8 @@ class IdempotentGenerationExecutor:
             raise
 
         envelope = _serialize_result(result)
-        response_ref = self.artifacts.put_bytes(
+        response_ref = await artifact_put_bytes(
+            self.artifacts,
             envelope,
             media_type="application/vnd.padawan.generation-result+json",
             restricted=True,
@@ -121,8 +131,10 @@ class IdempotentGenerationExecutor:
                 if persisted is None:
                     raise RuntimeError("completed call lost its response artifact")
                 return _deserialize_result(
-                    self.artifacts.read_bytes(
-                        _artifact_row_to_reference(persisted), allow_restricted=True
+                    await artifact_read_bytes(
+                        self.artifacts,
+                        _artifact_row_to_reference(persisted),
+                        allow_restricted=True,
                     )
                 )
             await self.catalog.register(session, response_ref)

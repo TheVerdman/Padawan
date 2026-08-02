@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+import os
+import warnings
 from functools import lru_cache
 from pathlib import Path
+from stat import S_IMODE
+from typing import Literal, Self
 
 from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
+
+
+class EnvFileSecurityWarning(UserWarning):
+    """The explicitly selected development secret file has broad permissions."""
 
 
 class Settings(BaseSettings):
@@ -20,11 +28,24 @@ class Settings(BaseSettings):
     )
 
     database_url: str = "sqlite+aiosqlite:///./padawan.sqlite3"
+    artifact_backend: Literal["local", "gcs"] = "local"
     artifact_root: Path = Path("artifacts")
+    gcs_project: str | None = None
+    gcs_bucket: str | None = None
+    gcs_prefix: str = "padawan/artifacts"
+    gcs_timeout_seconds: float = Field(default=60.0, gt=0, le=3600)
     log_level: str = "INFO"
     environment: str = "development"
     code_revision: str = "unknown"
     worker_id: str = "local-worker"
+    domain_id: str = "math.algebra"
+    lean_project_root: Path = Path("lean")
+    lean_lake_executable: Path = Path(".tools/elan/bin/lake")
+    lean_elan_home: Path = Path(".tools/elan")
+    lean_sandbox_mode: Literal["required", "best_effort", "off"] = "required"
+    lean_timeout_seconds: float = Field(default=20.0, gt=0, le=300)
+    lean_output_limit_bytes: int = Field(default=262_144, ge=4_096, le=16_777_216)
+    lean_memory_limit_mb: int = Field(default=4_096, ge=512, le=65_536)
     lease_seconds: int = Field(default=300, ge=5, le=86_400)
     heartbeat_seconds: int = Field(default=15, ge=1, le=300)
     external_timeout_seconds: float = Field(default=120.0, gt=0, le=3600)
@@ -51,6 +72,33 @@ class Settings(BaseSettings):
     raw_artifact_retention_days: int | None = Field(default=None, ge=1)
     export_private_reasoning: bool = False
 
+    @classmethod
+    def load(cls, *, env_file: Path | str | None = None) -> Self:
+        """Load settings with an opt-in external dotenv file.
+
+        `PADAWAN_ENV_FILE` is deliberately a bootstrap process variable. It is
+        never discovered by scanning sibling repositories and is not part of a
+        settings manifest. Real process variables retain pydantic-settings'
+        normal precedence over dotenv values.
+        """
+
+        configured = env_file if env_file is not None else os.environ.get("PADAWAN_ENV_FILE")
+        if configured is None or not str(configured).strip():
+            return cls()
+        selected = Path(configured).expanduser()
+        if not selected.exists():
+            raise ValueError("PADAWAN_ENV_FILE does not exist")
+        if not selected.is_file():
+            raise ValueError("PADAWAN_ENV_FILE must select a regular file")
+        settings = cls(_env_file=selected)
+        mode = S_IMODE(selected.stat().st_mode)
+        if mode & 0o077:
+            message = "PADAWAN_ENV_FILE is readable or writable by group/other users"
+            if settings.environment.casefold() in {"production", "prod"}:
+                raise ValueError(message)
+            warnings.warn(message, EnvFileSecurityWarning, stacklevel=2)
+        return settings
+
     @field_validator("database_url")
     @classmethod
     def require_async_database_driver(cls, value: str) -> str:
@@ -76,4 +124,4 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings()
+    return Settings.load()

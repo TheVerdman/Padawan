@@ -9,7 +9,7 @@ from sqlalchemy import or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from padawan.models.contracts import RunState
+from padawan.models.contracts import ResearchRole, RunState
 from padawan.models.tables import RunRow, RunTransitionRow, WorkerRow
 
 _HAPPY_PATH: tuple[RunState, ...] = (
@@ -47,6 +47,7 @@ class InvalidTransitionError(RuntimeError):
 class ClaimedRun:
     run_id: str
     state: RunState
+    research_role: ResearchRole
     payload: dict[str, Any]
     lease_token: str
     retry_count: int
@@ -67,15 +68,21 @@ class RunStore:
         if retry_budget < 0:
             raise ValueError("retry budget cannot be negative")
         assigned = run_id or f"run-{uuid4()}"
-        if await session.get(RunRow, assigned) is not None:
-            return assigned
         student_id_value = payload.get("student_id")
         student_id = str(student_id_value) if student_id_value else None
+        research_role = ResearchRole(str(payload.get("research_role", ResearchRole.TARGET.value)))
+        existing_by_id = await session.get(RunRow, assigned)
+        if existing_by_id is not None:
+            if existing_by_id.research_role != research_role.value:
+                raise ValueError("existing run ID has a different research role")
+            return assigned
         if student_id is not None:
             existing = await session.scalar(
                 select(RunRow).where(RunRow.active_student_id == student_id)
             )
             if existing is not None:
+                if existing.research_role != research_role.value:
+                    raise ValueError("active run has a different research role")
                 return existing.run_id
         timestamp = datetime.now(UTC)
         row = RunRow(
@@ -83,6 +90,7 @@ class RunStore:
             episode_id=None,
             student_id=student_id,
             active_student_id=student_id,
+            research_role=research_role.value,
             state=RunState.CREATED.value,
             sequence=0,
             payload=payload,
@@ -110,6 +118,8 @@ class RunStore:
             )
             if existing is None:
                 raise
+            if existing.research_role != research_role.value:
+                raise ValueError("concurrent active run has a different research role") from None
             return str(existing.run_id)
         return assigned
 
@@ -165,6 +175,7 @@ class RunStore:
         return ClaimedRun(
             run_id=row.run_id,
             state=RunState(row.state),
+            research_role=ResearchRole(row.research_role),
             payload=dict(row.payload),
             lease_token=token,
             retry_count=row.retry_count,
@@ -191,6 +202,12 @@ class RunStore:
             raise InvalidTransitionError("run lease is missing or stale")
         from_state = RunState(row.state)
         self._validate_transition(from_state, to_state, row)
+        if (
+            payload_updates
+            and "research_role" in payload_updates
+            and str(payload_updates["research_role"]) != row.research_role
+        ):
+            raise InvalidTransitionError("a run transition cannot change research role")
         row.sequence += 1
         row.state = to_state.value
         row.payload = {**row.payload, **(payload_updates or {})}

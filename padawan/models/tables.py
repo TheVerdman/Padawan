@@ -246,8 +246,15 @@ class ProvenanceEventRow(Base):
 
 class StudentRow(Base):
     __tablename__ = "students"
+    __table_args__ = (
+        CheckConstraint(
+            "research_role IN ('target', 'baseline', 'teacher', 'verifier', 'adjudicator')",
+            name="ck_students_research_role",
+        ),
+    )
 
     student_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    research_role: Mapped[str] = mapped_column(String(32), nullable=False, default="target")
     canonical_state_id: Mapped[str | None] = mapped_column(String(96))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -257,6 +264,10 @@ class StudentStateRow(Base):
     __table_args__ = (
         UniqueConstraint("student_id", "state_hash", name="uq_student_state_hash"),
         Index("ix_state_branch", "student_id", "branch_id", "created_at"),
+        CheckConstraint(
+            "research_role IN ('target', 'baseline', 'teacher', 'verifier', 'adjudicator')",
+            name="ck_student_states_research_role",
+        ),
     )
 
     state_id: Mapped[str] = mapped_column(String(96), primary_key=True)
@@ -265,6 +276,7 @@ class StudentStateRow(Base):
     )
     checkpoint_id: Mapped[str] = mapped_column(String(256), nullable=False)
     runtime_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    research_role: Mapped[str] = mapped_column(String(32), nullable=False, default="target")
     parent_state_id: Mapped[str | None] = mapped_column(
         ForeignKey("student_states.state_id", ondelete="RESTRICT")
     )
@@ -329,7 +341,13 @@ class EpisodeRow(Base):
 
 class AttemptRow(Base):
     __tablename__ = "attempts"
-    __table_args__ = (UniqueConstraint("request_id", name="uq_attempt_request"),)
+    __table_args__ = (
+        UniqueConstraint("request_id", name="uq_attempt_request"),
+        CheckConstraint(
+            "research_role IN ('target', 'baseline', 'teacher', 'verifier', 'adjudicator')",
+            name="ck_attempts_research_role",
+        ),
+    )
 
     attempt_id: Mapped[str] = mapped_column(String(96), primary_key=True)
     episode_id: Mapped[str] = mapped_column(
@@ -348,6 +366,7 @@ class AttemptRow(Base):
     response_id: Mapped[str | None] = mapped_column(String(256))
     model_id: Mapped[str] = mapped_column(String(256), nullable=False)
     runtime_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    research_role: Mapped[str] = mapped_column(String(32), nullable=False, default="target")
     record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -500,12 +519,17 @@ class RunRow(Base):
         UniqueConstraint("active_student_id", name="uq_run_active_student"),
         Index("ix_run_claim", "state", "lease_expires_at"),
         Index("ix_run_student", "student_id", "created_at"),
+        CheckConstraint(
+            "research_role IN ('target', 'baseline', 'teacher', 'verifier', 'adjudicator')",
+            name="ck_runs_research_role",
+        ),
     )
 
     run_id: Mapped[str] = mapped_column(String(96), primary_key=True)
     episode_id: Mapped[str | None] = mapped_column(String(96), unique=True)
     student_id: Mapped[str | None] = mapped_column(String(128))
     active_student_id: Mapped[str | None] = mapped_column(String(128))
+    research_role: Mapped[str] = mapped_column(String(32), nullable=False, default="target")
     state: Mapped[str] = mapped_column(String(64), nullable=False)
     sequence: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)

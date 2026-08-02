@@ -21,7 +21,8 @@ leasing excludes previously exposed instance groups.
 ## Student state
 
 `students` points to one canonical immutable `student_states` record. A state contains checkpoint
-and runtime identity, parent and branch, compacted working state, lesson references, hypotheses,
+and runtime identity, its `target`/`baseline` research role, parent and branch, compacted working
+state, lesson references, hypotheses,
 competency estimates, experiment identity, lifecycle status, and a semantic state hash. ORM hooks
 reject update or deletion of a state row.
 
@@ -50,7 +51,24 @@ comment validator result. No rejected teacher output is eligible for memory.
 
 `DevelopmentalEpisode` links state before/after, attempts, grade, intervention, revision, transfer,
 memory writes, exposures, retirement, controlled student/teaching/system outcomes, metrics,
-provenance, and consolidation proposals.
+provenance, and consolidation proposals. Role is repeated on runs, attempts, and episodes so replay
+and exports do not infer authority from provider names. Baseline evidence is diagnostic and cannot
+silently enter target memory.
+
+## Domain and reward contracts
+
+`DomainSpec` identifies a versioned task-semantic package and its evidence hierarchy.
+`EnvironmentSnapshot` fingerprints dependencies, tools, platform, network posture, and supporting
+artifacts. `TaskManifest` carries split, lineage, source, license, and freshness scope.
+`VerifierResult` distinguishes `verified`, `rejected`, `unknown`, and `infrastructure_failure` while
+retaining scoped evidence.
+
+`RewardRecord` stores hard gates separately from component values and an optional derived utility.
+A validator forbids scalar utility whenever any hard gate fails. Missing component values require a
+reason rather than becoming zero. `TrainingEligibilityDecision` maintains disjoint allowed and
+excluded lanes across continued pretraining, SFT, preference, RLVR, process, and evaluation-only
+uses. These contracts are implemented; durable reward compilation and policy recomputation remain
+future Round 2 work.
 
 ## Memory and experiments
 
@@ -72,9 +90,12 @@ run is nonterminal. A sequence uniqueness constraint prevents duplicate transiti
 `external_calls` provides the idempotency boundary. `workers` stores heartbeat and active run.
 `review_queue` stores adjudication work.
 
-`artifacts` holds immutable SHA-256 metadata; `artifact_references` links blobs to owners and is the
-source of truth for safe garbage collection. `provenance_heads` serializes each stream while
-`provenance_events` stores the immutable cryptographic chain.
+`artifacts` holds immutable SHA-256 metadata plus backend-specific location evidence. Local storage
+records a filesystem-relative blob identity; GCS records bucket, object, generation,
+metageneration, ETag, CRC32C/MD5 when supplied, size, and project. `artifact_references` links blobs
+to owners and is the source of truth for safe garbage collection. `provenance_heads` serializes
+each stream while `provenance_events` stores the immutable cryptographic chain.
 
-The initial Alembic migration is authoritative for a new database. CI compares it with SQLAlchemy
-metadata and exercises downgrade/upgrade from every checked-in revision.
+The Alembic revision chain is authoritative for a new database. The Round 2 role migration adds
+non-null role columns with a target-compatible default. CI compares the head revision with
+SQLAlchemy metadata and exercises downgrade/upgrade across every checked-in revision.

@@ -39,6 +39,10 @@ dev = [
   "pytest-asyncio>=1.0,<2",
   "ruff>=0.12,<1",
 ]
+gcs = [
+  "google-cloud-storage>=3.13,<4",
+  "google-crc32c>=1.7,<2",
+]
 
 [project.scripts]
 padawan = "padawan.cli.app:main"
@@ -56,6 +60,8 @@ testpaths = ["tests"]
 markers = [
   "postgres: requires PADAWAN_TEST_POSTGRES_URL",
   "live: requires a real model endpoint and credentials",
+  "gcs: requires PADAWAN_TEST_GCS_BUCKET and Google Application Default Credentials",
+  "lean: requires the workspace-local pinned Lean and Mathlib toolchain",
 ]
 
 [tool.ruff]

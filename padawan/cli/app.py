@@ -17,7 +17,8 @@ from sqlalchemy import func, select
 
 from padawan.adapters.heirloom.exporter import HeirloomAuditExporter
 from padawan.agent.loop import AutonomousResearchLoop
-from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore
+from padawan.artifacts.factory import build_artifact_backend
+from padawan.artifacts.store import ArtifactCatalog
 from padawan.config.composition import (
     StudentProvider,
     TeacherProvider,
@@ -27,12 +28,20 @@ from padawan.config.logging import configure_logging
 from padawan.config.settings import Settings
 from padawan.corpus.algebra import AlgebraCorpusGenerator, AlgebraFamily
 from padawan.corpus.registry import CorpusRegistry
+from padawan.domains.contracts import HardGateResult, VerifierDisposition
+from padawan.domains.lean_math import (
+    LeanMathCorpusGenerator,
+    LeanMathFamily,
+    LeanProofTask,
+    LeanVerifier,
+)
 from padawan.episodes.store import EpisodeStore
 from padawan.experiments.engine import ExperimentEngine
 from padawan.governance.manifests import CommandManifest, ManifestWriter, now
 from padawan.governance.policy import ExportPolicy
 from padawan.models.contracts import CorpusPool, TeacherMode
 from padawan.models.database import Database
+from padawan.models.hashing import sha256_digest
 from padawan.models.tables import (
     CorpusItemRow,
     InstanceGroupRow,
@@ -62,6 +71,7 @@ memory_app = typer.Typer(help="Versioned lesson memory.")
 report_app = typer.Typer(help="Research reports.")
 provenance_app = typer.Typer(help="Cryptographic provenance.")
 export_app = typer.Typer(help="Policy-governed exports.")
+verify_app = typer.Typer(help="Deterministic domain verifier operations.")
 
 app.add_typer(db_app, name="db")
 app.add_typer(corpus_app, name="corpus")
@@ -75,6 +85,7 @@ app.add_typer(memory_app, name="memory")
 app.add_typer(report_app, name="report")
 app.add_typer(provenance_app, name="provenance")
 app.add_typer(export_app, name="export")
+app.add_typer(verify_app, name="verify")
 
 
 @app.callback()
@@ -82,7 +93,7 @@ def root(
     ctx: typer.Context,
     json_output: bool = typer.Option(False, "--json", help="Emit machine-readable JSON."),
 ) -> None:
-    settings = Settings()
+    settings = Settings.load()
     configure_logging(settings.log_level)
     ctx.ensure_object(dict)
     ctx.obj["json"] = json_output
@@ -141,6 +152,83 @@ def corpus_generate_algebra(
             await database.close()
 
     _run_command(ctx, "corpus generate algebra", operation)
+
+
+@corpus_generate_app.command("lean-math")
+def corpus_generate_lean_math(
+    ctx: typer.Context,
+    pool: CorpusPool = typer.Option(CorpusPool.CURRICULUM, "--pool"),
+    seed: int = typer.Option(20260801, "--seed"),
+    groups_per_family: int = typer.Option(2, "--groups-per-family", min=1),
+    siblings_per_group: int = typer.Option(2, "--siblings-per-group", min=2),
+    family: list[LeanMathFamily] | None = typer.Option(None, "--family"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        settings = _settings(ctx)
+        database = Database(settings.database_url)
+        generator = LeanMathCorpusGenerator()
+        registry = CorpusRegistry()
+        selected = tuple(family) if family else None
+        try:
+            records = generator.generate(
+                pool=pool,
+                seed=seed,
+                groups_per_family=groups_per_family,
+                siblings_per_group=siblings_per_group,
+                families=selected,
+            )
+            async with database.transaction() as session:
+                for competency in generator.competencies():
+                    await registry.register_competency(session, competency)
+                stored = await registry.register_items(session, records)
+            return {
+                "domain_id": "math.lean",
+                "generated": len(records),
+                "registered": len(stored),
+                "pool": pool.value,
+                "families": sorted({record.template_family_id for record in records}),
+                "seed": seed,
+            }
+        finally:
+            await database.close()
+
+    _run_command(ctx, "corpus generate lean-math", operation)
+
+
+@verify_app.command("lean")
+def verify_lean(
+    ctx: typer.Context,
+    statement: str = typer.Option(..., "--statement"),
+    proof_file: Path = typer.Option(
+        ...,
+        "--proof-file",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+    ),
+    task_id: str | None = typer.Option(None, "--task-id"),
+) -> None:
+    def operation() -> dict[str, Any]:
+        proof = proof_file.read_text(encoding="utf-8")
+        selected_task_id = task_id or f"lean-task-{sha256_digest(statement)[7:23]}"
+        result = _lean_verifier(_settings(ctx)).verify(
+            LeanProofTask(task_id=selected_task_id, statement=statement, proof=proof)
+        )
+        gate = HardGateResult(
+            gate_id=f"lean-kernel:{selected_task_id}",
+            passed=result.disposition == VerifierDisposition.VERIFIED,
+            disposition=result.disposition,
+            evidence_refs=(f"{result.verifier_id}:{result.scope}",),
+            reason=result.summary,
+        )
+        return {
+            "verification": result.model_dump(mode="json"),
+            "hard_gate": gate.model_dump(mode="json"),
+        }
+
+    _run_command(ctx, "verify lean", operation)
 
 
 @corpus_app.command("validate")
@@ -346,11 +434,13 @@ def episode_inspect(ctx: typer.Context, episode_id: str) -> None:
     async def operation() -> dict[str, object]:
         settings = _settings(ctx)
         database = Database(settings.database_url)
+        artifacts = build_artifact_backend(settings)
         try:
-            store = EpisodeStore(ArtifactCatalog(LocalArtifactStore(settings.artifact_root)))
+            store = EpisodeStore(ArtifactCatalog(artifacts))
             async with database.transaction() as session:
                 return await store.inspect(session, episode_id=episode_id)
         finally:
+            await _close_resource(artifacts)
             await database.close()
 
     _run_command(ctx, "episode inspect", operation)
@@ -546,27 +636,33 @@ async def _live_research_run(
                     student_id=student_id,
                     checkpoint_id=selected_model,
                     runtime_id=student_provider,
+                    research_role=application.student_role,
                     initial_working_state={
                         "institution": "padawan",
                         "policy": "clean item, continuous student",
                     },
                 )
+            elif student.research_role != application.student_role.value:
+                raise ValueError(
+                    f"research identity {student_id} is {student.research_role}, not "
+                    f"{application.student_role.value}; use a separate baseline identity"
+                )
             if bootstrap:
-                generator = AlgebraCorpusGenerator()
-                for competency in generator.competencies():
+                for competency in application.domain.competencies():
                     await application.registry.register_competency(session, competency)
-                items = generator.generate(
+                items = application.domain.generate_curriculum(
                     pool=CorpusPool.CURRICULUM,
                     seed=experiment_seed,
                     groups_per_family=max(1, episode_budget),
                     siblings_per_group=3,
                 )
-                await application.registry.register_items(session, items)
+                await application.registry.register_items(session, list(items))
         loop = AutonomousResearchLoop(
             database=application.database,
             runs=application.runs,
             supervisor=application.supervisor,
             student_id=student_id,
+            research_role=application.student_role,
         )
         result = await loop.run(
             episode_budget=episode_budget,
@@ -585,7 +681,8 @@ def _run_command(
 ) -> None:
     settings = _settings(ctx)
     started = now()
-    writer = ManifestWriter(LocalArtifactStore(settings.artifact_root))
+    manifest_backend = build_artifact_backend(settings)
+    writer = ManifestWriter(manifest_backend)
     try:
         result_or_awaitable: object = operation()
         if inspect.isawaitable(result_or_awaitable):
@@ -618,10 +715,30 @@ def _run_command(
         reference = writer.write(manifest, known_secrets=_known_secrets(settings))
         _emit(ctx, {"error": error, "manifest": reference.model_dump(mode="json")}, error=True)
         raise typer.Exit(code=1) from exc
+    finally:
+        _close_resource_sync(manifest_backend)
 
 
 async def _await_value(value: Awaitable[object]) -> object:
     return await value
+
+
+async def _close_resource(resource: object) -> None:
+    close = getattr(resource, "close", None)
+    if close is None:
+        return
+    result = close()
+    if inspect.isawaitable(result):
+        await result
+
+
+def _close_resource_sync(resource: object) -> None:
+    close = getattr(resource, "close", None)
+    if close is None:
+        return
+    result = close()
+    if inspect.isawaitable(result):
+        asyncio.run(_await_value(result))
 
 
 def _emit(ctx: typer.Context, value: dict[str, Any], *, error: bool = False) -> None:
@@ -679,6 +796,23 @@ def _redact_database_url(value: str) -> str:
 
 def _repository_root() -> Path:
     return Path(__file__).resolve().parents[2]
+
+
+def _lean_verifier(settings: Settings) -> LeanVerifier:
+    repository = _repository_root()
+
+    def resolve(path: Path) -> Path:
+        return path if path.is_absolute() else repository / path
+
+    return LeanVerifier(
+        project_root=resolve(settings.lean_project_root),
+        lake_executable=resolve(settings.lean_lake_executable),
+        elan_home=resolve(settings.lean_elan_home),
+        sandbox_mode=settings.lean_sandbox_mode,
+        timeout_seconds=settings.lean_timeout_seconds,
+        output_limit_bytes=settings.lean_output_limit_bytes,
+        memory_limit_mb=settings.lean_memory_limit_mb,
+    )
 
 
 def _migration_root() -> Path:
