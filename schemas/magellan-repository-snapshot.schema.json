@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "MagellanSourceFile": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "size_bytes",
+        "digest"
+      ],
+      "title": "MagellanSourceFile",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/magellan-repository-snapshot.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "branch": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Branch"
+    },
+    "commit_sha": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Commit Sha",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "dependency_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Dependency Digest",
+      "type": "string"
+    },
+    "dirty": {
+      "title": "Dirty",
+      "type": "boolean"
+    },
+    "excluded_sensitive_paths": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Excluded Sensitive Paths",
+      "type": "array"
+    },
+    "excluded_volatile_paths": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Excluded Volatile Paths",
+      "type": "array"
+    },
+    "included_untracked_files": {
+      "items": {
+        "$ref": "#/$defs/MagellanSourceFile"
+      },
+      "title": "Included Untracked Files",
+      "type": "array"
+    },
+    "migration_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Migration Digest",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "minLength": 1,
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "source_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Source Digest",
+      "type": "string"
+    },
+    "tracked_changed_paths": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Tracked Changed Paths",
+      "type": "array"
+    },
+    "tracked_diff_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Tracked Diff Digest",
+      "type": "string"
+    },
+    "untracked_manifest_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Untracked Manifest Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "snapshot_id",
+    "commit_sha",
+    "branch",
+    "dirty",
+    "tracked_changed_paths",
+    "included_untracked_files",
+    "excluded_volatile_paths",
+    "excluded_sensitive_paths",
+    "tracked_diff_digest",
+    "untracked_manifest_digest",
+    "dependency_digest",
+    "migration_digest",
+    "source_digest",
+    "created_at"
+  ],
+  "title": "MagellanRepositorySnapshot",
+  "type": "object"
+}

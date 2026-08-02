@@ -1,0 +1,725 @@
+{
+  "$defs": {
+    "MagellanAgentProtocol": {
+      "enum": [
+        "responses",
+        "chat_completions"
+      ],
+      "title": "MagellanAgentProtocol",
+      "type": "string"
+    },
+    "MagellanApprovalDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "approval_id": {
+          "minLength": 1,
+          "title": "Approval Id",
+          "type": "string"
+        },
+        "call_id": {
+          "minLength": 1,
+          "title": "Call Id",
+          "type": "string"
+        },
+        "decided_at": {
+          "format": "date-time",
+          "title": "Decided At",
+          "type": "string"
+        },
+        "decided_by": {
+          "minLength": 1,
+          "title": "Decided By",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/MagellanApprovalStatus"
+        },
+        "tenant_id": {
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "user_id": {
+          "minLength": 1,
+          "title": "User Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "approval_id",
+        "call_id",
+        "tenant_id",
+        "user_id",
+        "status",
+        "decided_by",
+        "decided_at"
+      ],
+      "title": "MagellanApprovalDecision",
+      "type": "object"
+    },
+    "MagellanApprovalStatus": {
+      "enum": [
+        "approved",
+        "rejected",
+        "expired"
+      ],
+      "title": "MagellanApprovalStatus",
+      "type": "string"
+    },
+    "MagellanFailure": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "failure_class": {
+          "$ref": "#/$defs/MagellanFailureClass"
+        },
+        "failure_id": {
+          "minLength": 1,
+          "title": "Failure Id",
+          "type": "string"
+        },
+        "message": {
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "stage": {
+          "minLength": 1,
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "failure_id",
+        "failure_class",
+        "stage",
+        "retryable",
+        "message"
+      ],
+      "title": "MagellanFailure",
+      "type": "object"
+    },
+    "MagellanFailureClass": {
+      "enum": [
+        "environment_startup",
+        "environment_reset",
+        "environment_drift",
+        "agent_protocol",
+        "agent_timeout",
+        "tool_execution",
+        "observation_capture"
+      ],
+      "title": "MagellanFailureClass",
+      "type": "string"
+    },
+    "MagellanPlanRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "plan_id": {
+          "minLength": 1,
+          "title": "Plan Id",
+          "type": "string"
+        },
+        "rejection_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rejection Reason"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/MagellanPlanStatus"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/MagellanPlanStep"
+          },
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "plan_id",
+        "revision",
+        "status",
+        "steps",
+        "created_at"
+      ],
+      "title": "MagellanPlanRecord",
+      "type": "object"
+    },
+    "MagellanPlanStatus": {
+      "enum": [
+        "validated",
+        "rejected"
+      ],
+      "title": "MagellanPlanStatus",
+      "type": "string"
+    },
+    "MagellanPlanStep": {
+      "additionalProperties": false,
+      "properties": {
+        "depends_on": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Depends On",
+          "type": "array"
+        },
+        "input_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Input Digest",
+          "type": "string"
+        },
+        "inputs": {
+          "additionalProperties": true,
+          "title": "Inputs",
+          "type": "object"
+        },
+        "requires_human_approval": {
+          "default": false,
+          "title": "Requires Human Approval",
+          "type": "boolean"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "step_id": {
+          "minLength": 1,
+          "title": "Step Id",
+          "type": "string"
+        },
+        "tool_name": {
+          "minLength": 1,
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step_id",
+        "sequence",
+        "tool_name",
+        "inputs",
+        "input_digest"
+      ],
+      "title": "MagellanPlanStep",
+      "type": "object"
+    },
+    "MagellanToolCall": {
+      "additionalProperties": false,
+      "properties": {
+        "approval_bypass_used": {
+          "default": false,
+          "title": "Approval Bypass Used",
+          "type": "boolean"
+        },
+        "call_id": {
+          "minLength": 1,
+          "title": "Call Id",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Idempotency Key"
+        },
+        "input_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Input Digest",
+          "type": "string"
+        },
+        "inputs": {
+          "additionalProperties": true,
+          "title": "Inputs",
+          "type": "object"
+        },
+        "plan_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Id"
+        },
+        "plan_step_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Step Id"
+        },
+        "requested_at": {
+          "format": "date-time",
+          "title": "Requested At",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "tenant_id": {
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "tier": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MagellanToolTier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool_name": {
+          "minLength": 1,
+          "title": "Tool Name",
+          "type": "string"
+        },
+        "user_id": {
+          "minLength": 1,
+          "title": "User Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "call_id",
+        "sequence",
+        "tool_name",
+        "tenant_id",
+        "user_id",
+        "inputs",
+        "input_digest",
+        "requested_at"
+      ],
+      "title": "MagellanToolCall",
+      "type": "object"
+    },
+    "MagellanToolObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "cached": {
+          "default": false,
+          "title": "Cached",
+          "type": "boolean"
+        },
+        "call_id": {
+          "minLength": 1,
+          "title": "Call Id",
+          "type": "string"
+        },
+        "cost_usd": {
+          "default": 0.0,
+          "minimum": 0.0,
+          "title": "Cost Usd",
+          "type": "number"
+        },
+        "latency_ms": {
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "mutation_occurred": {
+          "title": "Mutation Occurred",
+          "type": "boolean"
+        },
+        "observation_id": {
+          "minLength": 1,
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "output": {
+          "additionalProperties": true,
+          "title": "Output",
+          "type": "object"
+        },
+        "output_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Output Digest",
+          "type": "string"
+        },
+        "provenance_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Provenance Refs",
+          "type": "array"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "state_after_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "State After Digest",
+          "type": "string"
+        },
+        "state_before_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "State Before Digest",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/MagellanToolStatus"
+        },
+        "validator_results": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/MagellanValidatorResult"
+          },
+          "title": "Validator Results",
+          "type": "array"
+        }
+      },
+      "required": [
+        "observation_id",
+        "call_id",
+        "status",
+        "output",
+        "output_digest",
+        "state_before_digest",
+        "state_after_digest",
+        "mutation_occurred",
+        "provenance_refs",
+        "latency_ms",
+        "observed_at"
+      ],
+      "title": "MagellanToolObservation",
+      "type": "object"
+    },
+    "MagellanToolStatus": {
+      "enum": [
+        "succeeded",
+        "refused",
+        "waiting",
+        "pending_approval",
+        "failed"
+      ],
+      "title": "MagellanToolStatus",
+      "type": "string"
+    },
+    "MagellanToolTier": {
+      "enum": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "title": "MagellanToolTier",
+      "type": "integer"
+    },
+    "MagellanTraceStatus": {
+      "enum": [
+        "complete",
+        "waiting",
+        "pending_approval",
+        "refused",
+        "failed",
+        "infrastructure_failure"
+      ],
+      "title": "MagellanTraceStatus",
+      "type": "string"
+    },
+    "MagellanValidatorResult": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "validator_id": {
+          "minLength": 1,
+          "title": "Validator Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "validator_id",
+        "passed",
+        "summary",
+        "evidence_refs"
+      ],
+      "title": "MagellanValidatorResult",
+      "type": "object"
+    },
+    "ResearchRole": {
+      "enum": [
+        "target",
+        "baseline",
+        "teacher",
+        "verifier",
+        "adjudicator"
+      ],
+      "title": "ResearchRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/magellan-agent-trace.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "agent_cost_usd": {
+      "minimum": 0.0,
+      "title": "Agent Cost Usd",
+      "type": "number"
+    },
+    "agent_input_tokens": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Agent Input Tokens"
+    },
+    "agent_latency_ms": {
+      "minimum": 0,
+      "title": "Agent Latency Ms",
+      "type": "integer"
+    },
+    "agent_output_tokens": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Agent Output Tokens"
+    },
+    "agent_protocol": {
+      "$ref": "#/$defs/MagellanAgentProtocol"
+    },
+    "approvals": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MagellanApprovalDecision"
+      },
+      "title": "Approvals",
+      "type": "array"
+    },
+    "authorization_snapshot_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Snapshot Digest",
+      "type": "string"
+    },
+    "calls": {
+      "items": {
+        "$ref": "#/$defs/MagellanToolCall"
+      },
+      "title": "Calls",
+      "type": "array"
+    },
+    "checkpoint_id": {
+      "minLength": 1,
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "failures": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MagellanFailure"
+      },
+      "title": "Failures",
+      "type": "array"
+    },
+    "final_answer": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Final Answer"
+    },
+    "final_state_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Final State Digest",
+      "type": "string"
+    },
+    "observations": {
+      "items": {
+        "$ref": "#/$defs/MagellanToolObservation"
+      },
+      "title": "Observations",
+      "type": "array"
+    },
+    "plans": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MagellanPlanRecord"
+      },
+      "title": "Plans",
+      "type": "array"
+    },
+    "research_role": {
+      "$ref": "#/$defs/ResearchRole"
+    },
+    "scenario_id": {
+      "minLength": 1,
+      "title": "Scenario Id",
+      "type": "string"
+    },
+    "state_id": {
+      "minLength": 1,
+      "title": "State Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/MagellanTraceStatus"
+    },
+    "student_id": {
+      "minLength": 1,
+      "title": "Student Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "trace_id": {
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "user_id": {
+      "minLength": 1,
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "scenario_id",
+    "student_id",
+    "checkpoint_id",
+    "state_id",
+    "research_role",
+    "tenant_id",
+    "user_id",
+    "authorization_snapshot_digest",
+    "environment_fingerprint",
+    "agent_protocol",
+    "status",
+    "agent_latency_ms",
+    "agent_cost_usd",
+    "calls",
+    "observations",
+    "final_state_digest",
+    "created_at",
+    "completed_at"
+  ],
+  "title": "MagellanAgentTrace",
+  "type": "object"
+}

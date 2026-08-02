@@ -31,6 +31,8 @@ Configuration is loaded once at the CLI composition boundary. Important variable
 | `PADAWAN_LEAN_PROJECT_ROOT` | pinned Lake project (default `./lean`) |
 | `PADAWAN_LEAN_LAKE_EXECUTABLE`, `PADAWAN_LEAN_ELAN_HOME` | workspace-local Lean runtime |
 | `PADAWAN_LEAN_SANDBOX_MODE` | `required`, `best_effort`, or explicit `off` |
+| `PADAWAN_MAGELLAN_REPOSITORY_ROOT` | explicit external Magellan Git worktree |
+| `PADAWAN_MAGELLAN_HANDSHAKE_PATH` | external typed environment-handshake JSON |
 
 `PADAWAN_OPENAI_API_KEY` and `PADAWAN_ANTHROPIC_API_KEY` are accepted aliases. Do not put `.env` in
 version control. Command manifests contain only redacted URLs and credential-presence booleans.
@@ -164,6 +166,31 @@ honor a lowered `RLIMIT_AS`; each result therefore truthfully records
 `memory_limit_enforced=false` there. On a platform without this sandbox, `required` returns an
 infrastructure failure. `best_effort` or `off` must only be selected inside a separately enforced
 container/VM boundary and the result records that network isolation was not provided.
+
+## Magellan Improvement gate
+
+Padawan never discovers or imports Magellan. Select its worktree and externally generated
+handshake at runtime, then run the read-only assessment:
+
+```text
+export PADAWAN_MAGELLAN_REPOSITORY_ROOT=/operator/selected/magellan
+export PADAWAN_MAGELLAN_HANDSHAKE_PATH=/operator/generated/magellan-handshake.json
+padawan --json verify magellan-environment
+```
+
+Neither path is written to the command manifest. A missing handshake produces a successful
+inspection with `ready=false`; a malformed file fails the command. Sensitive ignored files are
+named but never read, and a ready runtime must record the exact secret environment-name allowlist
+rather than mount those files. New bound corpus inventory is admitted only from a ready assessment:
+
+```text
+padawan corpus generate magellan --groups-per-family 1 --siblings-per-group 2 --seed 20260801
+```
+
+The current audited Magellan worktree is not ready: it has no matched-world reset/fork boundary,
+uses process-local idempotency, does not enforce every declared capability identity, permits a
+caller-constructed approval bypass, and still uses Chat Completions for OpenAI planning. See
+[Magellan Improvement integration](magellan-improvement.md) for the full contract and audit.
 
 ## Recovery and inspection
 

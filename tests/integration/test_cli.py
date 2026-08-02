@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from datetime import UTC, datetime
 
 from typer.testing import CliRunner
@@ -124,3 +125,49 @@ def test_cli_lean_verification_emits_hard_gate(tmp_path, monkeypatch) -> None:
     payload = json.loads(result.stdout)
     assert payload["verification"]["disposition"] == "verified"
     assert payload["hard_gate"]["passed"] is True
+
+
+def test_cli_magellan_assessment_is_read_only_and_redacts_repository_path(
+    tmp_path, monkeypatch
+) -> None:
+    repository = tmp_path / "private-magellan-worktree"
+    artifact_root = tmp_path / "artifacts"
+    repository.mkdir()
+    subprocess.run(("git", "-C", str(repository), "init", "-b", "main"), check=True)
+    subprocess.run(
+        ("git", "-C", str(repository), "config", "user.name", "Padawan Tests"),
+        check=True,
+    )
+    subprocess.run(
+        (
+            "git",
+            "-C",
+            str(repository),
+            "config",
+            "user.email",
+            "padawan@example.invalid",
+        ),
+        check=True,
+    )
+    (repository / "README.md").write_text("# Magellan test tree\n", encoding="utf-8")
+    subprocess.run(("git", "-C", str(repository), "add", "README.md"), check=True)
+    subprocess.run(
+        ("git", "-C", str(repository), "commit", "-m", "initial"),
+        check=True,
+    )
+    monkeypatch.setenv("PADAWAN_ARTIFACT_ROOT", str(artifact_root))
+    monkeypatch.setenv("PADAWAN_MAGELLAN_REPOSITORY_ROOT", str(repository))
+
+    result = CliRunner().invoke(app, ["--json", "verify", "magellan-environment"])
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.stdout)
+    assert payload["ready"] is False
+    assert payload["blockers"] == ["environment handshake is missing"]
+    assert str(repository) not in result.stdout
+    manifest_ref = ArtifactRef.model_validate(payload["manifest"], strict=False)
+    manifest = json.loads(LocalArtifactStore(artifact_root).read_text(manifest_ref))
+    serialized_manifest = json.dumps(manifest, sort_keys=True)
+    assert str(repository) not in serialized_manifest
+    assert manifest["configuration"]["magellan_repository_configured"] is True
+    assert manifest["configuration"]["magellan_handshake_configured"] is False

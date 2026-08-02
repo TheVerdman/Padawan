@@ -19,6 +19,16 @@ from padawan.domains.contracts import (
     TrainingEligibilityDecision,
     VerifierResult,
 )
+from padawan.domains.magellan_improvement.contracts import (
+    MagellanAgentTrace,
+    MagellanEnvironmentAssessment,
+    MagellanEnvironmentHandshake,
+    MagellanMatchedWorldManifest,
+    MagellanRepositorySnapshot,
+    MagellanScenarioManifest,
+    MagellanVerificationBundle,
+    MagellanWorldSnapshot,
+)
 from padawan.models.contracts import (
     AttemptRecord,
     CompactedStateRecord,
@@ -66,6 +76,14 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("exposure", ExposureRecord),
     ("grade", GradeRecord),
     ("lesson", LessonRecord),
+    ("magellan-agent-trace", MagellanAgentTrace),
+    ("magellan-environment-assessment", MagellanEnvironmentAssessment),
+    ("magellan-environment-handshake", MagellanEnvironmentHandshake),
+    ("magellan-matched-world-manifest", MagellanMatchedWorldManifest),
+    ("magellan-repository-snapshot", MagellanRepositorySnapshot),
+    ("magellan-scenario-manifest", MagellanScenarioManifest),
+    ("magellan-verification-bundle", MagellanVerificationBundle),
+    ("magellan-world-snapshot", MagellanWorldSnapshot),
     ("reward", RewardRecord),
     ("reward-policy", RewardPolicy),
     ("state-fork", StateForkRecord),

@@ -6,7 +6,8 @@ graders outrank model opinion, every external response is retained, state-forked
 the same student cognition, and both successful and failed episodes remain research data.
 
 This repository implements the durable core, one complete bounded symbolic-algebra research
-workflow, and a kernel-backed Lean mathematics verifier track:
+workflow, a kernel-backed Lean mathematics verifier track, and a hard-gated Magellan agentic
+environment protocol:
 
 - PostgreSQL-targeted SQLAlchemy persistence with SQLite for local development;
 - immutable student states and transactional treatment/control forks;
@@ -14,6 +15,8 @@ workflow, and a kernel-backed Lean mathematics verifier track:
 - local and GCS content-addressed artifact stores plus append-only cryptographic provenance;
 - a SymPy item generator and deterministic public-step grader;
 - a pinned Lean 4.32.2/Mathlib 4.32.2 corpus and sandboxed kernel verifier;
+- Magellan scenario, environment, world, plan/tool trace, approval, replay, reward, and training
+  eligibility contracts with a deterministic verifier;
 - Responses-API-first OpenAI and OpenAI-compatible adapters, an Inkling/vLLM adapter, and an
   Anthropic teacher adapter;
 - evidence-citing teacher contracts and deterministic comment validation;
@@ -32,11 +35,14 @@ endpoint and real teacher credentials are configured; unavailable integrations a
 failures rather than converted into passing evidence.
 
 The current scope is explicit: algebra has the complete autonomous developmental workflow; Lean
-mathematics has governed corpus generation and a real verifier but not that workflow yet. GCS is
-operational, and delayed-retention/interference scheduling is durable and tested. Live target
-outcomes still require the Inkling endpoint; appellate briefing, Magellan Improvement, training
-compilation, and parameter updates remain subsequent gates. No S3 backend is planned for the
-current GCS deployment. Parameter calls fail as unsupported rather than degrading to a no-op.
+mathematics and Magellan Improvement have governed corpus generation and real evidence verifiers
+but not live workflows. Magellan's audited tree does not yet satisfy Padawan's isolation,
+authorization, durable replay, approval, or Responses requirements, so this repository reports it
+as blocked rather than fabricating a sandbox result. GCS is operational, and delayed-retention/
+interference scheduling is durable and tested. Live target outcomes still require the Inkling
+endpoint; appellate briefing, training compilation, and parameter updates remain subsequent gates.
+No S3 backend is planned for the current GCS deployment. Parameter calls fail as unsupported rather
+than degrading to a no-op.
 The first real-provider pilot attempt is documented in
 [reports/live/2026-08-01-pilot-attempt.md](reports/live/2026-08-01-pilot-attempt.md); it was blocked
 before episode creation by an unavailable Inkling server and by credentials not being selected in
@@ -61,11 +67,12 @@ The CLI is available as `padawan --help` after installation. The OpenAI implemen
 Responses API and structured outputs; legacy Chat Completions exists only behind an explicit
 compatibility flag for non-OpenAI servers.
 
-Lean setup and verification are documented in [operations](docs/operations.md). Magellan was not
-read or modified by R2.3 and must be integrated against its retuned assumptions as a separate domain
-track. Acceptance evidence is in the
+Lean and Magellan setup/verification are documented in [operations](docs/operations.md) and the
+[Magellan integration contract](docs/magellan-improvement.md). Acceptance evidence is in the
 [first-slice report](reports/verification/2026-08-01-round-2-slice.md) and the
-[R2.3 report](reports/verification/2026-08-01-r2-3.md).
+[R2.3 report](reports/verification/2026-08-01-r2-3.md). The
+[R2.5 protocol report](reports/verification/2026-08-01-r2-5-magellan-protocol.md) records both the
+verified Padawan boundary and the still-blocked external acceptance gate.
 
 Start with the [Round 2 plan](docs/round-2-plan.md), [architecture](docs/architecture.md),
 [data model](docs/data-model.md), [experiment semantics](docs/experiment-semantics.md), and

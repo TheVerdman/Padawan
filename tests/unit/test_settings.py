@@ -78,3 +78,19 @@ def test_missing_explicit_env_file_fails_without_exposing_path(tmp_path) -> None
         Settings.load(env_file=missing)
 
     assert str(missing) not in str(captured.value)
+
+
+def test_magellan_local_paths_are_replaced_by_configuration_flags(tmp_path) -> None:
+    repository = tmp_path / "private-magellan-location"
+    handshake = tmp_path / "private-handshake.json"
+    settings = Settings(
+        magellan_repository_root=repository,
+        magellan_handshake_path=handshake,
+    )
+
+    serialized = json.dumps(settings.redacted_manifest(), sort_keys=True)
+
+    assert str(repository) not in serialized
+    assert str(handshake) not in serialized
+    assert settings.redacted_manifest()["magellan_repository_configured"] is True
+    assert settings.redacted_manifest()["magellan_handshake_configured"] is True

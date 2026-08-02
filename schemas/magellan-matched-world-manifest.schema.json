@@ -1,0 +1,85 @@
+{
+  "$defs": {
+    "MagellanWorldAllocation": {
+      "additionalProperties": false,
+      "properties": {
+        "allocation_id": {
+          "minLength": 1,
+          "title": "Allocation Id",
+          "type": "string"
+        },
+        "condition_id": {
+          "minLength": 1,
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "environment_fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Environment Fingerprint",
+          "type": "string"
+        },
+        "initial_state_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Initial State Digest",
+          "type": "string"
+        },
+        "isolation_token_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Isolation Token Digest",
+          "type": "string"
+        },
+        "world_id": {
+          "minLength": 1,
+          "title": "World Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "allocation_id",
+        "condition_id",
+        "world_id",
+        "isolation_token_digest",
+        "environment_fingerprint",
+        "initial_state_digest"
+      ],
+      "title": "MagellanWorldAllocation",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/magellan-matched-world-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allocations": {
+      "items": {
+        "$ref": "#/$defs/MagellanWorldAllocation"
+      },
+      "minItems": 2,
+      "title": "Allocations",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "matched_group_id": {
+      "minLength": 1,
+      "title": "Matched Group Id",
+      "type": "string"
+    },
+    "source_state_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Source State Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "matched_group_id",
+    "source_state_digest",
+    "allocations",
+    "created_at"
+  ],
+  "title": "MagellanMatchedWorldManifest",
+  "type": "object"
+}

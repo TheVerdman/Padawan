@@ -1,0 +1,83 @@
+{
+  "$id": "https://schemas.padawan.local/v1/magellan-world-snapshot.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allocation_id": {
+      "minLength": 1,
+      "title": "Allocation Id",
+      "type": "string"
+    },
+    "authorization_snapshot_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Snapshot Digest",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "database_snapshot_id": {
+      "minLength": 1,
+      "title": "Database Snapshot Id",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "isolation_token_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Isolation Token Digest",
+      "type": "string"
+    },
+    "observable_state": {
+      "additionalProperties": true,
+      "title": "Observable State",
+      "type": "object"
+    },
+    "snapshot_id": {
+      "minLength": 1,
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "state_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "State Digest",
+      "type": "string"
+    },
+    "tenant_id": {
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "user_id": {
+      "minLength": 1,
+      "title": "User Id",
+      "type": "string"
+    },
+    "world_id": {
+      "minLength": 1,
+      "title": "World Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "snapshot_id",
+    "allocation_id",
+    "world_id",
+    "isolation_token_digest",
+    "database_snapshot_id",
+    "tenant_id",
+    "user_id",
+    "authorization_snapshot_digest",
+    "environment_fingerprint",
+    "state_digest",
+    "observable_state",
+    "created_at"
+  ],
+  "title": "MagellanWorldSnapshot",
+  "type": "object"
+}

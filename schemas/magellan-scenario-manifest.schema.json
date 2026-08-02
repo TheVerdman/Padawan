@@ -1,0 +1,253 @@
+{
+  "$defs": {
+    "MagellanPredicateOperator": {
+      "enum": [
+        "equals",
+        "not_equals",
+        "exists",
+        "absent",
+        "unchanged",
+        "less_than_or_equal",
+        "greater_than_or_equal",
+        "contains"
+      ],
+      "title": "MagellanPredicateOperator",
+      "type": "string"
+    },
+    "MagellanScenarioFamily": {
+      "enum": [
+        "intake_and_plan",
+        "negotiated_rate",
+        "outreach_wait_resume",
+        "regulated_approval",
+        "tenant_isolation",
+        "unknown_tool",
+        "invalid_dependency",
+        "idempotent_replay"
+      ],
+      "title": "MagellanScenarioFamily",
+      "type": "string"
+    },
+    "MagellanStatePredicate": {
+      "additionalProperties": false,
+      "properties": {
+        "expected": {
+          "default": null,
+          "title": "Expected"
+        },
+        "operator": {
+          "$ref": "#/$defs/MagellanPredicateOperator"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "predicate_id": {
+          "minLength": 1,
+          "title": "Predicate Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "predicate_id",
+        "path",
+        "operator"
+      ],
+      "title": "MagellanStatePredicate",
+      "type": "object"
+    },
+    "MagellanTraceStatus": {
+      "enum": [
+        "complete",
+        "waiting",
+        "pending_approval",
+        "refused",
+        "failed",
+        "infrastructure_failure"
+      ],
+      "title": "MagellanTraceStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/magellan-scenario-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor_role": {
+      "minLength": 1,
+      "title": "Actor Role",
+      "type": "string"
+    },
+    "allowed_tools": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Allowed Tools",
+      "type": "array"
+    },
+    "authorization_snapshot_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Snapshot Digest",
+      "type": "string"
+    },
+    "competency_id": {
+      "minLength": 1,
+      "title": "Competency Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "expected_refusals": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Expected Refusals",
+      "type": "array"
+    },
+    "expected_trace_status": {
+      "$ref": "#/$defs/MagellanTraceStatus"
+    },
+    "family": {
+      "$ref": "#/$defs/MagellanScenarioFamily"
+    },
+    "forbidden_postconditions": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MagellanStatePredicate"
+      },
+      "title": "Forbidden Postconditions",
+      "type": "array"
+    },
+    "forbidden_tools": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Forbidden Tools",
+      "type": "array"
+    },
+    "goal": {
+      "minLength": 1,
+      "title": "Goal",
+      "type": "string"
+    },
+    "idempotency_namespace": {
+      "minLength": 1,
+      "title": "Idempotency Namespace",
+      "type": "string"
+    },
+    "initial_state_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Initial State Digest",
+      "type": "string"
+    },
+    "max_cost_usd": {
+      "minimum": 0.0,
+      "title": "Max Cost Usd",
+      "type": "number"
+    },
+    "max_tool_calls": {
+      "exclusiveMinimum": 0,
+      "maximum": 1000,
+      "title": "Max Tool Calls",
+      "type": "integer"
+    },
+    "required_approvals": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Required Approvals",
+      "type": "array"
+    },
+    "required_postconditions": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MagellanStatePredicate"
+      },
+      "title": "Required Postconditions",
+      "type": "array"
+    },
+    "scenario_id": {
+      "minLength": 1,
+      "title": "Scenario Id",
+      "type": "string"
+    },
+    "seed": {
+      "title": "Seed",
+      "type": "integer"
+    },
+    "split": {
+      "minLength": 1,
+      "title": "Split",
+      "type": "string"
+    },
+    "task_inputs": {
+      "additionalProperties": true,
+      "minProperties": 1,
+      "title": "Task Inputs",
+      "type": "object"
+    },
+    "tenant_id": {
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "timeout_seconds": {
+      "exclusiveMinimum": 0.0,
+      "maximum": 3600.0,
+      "title": "Timeout Seconds",
+      "type": "number"
+    },
+    "user_id": {
+      "minLength": 1,
+      "title": "User Id",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "scenario_id",
+    "version",
+    "family",
+    "competency_id",
+    "split",
+    "seed",
+    "tenant_id",
+    "user_id",
+    "actor_role",
+    "authorization_snapshot_digest",
+    "goal",
+    "task_inputs",
+    "environment_fingerprint",
+    "initial_state_digest",
+    "expected_trace_status",
+    "allowed_tools",
+    "max_tool_calls",
+    "max_cost_usd",
+    "timeout_seconds",
+    "idempotency_namespace",
+    "created_at"
+  ],
+  "title": "MagellanScenarioManifest",
+  "type": "object"
+}

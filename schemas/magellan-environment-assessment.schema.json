@@ -1,0 +1,457 @@
+{
+  "$defs": {
+    "MagellanAgentProtocol": {
+      "enum": [
+        "responses",
+        "chat_completions"
+      ],
+      "title": "MagellanAgentProtocol",
+      "type": "string"
+    },
+    "MagellanEnvironmentHandshake": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_protocol": {
+          "$ref": "#/$defs/MagellanAgentProtocol"
+        },
+        "allowed_network_hosts": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Allowed Network Hosts",
+          "type": "array"
+        },
+        "allowed_secret_env_vars": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "type": "string"
+          },
+          "title": "Allowed Secret Env Vars",
+          "type": "array"
+        },
+        "authorization_policy_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Authorization Policy Digest",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "database_backend": {
+          "minLength": 1,
+          "title": "Database Backend",
+          "type": "string"
+        },
+        "database_schema_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Database Schema Digest",
+          "type": "string"
+        },
+        "driver_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Driver Digest",
+          "type": "string"
+        },
+        "environment_id": {
+          "minLength": 1,
+          "title": "Environment Id",
+          "type": "string"
+        },
+        "external_effects": {
+          "$ref": "#/$defs/MagellanExternalEffects"
+        },
+        "idempotency_mode": {
+          "$ref": "#/$defs/MagellanIdempotencyMode"
+        },
+        "matched_worlds_independent": {
+          "title": "Matched Worlds Independent",
+          "type": "boolean"
+        },
+        "network_policy": {
+          "$ref": "#/$defs/MagellanNetworkPolicy"
+        },
+        "protocol_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Protocol Version",
+          "type": "string"
+        },
+        "repository_source_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Repository Source Digest",
+          "type": "string"
+        },
+        "reset_protocol_version": {
+          "minLength": 1,
+          "title": "Reset Protocol Version",
+          "type": "string"
+        },
+        "reset_verified": {
+          "title": "Reset Verified",
+          "type": "boolean"
+        },
+        "runtime_secret_policy": {
+          "$ref": "#/$defs/MagellanRuntimeSecretPolicy"
+        },
+        "source_isolation": {
+          "$ref": "#/$defs/MagellanSourceIsolation"
+        },
+        "tenant_isolation": {
+          "$ref": "#/$defs/MagellanTenantIsolation"
+        },
+        "tool_surface": {
+          "items": {
+            "$ref": "#/$defs/MagellanToolCapability"
+          },
+          "minItems": 1,
+          "title": "Tool Surface",
+          "type": "array"
+        },
+        "world_isolation": {
+          "$ref": "#/$defs/MagellanWorldIsolation"
+        },
+        "world_schema_version": {
+          "minLength": 1,
+          "title": "World Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "environment_id",
+        "repository_source_digest",
+        "driver_digest",
+        "database_backend",
+        "database_schema_digest",
+        "authorization_policy_digest",
+        "world_schema_version",
+        "source_isolation",
+        "runtime_secret_policy",
+        "world_isolation",
+        "reset_protocol_version",
+        "reset_verified",
+        "matched_worlds_independent",
+        "network_policy",
+        "external_effects",
+        "agent_protocol",
+        "tenant_isolation",
+        "idempotency_mode",
+        "tool_surface",
+        "created_at"
+      ],
+      "title": "MagellanEnvironmentHandshake",
+      "type": "object"
+    },
+    "MagellanExternalEffects": {
+      "enum": [
+        "blocked",
+        "recorded_mocks",
+        "live"
+      ],
+      "title": "MagellanExternalEffects",
+      "type": "string"
+    },
+    "MagellanIdempotencyMode": {
+      "enum": [
+        "durable",
+        "process_local",
+        "absent"
+      ],
+      "title": "MagellanIdempotencyMode",
+      "type": "string"
+    },
+    "MagellanNetworkPolicy": {
+      "enum": [
+        "denied",
+        "allowlisted",
+        "unrestricted"
+      ],
+      "title": "MagellanNetworkPolicy",
+      "type": "string"
+    },
+    "MagellanRepositorySnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "branch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Branch"
+        },
+        "commit_sha": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Commit Sha",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dependency_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Dependency Digest",
+          "type": "string"
+        },
+        "dirty": {
+          "title": "Dirty",
+          "type": "boolean"
+        },
+        "excluded_sensitive_paths": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Excluded Sensitive Paths",
+          "type": "array"
+        },
+        "excluded_volatile_paths": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Excluded Volatile Paths",
+          "type": "array"
+        },
+        "included_untracked_files": {
+          "items": {
+            "$ref": "#/$defs/MagellanSourceFile"
+          },
+          "title": "Included Untracked Files",
+          "type": "array"
+        },
+        "migration_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Migration Digest",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "minLength": 1,
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Source Digest",
+          "type": "string"
+        },
+        "tracked_changed_paths": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Tracked Changed Paths",
+          "type": "array"
+        },
+        "tracked_diff_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Tracked Diff Digest",
+          "type": "string"
+        },
+        "untracked_manifest_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Untracked Manifest Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "commit_sha",
+        "branch",
+        "dirty",
+        "tracked_changed_paths",
+        "included_untracked_files",
+        "excluded_volatile_paths",
+        "excluded_sensitive_paths",
+        "tracked_diff_digest",
+        "untracked_manifest_digest",
+        "dependency_digest",
+        "migration_digest",
+        "source_digest",
+        "created_at"
+      ],
+      "title": "MagellanRepositorySnapshot",
+      "type": "object"
+    },
+    "MagellanRuntimeSecretPolicy": {
+      "enum": [
+        "env_allowlist_only",
+        "mounted_secret_files",
+        "unrestricted"
+      ],
+      "title": "MagellanRuntimeSecretPolicy",
+      "type": "string"
+    },
+    "MagellanSourceFile": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "size_bytes",
+        "digest"
+      ],
+      "title": "MagellanSourceFile",
+      "type": "object"
+    },
+    "MagellanSourceIsolation": {
+      "enum": [
+        "live_worktree",
+        "content_addressed_copy",
+        "container_image"
+      ],
+      "title": "MagellanSourceIsolation",
+      "type": "string"
+    },
+    "MagellanTenantIsolation": {
+      "enum": [
+        "enforced",
+        "declared_only",
+        "absent"
+      ],
+      "title": "MagellanTenantIsolation",
+      "type": "string"
+    },
+    "MagellanToolCapability": {
+      "additionalProperties": false,
+      "properties": {
+        "externally_effectful": {
+          "title": "Externally Effectful",
+          "type": "boolean"
+        },
+        "input_schema": {
+          "additionalProperties": true,
+          "minProperties": 1,
+          "title": "Input Schema",
+          "type": "object"
+        },
+        "output_schema": {
+          "additionalProperties": true,
+          "minProperties": 1,
+          "title": "Output Schema",
+          "type": "object"
+        },
+        "tier": {
+          "$ref": "#/$defs/MagellanToolTier"
+        },
+        "tool_name": {
+          "minLength": 1,
+          "title": "Tool Name",
+          "type": "string"
+        },
+        "validators": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Validators",
+          "type": "array"
+        }
+      },
+      "required": [
+        "tool_name",
+        "tier",
+        "input_schema",
+        "output_schema",
+        "externally_effectful"
+      ],
+      "title": "MagellanToolCapability",
+      "type": "object"
+    },
+    "MagellanToolTier": {
+      "enum": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "title": "MagellanToolTier",
+      "type": "integer"
+    },
+    "MagellanWorldIsolation": {
+      "enum": [
+        "none",
+        "database_clone",
+        "container_snapshot"
+      ],
+      "title": "MagellanWorldIsolation",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/magellan-environment-assessment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "blockers": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Blockers",
+      "type": "array"
+    },
+    "environment_fingerprint": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Environment Fingerprint"
+    },
+    "handshake": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/MagellanEnvironmentHandshake"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "ready": {
+      "title": "Ready",
+      "type": "boolean"
+    },
+    "repository": {
+      "$ref": "#/$defs/MagellanRepositorySnapshot"
+    }
+  },
+  "required": [
+    "repository",
+    "handshake",
+    "environment_fingerprint",
+    "ready",
+    "blockers"
+  ],
+  "title": "MagellanEnvironmentAssessment",
+  "type": "object"
+}

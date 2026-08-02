@@ -46,6 +46,8 @@ class Settings(BaseSettings):
     lean_timeout_seconds: float = Field(default=20.0, gt=0, le=300)
     lean_output_limit_bytes: int = Field(default=262_144, ge=4_096, le=16_777_216)
     lean_memory_limit_mb: int = Field(default=4_096, ge=512, le=65_536)
+    magellan_repository_root: Path | None = None
+    magellan_handshake_path: Path | None = None
     lease_seconds: int = Field(default=300, ge=5, le=86_400)
     heartbeat_seconds: int = Field(default=15, ge=1, le=300)
     external_timeout_seconds: float = Field(default=120.0, gt=0, le=3600)
@@ -112,13 +114,21 @@ class Settings(BaseSettings):
 
     def redacted_manifest(self) -> dict[str, object]:
         values = self.model_dump(
-            exclude={"openai_api_key", "anthropic_api_key", "compatible_api_key"},
+            exclude={
+                "openai_api_key",
+                "anthropic_api_key",
+                "compatible_api_key",
+                "magellan_repository_root",
+                "magellan_handshake_path",
+            },
             mode="json",
         )
         values["database_url"] = make_url(self.database_url).render_as_string(hide_password=True)
         values["openai_api_key_configured"] = self.openai_api_key is not None
         values["anthropic_api_key_configured"] = self.anthropic_api_key is not None
         values["compatible_api_key_configured"] = self.compatible_api_key is not None
+        values["magellan_repository_configured"] = self.magellan_repository_root is not None
+        values["magellan_handshake_configured"] = self.magellan_handshake_path is not None
         return values
 
 

@@ -67,6 +67,17 @@ limitation. A missing required sandbox, timeout, signal, output overflow, or dep
 infrastructure failure—not an incorrect proof. Only Lean-kernel exit success produces `verified`.
 Other executable domains still require their own independent containment and authorization model.
 
+Magellan Improvement therefore does not execute a sibling checkout directly. Its read-only
+inspector hashes the Git revision, binary tracked diff, bounded non-sensitive untracked sources,
+dependency manifests, and migrations without serializing the local root. Untracked env, key, and
+credential-like files are excluded without reading. A valid handshake requires content-addressed
+source materialization, allowlisted environment-only secret injection, PostgreSQL world isolation,
+verified reset and matched-world independence, restricted networking, blocked or recorded external
+effects, the Responses protocol, enforced tenant identity, durable idempotency, and validators on
+every mutating tool. Captured traces reject cross-tenant/user context, caller-declared approval
+bypass, unapproved regulated mutation, read/propose mutation, broken provenance/state chains, and
+non-idempotent replay.
+
 ## Operational review
 
 Use TLS for remote PostgreSQL and model endpoints, restrict egress to configured providers, rotate

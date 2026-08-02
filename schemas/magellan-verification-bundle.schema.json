@@ -1,0 +1,315 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "HardGateResult": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "$ref": "#/$defs/VerifierDisposition"
+        },
+        "evidence_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "gate_id": {
+          "minLength": 1,
+          "title": "Gate Id",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "gate_id",
+        "passed",
+        "disposition",
+        "evidence_refs",
+        "reason"
+      ],
+      "title": "HardGateResult",
+      "type": "object"
+    },
+    "RewardObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "missing_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Missing Reason"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "component_id",
+        "value",
+        "evidence_refs"
+      ],
+      "title": "RewardObservation",
+      "type": "object"
+    },
+    "VerifierDisposition": {
+      "enum": [
+        "verified",
+        "rejected",
+        "unknown",
+        "infrastructure_failure"
+      ],
+      "title": "VerifierDisposition",
+      "type": "string"
+    },
+    "VerifierResult": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Artifact Refs",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "deterministic": {
+          "title": "Deterministic",
+          "type": "boolean"
+        },
+        "disposition": {
+          "$ref": "#/$defs/VerifierDisposition"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "title": "Evidence",
+          "type": "object"
+        },
+        "result_id": {
+          "minLength": 1,
+          "title": "Result Id",
+          "type": "string"
+        },
+        "scope": {
+          "minLength": 1,
+          "title": "Scope",
+          "type": "string"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "verifier_id": {
+          "minLength": 1,
+          "title": "Verifier Id",
+          "type": "string"
+        },
+        "verifier_version": {
+          "minLength": 1,
+          "title": "Verifier Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result_id",
+        "verifier_id",
+        "verifier_version",
+        "scope",
+        "disposition",
+        "deterministic",
+        "summary",
+        "evidence",
+        "created_at"
+      ],
+      "title": "VerifierResult",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/magellan-verification-bundle.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "hard_gates": {
+      "items": {
+        "$ref": "#/$defs/HardGateResult"
+      },
+      "minItems": 1,
+      "title": "Hard Gates",
+      "type": "array"
+    },
+    "reward_observations": {
+      "items": {
+        "$ref": "#/$defs/RewardObservation"
+      },
+      "minItems": 1,
+      "title": "Reward Observations",
+      "type": "array"
+    },
+    "scenario_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Scenario Digest",
+      "type": "string"
+    },
+    "scenario_id": {
+      "minLength": 1,
+      "title": "Scenario Id",
+      "type": "string"
+    },
+    "scenario_split": {
+      "minLength": 1,
+      "title": "Scenario Split",
+      "type": "string"
+    },
+    "task_verified": {
+      "title": "Task Verified",
+      "type": "boolean"
+    },
+    "trace_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Trace Digest",
+      "type": "string"
+    },
+    "trace_id": {
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "verification_input_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Verification Input Digest",
+      "type": "string"
+    },
+    "verifier_results": {
+      "items": {
+        "$ref": "#/$defs/VerifierResult"
+      },
+      "minItems": 1,
+      "title": "Verifier Results",
+      "type": "array"
+    }
+  },
+  "required": [
+    "scenario_id",
+    "scenario_digest",
+    "scenario_split",
+    "trace_id",
+    "trace_digest",
+    "environment_fingerprint",
+    "verification_input_digest",
+    "verifier_results",
+    "hard_gates",
+    "reward_observations",
+    "task_verified",
+    "created_at"
+  ],
+  "title": "MagellanVerificationBundle",
+  "type": "object"
+}

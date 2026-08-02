@@ -89,6 +89,46 @@
       "sha256": "f19ef34e59fd3161d72d60bd6d433f32f931387333814632002d42bb301b7c34"
     },
     {
+      "name": "magellan-agent-trace",
+      "schema": "magellan-agent-trace.schema.json",
+      "sha256": "3cb9763b3ba5091a77f18fa14f4ebb9909d008c5b6f01929bea2235310e22241"
+    },
+    {
+      "name": "magellan-environment-assessment",
+      "schema": "magellan-environment-assessment.schema.json",
+      "sha256": "7b94ed608f229fa063cef5f1183b90a7ea0677a8aa6ce3da46fde2f73b6e6991"
+    },
+    {
+      "name": "magellan-environment-handshake",
+      "schema": "magellan-environment-handshake.schema.json",
+      "sha256": "90c57fddd9588457c4dd694fadb041b99786baa0d040ff49dab093afeeadfd31"
+    },
+    {
+      "name": "magellan-matched-world-manifest",
+      "schema": "magellan-matched-world-manifest.schema.json",
+      "sha256": "53e8fe11fa607c4cf77278ba6e6408a7532ee4c0170b0c7373269b3af7ec9707"
+    },
+    {
+      "name": "magellan-repository-snapshot",
+      "schema": "magellan-repository-snapshot.schema.json",
+      "sha256": "a10312ff622d9672d6ed762fb09f4370d6e03b8d653b90641cf1fc3808565c18"
+    },
+    {
+      "name": "magellan-scenario-manifest",
+      "schema": "magellan-scenario-manifest.schema.json",
+      "sha256": "403614d4636b24492ac2dfb320bb20eed39f9990af41dd677a931fccaed9cc7a"
+    },
+    {
+      "name": "magellan-verification-bundle",
+      "schema": "magellan-verification-bundle.schema.json",
+      "sha256": "2a5f46b7cb06bc09555a38c930c7447002179cd4a12e03451c7456e390a46417"
+    },
+    {
+      "name": "magellan-world-snapshot",
+      "schema": "magellan-world-snapshot.schema.json",
+      "sha256": "f667e6d5bbd2df13e05592f036ab876ac20d2d4e442c3625d8136cc9e540904f"
+    },
+    {
       "name": "reward",
       "schema": "reward.schema.json",
       "sha256": "d9efdef5e58ab7c25697d530397e3bca829b80f3a3a8a6d6fd2d15cd0407b95a"

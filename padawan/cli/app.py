@@ -35,6 +35,12 @@ from padawan.domains.lean_math import (
     LeanProofTask,
     LeanVerifier,
 )
+from padawan.domains.magellan_improvement import (
+    MagellanEnvironmentAssessment,
+    MagellanEnvironmentInspector,
+    MagellanScenarioFamily,
+    MagellanScenarioGenerator,
+)
 from padawan.episodes.store import EpisodeStore
 from padawan.experiments.engine import ExperimentEngine
 from padawan.governance.manifests import CommandManifest, ManifestWriter, now
@@ -195,6 +201,58 @@ def corpus_generate_lean_math(
     _run_command(ctx, "corpus generate lean-math", operation)
 
 
+@corpus_generate_app.command("magellan")
+def corpus_generate_magellan(
+    ctx: typer.Context,
+    pool: CorpusPool = typer.Option(CorpusPool.CURRICULUM, "--pool"),
+    seed: int = typer.Option(20260801, "--seed"),
+    groups_per_family: int = typer.Option(1, "--groups-per-family", min=1),
+    siblings_per_group: int = typer.Option(2, "--siblings-per-group", min=2),
+    family: list[MagellanScenarioFamily] | None = typer.Option(None, "--family"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        settings = _settings(ctx)
+        assessment = _magellan_environment_assessment(settings)
+        if not assessment.ready or assessment.handshake is None:
+            raise ValueError(
+                "Magellan corpus generation requires a ready environment handshake: "
+                + "; ".join(assessment.blockers)
+            )
+        database = Database(settings.database_url)
+        generator = MagellanScenarioGenerator(
+            environment_fingerprint=assessment.handshake.fingerprint
+        )
+        registry = CorpusRegistry()
+        selected = tuple(family) if family else None
+        try:
+            records = generator.generate(
+                pool=pool,
+                seed=seed,
+                groups_per_family=groups_per_family,
+                siblings_per_group=siblings_per_group,
+                families=selected,
+            )
+            async with database.transaction() as session:
+                for competency in generator.competencies():
+                    await registry.register_competency(session, competency)
+                stored = await registry.register_items(session, records)
+            return {
+                "domain_id": "agent.magellan_improvement",
+                "environment_id": assessment.handshake.environment_id,
+                "environment_fingerprint": assessment.handshake.fingerprint,
+                "repository_snapshot_id": assessment.repository.snapshot_id,
+                "generated": len(records),
+                "registered": len(stored),
+                "pool": pool.value,
+                "families": sorted({record.template_family_id for record in records}),
+                "seed": seed,
+            }
+        finally:
+            await database.close()
+
+    _run_command(ctx, "corpus generate magellan", operation)
+
+
 @verify_app.command("lean")
 def verify_lean(
     ctx: typer.Context,
@@ -229,6 +287,15 @@ def verify_lean(
         }
 
     _run_command(ctx, "verify lean", operation)
+
+
+@verify_app.command("magellan-environment")
+def verify_magellan_environment(ctx: typer.Context) -> None:
+    def operation() -> dict[str, Any]:
+        assessment = _magellan_environment_assessment(_settings(ctx))
+        return assessment.model_dump(mode="json")
+
+    _run_command(ctx, "verify magellan-environment", operation)
 
 
 @corpus_app.command("validate")
@@ -851,6 +918,15 @@ def _lean_verifier(settings: Settings) -> LeanVerifier:
         timeout_seconds=settings.lean_timeout_seconds,
         output_limit_bytes=settings.lean_output_limit_bytes,
         memory_limit_mb=settings.lean_memory_limit_mb,
+    )
+
+
+def _magellan_environment_assessment(settings: Settings) -> MagellanEnvironmentAssessment:
+    if settings.magellan_repository_root is None:
+        raise ValueError("PADAWAN_MAGELLAN_REPOSITORY_ROOT is not configured")
+    return MagellanEnvironmentInspector().assess(
+        settings.magellan_repository_root,
+        handshake_path=settings.magellan_handshake_path,
     )
 
 

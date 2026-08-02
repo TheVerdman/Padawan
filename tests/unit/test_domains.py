@@ -31,7 +31,11 @@ def test_builtin_registry_validates_real_algebra_items() -> None:
     registry.validate_item(item)
 
     assert registry.get("math.algebra").spec.version == "1.0.0"
-    assert [spec.domain_id for spec in registry.installed()] == ["math.algebra", "math.lean"]
+    assert [spec.domain_id for spec in registry.installed()] == [
+        "agent.magellan_improvement",
+        "math.algebra",
+        "math.lean",
+    ]
 
 
 def test_registry_rejects_duplicate_active_domain() -> None:

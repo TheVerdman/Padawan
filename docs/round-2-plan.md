@@ -57,6 +57,33 @@ R2.3 does not contact a provider, mutate checkpoint weights, or access Magellan.
 tracks are the full Lean developmental workflow, Magellan Improvement, the closed appellate pack,
 and the training-product compiler.
 
+## R2.5 protocol checkpoint — 2026-08-01
+
+The Padawan-side Magellan protocol and deterministic authority are implemented after a read-only
+audit of the retuned worktree:
+
+- the external repository inspector binds commit, complete tracked diff, bounded non-sensitive
+  untracked source, dependency, and migration digests without persisting a local machine path;
+- the handshake requires content-addressed source materialization, allowlisted runtime secrets,
+  PostgreSQL, verified isolated reset/fork behavior, independent matched worlds, restricted
+  network/external effects, Responses, tenant enforcement, durable idempotency, mutating-tool
+  validators, and typed tool schemas;
+- eight matched scenario families cover the existing Magellan behavior plus tenant, unavailable
+  tool, invalid dependency, approval, and replay failures;
+- typed world, plan, tool, observation, approval, failure, and matched-allocation records bind
+  database, tenant, user, authorization, provenance, and replay identity;
+- deterministic verification separates environment, authorization, trace, safety, and task results;
+  the first four are non-compensable hard gates, while task/constraint/recovery/efficiency/cost
+  remain a recomputable vector;
+- training eligibility keeps baseline, sealed, unsafe, and infrastructure-failed traces
+  evaluation-only and never reclassifies episode data as continued-pretraining data.
+
+R2.5 is not accepted as a live integration. The audited Magellan tree still lacks an enclosing
+world reset/fork boundary and durable idempotency, does not enforce every capability identity,
+allows caller-created approval bypass, and uses Chat Completions in both OpenAI paths. No Magellan
+code was modified and no Inkling pilot was claimed. A real upstream driver and pinned sandbox must
+satisfy the handshake and matched-world acceptance test before the domain gains `build_workflow`.
+
 ## Round 2 thesis
 
 Round 1 established a durable, evidence-governed developmental loop for symbolic algebra. Round 2

@@ -2,8 +2,9 @@
 
 Padawan is an independent process and database. It coordinates model runtimes; it is not embedded
 in a checkpoint server, a teacher provider, Heirloom, or VECL-QB. Symbolic algebra is the complete
-autonomous research path; Lean mathematics is a second installed corpus/verifier package. State,
-evidence, orchestration, and adapter boundaries remain model-neutral.
+autonomous research path; Lean mathematics and Magellan Improvement are installed
+corpus/verifier packages with explicit external execution gates. State, evidence, orchestration,
+and adapter boundaries remain model-neutral.
 
 ## Runtime composition
 
@@ -19,6 +20,7 @@ domain cannot masquerade as a complete autonomous workflow. The authorities rema
 | domain registry | `DomainRegistry` | versioned domain packages and workflow capability boundary |
 | algebra verifier | `AlgebraGrader` | deterministic SymPy outcome and first-invalid-step evidence |
 | Lean verifier | `LeanVerifier` | pinned, sandboxed Lean-kernel proof authority |
+| Magellan verifier | `MagellanScenarioVerifier` | isolated-world, authorization, trace, and replay authority |
 | teacher | `TeacherService` plus provider adapter | structured intervention generation |
 | comment validation | `CommentValidator` | evidence, contradiction, span, and leakage checks |
 | state | `StateStore` | immutable lineage, symmetric forks, canonical promotion |
@@ -39,10 +41,11 @@ Provider and research role are orthogonal: OpenAI is a baseline or teacher, whil
 explicit compatible open-weight runtime are target candidates. Role is persisted through student
 state, run, attempt, and episode records; baseline runs cannot consolidate target memory.
 
-`DomainRegistry` currently installs `math.algebra@1.0.0` and `math.lean@1.0.0`. Algebra owns its
-full durable handler under `padawan.domains.algebra`. Lean owns deterministic matched corpus
-generation and kernel verification but intentionally has no `build_workflow`; selecting it as the
-live autonomous domain fails explicitly until that developmental workflow exists.
+`DomainRegistry` installs `math.algebra@1.0.0`, `math.lean@1.0.0`, and
+`agent.magellan_improvement@1.0.0`. Algebra owns its full durable handler under
+`padawan.domains.algebra`. Lean and Magellan own deterministic matched corpus generation and
+verification but intentionally have no `build_workflow`; selecting either as the live autonomous
+domain fails explicitly until its real execution and developmental workflow exists.
 
 ## Durable action loop
 
@@ -132,14 +135,19 @@ recomputes the stream rather than trusting a stored boolean.
 - Lean uses a committed `lean-toolchain`, Lake dependency lock, and exact Mathlib revision. The
   verifier resolves the pinned closure before sandboxing and invokes Lean directly, so candidate
   execution cannot trigger Lake dependency updates.
+- Magellan is inspected as an external Git worktree without imports. A runtime-only handshake binds
+  its complete dirty-state digest, content-addressed source materialization, PostgreSQL/
+  authorization/reset policy, typed tool surface, Responses protocol, and durable idempotency.
+  Local paths are not persisted.
 
 ## Present boundaries
 
-The complete operational workflow is algebra. Lean corpus generation and proof verification are
-operational, but its teaching/transfer workflow is not. GCS is implemented; S3 is intentionally
-absent. There is no parameter update implementation. `UnsupportedParameterUpdateBackend` fails
-explicitly because no backend can yet isolate, evaluate, commit, and restore a real weight update.
-Retention and interference are now durably scheduled, leased, completed, and recovered, but no
-instrumented Inkling extension currently supplies live target outcomes or router telemetry.
-Appellate briefing and Magellan Improvement remain subsequent domain tracks; no Magellan repository
-is accessed by R2.3.
+The complete operational workflow is algebra. Lean corpus generation/proof verification and
+Magellan scenario generation/evidence verification are operational, but neither has a live
+developmental workflow. The audited Magellan tree lacks the required world isolation, durable
+idempotency, identity enforcement, protected approvals, and Responses endpoint, so no live result
+is claimed. GCS is implemented; S3 is intentionally absent. There is no parameter update
+implementation. `UnsupportedParameterUpdateBackend` fails explicitly because no backend can yet
+isolate, evaluate, commit, and restore a real weight update. Retention and interference are durably
+scheduled, leased, completed, and recovered, but no instrumented Inkling extension currently
+supplies live target outcomes or router telemetry. Appellate briefing remains a subsequent track.
