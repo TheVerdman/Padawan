@@ -42,12 +42,14 @@ states remain immutable evidence.
 
 ## Interpretation limits
 
-A single block is descriptive, not a powered result. `experiment run --blocks N` executes `N`
-bounded developmental episodes; each episode currently owns its own persisted experiment and
-block. The lower-level engine supports multi-block experiments and paired aggregation, but the CLI
-does not yet aggregate separate episode experiments into one study report.
+A single block is descriptive, not a powered result. `experiment run --blocks N` still executes
+bounded developmental episodes, while a versioned `StudyManifest` is the authority that binds
+multiple persisted experiments, conditions, checkpoints, an identical suite digest, environment
+fingerprints, assignment seed, and optional propensities. `report study` aggregates the original
+paired blocks and reports missing, contaminated, and infrastructure attrition without imputation.
 
-`TransferTrialRecord` has a delayed-retest timestamp, and lesson history stores successful and
-failed transfer counts. The current supervisor does not schedule delayed retention or interference
-trials, so reports must not claim those outcomes. Cost is recorded when a provider adapter can
-supply it; the existing adapters do not estimate prices.
+Retention and interference trials are now durably scheduled against immutable state snapshots and
+fresh shadow or sealed item groups. Due-item leasing and expiry recovery are implemented. A result
+may be claimed only after the corresponding trial has a persisted exposure, verifier evidence,
+contamination checks, and explicit outcome; a scheduled or missing trial is not a failed student
+outcome. Cost remains recorded only when an adapter supplies it, and missing cost is not zero.

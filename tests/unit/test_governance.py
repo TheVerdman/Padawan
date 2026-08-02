@@ -1,12 +1,20 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from padawan.artifacts.store import LocalArtifactStore
 from padawan.config.settings import Settings
 from padawan.governance.policy import AccessContext, ExportPolicy, RetentionPolicy
+from padawan.models.contracts import (
+    DistributionScope,
+    RightsBasis,
+    RightsReviewStatus,
+    RightsUse,
+    SourceRights,
+    legacy_source_rights,
+)
 
 
 def test_export_policy_denies_restricted_and_private_by_default(tmp_path) -> None:
@@ -56,3 +64,29 @@ def test_command_configuration_manifest_redacts_all_credentials() -> None:
     assert "anthropic-secret" not in serialized
     assert "compatible-secret" not in serialized
     assert settings.redacted_manifest()["compatible_api_key_configured"] is True
+
+
+def test_rights_prohibition_and_legacy_import_are_conservative() -> None:
+    reviewed_at = datetime(2026, 8, 1, tzinfo=UTC)
+    prohibited = SourceRights(
+        rights_id="policy.prohibited",
+        version="1",
+        basis=RightsBasis.UNKNOWN,
+        basis_detail="The source was reviewed and rejected for downstream use.",
+        permitted_uses=(),
+        distribution_scope=DistributionScope.INTERNAL_ONLY,
+        review_status=RightsReviewStatus.PROHIBITED,
+        restrictions=("do not use",),
+        reviewed_by="test-reviewer",
+        reviewed_at=reviewed_at,
+    )
+    legacy = legacy_source_rights(
+        source="third-party:legacy",
+        license_id="Apache-2.0",
+        reviewed_at=reviewed_at,
+    )
+
+    assert not prohibited.permits(RightsUse.EVIDENCE_RETENTION)
+    assert legacy.basis == RightsBasis.UNKNOWN
+    assert legacy.license_id == "Apache-2.0"
+    assert legacy.review_status == RightsReviewStatus.REVIEW_REQUIRED

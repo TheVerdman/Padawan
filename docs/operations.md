@@ -192,6 +192,23 @@ uses process-local idempotency, does not enforce every declared capability ident
 caller-constructed approval bypass, and still uses Chat Completions for OpenAI planning. See
 [Magellan Improvement integration](magellan-improvement.md) for the full contract and audit.
 
+## Internal training products
+
+Compile the latest deterministic source watermark, then verify every restricted artifact and row:
+
+```text
+padawan --json training compile
+padawan --json training verify BUNDLE_ID
+padawan --json training inspect BUNDLE_ID
+```
+
+The compiler never calls a trainer. Baseline and teacher outputs remain in the evidence ledger but
+are excluded from target-training views by default. Source rights, explicit lane eligibility,
+checkpoint/tokenizer registration, contamination state, and split all gate admission. Continued
+pretraining accepts only separately admitted source documents; see [internal training
+products](training-products.md) for rights manifests, source admission, reproduction timestamps,
+and the complete exclusion policy.
+
 ## Recovery and inspection
 
 Provider intent is committed before I/O and response before transition. Restarting a worker is the

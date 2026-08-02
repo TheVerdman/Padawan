@@ -1,0 +1,180 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "EvidenceSourceKind": {
+      "enum": [
+        "corpus_item",
+        "episode",
+        "attempt",
+        "grade",
+        "teacher_intervention",
+        "revision",
+        "transfer_trial",
+        "verifier_result",
+        "reward",
+        "training_eligibility",
+        "training_source_document",
+        "training_source_decision",
+        "checkpoint"
+      ],
+      "title": "EvidenceSourceKind",
+      "type": "string"
+    },
+    "ResearchRole": {
+      "enum": [
+        "target",
+        "baseline",
+        "teacher",
+        "verifier",
+        "adjudicator"
+      ],
+      "title": "ResearchRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/evidence-ledger-entry.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_refs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Artifact Refs",
+      "type": "array"
+    },
+    "compiler_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "record": {
+      "additionalProperties": true,
+      "title": "Record",
+      "type": "object"
+    },
+    "research_role": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResearchRole"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "rights_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Rights Digests",
+      "type": "array"
+    },
+    "row_id": {
+      "minLength": 1,
+      "title": "Row Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Evidence Refs",
+      "type": "array"
+    },
+    "source_id": {
+      "minLength": 1,
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_kind": {
+      "$ref": "#/$defs/EvidenceSourceKind"
+    },
+    "source_record_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Record Digests",
+      "type": "array"
+    }
+  },
+  "required": [
+    "row_id",
+    "source_evidence_refs",
+    "source_record_digests",
+    "source_kind",
+    "source_id",
+    "record"
+  ],
+  "title": "EvidenceLedgerEntry",
+  "type": "object"
+}

@@ -1,5 +1,60 @@
 {
   "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
     "DistributionScope": {
       "enum": [
         "internal_only",
@@ -185,46 +240,78 @@
       "type": "object"
     }
   },
-  "$id": "https://schemas.padawan.local/v1/task-manifest.schema.json",
+  "$id": "https://schemas.padawan.local/v1/training-source-document.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "competency_id": {
+    "admitted_by": {
       "minLength": 1,
-      "title": "Competency Id",
+      "title": "Admitted By",
       "type": "string"
     },
-    "corpus_lineage": {
-      "additionalProperties": {
+    "content_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Digest",
+      "type": "string"
+    },
+    "content_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "document_id": {
+      "minLength": 1,
+      "title": "Document Id",
+      "type": "string"
+    },
+    "language": {
+      "minLength": 1,
+      "title": "Language",
+      "type": "string"
+    },
+    "media_type": {
+      "minLength": 1,
+      "title": "Media Type",
+      "type": "string"
+    },
+    "quality_evidence_refs": {
+      "items": {
+        "minLength": 1,
         "type": "string"
       },
-      "title": "Corpus Lineage",
-      "type": "object"
+      "title": "Quality Evidence Refs",
+      "type": "array"
     },
-    "domain_id": {
-      "minLength": 1,
-      "title": "Domain Id",
-      "type": "string"
+    "rights": {
+      "$ref": "#/$defs/SourceRights"
     },
-    "domain_version": {
-      "minLength": 1,
-      "title": "Domain Version",
-      "type": "string"
-    },
-    "environment_fingerprint": {
+    "rights_digest": {
       "pattern": "^sha256:[0-9a-f]{64}$",
-      "title": "Environment Fingerprint",
+      "title": "Rights Digest",
       "type": "string"
     },
-    "freshness_scope": {
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_id": {
       "minLength": 1,
-      "title": "Freshness Scope",
+      "title": "Source Id",
       "type": "string"
     },
-    "license": {
+    "source_version": {
+      "minLength": 1,
+      "title": "Source Version",
+      "type": "string"
+    },
+    "supersedes_document_id": {
       "anyOf": [
         {
-          "minLength": 1,
           "type": "string"
         },
         {
@@ -232,45 +319,29 @@
         }
       ],
       "default": null,
-      "deprecated": true,
-      "title": "License"
+      "title": "Supersedes Document Id"
     },
-    "metadata": {
-      "additionalProperties": true,
-      "title": "Metadata",
-      "type": "object"
-    },
-    "rights": {
-      "$ref": "#/$defs/SourceRights"
-    },
-    "source": {
+    "title": {
       "minLength": 1,
-      "title": "Source",
-      "type": "string"
-    },
-    "split": {
-      "minLength": 1,
-      "title": "Split",
-      "type": "string"
-    },
-    "task_id": {
-      "minLength": 1,
-      "title": "Task Id",
+      "title": "Title",
       "type": "string"
     }
   },
   "required": [
-    "task_id",
-    "domain_id",
-    "domain_version",
-    "competency_id",
-    "split",
-    "source",
+    "document_id",
+    "source_id",
+    "source_version",
+    "title",
+    "language",
+    "media_type",
+    "content_ref",
+    "content_digest",
     "rights",
-    "environment_fingerprint",
-    "corpus_lineage",
-    "freshness_scope"
+    "rights_digest",
+    "quality_evidence_refs",
+    "admitted_by",
+    "created_at"
   ],
-  "title": "TaskManifest",
+  "title": "TrainingSourceDocument",
   "type": "object"
 }

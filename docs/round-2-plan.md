@@ -84,6 +84,32 @@ allows caller-created approval bypass, and uses Chat Completions in both OpenAI 
 code was modified and no Inkling pilot was claimed. A real upstream driver and pinned sandbox must
 satisfy the handshake and matched-world acceptance test before the domain gains `build_workflow`.
 
+## R2.7a compiler checkpoint — 2026-08-01
+
+The internal training-product compiler and source-rights boundary are implemented:
+
+- a versioned `SourceRights` manifest replaces the legacy free-text license label as training-use
+  authority while preserving that old field for audit and migration compatibility;
+- evidence, normalized episode, SFT, preference, RLVR, negative/process,
+  continued-pretraining, sealed-evaluation, and exclusion artifacts compile as restricted,
+  canonical JSONL from one deterministic source watermark;
+- every row carries compiler version, source evidence references, record digests, and rights
+  digests; manifests also bind checkpoints/tokenizers, verifier/environment fingerprints, policy
+  versions, counts, and invocation;
+- baseline and teacher records remain in evidence and normalized products but are reason-coded out
+  of target-training products by default; teacher-influenced target attempts require a teacherless
+  replay;
+- sealed, shadow, quarantined, contaminated, rights-unreviewed, eligibility-missing, and
+  unregistered-checkpoint candidates are structurally excluded;
+- continued-pretraining sources have separate append-only admission and lifecycle decisions,
+  content-digest deduplication, quality evidence, and rights gates;
+- local and GCS backends share the same artifact protocol, and `training verify` rechecks every
+  artifact, row contract, digest, count, bundle identity, and database snapshot.
+
+R2.7a does not train a model or publish a dataset. The empirical release study still depends on a
+real Inkling endpoint and an externally produced checkpoint. The appellate pack is also still
+pending.
+
 ## Round 2 thesis
 
 Round 1 established a durable, evidence-governed developmental loop for symbolic algebra. Round 2
@@ -183,7 +209,7 @@ padawan/domains/
 The core contracts should include:
 
 - `DomainSpec`: identity, version, competencies, permitted teacher modes, evidence hierarchy;
-- `TaskManifest`: prompt inputs, corpus lineage, split, licenses, difficulty, freshness rules;
+- `TaskManifest`: prompt inputs, corpus lineage, split, source rights, difficulty, freshness rules;
 - `EnvironmentSnapshot`: immutable world state, dependencies, tool surface, and fingerprint;
 - `DomainAttempt`: domain-neutral action, observation, output, and capability records;
 - `VerifierResult`: verifier identity/version, scope, disposition, evidence, and uncertainty;
@@ -257,11 +283,11 @@ The compiler emits immutable, lineage-preserving products:
 | preference view | matched stronger/weaker outputs with attributable evidence | preference optimization |
 | RLVR view | task/environment manifest, action interface, verifier package, reward vector | verifiable reinforcement training |
 | negative/process view | failed proofs, invalid citations, unsafe plans, repairs, tool traces | process and error training |
-| continued-pretraining view | licensed, deduplicated source corpora rather than raw episodes | mid-training/continued pretraining |
+| continued-pretraining view | rights-cleared, deduplicated source corpora rather than raw episodes | mid-training/continued pretraining |
 | sealed evaluation suite | anchor, transfer, retention, interference, and regression tasks | checkpoint comparison only |
 
 Episode data is not automatically mid-training data. Continued pretraining needs its own source,
-license, deduplication, contamination, and quality gates. Teacher outputs are never promoted merely
+rights basis, deduplication, contamination, and quality gates. Teacher outputs are never promoted merely
 because a frontier model produced them. Baseline outputs are excluded from target training views by
 default and require a separately governed distillation decision if ever used.
 
@@ -273,12 +299,12 @@ Every bundle includes:
 - domain/environment/verifier fingerprints;
 - reward-policy and eligibility-policy versions;
 - split and contamination declarations;
-- license and source manifests;
+- rights-basis and source manifests;
 - included and excluded record counts with reason codes;
 - content digests and a reproducible compiler invocation.
 
 Sealed anchors, evaluation-only records, invalid environments, unauthorized data, and unresolved
-license records must be structurally ineligible for training exports.
+unresolved rights records must be structurally ineligible for training exports.
 
 ### 5. Checkpoint updates are external and offline
 

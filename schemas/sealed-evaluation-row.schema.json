@@ -1,0 +1,95 @@
+{
+  "$id": "https://schemas.padawan.local/v1/sealed-evaluation-row.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "competency_id": {
+      "minLength": 1,
+      "title": "Competency Id",
+      "type": "string"
+    },
+    "compiler_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "expected_answer": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Expected Answer"
+    },
+    "item_id": {
+      "minLength": 1,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "rights_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Rights Digests",
+      "type": "array"
+    },
+    "row_id": {
+      "minLength": 1,
+      "title": "Row Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Evidence Refs",
+      "type": "array"
+    },
+    "source_record_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Record Digests",
+      "type": "array"
+    },
+    "task_manifest": {
+      "additionalProperties": true,
+      "title": "Task Manifest",
+      "type": "object"
+    },
+    "verifier_spec": {
+      "additionalProperties": true,
+      "title": "Verifier Spec",
+      "type": "object"
+    }
+  },
+  "required": [
+    "row_id",
+    "source_evidence_refs",
+    "source_record_digests",
+    "item_id",
+    "competency_id",
+    "task_manifest",
+    "verifier_spec",
+    "expected_answer"
+  ],
+  "title": "SealedEvaluationRow",
+  "type": "object"
+}

@@ -1,0 +1,488 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "CheckpointSourceIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint_id": {
+          "minLength": 1,
+          "title": "Checkpoint Id",
+          "type": "string"
+        },
+        "manifest_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Manifest Digest"
+        },
+        "model_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Digest"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "registered": {
+          "title": "Registered",
+          "type": "boolean"
+        },
+        "tokenizer_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tokenizer Digest"
+        },
+        "tokenizer_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tokenizer Id"
+        }
+      },
+      "required": [
+        "checkpoint_id",
+        "model_id",
+        "registered"
+      ],
+      "title": "CheckpointSourceIdentity",
+      "type": "object"
+    },
+    "CompilerInvocation": {
+      "additionalProperties": false,
+      "properties": {
+        "as_of": {
+          "format": "date-time",
+          "title": "As Of",
+          "type": "string"
+        },
+        "checkpoint_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Checkpoint Ids",
+          "type": "array"
+        },
+        "compiler_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Compiler Version",
+          "type": "string"
+        },
+        "eligibility_policy_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Eligibility Policy Id"
+        },
+        "eligibility_policy_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Eligibility Policy Version"
+        },
+        "internal_only": {
+          "const": true,
+          "default": true,
+          "title": "Internal Only",
+          "type": "boolean"
+        },
+        "rights_policy_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Rights Policy Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "as_of"
+      ],
+      "title": "CompilerInvocation",
+      "type": "object"
+    },
+    "PolicyIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "minLength": 1,
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "policy_version": {
+          "minLength": 1,
+          "title": "Policy Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "policy_version"
+      ],
+      "title": "PolicyIdentity",
+      "type": "object"
+    },
+    "TrainingExclusionReason": {
+      "enum": [
+        "baseline_output",
+        "teacher_output",
+        "non_target_output",
+        "teacher_influenced",
+        "sealed_source",
+        "evaluation_source",
+        "quarantined_source",
+        "contaminated_lineage",
+        "rights_review_required",
+        "rights_use_not_permitted",
+        "output_rights_missing",
+        "output_rights_review_required",
+        "output_rights_use_not_permitted",
+        "missing_eligibility_decision",
+        "eligibility_lane_excluded",
+        "eligibility_conflict",
+        "hard_gate_failed",
+        "missing_checkpoint_manifest",
+        "checkpoint_identity_conflict",
+        "missing_valid_grade",
+        "unsuccessful_sft_trajectory",
+        "no_stronger_preference_pair",
+        "missing_rlvr_environment",
+        "private_reasoning_restricted",
+        "episode_not_source_corpus",
+        "source_document_not_active",
+        "source_document_contaminated",
+        "duplicate_source_content"
+      ],
+      "title": "TrainingExclusionReason",
+      "type": "string"
+    },
+    "TrainingLane": {
+      "enum": [
+        "continued_pretraining",
+        "sft",
+        "preference",
+        "rlvr",
+        "process",
+        "evaluation_only"
+      ],
+      "title": "TrainingLane",
+      "type": "string"
+    },
+    "TrainingProductKind": {
+      "enum": [
+        "evidence_ledger",
+        "normalized_episodes",
+        "sft",
+        "preference",
+        "rlvr",
+        "negative_process",
+        "continued_pretraining",
+        "sealed_evaluation",
+        "exclusions"
+      ],
+      "title": "TrainingProductKind",
+      "type": "string"
+    },
+    "TrainingProductManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "content_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Digest",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/TrainingProductKind"
+        },
+        "row_count": {
+          "minimum": 0,
+          "title": "Row Count",
+          "type": "integer"
+        },
+        "row_schema": {
+          "minLength": 1,
+          "title": "Row Schema",
+          "type": "string"
+        },
+        "row_schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Row Schema Version",
+          "type": "string"
+        },
+        "training_lane": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TrainingLane"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "training_lane",
+        "row_schema",
+        "artifact",
+        "row_count",
+        "content_digest"
+      ],
+      "title": "TrainingProductManifest",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/training-bundle-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "bundle_id": {
+      "minLength": 1,
+      "title": "Bundle Id",
+      "type": "string"
+    },
+    "checkpoint_identities": {
+      "items": {
+        "$ref": "#/$defs/CheckpointSourceIdentity"
+      },
+      "title": "Checkpoint Identities",
+      "type": "array"
+    },
+    "compiler_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "eligibility_policies": {
+      "items": {
+        "$ref": "#/$defs/PolicyIdentity"
+      },
+      "title": "Eligibility Policies",
+      "type": "array"
+    },
+    "environment_fingerprints": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Environment Fingerprints",
+      "type": "array"
+    },
+    "exclusion_counts": {
+      "additionalProperties": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/TrainingExclusionReason"
+      },
+      "title": "Exclusion Counts",
+      "type": "object"
+    },
+    "included_counts": {
+      "additionalProperties": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/TrainingProductKind"
+      },
+      "title": "Included Counts",
+      "type": "object"
+    },
+    "internal_only": {
+      "const": true,
+      "default": true,
+      "title": "Internal Only",
+      "type": "boolean"
+    },
+    "invocation": {
+      "$ref": "#/$defs/CompilerInvocation"
+    },
+    "products": {
+      "items": {
+        "$ref": "#/$defs/TrainingProductManifest"
+      },
+      "minItems": 1,
+      "title": "Products",
+      "type": "array"
+    },
+    "rights_manifest_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Rights Manifest Digests",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_artifact_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Source Artifact Digests",
+      "type": "array"
+    },
+    "source_document_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Source Document Ids",
+      "type": "array"
+    },
+    "source_episode_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Source Episode Ids",
+      "type": "array"
+    },
+    "source_snapshot_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Source Snapshot Digest",
+      "type": "string"
+    },
+    "verifier_fingerprints": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Verifier Fingerprints",
+      "type": "array"
+    }
+  },
+  "required": [
+    "bundle_id",
+    "invocation",
+    "source_snapshot_digest",
+    "checkpoint_identities",
+    "source_episode_ids",
+    "source_document_ids",
+    "source_artifact_digests",
+    "verifier_fingerprints",
+    "environment_fingerprints",
+    "rights_manifest_digests",
+    "eligibility_policies",
+    "products",
+    "included_counts",
+    "exclusion_counts",
+    "created_at"
+  ],
+  "title": "TrainingBundleManifest",
+  "type": "object"
+}

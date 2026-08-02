@@ -1,0 +1,169 @@
+{
+  "$defs": {
+    "TrainingExclusionReason": {
+      "enum": [
+        "baseline_output",
+        "teacher_output",
+        "non_target_output",
+        "teacher_influenced",
+        "sealed_source",
+        "evaluation_source",
+        "quarantined_source",
+        "contaminated_lineage",
+        "rights_review_required",
+        "rights_use_not_permitted",
+        "output_rights_missing",
+        "output_rights_review_required",
+        "output_rights_use_not_permitted",
+        "missing_eligibility_decision",
+        "eligibility_lane_excluded",
+        "eligibility_conflict",
+        "hard_gate_failed",
+        "missing_checkpoint_manifest",
+        "checkpoint_identity_conflict",
+        "missing_valid_grade",
+        "unsuccessful_sft_trajectory",
+        "no_stronger_preference_pair",
+        "missing_rlvr_environment",
+        "private_reasoning_restricted",
+        "episode_not_source_corpus",
+        "source_document_not_active",
+        "source_document_contaminated",
+        "duplicate_source_content"
+      ],
+      "title": "TrainingExclusionReason",
+      "type": "string"
+    },
+    "TrainingLane": {
+      "enum": [
+        "continued_pretraining",
+        "sft",
+        "preference",
+        "rlvr",
+        "process",
+        "evaluation_only"
+      ],
+      "title": "TrainingLane",
+      "type": "string"
+    },
+    "TrainingProductKind": {
+      "enum": [
+        "evidence_ledger",
+        "normalized_episodes",
+        "sft",
+        "preference",
+        "rlvr",
+        "negative_process",
+        "continued_pretraining",
+        "sealed_evaluation",
+        "exclusions"
+      ],
+      "title": "TrainingProductKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/training-exclusion.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": {
+      "minLength": 1,
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_kind": {
+      "minLength": 1,
+      "title": "Candidate Kind",
+      "type": "string"
+    },
+    "compiler_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "details": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/TrainingExclusionReason"
+      },
+      "title": "Details",
+      "type": "object"
+    },
+    "product_kind": {
+      "$ref": "#/$defs/TrainingProductKind"
+    },
+    "reason_codes": {
+      "items": {
+        "$ref": "#/$defs/TrainingExclusionReason"
+      },
+      "minItems": 1,
+      "title": "Reason Codes",
+      "type": "array"
+    },
+    "rights_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Rights Digests",
+      "type": "array"
+    },
+    "row_id": {
+      "minLength": 1,
+      "title": "Row Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Evidence Refs",
+      "type": "array"
+    },
+    "source_record_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Record Digests",
+      "type": "array"
+    },
+    "training_lane": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TrainingLane"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "row_id",
+    "source_evidence_refs",
+    "source_record_digests",
+    "candidate_id",
+    "candidate_kind",
+    "product_kind",
+    "reason_codes",
+    "details"
+  ],
+  "title": "TrainingExclusionRecord",
+  "type": "object"
+}

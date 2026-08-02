@@ -10,6 +10,7 @@ from padawan.models.contracts import (
     ArtifactRef,
     NonEmpty,
     Sha256,
+    SourceRights,
     StrictRecord,
     TeacherMode,
 )
@@ -46,7 +47,8 @@ class TaskManifest(StrictRecord):
     competency_id: NonEmpty
     split: NonEmpty
     source: NonEmpty
-    license: NonEmpty
+    rights: SourceRights
+    license: NonEmpty | None = Field(default=None, deprecated=True)
     environment_fingerprint: Sha256
     corpus_lineage: dict[str, str]
     freshness_scope: NonEmpty
@@ -216,6 +218,7 @@ class TrainingEligibilityDecision(StrictRecord):
     allowed_lanes: tuple[TrainingLane, ...]
     excluded_lanes: dict[TrainingLane, NonEmpty]
     evidence_refs: tuple[NonEmpty, ...]
+    subject_refs: tuple[NonEmpty, ...] = ()
     created_at: datetime
 
     @model_validator(mode="after")
@@ -225,4 +228,8 @@ class TrainingEligibilityDecision(StrictRecord):
         overlap = set(self.allowed_lanes).intersection(self.excluded_lanes)
         if overlap:
             raise ValueError(f"training lanes cannot be allowed and excluded: {sorted(overlap)}")
+        if len(self.subject_refs) != len(set(self.subject_refs)):
+            raise ValueError("training eligibility subjects must be unique")
+        if tuple(sorted(self.subject_refs)) != self.subject_refs:
+            raise ValueError("training eligibility subjects must use canonical lexical order")
         return self

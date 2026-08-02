@@ -180,7 +180,9 @@ class CorpusRegistry:
                     else item.status.value
                 ),
                 source=item.source,
-                license=item.license,
+                license=cast(str | None, item.model_dump(mode="python")["license"]),
+                rights_json=item.rights.model_dump(mode="json"),
+                rights_digest=sha256_digest(item.rights.model_dump(mode="json")),
                 contamination_scope=item.contamination_scope,
                 metadata_json={
                     "artifact_refs": [
@@ -639,6 +641,38 @@ class CorpusRegistry:
 
     async def validate_inventory(self, session: AsyncSession) -> tuple[str, ...]:
         errors: list[str] = []
+        items = (await session.scalars(select(CorpusItemRow))).all()
+        for item in items:
+            if item.rights_digest != sha256_digest(item.rights_json):
+                errors.append(f"invalid rights digest: {item.item_id}")
+            try:
+                CorpusItemRecord.model_validate(
+                    {
+                        "competency_id": item.competency_id,
+                        "template_family_id": item.template_family_id,
+                        "instance_group_id": item.instance_group_id,
+                        "item_id": item.item_id,
+                        "generation_seed": item.generation_seed,
+                        "generator_version": item.generator_version,
+                        "difficulty": item.difficulty,
+                        "prompt": item.prompt,
+                        "expected_answer": item.expected_answer,
+                        "verifier_spec": item.verifier_spec,
+                        "pool": item.pool,
+                        "status": item.status,
+                        "source": item.source,
+                        "rights": item.rights_json,
+                        "license": item.license,
+                        "contamination_scope": item.contamination_scope,
+                        "created_at": item.created_at,
+                        "retired_at": item.retired_at,
+                        "retirement_reason": item.retirement_reason,
+                        "artifacts": item.metadata_json.get("artifact_refs", []),
+                    },
+                    strict=False,
+                )
+            except ValueError as exc:
+                errors.append(f"invalid rights record: {item.item_id}: {exc}")
         families = (await session.scalars(select(TemplateFamilyRow))).all()
         for family in families:
             pools = set(
@@ -731,6 +765,7 @@ def _to_record(row: CorpusItemRow) -> CorpusItemRecord:
             "pool": row.pool,
             "status": row.status,
             "source": row.source,
+            "rights": row.rights_json,
             "license": row.license,
             "contamination_scope": row.contamination_scope,
             "created_at": row.created_at,

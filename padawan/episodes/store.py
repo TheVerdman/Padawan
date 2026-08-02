@@ -79,6 +79,14 @@ class EpisodeStore:
             ):
                 raise EpisodeConflictError("request replay produced a different attempt")
             return stored
+        for influence_id in attempt.influence_refs:
+            influence = await session.get(TeacherInterventionRow, influence_id)
+            if influence is None:
+                raise EpisodeConflictError(
+                    f"attempt cites unknown teacher influence: {influence_id}"
+                )
+            if influence.episode_id != attempt.episode_id:
+                raise EpisodeConflictError("attempt teacher influence belongs to another episode")
         row = AttemptRow(
             attempt_id=attempt.attempt_id,
             episode_id=attempt.episode_id,

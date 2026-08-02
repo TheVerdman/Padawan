@@ -6,7 +6,7 @@
     {
       "name": "attempt",
       "schema": "attempt.schema.json",
-      "sha256": "af415d6523fb489cb2adf1d883c01bc9500ff38182a083653425ca503164b0b3"
+      "sha256": "43f572769b056bdb88afceb5555e2dc100cace51a5257dc6df29a6fd60f9f72f"
     },
     {
       "name": "checkpoint-comparison",
@@ -34,6 +34,11 @@
       "sha256": "9b807da3628ac15e98ffe4d764425d54dc32212609780746ee9b0cda546f0284"
     },
     {
+      "name": "compiler-invocation",
+      "schema": "compiler-invocation.schema.json",
+      "sha256": "e43997fdbbf96eabaed1fc54a5afb7e97f7c9d34e48c0ead6527ac4ad37da795"
+    },
+    {
       "name": "compacted-state",
       "schema": "compacted-state.schema.json",
       "sha256": "557707ad62e692f84ba7b7e98962112bef07f20c2aea87e8fef65b521961fede"
@@ -46,7 +51,12 @@
     {
       "name": "corpus-item",
       "schema": "corpus-item.schema.json",
-      "sha256": "dd89ab7c0fd3c5b24ea9681dcbb0f0604d57f1f45e40e7c5593cd6948333e14c"
+      "sha256": "7872b31f112193d517af0de68b8664c8a740b8e8a272a5d14de040567459f22d"
+    },
+    {
+      "name": "continued-pretraining-row",
+      "schema": "continued-pretraining-row.schema.json",
+      "sha256": "0a82826dc203aa455d7871cf3627d94d8c5791d733d48f781d323e461f3234db"
     },
     {
       "name": "developmental-episode",
@@ -57,6 +67,11 @@
       "name": "environment-snapshot",
       "schema": "environment-snapshot.schema.json",
       "sha256": "a74f6664d996b54d839019a7446550c2c8e112265821da155559c7626fce1e9c"
+    },
+    {
+      "name": "evidence-ledger-entry",
+      "schema": "evidence-ledger-entry.schema.json",
+      "sha256": "c52b236dae9264ee5e6044a210b67ccafd04472c720608b887eae5338f5d6855"
     },
     {
       "name": "evaluation-outcome",
@@ -129,6 +144,21 @@
       "sha256": "f667e6d5bbd2df13e05592f036ab876ac20d2d4e442c3625d8136cc9e540904f"
     },
     {
+      "name": "normalized-episode-entry",
+      "schema": "normalized-episode-entry.schema.json",
+      "sha256": "427a63c87837d35cf0ea6e7722bf403c6b24b1ebc10f1a29f82de0c1e19158bc"
+    },
+    {
+      "name": "preference-training-row",
+      "schema": "preference-training-row.schema.json",
+      "sha256": "6ffe95aa050d326807bcd91125eb6a41f2d429ca399486822c688256d9f1d01a"
+    },
+    {
+      "name": "process-training-row",
+      "schema": "process-training-row.schema.json",
+      "sha256": "9de86ab94951a676cb49cb34ec8df7f80c394bae2c732977c02750c06fa349e1"
+    },
+    {
       "name": "reward",
       "schema": "reward.schema.json",
       "sha256": "d9efdef5e58ab7c25697d530397e3bca829b80f3a3a8a6d6fd2d15cd0407b95a"
@@ -137,6 +167,26 @@
       "name": "reward-policy",
       "schema": "reward-policy.schema.json",
       "sha256": "f6c18a6075256f3d59245395ca90610bf4df42bcd93f150d796777690ae6c340"
+    },
+    {
+      "name": "rlvr-training-row",
+      "schema": "rlvr-training-row.schema.json",
+      "sha256": "ea2b5a441ed021467d99400c561da95001d3d51f672cdc42c914f131485f1dea"
+    },
+    {
+      "name": "sealed-evaluation-row",
+      "schema": "sealed-evaluation-row.schema.json",
+      "sha256": "8a5dd957f66f89e5a03c1109fc6d0334103379122aa327380ac5ce30cbe1ca6c"
+    },
+    {
+      "name": "sft-training-row",
+      "schema": "sft-training-row.schema.json",
+      "sha256": "c82d2ca4c4a1da3898e7590597f4152ee5b3c756bb23723af1a5b581a33d0b0d"
+    },
+    {
+      "name": "source-rights",
+      "schema": "source-rights.schema.json",
+      "sha256": "5a8252155f0bcd7c9c2fab97b51987ab1c0942760a704a36c4b6bca30719221b"
     },
     {
       "name": "state-fork",
@@ -156,12 +206,12 @@
     {
       "name": "task-manifest",
       "schema": "task-manifest.schema.json",
-      "sha256": "02b76c9825325365de4f250993d0e3b239e9a529f4ad60126a8c7bef023c5f84"
+      "sha256": "69b955a6fd203ec67f81587becb3e1a9378fa46008b4483a415b1cdae614cd41"
     },
     {
       "name": "teacher-intervention",
       "schema": "teacher-intervention.schema.json",
-      "sha256": "08303fc95a672c797212aa72f8874fb9a09b6837ce04d9b735ff6cbde74473df"
+      "sha256": "58df1b549a9135fb947733d43b31f627542a75990c87150de7b90d0bc24faf5a"
     },
     {
       "name": "transfer-trial",
@@ -171,7 +221,37 @@
     {
       "name": "training-eligibility",
       "schema": "training-eligibility.schema.json",
-      "sha256": "a7bba8c0df5a968c10d68027e38a978d40456b2b4b5dd30b884c0cc49e293b2c"
+      "sha256": "b87a6f7f3a0609f0f79faee93daacf796643373fdfe2e8a42f34c1c3ddc39f71"
+    },
+    {
+      "name": "training-bundle-manifest",
+      "schema": "training-bundle-manifest.schema.json",
+      "sha256": "24c3af701b6fe971d13a38820fd06ea42688c92c0268d28827b8f28eac797f5b"
+    },
+    {
+      "name": "training-bundle-verification",
+      "schema": "training-bundle-verification.schema.json",
+      "sha256": "0021666ac538fc371883aa6a1b61e0735fadd9603212f57266ada50193c27431"
+    },
+    {
+      "name": "training-exclusion",
+      "schema": "training-exclusion.schema.json",
+      "sha256": "921e0e682dbcb873867e5099803cf5bce3ac07f2009de0781e715512b9157bd1"
+    },
+    {
+      "name": "training-product-manifest",
+      "schema": "training-product-manifest.schema.json",
+      "sha256": "827894f5bb9f1ba036606803b72566074025c090ad67093faa2fa4b812066b09"
+    },
+    {
+      "name": "training-source-decision",
+      "schema": "training-source-decision.schema.json",
+      "sha256": "3d9ceb7beb0b637569efb6b631c9a9b2688e7b6972825505f5f350b50eb12397"
+    },
+    {
+      "name": "training-source-document",
+      "schema": "training-source-document.schema.json",
+      "sha256": "b38f9174239ed726cc76c00dce794495df7edc6074ec42af4e612c2b3688df27"
     },
     {
       "name": "verifier-result",

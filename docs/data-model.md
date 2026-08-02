@@ -13,7 +13,8 @@ hierarchy `competency → template family → instance group → item`. Composit
 visibility checks prevent a lineage from crossing training, evaluation, and sealed visibility.
 
 An item carries its generator seed/version, difficulty, expected answer or verifier, pool, status,
-source, license, contamination scope, and retirement data. Leases include owner, opaque token,
+source, content-digested rights manifest, optional legacy license label, contamination scope, and
+retirement data. Leases include owner, opaque token,
 expiry, and attempt count. `exposures` records which surface was shown to which student state. The
 registry writes answer-bearing exposure and closure retirement in one transaction; student-aware
 leasing excludes previously exposed instance groups.
@@ -59,7 +60,8 @@ silently enter target memory.
 
 `DomainSpec` identifies a versioned task-semantic package and its evidence hierarchy.
 `EnvironmentSnapshot` fingerprints dependencies, tools, platform, network posture, and supporting
-artifacts. `TaskManifest` carries split, lineage, source, license, and freshness scope.
+artifacts. `TaskManifest` carries split, lineage, source, a versioned rights manifest, and freshness
+scope.
 `VerifierResult` distinguishes `verified`, `rejected`, `unknown`, and `infrastructure_failure` while
 retaining scoped evidence.
 
@@ -74,6 +76,13 @@ required missing component makes scalar utility unavailable rather than zero.
 It maintains disjoint allowed and excluded lanes across continued pretraining, SFT, preference,
 RLVR, process, and evaluation-only uses. A hard-gate failure can remain available for evaluation but
 cannot be admitted to a training lane.
+
+`training_source_documents` stores immutable content, source/version, artifact, rights, and quality
+evidence for separately admitted continued-pretraining material. Append-only
+`training_source_decisions` governs active, review-required, quarantined, and retired states.
+`training_bundles` binds a deterministic source snapshot to one canonical manifest artifact and all
+restricted product artifacts. Product rows and exclusions retain compiler version, source evidence
+references, source record digests, and rights digests.
 
 ## Memory and experiments
 

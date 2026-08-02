@@ -132,7 +132,9 @@ class CorpusItemRow(Base):
     pool: Mapped[str] = mapped_column(String(32), nullable=False)
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="active")
     source: Mapped[str] = mapped_column(String(512), nullable=False)
-    license: Mapped[str] = mapped_column(String(128), nullable=False)
+    license: Mapped[str | None] = mapped_column(String(128))
+    rights_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    rights_digest: Mapped[str] = mapped_column(String(71), nullable=False)
     contamination_scope: Mapped[str] = mapped_column(String(32), nullable=False)
     metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     lease_owner: Mapped[str | None] = mapped_column(String(160))
@@ -206,6 +208,70 @@ class ArtifactReferenceRow(Base):
     artifact_id: Mapped[str] = mapped_column(
         ForeignKey("artifacts.artifact_id", ondelete="RESTRICT"), nullable=False
     )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class TrainingSourceDocumentRow(Base):
+    __tablename__ = "training_source_documents"
+    __table_args__ = (
+        UniqueConstraint("source_id", "source_version", name="uq_training_source_version"),
+    )
+
+    document_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    source_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    source_version: Mapped[str] = mapped_column(String(128), nullable=False)
+    supersedes_document_id: Mapped[str | None] = mapped_column(
+        ForeignKey("training_source_documents.document_id", ondelete="RESTRICT")
+    )
+    content_artifact_id: Mapped[str] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT"), nullable=False
+    )
+    content_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    rights_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class TrainingSourceDecisionRow(Base):
+    __tablename__ = "training_source_decisions"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('active', 'review_required', 'quarantined', 'retired')",
+            name="ck_training_source_decision_status",
+        ),
+        Index("ix_training_source_status", "document_id", "status", "created_at"),
+    )
+
+    decision_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("training_source_documents.document_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    contaminated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class TrainingBundleRow(Base):
+    __tablename__ = "training_bundles"
+    __table_args__ = (
+        CheckConstraint("internal_only = true", name="ck_training_bundle_internal_only"),
+        Index("ix_training_bundle_snapshot", "source_snapshot_digest", "as_of"),
+    )
+
+    bundle_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    compiler_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_snapshot_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    manifest_artifact_id: Mapped[str] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT"), nullable=False
+    )
+    internal_only: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    as_of: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
@@ -947,6 +1013,13 @@ def _immutable(_mapper: Any, _connection: Any, target: Any) -> None:
     raise ValueError(f"{type(target).__name__} is immutable")
 
 
-for _immutable_type in (StudentStateRow, ArtifactRow, ProvenanceEventRow):
+for _immutable_type in (
+    StudentStateRow,
+    ArtifactRow,
+    ProvenanceEventRow,
+    TrainingSourceDocumentRow,
+    TrainingSourceDecisionRow,
+    TrainingBundleRow,
+):
     event.listen(_immutable_type, "before_update", _immutable)
     event.listen(_immutable_type, "before_delete", _immutable)

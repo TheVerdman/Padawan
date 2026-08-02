@@ -12,6 +12,7 @@ from padawan.models.contracts import (
     CorpusPool,
     TeacherMode,
     VerifierSpec,
+    project_authored_internal_rights,
 )
 from padawan.models.hashing import sha256_digest
 
@@ -150,7 +151,7 @@ class LeanMathCorpusGenerator:
                             ),
                             pool=pool,
                             source="deterministic:padawan.domains.lean_math.corpus",
-                            license="Apache-2.0",
+                            rights=project_authored_internal_rights(reviewed_at=timestamp),
                             contamination_scope="instance_group",
                             created_at=timestamp,
                         )

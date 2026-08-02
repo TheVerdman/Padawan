@@ -98,7 +98,7 @@ task outcome is unavailable.
 Successful, hard-gated target trajectories from non-sealed pools may be SFT, RLVR, process, and
 matched-preference candidates. Valid unsuccessful target traces may be process/preference
 candidates. Baseline, sealed, or hard-gate-failed traces remain evaluation-only. Continued
-pretraining always requires a separate licensed source corpus; episode traces are not silently
+pretraining always requires a separate rights-cleared source corpus; episode traces are not silently
 reclassified as mid-training data.
 
 ## Runtime gate

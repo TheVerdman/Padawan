@@ -1,0 +1,166 @@
+{
+  "$defs": {
+    "ResearchRole": {
+      "enum": [
+        "target",
+        "baseline",
+        "teacher",
+        "verifier",
+        "adjudicator"
+      ],
+      "title": "ResearchRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/normalized-episode-entry.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "attempts": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Attempts",
+      "type": "array"
+    },
+    "compiler_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "corpus_item": {
+      "additionalProperties": true,
+      "title": "Corpus Item",
+      "type": "object"
+    },
+    "eligibility_decisions": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Eligibility Decisions",
+      "type": "array"
+    },
+    "episode": {
+      "additionalProperties": true,
+      "title": "Episode",
+      "type": "object"
+    },
+    "episode_id": {
+      "minLength": 1,
+      "title": "Episode Id",
+      "type": "string"
+    },
+    "grades": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Grades",
+      "type": "array"
+    },
+    "item_id": {
+      "minLength": 1,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "research_roles": {
+      "items": {
+        "$ref": "#/$defs/ResearchRole"
+      },
+      "title": "Research Roles",
+      "type": "array"
+    },
+    "revisions": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Revisions",
+      "type": "array"
+    },
+    "rewards": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Rewards",
+      "type": "array"
+    },
+    "rights_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Rights Digests",
+      "type": "array"
+    },
+    "row_id": {
+      "minLength": 1,
+      "title": "Row Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Evidence Refs",
+      "type": "array"
+    },
+    "source_record_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Record Digests",
+      "type": "array"
+    },
+    "teacher_interventions": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Teacher Interventions",
+      "type": "array"
+    },
+    "transfer_trials": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Transfer Trials",
+      "type": "array"
+    }
+  },
+  "required": [
+    "row_id",
+    "source_evidence_refs",
+    "source_record_digests",
+    "episode_id",
+    "item_id",
+    "research_roles",
+    "corpus_item",
+    "episode",
+    "attempts",
+    "grades",
+    "teacher_interventions",
+    "revisions",
+    "transfer_trials",
+    "rewards",
+    "eligibility_decisions"
+  ],
+  "title": "NormalizedEpisodeEntry",
+  "type": "object"
+}

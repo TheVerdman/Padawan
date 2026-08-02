@@ -6,6 +6,7 @@ import json
 import os
 from collections.abc import Awaitable, Callable
 from dataclasses import asdict, is_dataclass
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, cast
@@ -18,7 +19,7 @@ from sqlalchemy import func, select
 from padawan.adapters.heirloom.exporter import HeirloomAuditExporter
 from padawan.agent.loop import AutonomousResearchLoop
 from padawan.artifacts.factory import build_artifact_backend
-from padawan.artifacts.store import ArtifactCatalog
+from padawan.artifacts.store import ArtifactCatalog, artifact_put_bytes
 from padawan.config.composition import (
     StudentProvider,
     TeacherProvider,
@@ -45,7 +46,7 @@ from padawan.episodes.store import EpisodeStore
 from padawan.experiments.engine import ExperimentEngine
 from padawan.governance.manifests import CommandManifest, ManifestWriter, now
 from padawan.governance.policy import ExportPolicy
-from padawan.models.contracts import CorpusPool, TeacherMode
+from padawan.models.contracts import CorpusPool, SourceRights, TeacherMode
 from padawan.models.database import Database
 from padawan.models.hashing import sha256_digest
 from padawan.models.tables import (
@@ -59,6 +60,13 @@ from padawan.orchestration.state_machine import RunStore
 from padawan.provenance.ledger import ProvenanceLedger
 from padawan.reporting.service import ReportingService
 from padawan.state.store import StateStore
+from padawan.training.compiler import TrainingCompiler
+from padawan.training.contracts import (
+    TrainingSourceDecision,
+    TrainingSourceDocument,
+    TrainingSourceStatus,
+)
+from padawan.training.sources import TrainingSourceRegistry
 
 app = typer.Typer(
     name="padawan",
@@ -78,6 +86,8 @@ report_app = typer.Typer(help="Research reports.")
 provenance_app = typer.Typer(help="Cryptographic provenance.")
 export_app = typer.Typer(help="Policy-governed exports.")
 verify_app = typer.Typer(help="Deterministic domain verifier operations.")
+training_app = typer.Typer(help="Rights-aware internal training-product compilation.")
+training_source_app = typer.Typer(help="Governed continued-pretraining source admission.")
 
 app.add_typer(db_app, name="db")
 app.add_typer(corpus_app, name="corpus")
@@ -92,6 +102,8 @@ app.add_typer(report_app, name="report")
 app.add_typer(provenance_app, name="provenance")
 app.add_typer(export_app, name="export")
 app.add_typer(verify_app, name="verify")
+app.add_typer(training_app, name="training")
+training_app.add_typer(training_source_app, name="source")
 
 
 @app.callback()
@@ -702,6 +714,201 @@ def export_heirloom(
     _run_command(ctx, "export heirloom", operation)
 
 
+@training_app.command("compile")
+def training_compile(
+    ctx: typer.Context,
+    as_of: str | None = typer.Option(
+        None,
+        "--as-of",
+        help="Timezone-aware ISO-8601 snapshot; defaults to the latest source watermark.",
+    ),
+    eligibility_policy_id: str | None = typer.Option(None, "--eligibility-policy-id"),
+    eligibility_policy_version: str | None = typer.Option(None, "--eligibility-policy-version"),
+    checkpoint_id: list[str] | None = typer.Option(None, "--checkpoint-id"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        settings = _settings(ctx)
+        database = Database(settings.database_url)
+        artifacts = build_artifact_backend(settings)
+        compiler = TrainingCompiler(artifacts, ArtifactCatalog(artifacts))
+        try:
+            async with database.transaction() as session:
+                build = await compiler.compile(
+                    session,
+                    as_of=_parse_timestamp(as_of) if as_of is not None else None,
+                    eligibility_policy_id=eligibility_policy_id,
+                    eligibility_policy_version=eligibility_policy_version,
+                    checkpoint_ids=tuple(sorted(set(checkpoint_id or ()))),
+                )
+            return {
+                "bundle_id": build.manifest.bundle_id,
+                "manifest_digest": build.manifest_ref.digest,
+                "manifest_artifact": build.manifest_ref.model_dump(mode="json"),
+                "source_snapshot_digest": build.manifest.source_snapshot_digest,
+                "as_of": build.manifest.invocation.as_of,
+                "internal_only": True,
+                "included_counts": build.manifest.included_counts,
+                "exclusion_counts": build.manifest.exclusion_counts,
+            }
+        finally:
+            await _close_resource(artifacts)
+            await database.close()
+
+    _run_command(ctx, "training compile", operation)
+
+
+@training_app.command("verify")
+def training_verify(ctx: typer.Context, bundle_id: str) -> None:
+    async def operation() -> dict[str, Any]:
+        settings = _settings(ctx)
+        database = Database(settings.database_url)
+        artifacts = build_artifact_backend(settings)
+        try:
+            async with database.transaction() as session:
+                verification = await TrainingCompiler(artifacts).verify(
+                    session, bundle_id=bundle_id
+                )
+            if not verification.valid:
+                raise ValueError(
+                    "training bundle verification failed: " + "; ".join(verification.errors)
+                )
+            return verification.model_dump(mode="json")
+        finally:
+            await _close_resource(artifacts)
+            await database.close()
+
+    _run_command(ctx, "training verify", operation)
+
+
+@training_app.command("inspect")
+def training_inspect(ctx: typer.Context, bundle_id: str) -> None:
+    async def operation() -> dict[str, Any]:
+        settings = _settings(ctx)
+        database = Database(settings.database_url)
+        artifacts = build_artifact_backend(settings)
+        try:
+            async with database.transaction() as session:
+                manifest = await TrainingCompiler(artifacts).get_manifest(
+                    session, bundle_id=bundle_id
+                )
+            return manifest.model_dump(mode="json")
+        finally:
+            await _close_resource(artifacts)
+            await database.close()
+
+    _run_command(ctx, "training inspect", operation)
+
+
+@training_source_app.command("admit")
+def training_source_admit(
+    ctx: typer.Context,
+    content_file: Path = typer.Option(
+        ...,
+        "--content-file",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+    ),
+    rights_manifest: Path = typer.Option(
+        ...,
+        "--rights-manifest",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+    ),
+    source_id: str = typer.Option(..., "--source-id"),
+    source_version: str = typer.Option(..., "--source-version"),
+    title: str = typer.Option(..., "--title"),
+    language: str = typer.Option("en", "--language"),
+    media_type: str = typer.Option("text/plain; charset=utf-8", "--media-type"),
+    status: TrainingSourceStatus = typer.Option(TrainingSourceStatus.REVIEW_REQUIRED, "--status"),
+    quality_evidence: list[str] | None = typer.Option(None, "--quality-evidence"),
+    contaminated: bool = typer.Option(False, "--contaminated"),
+    contamination_evidence: list[str] | None = typer.Option(None, "--contamination-evidence"),
+    supersedes_document_id: str | None = typer.Option(None, "--supersedes-document-id"),
+    admitted_by: str = typer.Option("cli.operator", "--admitted-by"),
+    reason: str = typer.Option("initial source admission", "--reason"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        settings = _settings(ctx)
+        database = Database(settings.database_url)
+        artifacts = build_artifact_backend(settings)
+        timestamp = now()
+        try:
+            rights_payload = json.loads(rights_manifest.read_text(encoding="utf-8"))
+            rights = SourceRights.model_validate(rights_payload, strict=False)
+            content_ref = await artifact_put_bytes(
+                artifacts,
+                content_file.read_bytes(),
+                media_type=media_type,
+                restricted=True,
+                raw_data=True,
+            )
+            document_identity = {
+                "source_id": source_id,
+                "source_version": source_version,
+                "content_digest": content_ref.digest,
+                "rights_digest": sha256_digest(rights.model_dump(mode="json")),
+            }
+            document_id = f"source-{sha256_digest(document_identity)[7:39]}"
+            document = TrainingSourceDocument(
+                document_id=document_id,
+                source_id=source_id,
+                source_version=source_version,
+                supersedes_document_id=supersedes_document_id,
+                title=title,
+                language=language,
+                media_type=media_type,
+                content_ref=content_ref,
+                content_digest=content_ref.digest,
+                rights=rights,
+                rights_digest=sha256_digest(rights.model_dump(mode="json")),
+                quality_evidence_refs=tuple(sorted(set(quality_evidence or ()))),
+                admitted_by=admitted_by,
+                created_at=timestamp,
+            )
+            decision_evidence = tuple(
+                sorted(set(quality_evidence or ()).union(contamination_evidence or ()))
+            )
+            decision_identity = {
+                "document_id": document_id,
+                "status": status.value,
+                "contaminated": contaminated,
+                "evidence_refs": decision_evidence,
+                "created_at": timestamp,
+            }
+            decision = TrainingSourceDecision(
+                decision_id=f"source-decision-{sha256_digest(decision_identity)[7:39]}",
+                document_id=document_id,
+                status=status,
+                contaminated=contaminated,
+                reason=reason,
+                evidence_refs=decision_evidence,
+                decided_by=admitted_by,
+                created_at=timestamp,
+            )
+            registry = TrainingSourceRegistry(ArtifactCatalog(artifacts))
+            async with database.transaction() as session:
+                admitted = await registry.admit(
+                    session,
+                    document=document,
+                    initial_decision=decision,
+                )
+            return {
+                "document": admitted.document.model_dump(mode="json"),
+                "decision": admitted.decision.model_dump(mode="json"),
+            }
+        finally:
+            await _close_resource(artifacts)
+            await database.close()
+
+    _run_command(ctx, "training source admit", operation)
+
+
 async def _live_research_run(
     *,
     settings: Settings,
@@ -867,6 +1074,8 @@ def _jsonable(value: Any) -> Any:
         return [_jsonable(item) for item in value]
     if isinstance(value, Path):
         return str(value)
+    if isinstance(value, datetime):
+        return value.isoformat()
     if isinstance(value, Enum):
         return value.value
     if hasattr(value, "model_dump"):
@@ -887,9 +1096,13 @@ def _known_secrets(settings: Settings) -> tuple[str, ...]:
 
 
 def _manifest_configuration(ctx: typer.Context, settings: Settings) -> dict[str, object]:
+    invocation = cast(dict[str, object], _jsonable(dict(ctx.params)))
+    for sensitive_path in ("content_file", "rights_manifest"):
+        if sensitive_path in invocation:
+            invocation[sensitive_path] = {"selected": invocation[sensitive_path] is not None}
     return {
         **settings.redacted_manifest(),
-        "invocation": cast(dict[str, object], _jsonable(dict(ctx.params))),
+        "invocation": invocation,
     }
 
 
@@ -898,6 +1111,13 @@ def _redact_database_url(value: str) -> str:
         return value
     scheme, rest = value.split("://", 1)
     return f"{scheme}://[REDACTED]@{rest.split('@', 1)[1]}"
+
+
+def _parse_timestamp(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        raise ValueError("--as-of must include a timezone offset")
+    return parsed
 
 
 def _repository_root() -> Path:

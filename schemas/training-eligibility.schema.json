@@ -62,6 +62,15 @@
       "minLength": 1,
       "title": "Policy Version",
       "type": "string"
+    },
+    "subject_refs": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Subject Refs",
+      "type": "array"
     }
   },
   "required": [

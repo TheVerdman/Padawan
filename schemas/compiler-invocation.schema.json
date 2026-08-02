@@ -1,0 +1,68 @@
+{
+  "$id": "https://schemas.padawan.local/v1/compiler-invocation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "checkpoint_ids": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Checkpoint Ids",
+      "type": "array"
+    },
+    "compiler_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "eligibility_policy_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Eligibility Policy Id"
+    },
+    "eligibility_policy_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Eligibility Policy Version"
+    },
+    "internal_only": {
+      "const": true,
+      "default": true,
+      "title": "Internal Only",
+      "type": "boolean"
+    },
+    "rights_policy_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Rights Policy Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "as_of"
+  ],
+  "title": "CompilerInvocation",
+  "type": "object"
+}

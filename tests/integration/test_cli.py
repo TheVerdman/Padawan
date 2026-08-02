@@ -86,6 +86,45 @@ def test_cli_failure_has_nonzero_exit_and_manifest(tmp_path, monkeypatch) -> Non
     assert manifest["configuration"]["invocation"]["episode_id"] == "missing"
 
 
+def test_cli_compiles_and_verifies_internal_training_bundle(tmp_path, monkeypatch) -> None:
+    database_path = tmp_path / "training.sqlite3"
+    artifact_root = tmp_path / "artifacts"
+    monkeypatch.setenv("PADAWAN_DATABASE_URL", f"sqlite+aiosqlite:///{database_path}")
+    monkeypatch.setenv("PADAWAN_ARTIFACT_ROOT", str(artifact_root))
+    runner = CliRunner()
+
+    assert runner.invoke(app, ["--json", "db", "migrate"]).exit_code == 0
+    generated = runner.invoke(
+        app,
+        [
+            "--json",
+            "corpus",
+            "generate",
+            "algebra",
+            "--groups-per-family",
+            "1",
+            "--siblings-per-group",
+            "3",
+            "--seed",
+            "71",
+        ],
+    )
+    assert generated.exit_code == 0, generated.output
+    compiled = runner.invoke(app, ["--json", "training", "compile"])
+    assert compiled.exit_code == 0, compiled.output
+    payload = json.loads(compiled.stdout)
+    assert payload["internal_only"] is True
+    assert payload["included_counts"]["evidence_ledger"] == 24
+    bundle_id = payload["bundle_id"]
+
+    verified = runner.invoke(app, ["--json", "training", "verify", bundle_id])
+    inspected = runner.invoke(app, ["--json", "training", "inspect", bundle_id])
+    assert verified.exit_code == 0, verified.output
+    assert inspected.exit_code == 0, inspected.output
+    assert json.loads(verified.stdout)["valid"] is True
+    assert json.loads(inspected.stdout)["bundle_id"] == bundle_id
+
+
 def test_cli_lean_verification_emits_hard_gate(tmp_path, monkeypatch) -> None:
     artifact_root = tmp_path / "artifacts"
     proof_file = tmp_path / "proof.lean"

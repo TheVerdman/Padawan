@@ -28,8 +28,9 @@ generates distinct answer keys within a sibling group.
 
 The registry performs batch admission checks. Missing algebra answers, duplicate sibling answers,
 or an answer string leaked into a sibling prompt quarantine the complete group and mark the family
-contaminated. Every accepted item has a nonoptional difficulty, generator version, verifier, source,
-license, and contamination scope.
+contaminated. Every accepted item has a nonoptional difficulty, generator version, verifier,
+source, versioned rights manifest, and contamination scope. The legacy license label is retained
+only as optional migration evidence; a free-text label is not training authority.
 
 ## Leasing and recovery
 

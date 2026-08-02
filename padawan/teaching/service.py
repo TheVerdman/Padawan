@@ -19,6 +19,7 @@ from padawan.models.contracts import (
     StudentStateRecord,
     TeacherInterventionRecord,
     TeacherMode,
+    unreviewed_provider_output_rights,
 )
 from padawan.teaching.contracts import TeacherOutput
 from padawan.teaching.validator import CommentValidator
@@ -187,6 +188,7 @@ class TeacherService:
                 token_usage=response.usage,
                 latency_ms=response.latency_ms,
                 estimated_cost_usd=None,
+                output_rights=unreviewed_provider_output_rights(provider=response.provider),
                 created_at=datetime.now(UTC),
             )
             if validation.status == CommentValidationStatus.ACCEPTED:

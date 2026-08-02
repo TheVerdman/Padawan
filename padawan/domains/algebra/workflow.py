@@ -41,6 +41,8 @@ from padawan.models.contracts import (
     TeacherMode,
     TeachingOutcome,
     TransferTrialRecord,
+    internally_generated_target_output_rights,
+    unreviewed_provider_output_rights,
 )
 from padawan.models.database import Database
 from padawan.models.hashing import sha256_digest
@@ -607,6 +609,7 @@ class AlgebraWorkflowHandler:
             state_id=state.state_id,
             request=request,
             label="revision",
+            influence_refs=(intervention.intervention_id,),
         )
         async with self.database.transaction() as session:
             await self.episodes.store_attempt(session, attempt)
@@ -757,6 +760,7 @@ class AlgebraWorkflowHandler:
             state_id=treatment_state.state_id,
             request=treatment_request,
             label="transfer-treatment",
+            influence_refs=(intervention.intervention_id,),
         )
         control_attempt = await self._attempt_from_generation(
             control_generation,
@@ -1394,6 +1398,7 @@ class AlgebraWorkflowHandler:
         state_id: str,
         request: GenerationRequest,
         label: str,
+        influence_refs: tuple[str, ...] = (),
     ) -> AttemptRecord:
         raw_response = await artifact_put_bytes(
             self.artifacts,
@@ -1429,6 +1434,12 @@ class AlgebraWorkflowHandler:
         except Exception:
             public = None
             final = generation.output_text
+        timestamp = datetime.now(UTC)
+        output_rights = (
+            internally_generated_target_output_rights(reviewed_at=timestamp)
+            if self.student_role == ResearchRole.TARGET
+            else unreviewed_provider_output_rights(provider=generation.provider)
+        )
         return AttemptRecord(
             attempt_id=f"attempt-{label}-{generation.request_id}",
             episode_id=episode_id,
@@ -1462,10 +1473,12 @@ class AlgebraWorkflowHandler:
             runtime_id=self.student_runtime_id,
             runtime_version=self.student_runtime_version,
             research_role=self.student_role,
+            influence_refs=tuple(sorted(set(influence_refs))),
+            output_rights=output_rights,
             sampling=request.sampling,
             capabilities=generation.capabilities,
             artifacts=(raw_request,),
-            created_at=datetime.now(UTC),
+            created_at=timestamp,
         )
 
     async def _load_attempt(self, attempt_id: str) -> AttemptRecord:

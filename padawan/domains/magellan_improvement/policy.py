@@ -143,5 +143,6 @@ def decide_magellan_training_eligibility(
         allowed_lanes=ordered_allowed,
         excluded_lanes=ordered_excluded,
         evidence_refs=(reward_id, *[result.result_id for result in bundle.verifier_results]),
+        subject_refs=(trace.trace_id,),
         created_at=timestamp,
     )

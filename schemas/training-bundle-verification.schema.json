@@ -1,0 +1,62 @@
+{
+  "$defs": {
+    "TrainingProductKind": {
+      "enum": [
+        "evidence_ledger",
+        "normalized_episodes",
+        "sft",
+        "preference",
+        "rlvr",
+        "negative_process",
+        "continued_pretraining",
+        "sealed_evaluation",
+        "exclusions"
+      ],
+      "title": "TrainingProductKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/training-bundle-verification.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "bundle_id": {
+      "minLength": 1,
+      "title": "Bundle Id",
+      "type": "string"
+    },
+    "checked_products": {
+      "items": {
+        "$ref": "#/$defs/TrainingProductKind"
+      },
+      "title": "Checked Products",
+      "type": "array"
+    },
+    "errors": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Errors",
+      "type": "array"
+    },
+    "manifest_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Manifest Digest",
+      "type": "string"
+    },
+    "valid": {
+      "title": "Valid",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "bundle_id",
+    "manifest_digest",
+    "valid",
+    "checked_products",
+    "errors"
+  ],
+  "title": "TrainingBundleVerification",
+  "type": "object"
+}

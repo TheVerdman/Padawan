@@ -1,0 +1,77 @@
+{
+  "$defs": {
+    "TrainingSourceStatus": {
+      "enum": [
+        "active",
+        "review_required",
+        "quarantined",
+        "retired"
+      ],
+      "title": "TrainingSourceStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/training-source-decision.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contaminated": {
+      "title": "Contaminated",
+      "type": "boolean"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "decided_by": {
+      "minLength": 1,
+      "title": "Decided By",
+      "type": "string"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "document_id": {
+      "minLength": 1,
+      "title": "Document Id",
+      "type": "string"
+    },
+    "evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/TrainingSourceStatus"
+    }
+  },
+  "required": [
+    "decision_id",
+    "document_id",
+    "status",
+    "contaminated",
+    "reason",
+    "evidence_refs",
+    "decided_by",
+    "created_at"
+  ],
+  "title": "TrainingSourceDecision",
+  "type": "object"
+}

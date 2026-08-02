@@ -62,6 +62,204 @@ class ResearchRole(StrEnum):
     ADJUDICATOR = "adjudicator"
 
 
+class RightsBasis(StrEnum):
+    PROJECT_AUTHORED = "project_authored"
+    PUBLIC_DOMAIN = "public_domain"
+    OPEN_LICENSE = "open_license"
+    CONTRACT_AUTHORIZED = "contract_authorized"
+    FAIR_USE_REVIEWED = "fair_use_reviewed"
+    PROVIDER_TERMS = "provider_terms"
+    UNKNOWN = "unknown"
+
+
+class RightsUse(StrEnum):
+    EVIDENCE_RETENTION = "evidence_retention"
+    INTERNAL_RESEARCH = "internal_research"
+    EVALUATION = "evaluation"
+    CONTINUED_PRETRAINING = "continued_pretraining"
+    SFT = "sft"
+    PREFERENCE = "preference"
+    RLVR = "rlvr"
+    PROCESS = "process"
+    REDISTRIBUTION = "redistribution"
+
+
+class DistributionScope(StrEnum):
+    INTERNAL_ONLY = "internal_only"
+    AGREEMENT_RESTRICTED = "agreement_restricted"
+    REDISTRIBUTABLE = "redistributable"
+
+
+class RightsReviewStatus(StrEnum):
+    CONFIRMED = "confirmed"
+    REVIEW_REQUIRED = "review_required"
+    PROHIBITED = "prohibited"
+
+
+class SourceRights(StrictRecord):
+    """Versioned use authority; this is governance evidence, not a legal conclusion."""
+
+    schema_version: Literal["1.0.0"] = SCHEMA_VERSION
+    rights_id: NonEmpty
+    version: NonEmpty
+    basis: RightsBasis
+    basis_detail: NonEmpty
+    permitted_uses: tuple[RightsUse, ...]
+    distribution_scope: DistributionScope
+    review_status: RightsReviewStatus
+    license_id: str | None = None
+    terms_uri: Annotated[str, Field(pattern=r"^https://[^\s]+$")] | None = None
+    terms_digest: Sha256 | None = None
+    attribution: str | None = None
+    restrictions: tuple[NonEmpty, ...] = ()
+    reviewed_by: str | None = None
+    reviewed_at: datetime | None = None
+
+    @model_validator(mode="after")
+    def internally_consistent(self) -> SourceRights:
+        if len(self.permitted_uses) != len(set(self.permitted_uses)):
+            raise ValueError("rights uses must be unique")
+        if tuple(sorted(self.permitted_uses, key=lambda use: use.value)) != self.permitted_uses:
+            raise ValueError("rights uses must use canonical lexical order")
+        if self.review_status == RightsReviewStatus.PROHIBITED and self.permitted_uses:
+            raise ValueError("prohibited rights cannot declare permitted uses")
+        if self.review_status != RightsReviewStatus.PROHIBITED and not self.permitted_uses:
+            raise ValueError("non-prohibited rights must declare at least one permitted use")
+        if len(self.restrictions) != len(set(self.restrictions)):
+            raise ValueError("rights restrictions must be unique")
+        if tuple(sorted(self.restrictions)) != self.restrictions:
+            raise ValueError("rights restrictions must use canonical lexical order")
+        if self.basis == RightsBasis.OPEN_LICENSE and not self.license_id:
+            raise ValueError("open-license rights require a license identifier")
+        if self.basis == RightsBasis.PROVIDER_TERMS and self.terms_uri is None:
+            raise ValueError("provider-term rights require a terms URI")
+        if (self.terms_uri is None) != (self.terms_digest is None):
+            raise ValueError("terms URI and immutable terms digest must be provided together")
+        if self.basis == RightsBasis.UNKNOWN and self.review_status == RightsReviewStatus.CONFIRMED:
+            raise ValueError("unknown rights cannot be confirmed")
+        if (self.reviewed_by is None) != (self.reviewed_at is None):
+            raise ValueError("rights reviewer identity and review time must be provided together")
+        if self.reviewed_at is not None and self.reviewed_at.tzinfo is None:
+            raise ValueError("rights review time must be timezone-aware")
+        if self.review_status in {
+            RightsReviewStatus.CONFIRMED,
+            RightsReviewStatus.PROHIBITED,
+        } and (not self.reviewed_by or self.reviewed_at is None):
+            raise ValueError("confirmed or prohibited rights require reviewer identity and time")
+        if (
+            self.distribution_scope == DistributionScope.REDISTRIBUTABLE
+            and RightsUse.REDISTRIBUTION not in self.permitted_uses
+        ):
+            raise ValueError("redistributable rights must expressly permit redistribution")
+        return self
+
+    def permits(self, use: RightsUse) -> bool:
+        return self.review_status == RightsReviewStatus.CONFIRMED and use in self.permitted_uses
+
+
+_PROJECT_AUTHORED_USES = tuple(sorted(RightsUse, key=lambda use: use.value))
+
+
+def project_authored_internal_rights(*, reviewed_at: datetime) -> SourceRights:
+    return SourceRights(
+        rights_id="padawan.project-authored.internal",
+        version="1.0.0",
+        basis=RightsBasis.PROJECT_AUTHORED,
+        basis_detail=(
+            "Generated from project-authored Padawan code and admitted for internal research use."
+        ),
+        permitted_uses=tuple(
+            use for use in _PROJECT_AUTHORED_USES if use != RightsUse.REDISTRIBUTION
+        ),
+        distribution_scope=DistributionScope.INTERNAL_ONLY,
+        review_status=RightsReviewStatus.CONFIRMED,
+        restrictions=("internal research only",),
+        reviewed_by="padawan.generated-source-policy",
+        reviewed_at=reviewed_at,
+    )
+
+
+def internally_generated_target_output_rights(*, reviewed_at: datetime) -> SourceRights:
+    return SourceRights(
+        rights_id="padawan.target-output.internal",
+        version="1.0.0",
+        basis=RightsBasis.PROJECT_AUTHORED,
+        basis_detail=(
+            "Generated by an operator-selected target runtime for Padawan's internal research."
+        ),
+        permitted_uses=tuple(
+            use for use in _PROJECT_AUTHORED_USES if use != RightsUse.REDISTRIBUTION
+        ),
+        distribution_scope=DistributionScope.INTERNAL_ONLY,
+        review_status=RightsReviewStatus.CONFIRMED,
+        restrictions=("internal research only",),
+        reviewed_by="padawan.target-output-policy",
+        reviewed_at=reviewed_at,
+    )
+
+
+def unreviewed_provider_output_rights(*, provider: str) -> SourceRights:
+    return SourceRights(
+        rights_id="padawan.provider-output.review-required",
+        version="1.0.0",
+        basis=RightsBasis.UNKNOWN,
+        basis_detail=(
+            f"Output from {provider} is retained as internal evidence; downstream target-training "
+            "authority has not been established."
+        ),
+        permitted_uses=tuple(
+            sorted(
+                (
+                    RightsUse.EVIDENCE_RETENTION,
+                    RightsUse.EVALUATION,
+                    RightsUse.INTERNAL_RESEARCH,
+                ),
+                key=lambda use: use.value,
+            )
+        ),
+        distribution_scope=DistributionScope.INTERNAL_ONLY,
+        review_status=RightsReviewStatus.REVIEW_REQUIRED,
+        restrictions=("exclude from target training until a versioned terms review is recorded",),
+    )
+
+
+def legacy_source_rights(
+    *, source: str, license_id: str, reviewed_at: datetime | str
+) -> SourceRights:
+    """Translate the former free-text field without inventing third-party training authority."""
+
+    timestamp = (
+        datetime.fromisoformat(reviewed_at.replace("Z", "+00:00"))
+        if isinstance(reviewed_at, str)
+        else reviewed_at
+    )
+    if source.startswith("deterministic:padawan."):
+        return project_authored_internal_rights(reviewed_at=timestamp)
+    return SourceRights(
+        rights_id="padawan.legacy-import.review-required",
+        version="1.0.0",
+        basis=RightsBasis.UNKNOWN,
+        basis_detail=(
+            "Imported from the legacy license label; provenance and intended training uses "
+            "require confirmation."
+        ),
+        permitted_uses=tuple(
+            sorted(
+                (
+                    RightsUse.EVIDENCE_RETENTION,
+                    RightsUse.EVALUATION,
+                    RightsUse.INTERNAL_RESEARCH,
+                ),
+                key=lambda use: use.value,
+            )
+        ),
+        distribution_scope=DistributionScope.INTERNAL_ONLY,
+        review_status=RightsReviewStatus.REVIEW_REQUIRED,
+        license_id=license_id,
+        restrictions=("legacy rights label requires review before training",),
+    )
+
+
 class CapabilityAvailability(StrEnum):
     AVAILABLE = "available"
     UNAVAILABLE = "unavailable"
@@ -220,7 +418,8 @@ class CorpusItemRecord(StrictRecord):
     pool: CorpusPool
     status: ItemStatus = ItemStatus.ACTIVE
     source: NonEmpty
-    license: NonEmpty
+    rights: SourceRights
+    license: NonEmpty | None = Field(default=None, deprecated=True)
     contamination_scope: Literal["item", "instance_group", "template_family", "lineage"]
     created_at: datetime
     retired_at: datetime | None = None
@@ -375,6 +574,8 @@ class AttemptRecord(StrictRecord):
     runtime_id: NonEmpty
     runtime_version: NonEmpty
     research_role: ResearchRole = ResearchRole.TARGET
+    influence_refs: tuple[NonEmpty, ...] = ()
+    output_rights: SourceRights | None = None
     sampling: SamplingConfiguration
     capabilities: RuntimeCapabilities
     artifacts: tuple[ArtifactRef, ...] = ()
@@ -382,6 +583,10 @@ class AttemptRecord(StrictRecord):
 
     @model_validator(mode="after")
     def trace_channels_are_honest_and_aligned(self) -> AttemptRecord:
+        if len(self.influence_refs) != len(set(self.influence_refs)):
+            raise ValueError("attempt influence references must be unique")
+        if tuple(sorted(self.influence_refs)) != self.influence_refs:
+            raise ValueError("attempt influence references must use canonical lexical order")
         if self.channel_spans and self.output_token_ids is None:
             raise ValueError("channel spans require output token IDs")
         if self.output_token_ids is not None:
@@ -483,6 +688,7 @@ class TeacherInterventionRecord(StrictRecord):
     token_usage: dict[str, int]
     latency_ms: float
     estimated_cost_usd: Annotated[float, Field(ge=0)] | None = None
+    output_rights: SourceRights | None = None
     created_at: datetime
 
 
