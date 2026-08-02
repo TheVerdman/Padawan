@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from padawan.domains.contracts import (
     EnvironmentSnapshot,
+    RewardPolicy,
     RewardRecord,
     TaskManifest,
     TrainingEligibilityDecision,
@@ -32,23 +33,44 @@ from padawan.models.contracts import (
     TeacherInterventionRecord,
     TransferTrialRecord,
 )
+from padawan.models.research_contracts import (
+    CheckpointComparisonRecord,
+    CheckpointDecisionRecord,
+    CheckpointEvaluationRecord,
+    CheckpointManifest,
+    CheckpointPromotionPolicy,
+    EvaluationOutcome,
+    EvaluationSchedule,
+    EvaluationSuiteManifest,
+    StudyManifest,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_ROOT = ROOT / "schemas"
 SCHEMA_BASE = "https://schemas.padawan.local/v1"
 PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("attempt", AttemptRecord),
+    ("checkpoint-comparison", CheckpointComparisonRecord),
+    ("checkpoint-decision", CheckpointDecisionRecord),
+    ("checkpoint-evaluation", CheckpointEvaluationRecord),
+    ("checkpoint-manifest", CheckpointManifest),
+    ("checkpoint-promotion-policy", CheckpointPromotionPolicy),
     ("compacted-state", CompactedStateRecord),
     ("competency", CompetencyRecord),
     ("corpus-item", CorpusItemRecord),
     ("developmental-episode", DevelopmentalEpisode),
     ("environment-snapshot", EnvironmentSnapshot),
+    ("evaluation-outcome", EvaluationOutcome),
+    ("evaluation-schedule", EvaluationSchedule),
+    ("evaluation-suite-manifest", EvaluationSuiteManifest),
     ("exposure", ExposureRecord),
     ("grade", GradeRecord),
     ("lesson", LessonRecord),
     ("reward", RewardRecord),
+    ("reward-policy", RewardPolicy),
     ("state-fork", StateForkRecord),
     ("student-state", StudentStateRecord),
+    ("study-manifest", StudyManifest),
     ("task-manifest", TaskManifest),
     ("teacher-intervention", TeacherInterventionRecord),
     ("transfer-trial", TransferTrialRecord),

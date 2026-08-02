@@ -513,6 +513,346 @@ class ExperimentBlockRow(Base):
     infrastructure_failure: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
+class VerifierResultRow(Base):
+    __tablename__ = "verifier_results"
+    __table_args__ = (
+        CheckConstraint(
+            "disposition IN ('verified', 'rejected', 'unknown', 'infrastructure_failure')",
+            name="ck_verifier_result_disposition",
+        ),
+        Index("ix_verifier_scope", "verifier_id", "scope", "created_at"),
+    )
+
+    result_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    verifier_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    verifier_version: Mapped[str] = mapped_column(String(128), nullable=False)
+    scope: Mapped[str] = mapped_column(String(192), nullable=False)
+    disposition: Mapped[str] = mapped_column(String(32), nullable=False)
+    deterministic: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class RewardPolicyRow(Base):
+    __tablename__ = "reward_policies"
+
+    policy_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    version: Mapped[str] = mapped_column(String(64), primary_key=True)
+    policy_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class RewardRow(Base):
+    __tablename__ = "rewards"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["policy_id", "policy_version"],
+            ["reward_policies.policy_id", "reward_policies.version"],
+            ondelete="RESTRICT",
+            name="fk_reward_policy",
+        ),
+        Index("ix_reward_policy", "policy_id", "policy_version", "created_at"),
+    )
+
+    reward_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    policy_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    policy_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    policy_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    input_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    eligible: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    derived_utility: Mapped[float | None] = mapped_column(Float)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class TrainingEligibilityRow(Base):
+    __tablename__ = "training_eligibility_decisions"
+    __table_args__ = (Index("ix_training_eligibility_reward", "reward_id", "created_at"),)
+
+    decision_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    reward_id: Mapped[str] = mapped_column(
+        ForeignKey("rewards.reward_id", ondelete="RESTRICT"), nullable=False
+    )
+    policy_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    policy_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class StudyRow(Base):
+    __tablename__ = "studies"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('planned', 'active', 'complete', 'cancelled', 'invalid')",
+            name="ck_study_status",
+        ),
+        UniqueConstraint("study_id", "version", name="uq_study_version"),
+        Index("ix_study_suite", "suite_manifest_digest", "status"),
+    )
+
+    study_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    suite_manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class StudyExperimentRow(Base):
+    __tablename__ = "study_experiments"
+    __table_args__ = (
+        UniqueConstraint("study_id", "experiment_id", name="uq_study_experiment"),
+        CheckConstraint(
+            "research_role IN ('target', 'baseline', 'teacher', 'verifier', 'adjudicator')",
+            name="ck_study_experiment_role",
+        ),
+        CheckConstraint(
+            "assignment_propensity IS NULL OR "
+            "(assignment_propensity > 0 AND assignment_propensity <= 1)",
+            name="ck_study_experiment_propensity",
+        ),
+    )
+
+    binding_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    study_id: Mapped[str] = mapped_column(
+        ForeignKey("studies.study_id", ondelete="RESTRICT"), nullable=False
+    )
+    experiment_id: Mapped[str] = mapped_column(
+        ForeignKey("experiments.experiment_id", ondelete="RESTRICT"), nullable=False
+    )
+    condition_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    checkpoint_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    research_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    suite_manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    environment_fingerprint: Mapped[str] = mapped_column(String(71), nullable=False)
+    assignment_propensity: Mapped[float | None] = mapped_column(Float)
+
+
+class EvaluationTrialRow(Base):
+    __tablename__ = "evaluation_trials"
+    __table_args__ = (
+        CheckConstraint(
+            "trial_type IN ('retention', 'interference')", name="ck_evaluation_trial_type"
+        ),
+        CheckConstraint(
+            "status IN ('scheduled', 'leased', 'complete', 'cancelled', 'invalid')",
+            name="ck_evaluation_trial_status",
+        ),
+        CheckConstraint(
+            "assignment_propensity IS NULL OR "
+            "(assignment_propensity > 0 AND assignment_propensity <= 1)",
+            name="ck_evaluation_trial_propensity",
+        ),
+        CheckConstraint(
+            "(trial_type = 'retention' AND interfering_episode_id IS NULL) OR "
+            "(trial_type = 'interference' AND interfering_episode_id IS NOT NULL)",
+            name="ck_evaluation_trial_interfering_episode",
+        ),
+        UniqueConstraint(
+            "study_id",
+            "student_id",
+            "source_episode_id",
+            "trial_type",
+            "instance_group_id",
+            name="uq_evaluation_trial_freshness",
+        ),
+        Index("ix_evaluation_trial_due", "status", "due_at", "lease_expires_at"),
+        Index("ix_evaluation_trial_student", "student_id", "competency_id", "created_at"),
+    )
+
+    trial_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    study_id: Mapped[str] = mapped_column(
+        ForeignKey("studies.study_id", ondelete="RESTRICT"), nullable=False
+    )
+    trial_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_episode_id: Mapped[str] = mapped_column(
+        ForeignKey("episodes.episode_id", ondelete="RESTRICT"), nullable=False
+    )
+    interfering_episode_id: Mapped[str | None] = mapped_column(
+        ForeignKey("episodes.episode_id", ondelete="RESTRICT")
+    )
+    student_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    checkpoint_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    state_snapshot_id: Mapped[str] = mapped_column(
+        ForeignKey("student_states.state_id", ondelete="RESTRICT"), nullable=False
+    )
+    competency_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    item_id: Mapped[str] = mapped_column(
+        ForeignKey("corpus_items.item_id", ondelete="RESTRICT"), nullable=False
+    )
+    instance_group_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    environment_fingerprint: Mapped[str] = mapped_column(String(71), nullable=False)
+    assignment_seed: Mapped[int] = mapped_column(Integer, nullable=False)
+    assignment_propensity: Mapped[float | None] = mapped_column(Float)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    definition_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    outcome_json: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    lease_owner: Mapped[str | None] = mapped_column(String(160))
+    lease_token: Mapped[str | None] = mapped_column(String(160), unique=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class CheckpointRow(Base):
+    __tablename__ = "checkpoints"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('candidate', 'evaluating', 'promoted', 'rejected', "
+            "'quarantined', 'revoked')",
+            name="ck_checkpoint_status",
+        ),
+        CheckConstraint(
+            "parent_checkpoint_id IS NULL OR parent_checkpoint_id <> checkpoint_id",
+            name="ck_checkpoint_parent_distinct",
+        ),
+        Index("ix_checkpoint_model_status", "model_id", "status", "created_at"),
+    )
+
+    checkpoint_id: Mapped[str] = mapped_column(String(256), primary_key=True)
+    parent_checkpoint_id: Mapped[str | None] = mapped_column(
+        ForeignKey("checkpoints.checkpoint_id", ondelete="RESTRICT")
+    )
+    model_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    tokenizer_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    model_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    tokenizer_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    training_bundle_manifest_digest: Mapped[str | None] = mapped_column(String(71))
+    manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class EvaluationSuiteRow(Base):
+    __tablename__ = "evaluation_suites"
+    __table_args__ = (UniqueConstraint("suite_id", "version", name="uq_evaluation_suite_version"),)
+
+    manifest_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    suite_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    version: Mapped[str] = mapped_column(String(64), nullable=False)
+    sealed: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CheckpointPromotionPolicyRow(Base):
+    __tablename__ = "checkpoint_promotion_policies"
+
+    policy_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    version: Mapped[str] = mapped_column(String(64), primary_key=True)
+    policy_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CheckpointEvaluationRow(Base):
+    __tablename__ = "checkpoint_evaluations"
+    __table_args__ = (
+        UniqueConstraint(
+            "checkpoint_id", "study_id", "suite_manifest_digest", name="uq_checkpoint_evaluation"
+        ),
+        Index("ix_checkpoint_evaluation_suite", "suite_manifest_digest", "created_at"),
+    )
+
+    evaluation_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    checkpoint_id: Mapped[str] = mapped_column(
+        ForeignKey("checkpoints.checkpoint_id", ondelete="RESTRICT"), nullable=False
+    )
+    study_id: Mapped[str] = mapped_column(
+        ForeignKey("studies.study_id", ondelete="RESTRICT"), nullable=False
+    )
+    suite_manifest_digest: Mapped[str] = mapped_column(
+        ForeignKey("evaluation_suites.manifest_digest", ondelete="RESTRICT"), nullable=False
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CheckpointComparisonRow(Base):
+    __tablename__ = "checkpoint_comparisons"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["policy_id", "policy_version"],
+            ["checkpoint_promotion_policies.policy_id", "checkpoint_promotion_policies.version"],
+            ondelete="RESTRICT",
+            name="fk_checkpoint_comparison_policy",
+        ),
+        UniqueConstraint(
+            "baseline_evaluation_id",
+            "candidate_evaluation_id",
+            "policy_id",
+            "policy_version",
+            name="uq_checkpoint_comparison_inputs",
+        ),
+        CheckConstraint(
+            "baseline_evaluation_id <> candidate_evaluation_id",
+            name="ck_checkpoint_comparison_distinct",
+        ),
+    )
+
+    comparison_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    baseline_evaluation_id: Mapped[str] = mapped_column(
+        ForeignKey("checkpoint_evaluations.evaluation_id", ondelete="RESTRICT"), nullable=False
+    )
+    candidate_evaluation_id: Mapped[str] = mapped_column(
+        ForeignKey("checkpoint_evaluations.evaluation_id", ondelete="RESTRICT"), nullable=False
+    )
+    suite_manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    policy_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    policy_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    recommended: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CheckpointDecisionRow(Base):
+    __tablename__ = "checkpoint_decisions"
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('start_evaluation', 'promote', 'reject', 'quarantine', 'revoke')",
+            name="ck_checkpoint_decision_action",
+        ),
+        CheckConstraint(
+            "from_status IN ('candidate', 'evaluating', 'promoted', 'rejected', "
+            "'quarantined', 'revoked')",
+            name="ck_checkpoint_decision_from_status",
+        ),
+        CheckConstraint(
+            "to_status IN ('candidate', 'evaluating', 'promoted', 'rejected', "
+            "'quarantined', 'revoked')",
+            name="ck_checkpoint_decision_to_status",
+        ),
+        Index("ix_checkpoint_decision", "checkpoint_id", "created_at"),
+    )
+
+    decision_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    checkpoint_id: Mapped[str] = mapped_column(
+        ForeignKey("checkpoints.checkpoint_id", ondelete="RESTRICT"), nullable=False
+    )
+    comparison_id: Mapped[str | None] = mapped_column(
+        ForeignKey("checkpoint_comparisons.comparison_id", ondelete="RESTRICT")
+    )
+    action: Mapped[str] = mapped_column(String(32), nullable=False)
+    from_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    to_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    actor: Mapped[str] = mapped_column(String(160), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class RunRow(Base):
     __tablename__ = "runs"
     __table_args__ = (

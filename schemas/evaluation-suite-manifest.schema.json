@@ -1,0 +1,54 @@
+{
+  "$id": "https://schemas.padawan.local/v1/evaluation-suite-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "environment_fingerprints": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Environment Fingerprints",
+      "type": "array"
+    },
+    "sealed": {
+      "title": "Sealed",
+      "type": "boolean"
+    },
+    "suite_id": {
+      "minLength": 1,
+      "title": "Suite Id",
+      "type": "string"
+    },
+    "task_manifest_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Task Manifest Digests",
+      "type": "array"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "suite_id",
+    "version",
+    "task_manifest_digests",
+    "environment_fingerprints",
+    "sealed",
+    "created_at"
+  ],
+  "title": "EvaluationSuiteManifest",
+  "type": "object"
+}

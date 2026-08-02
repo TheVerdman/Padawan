@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "PromotionMetricRule": {
+      "additionalProperties": false,
+      "properties": {
+        "max_regression": {
+          "default": 0.0,
+          "minimum": 0.0,
+          "title": "Max Regression",
+          "type": "number"
+        },
+        "metric_id": {
+          "minLength": 1,
+          "title": "Metric Id",
+          "type": "string"
+        },
+        "minimum_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum Delta"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "metric_id"
+      ],
+      "title": "PromotionMetricRule",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/checkpoint-promotion-policy.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "description": {
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "metric_rules": {
+      "items": {
+        "$ref": "#/$defs/PromotionMetricRule"
+      },
+      "minItems": 1,
+      "title": "Metric Rules",
+      "type": "array"
+    },
+    "policy_id": {
+      "minLength": 1,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy_id",
+    "version",
+    "description",
+    "metric_rules",
+    "created_at"
+  ],
+  "title": "CheckpointPromotionPolicy",
+  "type": "object"
+}

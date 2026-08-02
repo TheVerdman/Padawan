@@ -95,6 +95,7 @@ def test_cli_lean_verification_emits_hard_gate(tmp_path, monkeypatch) -> None:
         def verify(self, task) -> VerifierResult:
             assert task.proof == "by\n  omega\n"
             return VerifierResult(
+                result_id="lean-result-fake",
                 verifier_id="lean4.kernel",
                 verifier_version="test",
                 scope=task.task_id,

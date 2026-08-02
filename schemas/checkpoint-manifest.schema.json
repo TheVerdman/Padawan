@@ -54,84 +54,96 @@
       ],
       "title": "ArtifactRef",
       "type": "object"
-    },
-    "VerifierDisposition": {
-      "enum": [
-        "verified",
-        "rejected",
-        "unknown",
-        "infrastructure_failure"
-      ],
-      "title": "VerifierDisposition",
-      "type": "string"
     }
   },
-  "$id": "https://schemas.padawan.local/v1/verifier-result.schema.json",
+  "$id": "https://schemas.padawan.local/v1/checkpoint-manifest.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "artifact_refs": {
-      "default": [],
-      "items": {
-        "$ref": "#/$defs/ArtifactRef"
-      },
-      "title": "Artifact Refs",
-      "type": "array"
+    "architecture": {
+      "additionalProperties": true,
+      "title": "Architecture",
+      "type": "object"
+    },
+    "checkpoint_id": {
+      "minLength": 1,
+      "title": "Checkpoint Id",
+      "type": "string"
     },
     "created_at": {
       "format": "date-time",
       "title": "Created At",
       "type": "string"
     },
-    "deterministic": {
-      "title": "Deterministic",
-      "type": "boolean"
+    "model_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Model Digest",
+      "type": "string"
     },
-    "disposition": {
-      "$ref": "#/$defs/VerifierDisposition"
+    "model_id": {
+      "minLength": 1,
+      "title": "Model Id",
+      "type": "string"
     },
-    "evidence": {
+    "parent_checkpoint_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Checkpoint Id"
+    },
+    "runtime_compatibility": {
       "additionalProperties": true,
-      "title": "Evidence",
+      "title": "Runtime Compatibility",
       "type": "object"
     },
-    "result_id": {
-      "minLength": 1,
-      "title": "Result Id",
+    "tokenizer_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Tokenizer Digest",
       "type": "string"
     },
-    "scope": {
+    "tokenizer_id": {
       "minLength": 1,
-      "title": "Scope",
+      "title": "Tokenizer Id",
       "type": "string"
     },
-    "summary": {
-      "minLength": 1,
-      "title": "Summary",
-      "type": "string"
+    "trainer_attestations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Trainer Attestations",
+      "type": "array"
     },
-    "verifier_id": {
-      "minLength": 1,
-      "title": "Verifier Id",
-      "type": "string"
-    },
-    "verifier_version": {
-      "minLength": 1,
-      "title": "Verifier Version",
-      "type": "string"
+    "training_bundle_manifest_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Training Bundle Manifest Digest"
     }
   },
   "required": [
-    "result_id",
-    "verifier_id",
-    "verifier_version",
-    "scope",
-    "disposition",
-    "deterministic",
-    "summary",
-    "evidence",
+    "checkpoint_id",
+    "model_id",
+    "tokenizer_id",
+    "model_digest",
+    "tokenizer_digest",
+    "architecture",
+    "runtime_compatibility",
     "created_at"
   ],
-  "title": "VerifierResult",
+  "title": "CheckpointManifest",
   "type": "object"
 }

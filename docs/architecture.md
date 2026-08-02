@@ -25,6 +25,9 @@ domain cannot masquerade as a complete autonomous workflow. The authorities rema
 | episode | `EpisodeStore` | typed attempts, grades, interventions, trials, final episodes |
 | memory | `LessonMemory` | versioned lessons, retrieval decisions, conflicts, rollback |
 | experiment | `ExperimentEngine` | deterministic blocks, counterbalancing, paired analysis |
+| study | `StudyEngine` and `EvaluationScheduler` | versioned aggregation, retention/interference due work |
+| reward | `RewardEngine` | immutable verifier evidence, policies, utility recomputation |
+| checkpoint | `CheckpointRegistry` | external lineage, sealed-suite comparison, lifecycle decisions |
 | governance | `governance.*` | access, retention, export, and command-manifest policy |
 | consolidation | `MemoryConsolidationBackend` | evidence-gated lesson consolidation and rollback |
 
@@ -73,6 +76,30 @@ The implemented episode flow is:
 Treatment must show a strict transfer advantage to become canonical; a tie retains control. Both
 branches and all failed work remain stored.
 
+## Research evidence and offline checkpoint lifecycle
+
+`VerifierResult` rows are append-only raw evidence. A reward cites those results through hard gates
+and retains every raw component, normalizer, coefficient, missing-data action, input digest, and
+policy digest. `RewardEngine.recompute` rebuilds the complete record from the registered immutable
+policy; a missing component is never silently converted to zero, and a failed hard gate makes
+scalar utility unavailable. Training eligibility is a separate cited decision.
+
+`StudyEngine` groups independently persisted, state-forked experiments under one immutable suite
+manifest. Aggregation remains block-level and reports missing, contaminated, and infrastructure
+attrition separately. `EvaluationScheduler` creates retention probes from a source episode's final
+immutable state and interference probes from the post-interference state. Both require a fresh
+rotating-shadow or sealed-anchor item in the source competency. Due claims lease the trial and its
+exact corpus item together; completion requires a matching persisted prompt exposure unless the
+outcome is an explicit infrastructure failure.
+
+Checkpoint weights remain external and frozen during a study. `CheckpointRegistry` records model,
+tokenizer, parent, training-bundle, and runtime identities; accepts evaluations only against a
+registered identical suite; and compares N with N+1 under an immutable lexicographic policy.
+Integrity gates, required missing metrics, and regression limits precede capability or efficiency.
+Comparisons and promotion decisions have independent integrity/recomputation checks. Promotion,
+rejection, quarantine, revocation, and registry-level rollback do not imply that Padawan trained or
+mutated any weights.
+
 ## Storage
 
 PostgreSQL is the production concurrency target. PostgreSQL claims use row locks with `SKIP LOCKED`;
@@ -111,8 +138,8 @@ recomputes the stream rather than trusting a stored boolean.
 The complete operational workflow is algebra. Lean corpus generation and proof verification are
 operational, but its teaching/transfer workflow is not. GCS is implemented; S3 is intentionally
 absent. There is no parameter update implementation. `UnsupportedParameterUpdateBackend` fails
-explicitly because no backend can
-yet isolate, evaluate, commit, and restore a real weight update. Delayed-retention timestamps and
-router telemetry are represented by contracts, but no scheduler or instrumented Inkling extension
-currently produces them. Appellate briefing remains a planned domain, and Magellan implementation
-is deferred until that codebase is retuned; no Magellan repository is accessed by this slice.
+explicitly because no backend can yet isolate, evaluate, commit, and restore a real weight update.
+Retention and interference are now durably scheduled, leased, completed, and recovered, but no
+instrumented Inkling extension currently supplies live target outcomes or router telemetry.
+Appellate briefing and Magellan Improvement remain subsequent domain tracks; no Magellan repository
+is accessed by R2.3.

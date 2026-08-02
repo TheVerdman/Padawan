@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
+from uuid import uuid4
 
 from padawan.domains.contracts import (
     EnvironmentSnapshot,
@@ -222,6 +223,7 @@ class LeanVerifier:
             source = self.render_source(task)
         except LeanInputPolicyError as exc:
             return VerifierResult(
+                result_id=f"lean-result-{uuid4()}",
                 verifier_id=self.verifier_id,
                 verifier_version=self.verifier_version,
                 scope=task.task_id,
@@ -264,6 +266,7 @@ class LeanVerifier:
         sandbox_failed = "sandbox-exec: sandbox_" in normalized_stderr.casefold()
         sandbox_applied = execution.sandboxed and not sandbox_failed
         return VerifierResult(
+            result_id=f"lean-result-{uuid4()}",
             verifier_id=self.verifier_id,
             verifier_version=self.verifier_version,
             scope=task.task_id,
@@ -616,6 +619,7 @@ class LeanVerifier:
         if source_digest is not None:
             evidence["source_digest"] = source_digest
         return VerifierResult(
+            result_id=f"lean-result-{uuid4()}",
             verifier_id=self.verifier_id,
             verifier_version=self.verifier_version,
             scope=task.task_id,

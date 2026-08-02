@@ -1,0 +1,128 @@
+{
+  "$defs": {
+    "RewardComponentPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "missing_action": {
+          "$ref": "#/$defs/RewardMissingAction",
+          "default": "invalidate_utility"
+        },
+        "normalization": {
+          "$ref": "#/$defs/RewardNormalization"
+        },
+        "weight": {
+          "title": "Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "component_id",
+        "weight"
+      ],
+      "title": "RewardComponentPolicy",
+      "type": "object"
+    },
+    "RewardMissingAction": {
+      "enum": [
+        "invalidate_utility",
+        "omit"
+      ],
+      "title": "RewardMissingAction",
+      "type": "string"
+    },
+    "RewardNormalization": {
+      "additionalProperties": false,
+      "properties": {
+        "clamp_max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clamp Max"
+        },
+        "clamp_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clamp Min"
+        },
+        "offset": {
+          "default": 0.0,
+          "title": "Offset",
+          "type": "number"
+        },
+        "scale": {
+          "default": 1.0,
+          "title": "Scale",
+          "type": "number"
+        }
+      },
+      "title": "RewardNormalization",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/reward-policy.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "aggregation": {
+      "const": "weighted_sum",
+      "default": "weighted_sum",
+      "title": "Aggregation",
+      "type": "string"
+    },
+    "components": {
+      "items": {
+        "$ref": "#/$defs/RewardComponentPolicy"
+      },
+      "minItems": 1,
+      "title": "Components",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "description": {
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "policy_id": {
+      "minLength": 1,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy_id",
+    "version",
+    "description",
+    "components",
+    "created_at"
+  ],
+  "title": "RewardPolicy",
+  "type": "object"
+}

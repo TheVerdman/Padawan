@@ -39,14 +39,9 @@
       "title": "HardGateResult",
       "type": "object"
     },
-    "RewardComponent": {
+    "MetricObservation": {
       "additionalProperties": false,
       "properties": {
-        "component_id": {
-          "minLength": 1,
-          "title": "Component Id",
-          "type": "string"
-        },
         "evidence_refs": {
           "items": {
             "minLength": 1,
@@ -55,6 +50,11 @@
           "minItems": 1,
           "title": "Evidence Refs",
           "type": "array"
+        },
+        "metric_id": {
+          "minLength": 1,
+          "title": "Metric Id",
+          "type": "string"
         },
         "missing_reason": {
           "anyOf": [
@@ -69,17 +69,6 @@
           "default": null,
           "title": "Missing Reason"
         },
-        "normalized_value": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "title": "Normalized Value"
-        },
         "value": {
           "anyOf": [
             {
@@ -90,20 +79,14 @@
             }
           ],
           "title": "Value"
-        },
-        "weight": {
-          "title": "Weight",
-          "type": "number"
         }
       },
       "required": [
-        "component_id",
+        "metric_id",
         "value",
-        "normalized_value",
-        "weight",
         "evidence_refs"
       ],
-      "title": "RewardComponent",
+      "title": "MetricObservation",
       "type": "object"
     },
     "VerifierDisposition": {
@@ -117,33 +100,24 @@
       "type": "string"
     }
   },
-  "$id": "https://schemas.padawan.local/v1/reward.schema.json",
+  "$id": "https://schemas.padawan.local/v1/checkpoint-evaluation.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "components": {
-      "items": {
-        "$ref": "#/$defs/RewardComponent"
-      },
-      "minItems": 1,
-      "title": "Components",
-      "type": "array"
+    "checkpoint_id": {
+      "minLength": 1,
+      "title": "Checkpoint Id",
+      "type": "string"
     },
     "created_at": {
       "format": "date-time",
       "title": "Created At",
       "type": "string"
     },
-    "derived_utility": {
-      "anyOf": [
-        {
-          "type": "number"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "title": "Derived Utility"
+    "evaluation_id": {
+      "minLength": 1,
+      "title": "Evaluation Id",
+      "type": "string"
     },
     "hard_gates": {
       "items": {
@@ -153,43 +127,34 @@
       "title": "Hard Gates",
       "type": "array"
     },
-    "input_digest": {
+    "metrics": {
+      "items": {
+        "$ref": "#/$defs/MetricObservation"
+      },
+      "minItems": 1,
+      "title": "Metrics",
+      "type": "array"
+    },
+    "study_id": {
+      "minLength": 1,
+      "title": "Study Id",
+      "type": "string"
+    },
+    "suite_manifest_digest": {
       "pattern": "^sha256:[0-9a-f]{64}$",
-      "title": "Input Digest",
-      "type": "string"
-    },
-    "policy_digest": {
-      "pattern": "^sha256:[0-9a-f]{64}$",
-      "title": "Policy Digest",
-      "type": "string"
-    },
-    "policy_id": {
-      "minLength": 1,
-      "title": "Policy Id",
-      "type": "string"
-    },
-    "policy_version": {
-      "minLength": 1,
-      "title": "Policy Version",
-      "type": "string"
-    },
-    "reward_id": {
-      "minLength": 1,
-      "title": "Reward Id",
+      "title": "Suite Manifest Digest",
       "type": "string"
     }
   },
   "required": [
-    "reward_id",
-    "policy_id",
-    "policy_version",
-    "policy_digest",
-    "input_digest",
+    "evaluation_id",
+    "checkpoint_id",
+    "study_id",
+    "suite_manifest_digest",
+    "metrics",
     "hard_gates",
-    "components",
-    "derived_utility",
     "created_at"
   ],
-  "title": "RewardRecord",
+  "title": "CheckpointEvaluationRecord",
   "type": "object"
 }

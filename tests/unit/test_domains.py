@@ -53,6 +53,7 @@ def test_hard_gate_failure_cannot_be_compensated_by_scalar_reward() -> None:
     component = RewardComponent(
         component_id="clarity",
         value=1.0,
+        normalized_value=1.0,
         weight=1.0,
         evidence_refs=("judge-result-1",),
     )
@@ -62,6 +63,8 @@ def test_hard_gate_failure_cannot_be_compensated_by_scalar_reward() -> None:
             reward_id="reward-1",
             policy_id="policy-default",
             policy_version="1",
+            policy_digest=f"sha256:{'0' * 64}",
+            input_digest=f"sha256:{'1' * 64}",
             hard_gates=(gate,),
             components=(component,),
             derived_utility=1.0,
@@ -72,6 +75,8 @@ def test_hard_gate_failure_cannot_be_compensated_by_scalar_reward() -> None:
         reward_id="reward-2",
         policy_id="policy-default",
         policy_version="1",
+        policy_digest=f"sha256:{'0' * 64}",
+        input_digest=f"sha256:{'1' * 64}",
         hard_gates=(gate,),
         components=(component,),
         derived_utility=None,
@@ -105,6 +110,7 @@ def test_reward_values_must_be_finite(non_finite: float) -> None:
         RewardComponent(
             component_id="invalid-number",
             value=non_finite,
+            normalized_value=non_finite,
             weight=1.0,
             evidence_refs=("verifier-result-1",),
         )

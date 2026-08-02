@@ -1,0 +1,122 @@
+{
+  "$defs": {
+    "EvaluationTrialType": {
+      "enum": [
+        "retention",
+        "interference"
+      ],
+      "title": "EvaluationTrialType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/evaluation-schedule.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assignment_propensity": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Assignment Propensity"
+    },
+    "assignment_seed": {
+      "title": "Assignment Seed",
+      "type": "integer"
+    },
+    "checkpoint_id": {
+      "minLength": 1,
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "competency_id": {
+      "minLength": 1,
+      "title": "Competency Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "due_at": {
+      "format": "date-time",
+      "title": "Due At",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "interfering_episode_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Interfering Episode Id"
+    },
+    "item_id": {
+      "minLength": 1,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "source_episode_id": {
+      "minLength": 1,
+      "title": "Source Episode Id",
+      "type": "string"
+    },
+    "state_snapshot_id": {
+      "minLength": 1,
+      "title": "State Snapshot Id",
+      "type": "string"
+    },
+    "student_id": {
+      "minLength": 1,
+      "title": "Student Id",
+      "type": "string"
+    },
+    "study_id": {
+      "minLength": 1,
+      "title": "Study Id",
+      "type": "string"
+    },
+    "trial_id": {
+      "minLength": 1,
+      "title": "Trial Id",
+      "type": "string"
+    },
+    "trial_type": {
+      "$ref": "#/$defs/EvaluationTrialType"
+    }
+  },
+  "required": [
+    "trial_id",
+    "study_id",
+    "trial_type",
+    "source_episode_id",
+    "student_id",
+    "checkpoint_id",
+    "state_snapshot_id",
+    "competency_id",
+    "item_id",
+    "environment_fingerprint",
+    "assignment_seed",
+    "due_at",
+    "created_at"
+  ],
+  "title": "EvaluationSchedule",
+  "type": "object"
+}

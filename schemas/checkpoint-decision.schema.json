@@ -1,0 +1,124 @@
+{
+  "$defs": {
+    "CheckpointDecisionAction": {
+      "enum": [
+        "start_evaluation",
+        "promote",
+        "reject",
+        "quarantine",
+        "revoke"
+      ],
+      "title": "CheckpointDecisionAction",
+      "type": "string"
+    },
+    "CheckpointStatus": {
+      "enum": [
+        "candidate",
+        "evaluating",
+        "promoted",
+        "rejected",
+        "quarantined",
+        "revoked"
+      ],
+      "title": "CheckpointStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/checkpoint-decision.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "$ref": "#/$defs/CheckpointDecisionAction"
+    },
+    "actor": {
+      "minLength": 1,
+      "title": "Actor",
+      "type": "string"
+    },
+    "checkpoint_id": {
+      "minLength": 1,
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "comparison_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Comparison Id"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "from_status": {
+      "$ref": "#/$defs/CheckpointStatus"
+    },
+    "policy_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Policy Id"
+    },
+    "policy_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Policy Version"
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "to_status": {
+      "$ref": "#/$defs/CheckpointStatus"
+    }
+  },
+  "required": [
+    "decision_id",
+    "checkpoint_id",
+    "action",
+    "from_status",
+    "to_status",
+    "actor",
+    "reason",
+    "evidence_refs",
+    "created_at"
+  ],
+  "title": "CheckpointDecisionRecord",
+  "type": "object"
+}

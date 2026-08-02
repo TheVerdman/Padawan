@@ -9,6 +9,31 @@
       "sha256": "af415d6523fb489cb2adf1d883c01bc9500ff38182a083653425ca503164b0b3"
     },
     {
+      "name": "checkpoint-comparison",
+      "schema": "checkpoint-comparison.schema.json",
+      "sha256": "47a9b68a8969db925806e30998eee8ce3e501dea2755505a69ba84e5fff7ed85"
+    },
+    {
+      "name": "checkpoint-decision",
+      "schema": "checkpoint-decision.schema.json",
+      "sha256": "316958d558760b4295f726f72401ba60341dd5f6c11707742006572a6afa48ed"
+    },
+    {
+      "name": "checkpoint-evaluation",
+      "schema": "checkpoint-evaluation.schema.json",
+      "sha256": "2ab91cc6bc6cfa03532f8148642a5eadeb9885a0fddcfe3d22fb4a3441e11caf"
+    },
+    {
+      "name": "checkpoint-manifest",
+      "schema": "checkpoint-manifest.schema.json",
+      "sha256": "31f52102e904d0abaa8397a4d63241d1a9192c5e38a6d32c5b00d336f6ca3e1e"
+    },
+    {
+      "name": "checkpoint-promotion-policy",
+      "schema": "checkpoint-promotion-policy.schema.json",
+      "sha256": "9b807da3628ac15e98ffe4d764425d54dc32212609780746ee9b0cda546f0284"
+    },
+    {
       "name": "compacted-state",
       "schema": "compacted-state.schema.json",
       "sha256": "557707ad62e692f84ba7b7e98962112bef07f20c2aea87e8fef65b521961fede"
@@ -34,6 +59,21 @@
       "sha256": "a74f6664d996b54d839019a7446550c2c8e112265821da155559c7626fce1e9c"
     },
     {
+      "name": "evaluation-outcome",
+      "schema": "evaluation-outcome.schema.json",
+      "sha256": "220ffde0f350a30ae738526ab572315354b02fee00f6cef43e8a8aae3d45bc32"
+    },
+    {
+      "name": "evaluation-schedule",
+      "schema": "evaluation-schedule.schema.json",
+      "sha256": "544279177137efd4a759c2717be8650c152c2b802da96980e1434e9adcb4a43a"
+    },
+    {
+      "name": "evaluation-suite-manifest",
+      "schema": "evaluation-suite-manifest.schema.json",
+      "sha256": "7b0ee26832df590c0342dc5d10329cab4c0b986b4252050f372344e6c11e7c55"
+    },
+    {
       "name": "exposure",
       "schema": "exposure.schema.json",
       "sha256": "949f4a06f304d23aacc4a130320aa7e56fbd054d6cdec2423a5ba35ceeb7bb16"
@@ -51,7 +91,12 @@
     {
       "name": "reward",
       "schema": "reward.schema.json",
-      "sha256": "4f218c9fbf4b7f2e9adf60e4a24277663c56a257e631d458e4112c1d4ba9da18"
+      "sha256": "d9efdef5e58ab7c25697d530397e3bca829b80f3a3a8a6d6fd2d15cd0407b95a"
+    },
+    {
+      "name": "reward-policy",
+      "schema": "reward-policy.schema.json",
+      "sha256": "f6c18a6075256f3d59245395ca90610bf4df42bcd93f150d796777690ae6c340"
     },
     {
       "name": "state-fork",
@@ -62,6 +107,11 @@
       "name": "student-state",
       "schema": "student-state.schema.json",
       "sha256": "4edf300fc87895496e3eac90a114d614b9d70a952bfad2d01ba48e632bef1b77"
+    },
+    {
+      "name": "study-manifest",
+      "schema": "study-manifest.schema.json",
+      "sha256": "f8815985cc98d6ca64388a61bd53f3b81a7713b1f3b09f1b57c7cbf4622e0f7d"
     },
     {
       "name": "task-manifest",
@@ -86,7 +136,7 @@
     {
       "name": "verifier-result",
       "schema": "verifier-result.schema.json",
-      "sha256": "a96187b61bb9f8bcc64e3d2260fac3b7f288e1814d290ec1668b07e757e52283"
+      "sha256": "1faa090d4db341df82d6d2f75712ef9efcbaf58258ce0cc7340f7cb29d1a1b25"
     }
   ]
 }

@@ -1,0 +1,100 @@
+{
+  "$id": "https://schemas.padawan.local/v1/evaluation-outcome.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "contamination_checks": {
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "propertyNames": {
+        "minLength": 1
+      },
+      "title": "Contamination Checks",
+      "type": "object"
+    },
+    "exposure_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Exposure Id"
+    },
+    "infrastructure_failures": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Infrastructure Failures",
+      "type": "array"
+    },
+    "missing_reasons": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "propertyNames": {
+        "minLength": 1
+      },
+      "title": "Missing Reasons",
+      "type": "object"
+    },
+    "score": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Score"
+    },
+    "success": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Success"
+    },
+    "trial_id": {
+      "minLength": 1,
+      "title": "Trial Id",
+      "type": "string"
+    },
+    "verifier_result_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Verifier Result Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "trial_id",
+    "success",
+    "score",
+    "missing_reasons",
+    "verifier_result_ids",
+    "contamination_checks",
+    "completed_at"
+  ],
+  "title": "EvaluationOutcome",
+  "type": "object"
+}

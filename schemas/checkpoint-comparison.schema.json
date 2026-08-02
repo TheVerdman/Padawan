@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "MetricObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "metric_id": {
+          "minLength": 1,
+          "title": "Metric Id",
+          "type": "string"
+        },
+        "missing_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Missing Reason"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "metric_id",
+        "value",
+        "evidence_refs"
+      ],
+      "title": "MetricObservation",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/checkpoint-comparison.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "baseline_evaluation_id": {
+      "minLength": 1,
+      "title": "Baseline Evaluation Id",
+      "type": "string"
+    },
+    "candidate_evaluation_id": {
+      "minLength": 1,
+      "title": "Candidate Evaluation Id",
+      "type": "string"
+    },
+    "comparison_id": {
+      "minLength": 1,
+      "title": "Comparison Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "hard_gate_failures": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Hard Gate Failures",
+      "type": "array"
+    },
+    "metric_deltas": {
+      "items": {
+        "$ref": "#/$defs/MetricObservation"
+      },
+      "minItems": 1,
+      "title": "Metric Deltas",
+      "type": "array"
+    },
+    "missing_required_metrics": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Missing Required Metrics",
+      "type": "array"
+    },
+    "policy_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Policy Digest",
+      "type": "string"
+    },
+    "policy_id": {
+      "minLength": 1,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "policy_version": {
+      "minLength": 1,
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "promotion_recommended": {
+      "title": "Promotion Recommended",
+      "type": "boolean"
+    },
+    "regression_breaches": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Regression Breaches",
+      "type": "array"
+    },
+    "suite_manifest_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Suite Manifest Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "comparison_id",
+    "baseline_evaluation_id",
+    "candidate_evaluation_id",
+    "suite_manifest_digest",
+    "policy_id",
+    "policy_version",
+    "policy_digest",
+    "metric_deltas",
+    "regression_breaches",
+    "hard_gate_failures",
+    "missing_required_metrics",
+    "promotion_recommended",
+    "created_at"
+  ],
+  "title": "CheckpointComparisonRecord",
+  "type": "object"
+}

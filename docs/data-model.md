@@ -63,12 +63,17 @@ artifacts. `TaskManifest` carries split, lineage, source, license, and freshness
 `VerifierResult` distinguishes `verified`, `rejected`, `unknown`, and `infrastructure_failure` while
 retaining scoped evidence.
 
-`RewardRecord` stores hard gates separately from component values and an optional derived utility.
-A validator forbids scalar utility whenever any hard gate fails. Missing component values require a
-reason rather than becoming zero. `TrainingEligibilityDecision` maintains disjoint allowed and
-excluded lanes across continued pretraining, SFT, preference, RLVR, process, and evaluation-only
-uses. These contracts are implemented; durable reward compilation and policy recomputation remain
-future Round 2 work.
+`verifier_results` stores append-only, digest-protected objective observations before any reward is
+computed. `reward_policies` is immutable by `(policy_id, version)` and retains every component
+normalization, coefficient, and missing-data action. `rewards` stores hard gates, raw and normalized
+components, policy/input/record digests, and optional derived utility. Recomputation reloads the
+policy and evidence-shaped inputs and verifies the complete stored record. A failed hard gate or a
+required missing component makes scalar utility unavailable rather than zero.
+
+`training_eligibility_decisions` cites a source reward and remains distinct from reward calculation.
+It maintains disjoint allowed and excluded lanes across continued pretraining, SFT, preference,
+RLVR, process, and evaluation-only uses. A hard-gate failure can remain available for evaluation but
+cannot be admitted to a training lane.
 
 ## Memory and experiments
 
@@ -82,6 +87,34 @@ versions and invalidating additions made after the snapshot; history is not eras
 counterbalanced assignment, treatment/control outcomes, contamination flag, and infrastructure
 attrition. Analysis excludes unmatched, contaminated, or infrastructure-failed blocks and reports
 the exclusion counts.
+
+## Studies and scheduled evaluation
+
+`studies` stores one immutable, versioned study manifest and suite digest. `study_experiments`
+binds persisted experiments to conditions, frozen checkpoints, research roles, environment
+fingerprints, and optional assignment propensities. Study aggregation reads the original experiment
+blocks; it reports missingness and exclusion classes and never manufactures a paired outcome.
+
+`evaluation_trials` is a due-time queue for delayed retention and interference probes. Each row
+binds a source episode, exact immutable state snapshot, source competency, fresh evaluation-only
+item, assignment seed/propensity, and environment fingerprint. Interference trials additionally
+bind a complete episode in another competency and the post-interference snapshot. Trial and item
+leases share an opaque token and recover together. Completed outcomes retain explicit missing
+reasons, contamination checks, verifier result IDs, and the matching prompt exposure.
+
+## External checkpoints
+
+`checkpoints` is a registry for externally produced frozen model artifacts. It retains parent
+lineage, model/tokenizer digests, optional training-bundle digest, compatibility metadata, and one
+of candidate, evaluating, promoted, rejected, quarantined, or revoked status. It is not a trainer.
+
+`evaluation_suites` pins task and environment manifests. `checkpoint_evaluations` can cite only a
+registered study with the same suite digest and hard gates backed by persisted verifier results.
+`checkpoint_promotion_policies` defines required metrics, regression tolerances, and minimum gains.
+`checkpoint_comparisons` records metric deltas, explicit missingness, hard-gate failures, and the
+lexicographic recommendation. `checkpoint_decisions` forms the immutable lifecycle audit trail.
+Comparison recomputation verifies source evaluation, policy, and record digests; promotion decision
+verification rechecks that the same candidate and recomputed recommendation support the action.
 
 ## Operations, artifacts, and provenance
 
@@ -97,5 +130,7 @@ to owners and is the source of truth for safe garbage collection. `provenance_he
 each stream while `provenance_events` stores the immutable cryptographic chain.
 
 The Alembic revision chain is authoritative for a new database. The Round 2 role migration adds
-non-null role columns with a target-compatible default. CI compares the head revision with
-SQLAlchemy metadata and exercises downgrade/upgrade across every checked-in revision.
+non-null role columns with a target-compatible default; the R2.3 revision adds verifier, reward,
+study, scheduled-evaluation, suite, checkpoint, comparison, and decision tables. CI compares the
+head revision with SQLAlchemy metadata and exercises downgrade/upgrade across every checked-in
+revision.

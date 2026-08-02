@@ -19,6 +19,9 @@ workflow, and a kernel-backed Lean mathematics verifier track:
 - evidence-citing teacher contracts and deterministic comment validation;
 - crash-resumable run transitions, idempotent external calls, worker leases, and stale recovery;
 - matched-block experiments with counterbalancing, McNemar analysis, and bootstrap intervals;
+- durable verifier/reward ledgers with versioned meta-utility recomputation and training eligibility;
+- versioned multi-experiment studies plus fresh-item retention and interference scheduling;
+- an external frozen-checkpoint registry with sealed-suite comparison, promotion, and revocation;
 - versioned lesson memory with branch isolation, negative retrieval evidence, snapshots, and
   rollback;
 - an evidence-gated memory consolidation backend and an explicit refusal for unsupported parameter
@@ -30,9 +33,10 @@ failures rather than converted into passing evidence.
 
 The current scope is explicit: algebra has the complete autonomous developmental workflow; Lean
 mathematics has governed corpus generation and a real verifier but not that workflow yet. GCS is
-operational, while delayed-retention scheduling, appellate briefing, and parameter updates remain
-future gates. No S3 backend is planned for the current GCS deployment. Parameter calls fail as
-unsupported rather than degrading to a no-op.
+operational, and delayed-retention/interference scheduling is durable and tested. Live target
+outcomes still require the Inkling endpoint; appellate briefing, Magellan Improvement, training
+compilation, and parameter updates remain subsequent gates. No S3 backend is planned for the
+current GCS deployment. Parameter calls fail as unsupported rather than degrading to a no-op.
 The first real-provider pilot attempt is documented in
 [reports/live/2026-08-01-pilot-attempt.md](reports/live/2026-08-01-pilot-attempt.md); it was blocked
 before episode creation by an unavailable Inkling server and by credentials not being selected in
@@ -57,10 +61,11 @@ The CLI is available as `padawan --help` after installation. The OpenAI implemen
 Responses API and structured outputs; legacy Chat Completions exists only behind an explicit
 compatibility flag for non-OpenAI servers.
 
-Lean setup and verification are documented in [operations](docs/operations.md). Magellan work is
-intentionally deferred until its assumptions are retuned; this Round 2 implementation does not
-read or modify that repository. The first slice's local, GCS, and Lean acceptance evidence is in
-[the Round 2 verification report](reports/verification/2026-08-01-round-2-slice.md).
+Lean setup and verification are documented in [operations](docs/operations.md). Magellan was not
+read or modified by R2.3 and must be integrated against its retuned assumptions as a separate domain
+track. Acceptance evidence is in the
+[first-slice report](reports/verification/2026-08-01-round-2-slice.md) and the
+[R2.3 report](reports/verification/2026-08-01-r2-3.md).
 
 Start with the [Round 2 plan](docs/round-2-plan.md), [architecture](docs/architecture.md),
 [data model](docs/data-model.md), [experiment semantics](docs/experiment-semantics.md), and

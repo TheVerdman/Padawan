@@ -24,10 +24,38 @@ The first Round 2 slice is implemented and verified locally:
 - `VerifierResult`, hard gates, reward components, and training-lane eligibility contracts exist,
   including the invariant that a hard-gate failure cannot receive scalar utility.
 
-Still pending are durable reward persistence/recomputation, retention and interference scheduling,
-checkpoint lifecycle/compiler work, a closed appellate court pack, and the full Lean developmental
-workflow. Magellan implementation is explicitly deferred at the user's direction until that
-codebase is retuned to current assumptions.
+After this first slice, durable reward persistence/recomputation, retention and interference
+scheduling, checkpoint lifecycle/compiler work, a closed appellate court pack, and the full Lean
+developmental workflow remained pending.
+
+## R2.3 implementation checkpoint — 2026-08-01
+
+The reward, study, and external-checkpoint substrate is now implemented:
+
+- verifier results, reward policies, reward records, and training eligibility are durable,
+  append-only evidence objects; every reward retains raw/normalized components and policy/input
+  digests and can be deterministically recomputed;
+- hard-gate evidence must resolve to persisted verifier results, missing observations stay explicit,
+  and failed gates cannot receive utility or enter a training lane;
+- immutable study manifests bind experiments to conditions, roles, frozen checkpoints, identical
+  suite digests, environment fingerprints, assignment seeds, and optional propensities;
+- study aggregation consumes the original paired blocks and reports missing, contaminated, and
+  infrastructure attrition without imputation;
+- delayed-retention and interference trials bind complete source episodes, immutable state
+  snapshots, fresh shadow/sealed item groups, and—in interference trials—learning in another
+  competency; due claims and expiry recovery coordinate trial and corpus-item leases;
+- checkpoint, evaluation-suite, evaluation, promotion-policy, comparison, and decision records form
+  a real external/offline lifecycle through candidate, evaluating, promoted/rejected, quarantine,
+  and revocation states;
+- checkpoint comparison is lexicographic and recomputable from the same frozen suite evidence;
+  optional missing metrics remain missing, while hard gates, required metrics, and regression
+  tolerances cannot be scalar-compensated;
+- read-only study, reward, and checkpoint reports expose immutable inputs and live integrity checks;
+  no code path calls memory consolidation a weight update or claims an internal trainer exists.
+
+R2.3 does not contact a provider, mutate checkpoint weights, or access Magellan. The remaining major
+tracks are the full Lean developmental workflow, Magellan Improvement, the closed appellate pack,
+and the training-product compiler.
 
 ## Round 2 thesis
 
@@ -480,7 +508,7 @@ Accept when:
 - a credentialed test-bucket round trip verifies generation and checksums;
 - no credential value appears in git, command output, logs, failures, provenance, or artifacts.
 
-### R2.3 — Reward, study, and checkpoint contracts
+### R2.3 — Reward, study, and checkpoint contracts — implemented
 
 Deliver:
 

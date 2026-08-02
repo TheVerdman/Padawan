@@ -220,7 +220,7 @@ def verify_lean(
             gate_id=f"lean-kernel:{selected_task_id}",
             passed=result.disposition == VerifierDisposition.VERIFIED,
             disposition=result.disposition,
-            evidence_refs=(f"{result.verifier_id}:{result.scope}",),
+            evidence_refs=(result.result_id,),
             reason=result.summary,
         )
         return {
@@ -535,6 +535,45 @@ def report_experiment(ctx: typer.Context, experiment_id: str) -> None:
             await database.close()
 
     _run_command(ctx, "report experiment", operation)
+
+
+@report_app.command("study")
+def report_study(ctx: typer.Context, study_id: str) -> None:
+    async def operation() -> dict[str, Any]:
+        database = Database(_settings(ctx).database_url)
+        try:
+            service = ReportingService(database, ExperimentEngine(StateStore()))
+            return await service.study(study_id)
+        finally:
+            await database.close()
+
+    _run_command(ctx, "report study", operation)
+
+
+@report_app.command("reward")
+def report_reward(ctx: typer.Context, reward_id: str) -> None:
+    async def operation() -> dict[str, Any]:
+        database = Database(_settings(ctx).database_url)
+        try:
+            service = ReportingService(database, ExperimentEngine(StateStore()))
+            return await service.reward(reward_id)
+        finally:
+            await database.close()
+
+    _run_command(ctx, "report reward", operation)
+
+
+@report_app.command("checkpoint")
+def report_checkpoint(ctx: typer.Context, checkpoint_id: str) -> None:
+    async def operation() -> dict[str, Any]:
+        database = Database(_settings(ctx).database_url)
+        try:
+            service = ReportingService(database, ExperimentEngine(StateStore()))
+            return await service.checkpoint(checkpoint_id)
+        finally:
+            await database.close()
+
+    _run_command(ctx, "report checkpoint", operation)
 
 
 @report_app.command("operations")

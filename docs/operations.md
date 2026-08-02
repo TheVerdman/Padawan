@@ -179,12 +179,45 @@ padawan episode inspect EPISODE_ID
 padawan state inspect --student-id STUDENT_ID
 padawan memory inspect
 padawan report experiment EXPERIMENT_ID
+padawan report study STUDY_ID
+padawan report reward REWARD_ID
+padawan report checkpoint CHECKPOINT_ID
 padawan report operations
 padawan provenance verify --stream-id global
 ```
 
 Manual forks use `padawan state fork STATE_ID --experiment-id EXPERIMENT_ID`. Pause or release a
 governance hold with `padawan supervisor pause RUN_ID` and `padawan supervisor resume RUN_ID`.
+
+## Reward, study, and checkpoint operations
+
+R2.3 lifecycle mutations are service boundaries used by governed workflows rather than ad hoc CLI
+switches:
+
+- `RewardEngine` registers immutable reward policies and verifier results, computes records, checks
+  training eligibility, and recomputes stored utilities;
+- `StudyEngine` registers immutable manifests and aggregates original experiment blocks;
+- `EvaluationScheduler` schedules, claims, completes, and recovers retention/interference work;
+- `CheckpointRegistry` registers external checkpoint and suite manifests, records evaluations,
+  recomputes comparisons, and applies auditable promotion, rejection, quarantine, or revocation.
+
+The report commands are intentionally read-only. `report reward` includes policy/evidence-backed
+recomputation and training eligibility. `report study` includes the immutable manifest, condition
+aggregation, attrition, and trial outcomes without lease secrets. `report checkpoint` includes its
+lineage, frozen-suite evaluations, comparisons, lifecycle decisions, and current integrity checks.
+`report operations` adds counts for rewards, study/trial states, and checkpoint states.
+
+A worker must persist prompt exposure before completing a student retention/interference outcome.
+If the provider or environment fails before any student outcome exists, record an explicit
+infrastructure failure with missing reasons and no exposure rather than fabricating a failure score.
+Expired evaluation leases are safe to recover: the trial returns to `scheduled` and its exact corpus
+item returns to `active` in the same transaction.
+
+Checkpoint promotion never calls a trainer. Import the externally produced artifact digest, keep
+both N and N+1 frozen, evaluate both against the same registered suite digest, then compare under a
+versioned policy. Optional missing efficiency evidence does not become zero; missing required
+metrics, invalid hard gates, or regression breaches block promotion. Revocation changes only the
+registry decision and preserves all evidence and lineage for rollback/audit.
 
 ## Heirloom export
 
