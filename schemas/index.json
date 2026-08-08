@@ -29,9 +29,19 @@
       "sha256": "9a7ab0fd65582122a8385cf95661bd25bb37fc6f50a1ea013753a726363ec313"
     },
     {
+      "name": "appellate-semantic-assessment-draft",
+      "schema": "appellate-semantic-assessment-draft.schema.json",
+      "sha256": "3d8f3e44e7368c34776552788e0ca85c43f638c95c24f31719dd193945895c08"
+    },
+    {
       "name": "appellate-submission",
       "schema": "appellate-submission.schema.json",
       "sha256": "b124b7d231b9769ee765d5acca134fa6326f435e1b35bd29671cddba1859444d"
+    },
+    {
+      "name": "appellate-submission-draft",
+      "schema": "appellate-submission-draft.schema.json",
+      "sha256": "a8a358c3ce376b386a0afa93c459ef0fd65856d65b5ab77040d5e662dbf87b72"
     },
     {
       "name": "appellate-verification-bundle",
@@ -96,7 +106,7 @@
     {
       "name": "developmental-episode",
       "schema": "developmental-episode.schema.json",
-      "sha256": "e0b424cc17ac646ddae5fdf06f2506fe7cb6967270a2faad5a78224452b3acd8"
+      "sha256": "2efe65d6f1035a6410d3d7c9c0ef1a621f7124ef02b39cfd2b027f85f996d4f2"
     },
     {
       "name": "environment-snapshot",

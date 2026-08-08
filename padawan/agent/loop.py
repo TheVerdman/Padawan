@@ -45,12 +45,14 @@ class AutonomousResearchLoop:
         supervisor: AutonomousSupervisor,
         student_id: str,
         research_role: ResearchRole = ResearchRole.TARGET,
+        domain_id: str = "math.algebra",
     ) -> None:
         self.database = database
         self.runs = runs
         self.supervisor = supervisor
         self.student_id = student_id
         self.research_role = research_role
+        self.domain_id = domain_id
 
     async def run(
         self,
@@ -68,7 +70,7 @@ class AutonomousResearchLoop:
                 seed=experiment_seed + index,
                 teacher_mode=teacher_mode,
             )
-            # One episode uses 21 happy-path transitions. The larger action budget
+            # A domain episode uses a bounded durable transition path. The larger action budget
             # allows bounded retries without turning this into a monolithic script.
             await self.supervisor.run(budget=256)
             row = await self._run_row(run_id)
@@ -122,6 +124,7 @@ class AutonomousResearchLoop:
                 session,
                 payload={
                     "student_id": self.student_id,
+                    "domain_id": self.domain_id,
                     "research_role": self.research_role.value,
                     "state_id": student.canonical_state_id,
                     "pool": "curriculum",

@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from padawan.models.contracts import ResearchRole, RunState
 from padawan.models.tables import RunRow, RunTransitionRow, WorkerRow
 
-_HAPPY_PATH: tuple[RunState, ...] = (
+_ALGEBRA_PATH: tuple[RunState, ...] = (
     RunState.CREATED,
     RunState.ITEMS_LEASED,
     RunState.BASE_STATE_SNAPSHOTTED,
@@ -35,7 +35,26 @@ _HAPPY_PATH: tuple[RunState, ...] = (
     RunState.EPISODE_COMMITTED,
     RunState.COMPLETE,
 )
-_NEXT = {left: right for left, right in zip(_HAPPY_PATH, _HAPPY_PATH[1:], strict=False)}
+_DOMAIN_GENERAL_PATH: tuple[RunState, ...] = (
+    RunState.CREATED,
+    RunState.DOMAIN_ITEMS_LEASED,
+    RunState.DOMAIN_STATE_FORKED,
+    RunState.DOMAIN_COLD_ATTEMPT_STORED,
+    RunState.DOMAIN_COLD_VERIFIED,
+    RunState.DOMAIN_TEACHER_STORED,
+    RunState.DOMAIN_REVISION_VERIFIED,
+    RunState.DOMAIN_TRANSFER_VERIFIED,
+    RunState.DOMAIN_MEMORY_DECIDED,
+    RunState.DOMAIN_EPISODE_COMMITTED,
+    RunState.COMPLETE,
+)
+_NEXT: dict[RunState, set[RunState]] = {}
+for _path in (_ALGEBRA_PATH, _DOMAIN_GENERAL_PATH):
+    for _left, _right in zip(_path, _path[1:], strict=False):
+        _NEXT.setdefault(_left, set()).add(_right)
+_AUTOMATIC_NEXT = {
+    left: right for left, right in zip(_ALGEBRA_PATH, _ALGEBRA_PATH[1:], strict=False)
+}
 _TERMINAL = {RunState.COMPLETE, RunState.FAILED_TERMINAL, RunState.REVIEW_REQUIRED}
 
 
@@ -256,7 +275,7 @@ class RunStore:
         if row is None:
             raise KeyError(run_id)
         current = RunState(row.state)
-        next_state = _NEXT.get(current)
+        next_state = _AUTOMATIC_NEXT.get(current)
         if next_state is None:
             raise InvalidTransitionError(f"{current.value} has no automatic successor")
         return await self.transition(
@@ -420,9 +439,10 @@ class RunStore:
             if to_state.value != expected:
                 raise InvalidTransitionError(f"retry must resume at {expected}")
             return
-        expected_state = _NEXT.get(from_state)
-        if to_state != expected_state:
+        expected_states = _NEXT.get(from_state, set())
+        if to_state not in expected_states:
+            expected = ", ".join(sorted(state.value for state in expected_states)) or "none"
             raise InvalidTransitionError(
                 f"invalid transition {from_state.value} -> {to_state.value}; "
-                f"expected {expected_state}"
+                f"expected one of {expected}"
             )

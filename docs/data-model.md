@@ -52,9 +52,9 @@ comment validator result. No rejected teacher output is eligible for memory.
 
 `DevelopmentalEpisode` links state before/after, attempts, grade, intervention, revision, transfer,
 memory writes, exposures, retirement, controlled student/teaching/system outcomes, metrics,
-provenance, and consolidation proposals. Role is repeated on runs, attempts, and episodes so replay
-and exports do not infer authority from provider names. Baseline evidence is diagnostic and cannot
-silently enter target memory.
+provenance, domain-verifier evidence, and consolidation proposals. Role is repeated on runs,
+attempts, and episodes so replay and exports do not infer authority from provider names. Baseline
+evidence is diagnostic and cannot silently enter target memory.
 
 ## Domain and reward contracts
 
@@ -65,11 +65,12 @@ scope.
 `VerifierResult` distinguishes `verified`, `rejected`, `unknown`, and `infrastructure_failure` while
 retaining scoped evidence.
 
-The appellate package adds content-addressed court-pack, closed-record, scenario, submission,
-semantic-assessment, citator-assessment, and verification-bundle contracts. Citation resolution,
-quotation fidelity, proposition support, applicability, and currentness remain distinct results.
-The first court pack has no dependable citator, so currentness is structurally `unknown` rather
-than inferred from the closed opinion inventory.
+The appellate package adds content-addressed court-pack, closed-record, scenario, student-draft,
+system-bound submission, adjudicator-draft, semantic-assessment, citator-assessment, and
+verification-bundle contracts. Citation resolution, quotation fidelity, proposition support,
+applicability, and currentness remain distinct results. The first court pack has no dependable
+citator, so currentness is structurally `unknown` rather than inferred from the closed opinion
+inventory.
 
 `verifier_results` stores append-only, digest-protected objective observations before any reward is
 computed. `reward_policies` is immutable by `(policy_id, version)` and retains every component

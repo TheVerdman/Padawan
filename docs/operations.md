@@ -23,6 +23,7 @@ Configuration is loaded once at the CLI composition boundary. Important variable
 | `PADAWAN_CODE_REVISION` | revision committed into provenance |
 | `PADAWAN_WORKER_ID` | stable worker identity |
 | `PADAWAN_LEASE_SECONDS` | item and run lease period |
+| `PADAWAN_DOMAIN_ID` | active workflow domain (`math.algebra`, `math.lean`, or `legal.appellate.fourth_circuit`) |
 | `PADAWAN_OPENAI_MODEL`, `OPENAI_API_KEY` | Responses API baseline and/or teacher |
 | `PADAWAN_ANTHROPIC_MODEL`, `ANTHROPIC_API_KEY` | Anthropic teacher |
 | `PADAWAN_INKLING_BASE_URL`, `PADAWAN_INKLING_MODEL` | Inkling Responses endpoint |
@@ -114,6 +115,28 @@ padawan experiment run --blocks 1 --bootstrap \
   --teacher-provider openai --teacher-model "$PADAWAN_OPENAI_MODEL"
 ```
 
+The same bounded loop selects Lean or appellate authority through process configuration. `--bootstrap`
+registers three-sibling curriculum inventory for the selected domain before the run:
+
+```text
+PADAWAN_DOMAIN_ID=math.lean \
+  padawan experiment run --blocks 1 --bootstrap \
+    --student-provider inkling --student-model "$PADAWAN_INKLING_MODEL" \
+    --teacher-provider openai --teacher-model "$PADAWAN_OPENAI_MODEL"
+
+PADAWAN_DOMAIN_ID=legal.appellate.fourth_circuit \
+  padawan experiment run --blocks 1 --bootstrap \
+    --student-provider inkling --student-model "$PADAWAN_INKLING_MODEL" \
+    --teacher-provider anthropic --teacher-model "$PADAWAN_ANTHROPIC_MODEL"
+```
+
+In the appellate composition, the configured teacher transport also executes separately identified
+semantic-adjudicator calls. Those calls use their own durable purpose, strict assessment schema,
+and `adjudicator` research role; their raw responses remain restricted evidence and are not target
+student outputs. Deterministic hard-gate failures skip adjudication entirely. This does not supply a
+citator: currentness remains unknown until a licensed provider or governed import is admitted in a
+new court-pack version.
+
 The official OpenAI path always uses `POST /v1/responses`, including structured output under
 `text.format`; it has no Chat Completions fallback. Inkling and generic compatible endpoints also
 use Responses by default. `supervisor run` alone exposes `--allow-legacy-student-fallback`; using
@@ -159,6 +182,11 @@ The verifier resolves `LEAN_PATH` from the pinned Lake closure, then invokes the
 directly. It generates the import and theorem wrapper, rejects command/metaprogramming escape
 tokens, supplies an allowlisted environment with no provider credentials, caps wall/CPU/output/file
 descriptors, and distinguishes proof rejection from timeout, sandbox, or environment failure.
+
+The Lean developmental workflow sends the student only the pinned theorem statement and accepts
+only a tactic proof beginning with `by`. Cold, revision, and matched treatment/control transfer
+proofs all pass through this verifier; teacher or student confidence cannot substitute for kernel
+acceptance.
 
 On macOS the default `required` sandbox denies all network operations, confines filesystem writes
 to the per-proof temporary directory, and denies common credential/key directories. macOS does not

@@ -292,6 +292,7 @@ class CorpusRegistry:
         lease_for: timedelta,
         student_id: str | None = None,
         competency_id: str | None = None,
+        competency_ids: tuple[str, ...] | None = None,
         now: datetime | None = None,
     ) -> tuple[Lease, ...]:
         """Lease unseen siblings together so a partial block cannot escape to another worker."""
@@ -300,6 +301,10 @@ class CorpusRegistry:
             raise ValueError("matched group lease requires at least two items")
         if pool == CorpusPool.SEALED_ANCHOR:
             raise CorpusPolicyError("sealed anchors require the dedicated evaluation path")
+        if competency_id is not None and competency_ids is not None:
+            raise ValueError("select either one competency or a competency set")
+        if competency_ids is not None and not competency_ids:
+            raise ValueError("competency set cannot be empty")
         timestamp = now or datetime.now(UTC)
         await self.recover_expired_leases(session, now=timestamp)
         group_query = (
@@ -321,6 +326,8 @@ class CorpusRegistry:
             group_query = group_query.where(CorpusItemRow.instance_group_id.not_in(exposed_groups))
         if competency_id is not None:
             group_query = group_query.where(CorpusItemRow.competency_id == competency_id)
+        elif competency_ids is not None:
+            group_query = group_query.where(CorpusItemRow.competency_id.in_(competency_ids))
         group_id = await session.scalar(group_query)
         if group_id is None:
             return ()
@@ -726,19 +733,31 @@ def _batch_validation_reasons(items: list[CorpusItemRecord]) -> dict[str, str]:
             for sibling in siblings
         ):
             issues.append("algebra generator omitted expected answer")
-        answers = [
-            json.dumps(sibling.expected_answer, sort_keys=True, separators=(",", ":"))
-            for sibling in siblings
-        ]
-        if len(answers) != len(set(answers)):
-            issues.append("matched siblings have duplicate answers")
-        for sibling in siblings:
-            other_answers = {
-                answer for answer, other in zip(answers, siblings, strict=True) if other != sibling
-            }
-            normalized_prompt = re.sub(r"\s+", "", sibling.prompt)
-            if any(re.sub(r"\s+", "", answer) in normalized_prompt for answer in other_answers):
-                issues.append(f"sibling answer leakage in {sibling.item_id}")
+        answer_bearing = [sibling.expected_answer is not None for sibling in siblings]
+        if any(answer_bearing) and not all(answer_bearing):
+            issues.append("matched siblings mix fixed-answer and agentic task contracts")
+        elif all(answer_bearing):
+            answers = [
+                json.dumps(sibling.expected_answer, sort_keys=True, separators=(",", ":"))
+                for sibling in siblings
+            ]
+            if len(answers) != len(set(answers)):
+                issues.append("matched siblings have duplicate answers")
+            for sibling in siblings:
+                other_answers = {
+                    answer
+                    for answer, other in zip(answers, siblings, strict=True)
+                    if other != sibling
+                }
+                normalized_prompt = re.sub(r"\s+", "", sibling.prompt)
+                if any(re.sub(r"\s+", "", answer) in normalized_prompt for answer in other_answers):
+                    issues.append(f"sibling answer leakage in {sibling.item_id}")
+        else:
+            task_digests = [
+                sha256_digest(sibling.verifier_spec.model_dump(mode="json")) for sibling in siblings
+            ]
+            if len(task_digests) != len(set(task_digests)):
+                issues.append("agentic matched siblings have duplicate verifier tasks")
         if issues:
             issues_by_group[group_id] = sorted(set(issues))
     return {

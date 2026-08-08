@@ -131,6 +131,35 @@ R2.6 is complete as a corpus/verifier software package, not as a live developmen
 does not run Inkling, call an adjudicator, research outside the closed pack, file a brief, or replace
 professional legal judgment.
 
+## R2.4/R2.6 developmental-workflow checkpoint — 2026-08-08
+
+The two deferred domain workflows are now implemented as software:
+
+- `DomainDevelopmentalWorkflowHandler` provides a second, 10-transition durable path for
+  domain-owned student rendering, output decoding, and grading while preserving three-sibling
+  leasing, symmetric state forks, exposure-before-I/O, validated teaching, matched transfer,
+  branch isolation, memory governance, retirement, provenance, and episode commitment;
+- Lean binds that path to the pinned `LeanVerifier`; a student emits only a tactic proof and kernel
+  rejection, infrastructure failure, and verified proof remain distinct outcomes;
+- appellate student output is a content-only draft whose identity, scenario, role, and time are
+  system-bound; deterministic integrity gates run before any semantic model call;
+- `AppellateAdjudicationService` executes a strict typed assessment, gives each claim only its
+  attached passages/rules/record facts, persists the request/response idempotently, rejects
+  unbound evidence, and cannot decide currentness;
+- Pydantic schemas are normalized to the strict Structured Outputs subset before an OpenAI or
+  OpenAI-compatible Responses request, without mutating the durable source schema;
+- the corpus integrity policy now distinguishes fixed-answer siblings from agentic siblings, so
+  the latter are checked for distinct task/verifier identity instead of being quarantined merely
+  because every `expected_answer` is intentionally absent; and
+- domain verifier evidence is carried into the final developmental episode for downstream audit
+  and training-product decisions.
+
+The first appellate pack still has no admitted citator. ADR 0011 specifies the licensed-API or
+governed-import boundary; until that provider and its retention rights are confirmed, currentness
+remains `unknown_without_citator`. No Inkling, teacher, adjudicator, citator, Magellan, or trainer
+service was called to establish this software checkpoint. Live acceptance still depends on the
+Inkling-Small endpoint and a governed study; Magellan work remains deferred.
+
 ## Round 2 thesis
 
 Round 1 established a durable, evidence-governed developmental loop for symbolic algebra. Round 2

@@ -1,9 +1,10 @@
 # Architecture
 
 Padawan is an independent process and database. It coordinates model runtimes; it is not embedded
-in a checkpoint server, a teacher provider, Heirloom, or VECL-QB. Symbolic algebra is the complete
-autonomous research path; Lean mathematics, appellate briefing, and Magellan Improvement are
-installed corpus/verifier packages with explicit external execution gates. State, evidence,
+in a checkpoint server, a teacher provider, Heirloom, or VECL-QB. Symbolic algebra keeps its
+original complete research path. Lean mathematics and appellate briefing use a shared complete
+developmental path with domain-owned execution and verification authorities. Magellan Improvement
+remains a corpus/verifier package behind explicit external execution gates. State, evidence,
 orchestration, and adapter boundaries remain model-neutral.
 
 ## Runtime composition
@@ -18,9 +19,12 @@ domain cannot masquerade as a complete autonomous workflow. The authorities rema
 | student runtime | `adapters.*` | real async generation and capability reporting |
 | corpus | `CorpusRegistry` | lineage, leasing, exposure, retirement, quarantine |
 | domain registry | `DomainRegistry` | versioned domain packages and workflow capability boundary |
+| shared developmental control | `DomainDevelopmentalWorkflowHandler` | matched leasing, state forks, teacher validation, transfer, memory decision, retirement, and episode commit for non-algebra domains |
 | algebra verifier | `AlgebraGrader` | deterministic SymPy outcome and first-invalid-step evidence |
 | Lean verifier | `LeanVerifier` | pinned, sandboxed Lean-kernel proof authority |
 | appellate verifier | `AppellateBriefVerifier` | closed-pack rule, record, citation, quotation, leakage, and separately adjudicated semantic evidence |
+| appellate adjudicator | `AppellateAdjudicationService` | strict-schema, claim-scoped semantic judgment from admitted evidence only |
+| citator | provider adapter plus admitted court-pack source | independent currentness evidence; intentionally unconfigured in the first pack |
 | Magellan verifier | `MagellanScenarioVerifier` | isolated-world, authorization, trace, and replay authority |
 | teacher | `TeacherService` plus provider adapter | structured intervention generation |
 | comment validation | `CommentValidator` | evidence, contradiction, span, and leakage checks |
@@ -43,19 +47,20 @@ explicit compatible open-weight runtime are target candidates. Role is persisted
 state, run, attempt, and episode records; baseline runs cannot consolidate target memory.
 
 `DomainRegistry` installs `math.algebra@1.0.0`, `math.lean@1.0.0`,
-`legal.appellate.fourth_circuit@1.0.0`, and `agent.magellan_improvement@1.0.0`. Algebra owns its full
-durable handler under `padawan.domains.algebra`. Lean, appellate, and Magellan own deterministic
-matched corpus generation and verification but intentionally have no `build_workflow`; selecting
-one as the live autonomous domain fails explicitly until its real execution and developmental
-workflow exists.
+`legal.appellate.fourth_circuit@1.0.0`, and `agent.magellan_improvement@1.0.0`. Algebra owns its
+specialized durable handler under `padawan.domains.algebra`. Lean and appellate each implement
+`build_workflow` by binding a domain authority to `DomainDevelopmentalWorkflowHandler`. Magellan
+intentionally has no workflow; selecting it as the live domain fails until its real sandbox and
+environment driver satisfy the handshake.
 
 ## Durable action loop
 
 A `RunRow` is a state machine, not a call stack. One worker claim protects exactly one action. The
 worker persists the next transition and releases the lease before another action may begin. The
-happy path contains 20 transitions from `CREATED` through `COMPLETE`; retryable, terminal, and
-review states are explicit. A database uniqueness constraint permits only one active run for a
-student, while terminal transitions release that slot.
+specialized algebra path contains 20 transitions from `CREATED` through `COMPLETE`; the shared
+domain path combines the same research invariants into 10 durable transitions. Retryable,
+terminal, and review states are explicit. A database uniqueness constraint permits only one active
+run for a student, while terminal transitions release that slot.
 
 Before network I/O, `IdempotentGenerationExecutor` commits an external-call intent and restricted
 request artifact. After I/O it commits a restricted response envelope before the run transition.
@@ -65,7 +70,7 @@ The corpus registry also commits a conservative student exposure before each stu
 a terminal failure releases its leases but the exposed sibling group remains ineligible for that
 student.
 
-The implemented episode flow is:
+Both implemented paths preserve this episode flow:
 
 1. lease one three-item matched sibling group and create an active episode;
 2. record the immutable base state and fork treatment/control states transactionally;
@@ -79,7 +84,10 @@ The implemented episode flow is:
 10. commit the typed episode and complete the run.
 
 Treatment must show a strict transfer advantage to become canonical; a tie retains control. Both
-branches and all failed work remain stored.
+branches and all failed work remain stored. Lean student output is a narrow proof term and only the
+pinned kernel decides correctness. Appellate student output is a content-only draft: Padawan binds
+brief identity, scenario, research role, and time; deterministic integrity gates run before any
+semantic adjudicator call, and the adjudicator can cite only evidence attached to each claim.
 
 ## Research evidence and offline checkpoint lifecycle
 
@@ -144,12 +152,13 @@ recomputes the stream rather than trusting a stored boolean.
 
 ## Present boundaries
 
-The complete operational workflow is algebra. Lean corpus generation/proof verification and
-Magellan scenario generation/evidence verification are operational, but neither has a live
-developmental workflow. The audited Magellan tree lacks the required world isolation, durable
-idempotency, identity enforcement, protected approvals, and Responses endpoint, so no live result
-is claimed. GCS is implemented; S3 is intentionally absent. There is no parameter update
+Algebra, Lean mathematics, and appellate briefing have complete software workflows. Their real
+target studies still depend on the Inkling endpoint; no live result is claimed by software tests.
+The first appellate pack has no admitted citator, so currentness remains `unknown` and cannot be
+self-attested by its adjudicator. The audited Magellan tree lacks the required world isolation,
+durable idempotency, identity enforcement, protected approvals, and Responses endpoint, so it has
+no live workflow. GCS is implemented; S3 is intentionally absent. There is no parameter update
 implementation. `UnsupportedParameterUpdateBackend` fails explicitly because no backend can yet
 isolate, evaluate, commit, and restore a real weight update. Retention and interference are durably
 scheduled, leased, completed, and recovered, but no instrumented Inkling extension currently
-supplies live target outcomes or router telemetry. Appellate briefing remains a subsequent track.
+supplies live target outcomes or router telemetry.

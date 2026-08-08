@@ -1,0 +1,283 @@
+{
+  "$defs": {
+    "AppellateBriefSection": {
+      "additionalProperties": false,
+      "properties": {
+        "heading": {
+          "minLength": 1,
+          "title": "Heading",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/BriefSectionKind"
+        },
+        "paragraphs": {
+          "items": {
+            "$ref": "#/$defs/AppellateParagraph"
+          },
+          "minItems": 1,
+          "title": "Paragraphs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "heading",
+        "paragraphs"
+      ],
+      "title": "AppellateBriefSection",
+      "type": "object"
+    },
+    "AppellateCitation": {
+      "additionalProperties": false,
+      "properties": {
+        "citation_id": {
+          "minLength": 1,
+          "title": "Citation Id",
+          "type": "string"
+        },
+        "claim_id": {
+          "minLength": 1,
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "display": {
+          "minLength": 1,
+          "title": "Display",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/AppellateCitationKind"
+        },
+        "locator_id": {
+          "minLength": 1,
+          "title": "Locator Id",
+          "type": "string"
+        },
+        "quoted_text": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quoted Text"
+        },
+        "source_id": {
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "citation_id",
+        "claim_id",
+        "kind",
+        "source_id",
+        "locator_id",
+        "display"
+      ],
+      "title": "AppellateCitation",
+      "type": "object"
+    },
+    "AppellateCitationKind": {
+      "enum": [
+        "record",
+        "authority",
+        "rule"
+      ],
+      "title": "AppellateCitationKind",
+      "type": "string"
+    },
+    "AppellateClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "citation_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Citation Ids",
+          "type": "array"
+        },
+        "claim_id": {
+          "minLength": 1,
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/AppellateClaimKind"
+        },
+        "record_fact_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Record Fact Ids",
+          "type": "array"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "treated_authority_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Treated Authority Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "claim_id",
+        "kind",
+        "text",
+        "citation_ids"
+      ],
+      "title": "AppellateClaim",
+      "type": "object"
+    },
+    "AppellateClaimKind": {
+      "enum": [
+        "jurisdiction",
+        "issue",
+        "record_fact",
+        "procedural_history",
+        "preservation",
+        "legal_rule",
+        "standard_of_review",
+        "application",
+        "counterargument",
+        "remedy"
+      ],
+      "title": "AppellateClaimKind",
+      "type": "string"
+    },
+    "AppellateComplianceDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "counted_words": {
+          "minimum": 0,
+          "title": "Counted Words",
+          "type": "integer"
+        },
+        "service_certified": {
+          "title": "Service Certified",
+          "type": "boolean"
+        },
+        "typeface_points": {
+          "minimum": 14,
+          "title": "Typeface Points",
+          "type": "integer"
+        },
+        "uses_word_count_limit": {
+          "title": "Uses Word Count Limit",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "counted_words",
+        "typeface_points",
+        "uses_word_count_limit",
+        "service_certified"
+      ],
+      "title": "AppellateComplianceDraft",
+      "type": "object"
+    },
+    "AppellateParagraph": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "paragraph_id": {
+          "minLength": 1,
+          "title": "Paragraph Id",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "paragraph_id",
+        "text"
+      ],
+      "title": "AppellateParagraph",
+      "type": "object"
+    },
+    "BriefSectionKind": {
+      "enum": [
+        "cover",
+        "table_of_contents",
+        "table_of_authorities",
+        "jurisdictional_statement",
+        "issues_presented",
+        "statement_of_case",
+        "summary_of_argument",
+        "argument",
+        "conclusion",
+        "certificate_of_compliance",
+        "certificate_of_service"
+      ],
+      "title": "BriefSectionKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/appellate-submission-draft.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Student-authored content before Padawan binds institutional identity.",
+  "properties": {
+    "citations": {
+      "items": {
+        "$ref": "#/$defs/AppellateCitation"
+      },
+      "title": "Citations",
+      "type": "array"
+    },
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/AppellateClaim"
+      },
+      "minItems": 1,
+      "title": "Claims",
+      "type": "array"
+    },
+    "compliance": {
+      "$ref": "#/$defs/AppellateComplianceDraft"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/AppellateBriefSection"
+      },
+      "minItems": 1,
+      "title": "Sections",
+      "type": "array"
+    }
+  },
+  "required": [
+    "sections",
+    "claims",
+    "citations",
+    "compliance"
+  ],
+  "title": "AppellateSubmissionDraft",
+  "type": "object"
+}

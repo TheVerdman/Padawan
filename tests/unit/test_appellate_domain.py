@@ -59,14 +59,16 @@ def test_court_pack_is_closed_and_does_not_claim_currentness() -> None:
     }
 
 
-def test_builtin_registry_installs_appellate_without_claiming_live_workflow() -> None:
+def test_builtin_registry_installs_appellate_developmental_workflow() -> None:
     registry = build_builtin_domain_registry()
     package = registry.get("legal.appellate.fourth_circuit")
 
     assert package.spec.supports_tools is False
     assert package.spec.deterministic_verifiers == ("appellate_closed_record",)
-    with pytest.raises(ValueError, match="no autonomous workflow"):
-        registry.get_workflow("legal.appellate.fourth_circuit")
+    assert (
+        registry.get_workflow("legal.appellate.fourth_circuit").spec.domain_id
+        == "legal.appellate.fourth_circuit"
+    )
 
 
 def test_scenario_content_address_rejects_record_tampering() -> None:

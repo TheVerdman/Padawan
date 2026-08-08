@@ -183,6 +183,12 @@ async def build_live_application(
         clients.append(teacher_client)
 
     catalog = ArtifactCatalog(artifacts)
+    student_executor = IdempotentGenerationExecutor(
+        database=database, artifacts=artifacts, client=student_client
+    )
+    teacher_executor = IdempotentGenerationExecutor(
+        database=database, artifacts=artifacts, client=teacher_client
+    )
     runtime_context = DomainRuntimeContext(
         database=database,
         artifacts=artifacts,
@@ -194,13 +200,20 @@ async def build_live_application(
             code_revision=settings.code_revision,
             environment=settings.environment,
         ),
-        student_calls=IdempotentGenerationExecutor(
-            database=database, artifacts=artifacts, client=student_client
-        ),
-        teacher_calls=IdempotentGenerationExecutor(
-            database=database, artifacts=artifacts, client=teacher_client
-        ),
+        student_calls=student_executor,
+        teacher_calls=teacher_executor,
         teacher_provider=teacher_provider,
+        adjudicator_calls=teacher_executor,
+        adjudicator_provider=teacher_provider,
+        domain_options={
+            "lean_project_root": settings.lean_project_root,
+            "lean_lake_executable": settings.lean_lake_executable,
+            "lean_elan_home": settings.lean_elan_home,
+            "lean_sandbox_mode": settings.lean_sandbox_mode,
+            "lean_timeout_seconds": settings.lean_timeout_seconds,
+            "lean_output_limit_bytes": settings.lean_output_limit_bytes,
+            "lean_memory_limit_mb": settings.lean_memory_limit_mb,
+        },
         memory=memory,
         memory_backend=MemoryConsolidationBackend(memory),
         student_runtime_id=student_runtime_id,

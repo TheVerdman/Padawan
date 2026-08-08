@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from padawan.corpus.algebra import AlgebraCorpusGenerator, AlgebraFamily
 from padawan.corpus.registry import CorpusPolicyError, CorpusRegistry
+from padawan.domains.legal.appellate import AppellateCorpusGenerator, AppellateScenarioFamily
 from padawan.models.contracts import CorpusItemRecord, CorpusPool, ItemStatus
 from padawan.models.tables import CorpusItemRow, TemplateFamilyRow
 
@@ -90,6 +91,36 @@ async def test_malformed_generated_group_is_quarantined(database, defect: str) -
         assert all(row.pool == CorpusPool.QUARANTINE.value for row in rows)
         assert all(row.status == ItemStatus.QUARANTINED.value for row in rows)
         assert family is not None and family.contaminated
+
+
+async def test_agentic_siblings_without_fixed_answers_use_distinct_task_identity(database) -> None:
+    generator = AppellateCorpusGenerator()
+    created_at = datetime(2026, 8, 8, tzinfo=UTC)
+    items = generator.generate(
+        pool=CorpusPool.CURRICULUM,
+        seed=311,
+        groups_per_family=1,
+        siblings_per_group=3,
+        families=(AppellateScenarioFamily.AMBIGUOUS_VIDEO,),
+        created_at=created_at,
+    )
+    registry = CorpusRegistry()
+    async with database.transaction() as session:
+        for competency in generator.competencies(created_at=created_at):
+            await registry.register_competency(session, competency)
+        await registry.register_items(session, items)
+    async with database.transaction() as session:
+        rows = (
+            await session.scalars(
+                select(CorpusItemRow).where(
+                    CorpusItemRow.instance_group_id == items[0].instance_group_id
+                )
+            )
+        ).all()
+
+    assert len(rows) == 3
+    assert all(row.expected_answer is None for row in rows)
+    assert all(row.status == ItemStatus.ACTIVE.value for row in rows)
 
 
 async def test_contaminated_shadow_family_is_closed_in_full(database) -> None:

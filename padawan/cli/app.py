@@ -1086,6 +1086,7 @@ async def _live_research_run(
             supervisor=application.supervisor,
             student_id=student_id,
             research_role=application.student_role,
+            domain_id=application.domain.spec.domain_id,
         )
         result = await loop.run(
             episode_budget=episode_budget,

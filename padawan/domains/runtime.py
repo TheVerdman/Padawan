@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 from padawan.artifacts.store import ArtifactBackend
 from padawan.corpus.registry import CorpusRegistry
@@ -28,6 +29,9 @@ class DomainRuntimeContext:
     student_calls: IdempotentGenerationExecutor
     teacher_calls: IdempotentGenerationExecutor
     teacher_provider: str
+    adjudicator_calls: IdempotentGenerationExecutor | None
+    adjudicator_provider: str | None
+    domain_options: dict[str, Any]
     memory: LessonMemory
     memory_backend: ConsolidationBackend
     student_runtime_id: str

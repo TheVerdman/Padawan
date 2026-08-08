@@ -358,6 +358,15 @@ class RunState(StrEnum):
     EXPOSURES_RECORDED = "EXPOSURES_RECORDED"
     ITEMS_RETIRED = "ITEMS_RETIRED"
     EPISODE_COMMITTED = "EPISODE_COMMITTED"
+    DOMAIN_ITEMS_LEASED = "DOMAIN_ITEMS_LEASED"
+    DOMAIN_STATE_FORKED = "DOMAIN_STATE_FORKED"
+    DOMAIN_COLD_ATTEMPT_STORED = "DOMAIN_COLD_ATTEMPT_STORED"
+    DOMAIN_COLD_VERIFIED = "DOMAIN_COLD_VERIFIED"
+    DOMAIN_TEACHER_STORED = "DOMAIN_TEACHER_STORED"
+    DOMAIN_REVISION_VERIFIED = "DOMAIN_REVISION_VERIFIED"
+    DOMAIN_TRANSFER_VERIFIED = "DOMAIN_TRANSFER_VERIFIED"
+    DOMAIN_MEMORY_DECIDED = "DOMAIN_MEMORY_DECIDED"
+    DOMAIN_EPISODE_COMMITTED = "DOMAIN_EPISODE_COMMITTED"
     COMPLETE = "COMPLETE"
     FAILED_RETRYABLE = "FAILED_RETRYABLE"
     FAILED_TERMINAL = "FAILED_TERMINAL"
@@ -745,6 +754,7 @@ class DevelopmentalEpisode(StrictRecord):
     system_outcomes: tuple[SystemOutcome, ...] = ()
     pedagogical_metrics: dict[str, float]
     provenance_event_ids: tuple[str, ...]
+    domain_evidence_refs: tuple[NonEmpty, ...] = ()
     consolidation_proposal_ids: tuple[str, ...] = ()
     status: Literal["active", "complete", "failed", "review_required"]
     created_at: datetime

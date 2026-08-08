@@ -53,12 +53,11 @@ def test_lean_generator_is_deterministic_and_domain_validated() -> None:
         domain.validate_item(item)
 
 
-def test_lean_domain_is_installed_without_claiming_autonomous_workflow() -> None:
+def test_lean_domain_exposes_the_shared_developmental_workflow() -> None:
     registry = build_builtin_domain_registry()
 
     assert registry.get("math.lean").spec.deterministic_verifiers == ("lean4_kernel",)
-    with pytest.raises(ValueError, match="no autonomous workflow"):
-        registry.get_workflow("math.lean")
+    assert registry.get_workflow("math.lean").spec.domain_id == "math.lean"
 
 
 def test_lean_source_wrapper_rejects_command_and_metaprogramming_injection(tmp_path: Path) -> None:

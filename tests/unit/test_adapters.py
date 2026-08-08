@@ -8,8 +8,12 @@ import pytest
 from padawan.adapters.base import GenerationRequest, ModelProviderError
 from padawan.adapters.frontier_anthropic.client import AnthropicMessagesClient
 from padawan.adapters.frontier_openai.client import OpenAIResponsesClient
-from padawan.adapters.openai_compatible.client import OpenAICompatibleClient
+from padawan.adapters.openai_compatible.client import (
+    OpenAICompatibleClient,
+    _strict_json_schema,
+)
 from padawan.models.contracts import CapabilityAvailability, SamplingConfiguration
+from padawan.teaching.contracts import TeacherOutput
 
 
 def _request() -> GenerationRequest:
@@ -33,6 +37,29 @@ def _request() -> GenerationRequest:
         metadata={"purpose": "test"},
         store=False,
     )
+
+
+def test_pydantic_schema_is_normalized_for_strict_responses_without_mutation() -> None:
+    source = TeacherOutput.model_json_schema()
+    normalized = _strict_json_schema(source)
+
+    assert source != normalized
+    assert "default" in source["properties"]["error_class"]
+
+    def assert_strict(node: object) -> None:
+        if isinstance(node, dict):
+            assert "default" not in node
+            properties = node.get("properties")
+            if isinstance(properties, dict):
+                assert node["additionalProperties"] is False
+                assert node["required"] == list(properties)
+            for value in node.values():
+                assert_strict(value)
+        elif isinstance(node, list):
+            for value in node:
+                assert_strict(value)
+
+    assert_strict(normalized)
 
 
 async def test_responses_api_payload_and_raw_round_trip() -> None:

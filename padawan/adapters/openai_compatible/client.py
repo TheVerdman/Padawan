@@ -4,6 +4,7 @@ import asyncio
 import json
 import time
 from collections.abc import AsyncIterator
+from copy import deepcopy
 from typing import Any, Literal
 
 import httpx
@@ -326,7 +327,7 @@ def _responses_payload(request: GenerationRequest, model: str, *, stream: bool) 
                 "type": "json_schema",
                 "name": request.schema_name or "padawan_response",
                 "strict": True,
-                "schema": request.json_schema,
+                "schema": _strict_json_schema(request.json_schema),
             }
         }
     return payload
@@ -361,7 +362,7 @@ def _chat_payload(request: GenerationRequest, model: str, *, stream: bool) -> di
             "json_schema": {
                 "name": request.schema_name or "padawan_response",
                 "strict": True,
-                "schema": request.json_schema,
+                "schema": _strict_json_schema(request.json_schema),
             },
         }
     return payload
@@ -380,6 +381,34 @@ def _completion_payload(request: GenerationRequest, model: str, *, stream: bool)
         "logprobs": request.sampling.top_logprobs,
         "stream": stream,
     }
+
+
+def _strict_json_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Adapt a Pydantic schema to the strict Structured Outputs subset.
+
+    Strict Responses schemas require every object property in ``required`` and
+    reject default-valued schema keywords. Nullable fields retain their null
+    union; collection defaults become fields the model must emit. The input
+    schema remains unchanged.
+    """
+
+    normalized = deepcopy(schema)
+
+    def visit(node: Any) -> None:
+        if isinstance(node, dict):
+            node.pop("default", None)
+            properties = node.get("properties")
+            if isinstance(properties, dict):
+                node["required"] = list(properties)
+                node["additionalProperties"] = False
+            for value in node.values():
+                visit(value)
+        elif isinstance(node, list):
+            for value in node:
+                visit(value)
+
+    visit(normalized)
+    return normalized
 
 
 def _parse_responses(payload: dict[str, Any]) -> dict[str, Any]:

@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from padawan.domains.contracts import DomainSpec
+from padawan.domains.developmental.workflow import DomainDevelopmentalWorkflowHandler
+from padawan.domains.legal.appellate.adjudication import AppellateAdjudicationService
 from padawan.domains.legal.appellate.contracts import AppellateScenarioManifest
 from padawan.domains.legal.appellate.corpus import (
     APPELLATE_DOMAIN_ID,
@@ -12,6 +14,10 @@ from padawan.domains.legal.appellate.corpus import (
     AppellateCorpusGenerator,
 )
 from padawan.domains.legal.appellate.court_pack import build_fourth_circuit_pack
+from padawan.domains.legal.appellate.developmental import (
+    AppellateDevelopmentalAuthority,
+)
+from padawan.domains.runtime import DomainRuntimeContext
 from padawan.models.contracts import (
     CompetencyRecord,
     CorpusItemRecord,
@@ -24,8 +30,8 @@ from padawan.models.contracts import (
 class AppellateBriefingDomain:
     """Corpus and verifier authority for the first closed federal appellate pack.
 
-    The package intentionally has no live student or autonomous developmental workflow. It emits
-    governed tasks and validates evidence contracts for an external runner.
+    The domain binds its closed-record authority and semantic adjudicator to the shared
+    developmental control flow.
     """
 
     def __init__(self) -> None:
@@ -126,4 +132,16 @@ class AppellateBriefingDomain:
                 groups_per_family=groups_per_family,
                 siblings_per_group=siblings_per_group,
             )
+        )
+
+    def build_workflow(self, context: DomainRuntimeContext) -> DomainDevelopmentalWorkflowHandler:
+        if context.adjudicator_calls is None or context.adjudicator_provider is None:
+            raise ValueError("appellate workflow requires a configured semantic adjudicator")
+        adjudicator = AppellateAdjudicationService(
+            executor=context.adjudicator_calls,
+            provider=context.adjudicator_provider,
+        )
+        return DomainDevelopmentalWorkflowHandler.from_context(
+            authority=AppellateDevelopmentalAuthority(adjudicator=adjudicator),
+            context=context,
         )

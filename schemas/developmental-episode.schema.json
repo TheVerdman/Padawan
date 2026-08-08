@@ -136,6 +136,15 @@
       "title": "Diagnosis Ids",
       "type": "array"
     },
+    "domain_evidence_refs": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Domain Evidence Refs",
+      "type": "array"
+    },
     "episode_id": {
       "minLength": 1,
       "title": "Episode Id",

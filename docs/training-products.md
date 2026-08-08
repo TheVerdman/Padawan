@@ -118,8 +118,8 @@ versions by content digest and records the excluded duplicate.
 ## Current boundary
 
 The compiler is usable with local or GCS artifact storage, but it is still an offline product
-boundary. It does not operationalize Inkling serving, modify Magellan, execute an appellate student
-or adjudicator workflow, or supply an external trainer. The appellate corpus/verifier package can
-produce RLVR-eligible evidence only after an external target run and digest-bound semantic
-adjudication. A checkpoint produced elsewhere can cite the bundle manifest digest when it is
-registered, after which the existing sealed-suite promotion lifecycle governs it.
+boundary. It does not operationalize Inkling serving, modify Magellan, call a citator, or supply an
+external trainer. Lean and appellate student/adjudicator workflows now exist as software, but
+RLVR-eligible evidence still requires a real external target run and, for appellate work,
+digest-bound semantic adjudication. A checkpoint produced elsewhere can cite the bundle manifest
+digest when it is registered, after which the existing sealed-suite promotion lifecycle governs it.

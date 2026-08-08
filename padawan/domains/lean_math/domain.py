@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from pathlib import Path
+from typing import cast
 
 from padawan.domains.contracts import DomainSpec
+from padawan.domains.developmental.workflow import DomainDevelopmentalWorkflowHandler
 from padawan.domains.lean_math.corpus import (
     LEAN_VERIFIER_TYPE,
     LEAN_VERIFIER_VERSION,
     LeanMathCorpusGenerator,
 )
+from padawan.domains.lean_math.developmental import LeanDevelopmentalAuthority
+from padawan.domains.lean_math.verifier import LeanSandboxMode, LeanVerifier
+from padawan.domains.runtime import DomainRuntimeContext
 from padawan.models.contracts import (
     CompetencyRecord,
     CorpusItemRecord,
@@ -20,8 +26,8 @@ from padawan.models.contracts import (
 class LeanMathDomain:
     """Kernel-verifiable Lean mathematics domain.
 
-    Round 2 installs its corpus and verifier authority. It deliberately does not
-    claim the algebra domain's autonomous teaching workflow.
+    The domain supplies Lean-specific generation and kernel verification to the
+    shared developmental control flow.
     """
 
     def __init__(self) -> None:
@@ -92,4 +98,20 @@ class LeanMathDomain:
                 groups_per_family=groups_per_family,
                 siblings_per_group=siblings_per_group,
             )
+        )
+
+    def build_workflow(self, context: DomainRuntimeContext) -> DomainDevelopmentalWorkflowHandler:
+        options = context.domain_options
+        verifier = LeanVerifier(
+            project_root=Path(options.get("lean_project_root", "lean")),
+            lake_executable=Path(options.get("lean_lake_executable", ".tools/elan/bin/lake")),
+            elan_home=Path(options.get("lean_elan_home", ".tools/elan")),
+            sandbox_mode=cast(LeanSandboxMode, options.get("lean_sandbox_mode", "required")),
+            timeout_seconds=float(options.get("lean_timeout_seconds", 20.0)),
+            output_limit_bytes=int(options.get("lean_output_limit_bytes", 262_144)),
+            memory_limit_mb=int(options.get("lean_memory_limit_mb", 4_096)),
+        )
+        return DomainDevelopmentalWorkflowHandler.from_context(
+            authority=LeanDevelopmentalAuthority(verifier),
+            context=context,
         )

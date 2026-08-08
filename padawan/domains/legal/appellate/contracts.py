@@ -398,6 +398,22 @@ class AppellateComplianceCertificate(StrictRecord):
     service_certified: bool
 
 
+class AppellateComplianceDraft(StrictRecord):
+    counted_words: Annotated[int, Field(ge=0)]
+    typeface_points: Annotated[int, Field(ge=14)]
+    uses_word_count_limit: bool
+    service_certified: bool
+
+
+class AppellateSubmissionDraft(StrictRecord):
+    """Student-authored content before Padawan binds institutional identity."""
+
+    sections: Annotated[tuple[AppellateBriefSection, ...], Field(min_length=1)]
+    claims: Annotated[tuple[AppellateClaim, ...], Field(min_length=1)]
+    citations: tuple[AppellateCitation, ...]
+    compliance: AppellateComplianceDraft
+
+
 class AppellateSubmission(StrictRecord):
     brief_id: NonEmpty
     scenario_id: NonEmpty
@@ -563,6 +579,16 @@ class AppellateSemanticAssessment(StrictRecord):
         if len(authority_ids) != len(set(authority_ids)):
             raise ValueError("adverse-authority assessments must be unique")
         return self
+
+
+class AppellateSemanticAssessmentDraft(StrictRecord):
+    """Adjudicator output before Padawan binds model and evidence identity."""
+
+    claim_assessments: Annotated[tuple[AppellateClaimAssessment, ...], Field(min_length=1)]
+    adverse_authority_assessments: tuple[AppellateAdverseAuthorityAssessment, ...]
+    issue_coverage: AppellateCoverageAssessment
+    preservation_coverage: AppellateCoverageAssessment
+    remedy_coverage: AppellateCoverageAssessment
 
 
 class AuthorityCurrentnessAssessment(StrictRecord):

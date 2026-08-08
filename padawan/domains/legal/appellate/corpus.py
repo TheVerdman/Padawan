@@ -337,7 +337,8 @@ def _render_prompt(*, pack: AppellateCourtPack, scenario: AppellateScenarioManif
     pack_payload = pack.model_dump(mode="json")
     return (
         "Draft the appellant's principal brief only from the closed materials below. Return an "
-        "AppellateSubmission JSON object: the ordered brief plus a complete claim/citation map. "
+        "AppellateSubmissionDraft JSON object: the ordered brief plus a complete claim/citation "
+        "map and compliance fields. Padawan binds the brief, scenario, role, and timestamp. "
         "Treat an authority outside the declared corpus as unresolved, never as automatically "
         "fabricated. Do not claim that any authority is good law; this pack has no citator. "
         "Substantive paragraph text must be exactly the joined text of its mapped claims. Record "

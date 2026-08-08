@@ -20,6 +20,12 @@ toolchain, dependency drift, sandbox failure, timeout, signal, or output overflo
 failure and cannot be scored as student error. Tactic-state or teacher judgments may later provide
 process components, but cannot compensate for a final kernel rejection.
 
+For appellate briefing, court-pack, rule, record, citation, quotation, and leakage checks precede
+claim-scoped semantic adjudication. The adjudicator can use only evidence already attached to a
+claim and cannot establish authority currentness. Currentness requires an independently admitted,
+fresh citator result; negative treatment rejects it, while missing, stale, ambiguous, or unlicensed
+evidence stays unknown. A student, teacher, or adjudicator assertion is not citator evidence.
+
 Evidence records are immutable and content-backed. Provider bytes and rendered inputs remain raw
 artifacts; normalized grades and interventions refer to them but do not replace them. Provenance
 events commit hashes of the normalized event payload and link events in order. Neither a stored

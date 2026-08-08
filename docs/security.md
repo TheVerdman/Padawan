@@ -43,6 +43,13 @@ metadata is evidence, not a credential. Restricted/raw classification cannot be 
 second writer. Cloud IAM, retention policy, encryption, audit logging, and lifecycle rules remain
 operator controls outside Padawan.
 
+Future citator reports are restricted legal-research evidence. An adapter may retain raw provider
+material only when the subscription permits automated access and internal retention; otherwise the
+result cannot satisfy the automated audit boundary and remains unknown or enters governed human
+review. Commercial UI scraping is out of scope. Citator credentials follow the same composition-
+boundary and secret-manager rules as model credentials and never enter prompts, court packs, or
+the repository.
+
 ## Retention and integrity
 
 Normalized research records, provenance events, student states, and artifact metadata are
