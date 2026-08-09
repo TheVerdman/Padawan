@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -67,3 +69,27 @@ class ModelProviderError(RuntimeError):
         self.status_code = status_code
         self.retryable = retryable
         self.response_body = response_body
+
+
+def rendered_messages(request: GenerationRequest) -> tuple[dict[str, Any], ...]:
+    """Return the exact role/message structure supplied to message-oriented transports."""
+
+    messages: list[dict[str, Any]] = []
+    if request.instructions:
+        messages.append({"role": "developer", "content": request.instructions})
+    if isinstance(request.input, str):
+        messages.append({"role": "user", "content": request.input})
+    else:
+        messages.extend(deepcopy(request.input))
+    return tuple(messages)
+
+
+def rendered_prompt(request: GenerationRequest) -> str:
+    if isinstance(request.input, str):
+        return request.input
+    return json.dumps(
+        request.input,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )

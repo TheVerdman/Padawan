@@ -19,6 +19,8 @@ from padawan.models.contracts import ArtifactRef, RuntimeCapabilities
 from padawan.models.database import Database
 from padawan.models.hashing import sha256_digest
 from padawan.models.tables import ArtifactRow, ExternalCallRow
+from padawan.temporal.contracts import OperationStatus
+from padawan.temporal.telemetry import OperationTelemetryStore
 
 
 class GenerationClient(Protocol):
@@ -34,11 +36,13 @@ class IdempotentGenerationExecutor:
         database: Database,
         artifacts: ArtifactBackend,
         client: GenerationClient,
+        telemetry: OperationTelemetryStore | None = None,
     ) -> None:
         self.database = database
         self.artifacts = artifacts
         self.catalog = ArtifactCatalog(artifacts)
         self.client = client
+        self.telemetry = telemetry or OperationTelemetryStore()
 
     async def execute(
         self,
@@ -49,6 +53,13 @@ class IdempotentGenerationExecutor:
         request: GenerationRequest,
     ) -> GenerationResult:
         request_hash = sha256_digest(request.model_dump(mode="json"))
+        operation_id = _operation_id(request.request_id)
+        environment_fingerprint = sha256_digest(
+            {
+                "provider": provider,
+                "operation_type": "model_generation",
+            }
+        )
         async with self.database.transaction() as session:
             existing = await session.get(ExternalCallRow, request.request_id)
             if existing is not None:
@@ -63,7 +74,31 @@ class IdempotentGenerationExecutor:
                         self.artifacts, reference, allow_restricted=True
                     )
                     return _deserialize_result(payload)
+                try:
+                    operation = await self.telemetry.get(session, operation_id=operation_id)
+                except KeyError:
+                    await self.telemetry.create(
+                        session,
+                        operation_id=operation_id,
+                        operation_type="model_generation",
+                        environment_fingerprint=environment_fingerprint,
+                        workload_class=purpose,
+                        workload=_generation_workload(request, provider),
+                        run_id=run_id,
+                        source_ref=request.request_id,
+                        status=OperationStatus.RUNNING,
+                        occurred_at=existing.created_at,
+                    )
+                else:
+                    if operation.status == OperationStatus.WAITING:
+                        await self.telemetry.transition(
+                            session,
+                            operation_id=operation_id,
+                            status=OperationStatus.RUNNING,
+                            detail={"reason": "idempotent external call resumed"},
+                        )
             else:
+                timestamp = datetime.now(UTC)
                 request_ref = await artifact_put_text(
                     self.artifacts,
                     request.model_dump_json(),
@@ -90,9 +125,21 @@ class IdempotentGenerationExecutor:
                         provider_response_id=None,
                         status="pending",
                         error=None,
-                        created_at=datetime.now(UTC),
+                        created_at=timestamp,
                         completed_at=None,
                     )
+                )
+                await self.telemetry.create(
+                    session,
+                    operation_id=operation_id,
+                    operation_type="model_generation",
+                    environment_fingerprint=environment_fingerprint,
+                    workload_class=purpose,
+                    workload=_generation_workload(request, provider),
+                    run_id=run_id,
+                    source_ref=request.request_id,
+                    status=OperationStatus.RUNNING,
+                    occurred_at=timestamp,
                 )
 
         try:
@@ -108,6 +155,18 @@ class IdempotentGenerationExecutor:
                         "retryable": exc.retryable,
                         "response_digest": sha256_digest(exc.response_body),
                     }
+                    await self.telemetry.transition(
+                        session,
+                        operation_id=operation_id,
+                        status=(
+                            OperationStatus.WAITING if exc.retryable else OperationStatus.FAILED
+                        ),
+                        detail={
+                            "provider_status_code": exc.status_code,
+                            "retryable": exc.retryable,
+                            "response_digest": sha256_digest(exc.response_body),
+                        },
+                    )
             raise
 
         envelope = _serialize_result(result)
@@ -149,6 +208,16 @@ class IdempotentGenerationExecutor:
             row.status = "completed"
             row.error = None
             row.completed_at = datetime.now(UTC)
+            await self.telemetry.transition(
+                session,
+                operation_id=operation_id,
+                status=OperationStatus.SUCCEEDED,
+                occurred_at=row.completed_at,
+                detail={
+                    "provider_latency_ms": result.latency_ms,
+                    "response_id_present": result.response_id is not None,
+                },
+            )
         return result
 
 
@@ -217,3 +286,26 @@ def _artifact_row_to_reference(row: ArtifactRow) -> ArtifactRef:
         },
         strict=False,
     )
+
+
+def _operation_id(request_id: str) -> str:
+    return f"operation-generation-{sha256_digest(request_id)[7:39]}"
+
+
+def _generation_workload(request: GenerationRequest, provider: str) -> dict[str, object]:
+    if isinstance(request.input, str):
+        input_kind = "text"
+        input_size = len(request.input)
+        message_count = 1
+    else:
+        input_kind = "messages"
+        input_size = len(json.dumps(request.input, sort_keys=True))
+        message_count = len(request.input)
+    return {
+        "provider": provider,
+        "input_kind": input_kind,
+        "input_size_chars": input_size,
+        "message_count": message_count,
+        "max_output_tokens": request.sampling.max_output_tokens,
+        "schema_constrained": request.json_schema is not None,
+    }

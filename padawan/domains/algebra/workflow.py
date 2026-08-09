@@ -6,7 +6,12 @@ from typing import Any, Literal
 
 from sqlalchemy import select
 
-from padawan.adapters.base import GenerationRequest, GenerationResult
+from padawan.adapters.base import (
+    GenerationRequest,
+    GenerationResult,
+    rendered_messages,
+    rendered_prompt,
+)
 from padawan.artifacts.store import (
     ArtifactBackend,
     ArtifactCatalog,
@@ -1446,13 +1451,8 @@ class AlgebraWorkflowHandler:
             item_id=str(item["item_id"]),
             state_before_id=state_id,
             state_after_id=None,
-            rendered_messages=(
-                {"role": "developer", "content": request.instructions},
-                {"role": "user", "content": request.input},
-            ),
-            rendered_prompt=(
-                request.input if isinstance(request.input, str) else json.dumps(request.input)
-            ),
+            rendered_messages=rendered_messages(request),
+            rendered_prompt=rendered_prompt(request),
             input_token_ids=None,
             raw_generation_ref=raw_response,
             output_token_ids=generation.token_ids,

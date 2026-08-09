@@ -87,6 +87,9 @@ cannot be admitted to a training lane.
 `training_source_documents` stores immutable content, source/version, artifact, rights, and quality
 evidence for separately admitted continued-pretraining material. Append-only
 `training_source_decisions` governs active, review-required, quarantined, and retired states.
+`authored_demonstrations` stores verifier-backed project-authored gold separately from attempts. It
+binds a training-visible curriculum item, exact messages and target events, final answer, verifier
+result/digest, quality evidence, and source/output SFT rights.
 `training_bundles` binds a deterministic source snapshot to one canonical manifest artifact and all
 restricted product artifacts. Product rows and exclusions retain compiler version, source evidence
 references, source record digests, and rights digests.
@@ -139,6 +142,12 @@ run is nonterminal. A sequence uniqueness constraint prevents duplicate transiti
 `external_calls` provides the idempotency boundary. `workers` stores heartbeat and active run.
 `review_queue` stores adjudication work.
 
+`operation_spans` indexes the current state of a measured operation, while immutable
+`operation_span_events` retains every queued/running/waiting/terminal transition.
+`duration_profiles` records reproducible p50/p90/p95 duration and timeout estimates with exact
+source span IDs and an evidence cutoff. The same typed duration profile can appear in a synthetic
+`TemporalFrame`, but virtual scenario time never controls operational leases or real I/O.
+
 `artifacts` holds immutable SHA-256 metadata plus backend-specific location evidence. Local storage
 records a filesystem-relative blob identity; GCS records bucket, object, generation,
 metageneration, ETag, CRC32C/MD5 when supplied, size, and project. `artifact_references` links blobs
@@ -149,4 +158,5 @@ The Alembic revision chain is authoritative for a new database. The Round 2 role
 non-null role columns with a target-compatible default; the R2.3 revision adds verifier, reward,
 study, scheduled-evaluation, suite, checkpoint, comparison, and decision tables. CI compares the
 head revision with SQLAlchemy metadata and exercises downgrade/upgrade across every checked-in
-revision.
+revision. The temporal revision adds operation spans/events, duration profiles, and governed
+authored demonstrations.

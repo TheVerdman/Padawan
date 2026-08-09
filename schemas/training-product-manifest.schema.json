@@ -69,6 +69,7 @@
     },
     "TrainingProductKind": {
       "enum": [
+        "authored_sft",
         "evidence_ledger",
         "normalized_episodes",
         "sft",

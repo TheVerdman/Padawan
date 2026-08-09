@@ -40,6 +40,10 @@ from padawan.domains.magellan_improvement.contracts import (
     MagellanVerificationBundle,
     MagellanWorldSnapshot,
 )
+from padawan.domains.temporal_grounding.contracts import (
+    TemporalScenarioManifest,
+    TemporalScenarioOracle,
+)
 from padawan.models.contracts import (
     AttemptRecord,
     CompactedStateRecord,
@@ -66,7 +70,16 @@ from padawan.models.research_contracts import (
     EvaluationSuiteManifest,
     StudyManifest,
 )
+from padawan.temporal.contracts import (
+    DurationProfile,
+    OperationSpanEventRecord,
+    OperationSpanRecord,
+    TemporalDecision,
+    TemporalFrame,
+)
 from padawan.training.contracts import (
+    AuthoredDemonstration,
+    AuthoredSFTTrainingRow,
     CompilerInvocation,
     ContinuedPretrainingRow,
     EvidenceLedgerEntry,
@@ -98,6 +111,8 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("appellate-submission-draft", AppellateSubmissionDraft),
     ("appellate-verification-bundle", AppellateVerificationBundle),
     ("attempt", AttemptRecord),
+    ("authored-demonstration", AuthoredDemonstration),
+    ("authored-sft-training-row", AuthoredSFTTrainingRow),
     ("checkpoint-comparison", CheckpointComparisonRecord),
     ("checkpoint-decision", CheckpointDecisionRecord),
     ("checkpoint-evaluation", CheckpointEvaluationRecord),
@@ -109,6 +124,7 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("corpus-item", CorpusItemRecord),
     ("continued-pretraining-row", ContinuedPretrainingRow),
     ("developmental-episode", DevelopmentalEpisode),
+    ("duration-profile", DurationProfile),
     ("environment-snapshot", EnvironmentSnapshot),
     ("evidence-ledger-entry", EvidenceLedgerEntry),
     ("evaluation-outcome", EvaluationOutcome),
@@ -126,6 +142,8 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("magellan-verification-bundle", MagellanVerificationBundle),
     ("magellan-world-snapshot", MagellanWorldSnapshot),
     ("normalized-episode-entry", NormalizedEpisodeEntry),
+    ("operation-span", OperationSpanRecord),
+    ("operation-span-event", OperationSpanEventRecord),
     ("preference-training-row", PreferenceTrainingRow),
     ("process-training-row", ProcessTrainingRow),
     ("reward", RewardRecord),
@@ -139,6 +157,10 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("study-manifest", StudyManifest),
     ("task-manifest", TaskManifest),
     ("teacher-intervention", TeacherInterventionRecord),
+    ("temporal-decision", TemporalDecision),
+    ("temporal-frame", TemporalFrame),
+    ("temporal-scenario-manifest", TemporalScenarioManifest),
+    ("temporal-scenario-oracle", TemporalScenarioOracle),
     ("transfer-trial", TransferTrialRecord),
     ("training-eligibility", TrainingEligibilityDecision),
     ("training-bundle-manifest", TrainingBundleManifest),

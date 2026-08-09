@@ -1,0 +1,162 @@
+{
+  "$defs": {
+    "DurationForecast": {
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "p50_completed_at": {
+          "format": "date-time",
+          "title": "P50 Completed At",
+          "type": "string"
+        },
+        "p90_completed_at": {
+          "format": "date-time",
+          "title": "P90 Completed At",
+          "type": "string"
+        },
+        "source_profile_id": {
+          "minLength": 1,
+          "title": "Source Profile Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id",
+        "p50_completed_at",
+        "p90_completed_at",
+        "source_profile_id"
+      ],
+      "title": "DurationForecast",
+      "type": "object"
+    },
+    "TemporalAction": {
+      "additionalProperties": false,
+      "properties": {
+        "execute_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execute At"
+        },
+        "kind": {
+          "$ref": "#/$defs/TemporalActionKind"
+        },
+        "rationale_code": {
+          "minLength": 1,
+          "title": "Rationale Code",
+          "type": "string"
+        },
+        "subject": {
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "subject",
+        "rationale_code"
+      ],
+      "title": "TemporalAction",
+      "type": "object"
+    },
+    "TemporalActionKind": {
+      "enum": [
+        "continue",
+        "wait",
+        "poll",
+        "revalidate",
+        "inspect",
+        "retry",
+        "cancel",
+        "reschedule",
+        "notify_user"
+      ],
+      "title": "TemporalActionKind",
+      "type": "string"
+    },
+    "TemporalContinuity": {
+      "enum": [
+        "immediate_continuation",
+        "resume_after_gap",
+        "reestablish_context"
+      ],
+      "title": "TemporalContinuity",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/temporal-scenario-oracle.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "acknowledge_gap": {
+      "title": "Acknowledge Gap",
+      "type": "boolean"
+    },
+    "claims_continuous_activity": {
+      "const": false,
+      "default": false,
+      "title": "Claims Continuous Activity",
+      "type": "boolean"
+    },
+    "continuity": {
+      "$ref": "#/$defs/TemporalContinuity"
+    },
+    "forbidden_response_fragments": {
+      "default": [],
+      "items": {
+        "minLength": 2,
+        "type": "string"
+      },
+      "title": "Forbidden Response Fragments",
+      "type": "array"
+    },
+    "next_check_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Next Check At"
+    },
+    "required_actions": {
+      "items": {
+        "$ref": "#/$defs/TemporalAction"
+      },
+      "minItems": 1,
+      "title": "Required Actions",
+      "type": "array"
+    },
+    "required_duration_forecasts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DurationForecast"
+      },
+      "title": "Required Duration Forecasts",
+      "type": "array"
+    }
+  },
+  "required": [
+    "continuity",
+    "acknowledge_gap",
+    "required_actions"
+  ],
+  "title": "TemporalScenarioOracle",
+  "type": "object"
+}

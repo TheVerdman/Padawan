@@ -57,6 +57,7 @@
     },
     "EvidenceSourceKind": {
       "enum": [
+        "authored_demonstration",
         "corpus_item",
         "episode",
         "attempt",

@@ -13,6 +13,7 @@ One bundle always manifests all of these views, including zero-row views:
 | --- | --- |
 | evidence ledger | every source record and immutable artifact reference in the snapshot |
 | normalized episodes | attempts, grades, interventions, revisions, transfers, rewards, and eligibility evidence |
+| authored SFT | verifier-backed project-authored gold with explicit source/output SFT rights; never labeled as a student attempt |
 | SFT | successful, deterministically graded target output with explicit SFT eligibility |
 | preference | same-prompt target outputs with a strict verified score ordering and explicit eligibility |
 | RLVR | governed task/verifier environment plus observed target output and reward evidence |
@@ -26,6 +27,12 @@ Baseline outputs, teacher interventions, and target prompts directly influenced 
 excluded from target-training products by default. A later policy cannot recover them by deleting
 the exclusion evidence; it needs a separately versioned decision and, where applicable, a
 teacherless successful replay.
+
+Authored demonstrations use a separate append-only admission path and product. Each row cites its
+curriculum item, canonical multi-turn transcript, target event, final answer, deterministic verifier
+result, quality evidence, and rights digests. Downstream training may intentionally mix
+`authored_sft` with `sft`, but provenance always preserves which examples were authored gold and
+which were observed target successes.
 
 Sealed, rotating-shadow, quarantined, contaminated, unreviewed, ineligible, and unregistered-
 checkpoint material is structurally excluded from target-training views. A registered checkpoint
@@ -85,9 +92,10 @@ padawan training compile --as-of 2026-08-01T20:15:00Z \
 ```
 
 The optional policy selector prevents evidence from another eligibility policy from admitting a
-row. The manifest records the invocation, source snapshot, checkpoint identities, episode and
-source-document IDs, source artifact digests, verifier/environment fingerprints, rights digests,
-eligibility policies, product counts, exclusion counts, and content-addressed product artifacts.
+row. The manifest records the invocation, source snapshot, checkpoint identities, episode,
+source-document, and authored-demonstration IDs, source artifact digests, verifier/environment
+fingerprints, rights digests, eligibility policies, product counts, exclusion counts, and
+content-addressed product artifacts.
 
 Verification re-reads every restricted artifact, validates its SHA-256 identity, parses every row
 against the versioned contract, checks canonical JSONL ordering and counts, recomputes the bundle

@@ -255,6 +255,34 @@ class TrainingSourceDecisionRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class AuthoredDemonstrationRow(Base):
+    __tablename__ = "authored_demonstrations"
+    __table_args__ = (
+        Index(
+            "ix_authored_demonstration_domain",
+            "domain_id",
+            "competency_id",
+            "created_at",
+        ),
+    )
+
+    demonstration_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    domain_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    competency_id: Mapped[str] = mapped_column(
+        ForeignKey("competencies.competency_id", ondelete="RESTRICT"), nullable=False
+    )
+    source_item_id: Mapped[str] = mapped_column(
+        ForeignKey("corpus_items.item_id", ondelete="RESTRICT"), nullable=False
+    )
+    verifier_result_id: Mapped[str] = mapped_column(
+        ForeignKey("verifier_results.result_id", ondelete="RESTRICT"), nullable=False
+    )
+    rights_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class TrainingBundleRow(Base):
     __tablename__ = "training_bundles"
     __table_args__ = (
@@ -985,6 +1013,92 @@ class ExternalCallRow(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class OperationSpanRow(Base):
+    __tablename__ = "operation_spans"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('queued', 'running', 'waiting', 'succeeded', 'failed', "
+            "'cancelled', 'timed_out')",
+            name="ck_operation_span_status",
+        ),
+        Index(
+            "ix_operation_span_profile",
+            "operation_type",
+            "environment_fingerprint",
+            "workload_class",
+            "completed_at",
+        ),
+        Index("ix_operation_span_active", "status", "updated_at"),
+    )
+
+    operation_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    parent_operation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("operation_spans.operation_id", ondelete="RESTRICT")
+    )
+    run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.run_id", ondelete="RESTRICT"))
+    source_ref: Mapped[str | None] = mapped_column(String(192))
+    operation_type: Mapped[str] = mapped_column(String(128), nullable=False)
+    environment_fingerprint: Mapped[str] = mapped_column(String(71), nullable=False)
+    workload_class: Mapped[str] = mapped_column(String(128), nullable=False)
+    workload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    enqueued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    first_progress_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    event_sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class OperationSpanEventRow(Base):
+    __tablename__ = "operation_span_events"
+    __table_args__ = (
+        UniqueConstraint("operation_id", "sequence", name="uq_operation_span_event_sequence"),
+        CheckConstraint(
+            "status IN ('queued', 'running', 'waiting', 'succeeded', 'failed', "
+            "'cancelled', 'timed_out')",
+            name="ck_operation_span_event_status",
+        ),
+        CheckConstraint(
+            "progress IS NULL OR (progress >= 0 AND progress <= 1)",
+            name="ck_operation_span_event_progress",
+        ),
+    )
+
+    event_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    operation_id: Mapped[str] = mapped_column(
+        ForeignKey("operation_spans.operation_id", ondelete="RESTRICT"), nullable=False
+    )
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    progress: Mapped[float | None] = mapped_column(Float)
+    detail: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
+class DurationProfileRow(Base):
+    __tablename__ = "duration_profiles"
+    __table_args__ = (
+        Index(
+            "ix_duration_profile_lookup",
+            "operation_type",
+            "environment_fingerprint",
+            "workload_class",
+            "as_of",
+        ),
+    )
+
+    profile_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    operation_type: Mapped[str] = mapped_column(String(128), nullable=False)
+    environment_fingerprint: Mapped[str] = mapped_column(String(71), nullable=False)
+    workload_class: Mapped[str] = mapped_column(String(128), nullable=False)
+    as_of: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class WorkerRow(Base):
     __tablename__ = "workers"
 
@@ -1019,7 +1133,10 @@ for _immutable_type in (
     ProvenanceEventRow,
     TrainingSourceDocumentRow,
     TrainingSourceDecisionRow,
+    AuthoredDemonstrationRow,
     TrainingBundleRow,
+    OperationSpanEventRow,
+    DurationProfileRow,
 ):
     event.listen(_immutable_type, "before_update", _immutable)
     event.listen(_immutable_type, "before_delete", _immutable)

@@ -26,6 +26,9 @@ domain cannot masquerade as a complete autonomous workflow. The authorities rema
 | appellate adjudicator | `AppellateAdjudicationService` | strict-schema, claim-scoped semantic judgment from admitted evidence only |
 | citator | provider adapter plus admitted court-pack source | independent currentness evidence; intentionally unconfigured in the first pack |
 | Magellan verifier | `MagellanScenarioVerifier` | isolated-world, authorization, trace, and replay authority |
+| temporal frame | `padawan.temporal` | authoritative event time, activity, freshness, active-operation, and duration contracts |
+| temporal verifier | `TemporalPolicyVerifier` | deterministic continuity, honesty, action, duration, and next-check authority |
+| operation telemetry | `OperationTelemetryStore` | append-only operation transitions and reproducible duration profiles |
 | teacher | `TeacherService` plus provider adapter | structured intervention generation |
 | comment validation | `CommentValidator` | evidence, contradiction, span, and leakage checks |
 | state | `StateStore` | immutable lineage, symmetric forks, canonical promotion |
@@ -47,11 +50,12 @@ explicit compatible open-weight runtime are target candidates. Role is persisted
 state, run, attempt, and episode records; baseline runs cannot consolidate target memory.
 
 `DomainRegistry` installs `math.algebra@1.0.0`, `math.lean@1.0.0`,
-`legal.appellate.fourth_circuit@1.0.0`, and `agent.magellan_improvement@1.0.0`. Algebra owns its
-specialized durable handler under `padawan.domains.algebra`. Lean and appellate each implement
-`build_workflow` by binding a domain authority to `DomainDevelopmentalWorkflowHandler`. Magellan
-intentionally has no workflow; selecting it as the live domain fails until its real sandbox and
-environment driver satisfy the handshake.
+`legal.appellate.fourth_circuit@1.0.0`, `agent.magellan_improvement@1.0.0`, and
+`temporal.grounding@1.0.0`. Algebra owns its specialized durable handler under
+`padawan.domains.algebra`. Lean, appellate, and temporal grounding bind their domain authorities to
+`DomainDevelopmentalWorkflowHandler`; the temporal workflow uses synthetic authoritative frames
+and duration profiles. Magellan intentionally has no workflow; selecting it as the live domain
+fails until its real sandbox and environment driver satisfy the handshake.
 
 ## Durable action loop
 
@@ -66,6 +70,9 @@ Before network I/O, `IdempotentGenerationExecutor` commits an external-call inte
 request artifact. After I/O it commits a restricted response envelope before the run transition.
 Replaying the same request ID returns the stored response and rejects a different request body.
 Thus a crash after a provider response but before a state transition does not generate twice.
+The same boundary records a `model_generation` operation span before I/O and an append-only status
+event on wait, failure, or success. Terminal spans can be compiled into versioned p50/p90/p95 and
+timeout profiles without retaining prompt text in workload metadata.
 The corpus registry also commits a conservative student exposure before each student transport call;
 a terminal failure releases its leases but the exposed sibling group remains ineligible for that
 student.
@@ -96,6 +103,11 @@ and retains every raw component, normalizer, coefficient, missing-data action, i
 policy digest. `RewardEngine.recompute` rebuilds the complete record from the registered immutable
 policy; a missing component is never silently converted to zero, and a failed hard gate makes
 scalar utility unavailable. Training eligibility is a separate cited decision.
+
+Project-authored gold behavior has a separate admission identity. An `AuthoredDemonstration` must
+cite deterministic verified evidence and SFT-confirmed source/output rights; the compiler emits it
+as `authored_sft`, while independently successful target attempts remain in `sft`. This keeps an
+oracle bootstrap example from masquerading as an observed student success.
 
 `StudyEngine` groups independently persisted, state-forked experiments under one immutable suite
 manifest. Aggregation remains block-level and reports missing, contaminated, and infrastructure

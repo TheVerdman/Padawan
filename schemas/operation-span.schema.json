@@ -1,0 +1,218 @@
+{
+  "$defs": {
+    "OperationSpanEventRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "additionalProperties": true,
+          "title": "Detail",
+          "type": "object"
+        },
+        "event_id": {
+          "minLength": 1,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "operation_id": {
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "progress": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Progress"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/OperationStatus"
+        }
+      },
+      "required": [
+        "event_id",
+        "operation_id",
+        "sequence",
+        "status",
+        "occurred_at"
+      ],
+      "title": "OperationSpanEventRecord",
+      "type": "object"
+    },
+    "OperationStatus": {
+      "enum": [
+        "queued",
+        "running",
+        "waiting",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "timed_out"
+      ],
+      "title": "OperationStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/operation-span.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "enqueued_at": {
+      "format": "date-time",
+      "title": "Enqueued At",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/OperationSpanEventRecord"
+      },
+      "minItems": 1,
+      "title": "Events",
+      "type": "array"
+    },
+    "first_progress_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "First Progress At"
+    },
+    "operation_id": {
+      "minLength": 1,
+      "title": "Operation Id",
+      "type": "string"
+    },
+    "operation_type": {
+      "minLength": 1,
+      "title": "Operation Type",
+      "type": "string"
+    },
+    "parent_operation_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Operation Id"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
+    },
+    "source_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Ref"
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Started At"
+    },
+    "status": {
+      "$ref": "#/$defs/OperationStatus"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "workload": {
+      "additionalProperties": true,
+      "title": "Workload",
+      "type": "object"
+    },
+    "workload_class": {
+      "minLength": 1,
+      "title": "Workload Class",
+      "type": "string"
+    }
+  },
+  "required": [
+    "operation_id",
+    "operation_type",
+    "environment_fingerprint",
+    "workload_class",
+    "workload",
+    "status",
+    "enqueued_at",
+    "events",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "OperationSpanRecord",
+  "type": "object"
+}

@@ -267,6 +267,7 @@
     },
     "TrainingProductKind": {
       "enum": [
+        "authored_sft",
         "evidence_ledger",
         "normalized_episodes",
         "sft",
@@ -436,6 +437,14 @@
       "title": "Source Artifact Digests",
       "type": "array"
     },
+    "source_demonstration_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Source Demonstration Ids",
+      "type": "array"
+    },
     "source_document_ids": {
       "items": {
         "minLength": 1,
@@ -473,6 +482,7 @@
     "checkpoint_identities",
     "source_episode_ids",
     "source_document_ids",
+    "source_demonstration_ids",
     "source_artifact_digests",
     "verifier_fingerprints",
     "environment_fingerprints",

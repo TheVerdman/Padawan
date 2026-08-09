@@ -15,7 +15,7 @@ from padawan.models.contracts import (
     SourceRights,
     StrictRecord,
 )
-from padawan.models.hashing import sha256_digest
+from padawan.models.hashing import canonical_json_bytes, sha256_digest
 
 TRAINING_COMPILER_VERSION: Literal["1.0.0"] = "1.0.0"
 TRAINING_ROW_SCHEMA_VERSION: Literal["1.0.0"] = "1.0.0"
@@ -83,7 +83,69 @@ class TrainingSourceDecision(StrictRecord):
         return self
 
 
+class AuthoredMessage(StrictRecord):
+    role: Literal["developer", "system", "user", "assistant", "tool"]
+    content: NonEmpty
+
+
+class AuthoredTargetEvent(StrictRecord):
+    type: Literal["assistant_message"] = "assistant_message"
+    role: Literal["assistant"] = "assistant"
+    content: NonEmpty
+
+
+class AuthoredDemonstration(StrictRecord):
+    """Governed gold behavior that is explicitly not an observed student attempt."""
+
+    schema_version: Literal["1.0.0"] = TRAINING_ROW_SCHEMA_VERSION
+    demonstration_id: NonEmpty
+    domain_id: NonEmpty
+    competency_id: NonEmpty
+    source_item_id: NonEmpty
+    verification_scope: NonEmpty
+    messages: Annotated[tuple[AuthoredMessage, ...], Field(min_length=1)]
+    prompt: NonEmpty
+    target_events: Annotated[tuple[AuthoredTargetEvent, ...], Field(min_length=1)]
+    final_answer: dict[str, Any] | str
+    verifier_result_id: NonEmpty
+    verifier_result_digest: Sha256
+    rights: SourceRights
+    rights_digest: Sha256
+    quality_evidence_refs: Annotated[tuple[NonEmpty, ...], Field(min_length=1)]
+    authored_by: NonEmpty
+    reviewed_by: NonEmpty
+    created_at: datetime
+
+    @model_validator(mode="after")
+    def demonstration_is_governed(self) -> AuthoredDemonstration:
+        if self.created_at.tzinfo is None or self.created_at.utcoffset() is None:
+            raise ValueError("authored demonstration creation time must be timezone-aware")
+        if self.rights_digest != sha256_digest(self.rights.model_dump(mode="json")):
+            raise ValueError("authored demonstration rights digest is invalid")
+        if len(self.quality_evidence_refs) != len(set(self.quality_evidence_refs)):
+            raise ValueError("authored demonstration evidence references must be unique")
+        if tuple(sorted(self.quality_evidence_refs)) != self.quality_evidence_refs:
+            raise ValueError(
+                "authored demonstration evidence references must be canonically ordered"
+            )
+        if self.verifier_result_id not in self.quality_evidence_refs:
+            raise ValueError("authored demonstration must cite its verifier result")
+        if not any(message.role == "user" for message in self.messages):
+            raise ValueError("authored demonstration requires at least one user message")
+        expected_content = (
+            self.final_answer
+            if isinstance(self.final_answer, str)
+            else canonical_json_bytes(self.final_answer).decode("utf-8")
+        )
+        if self.target_events[-1].content != expected_content:
+            raise ValueError(
+                "authored demonstration final target event differs from its final answer"
+            )
+        return self
+
+
 class TrainingProductKind(StrEnum):
+    AUTHORED_SFT = "authored_sft"
     EVIDENCE_LEDGER = "evidence_ledger"
     NORMALIZED_EPISODES = "normalized_episodes"
     SFT = "sft"
@@ -96,6 +158,7 @@ class TrainingProductKind(StrEnum):
 
 
 class EvidenceSourceKind(StrEnum):
+    AUTHORED_DEMONSTRATION = "authored_demonstration"
     CORPUS_ITEM = "corpus_item"
     EPISODE = "episode"
     ATTEMPT = "attempt"
@@ -222,6 +285,34 @@ class SFTTrainingRow(CompiledRow):
     eligibility_decision_ids: Annotated[tuple[NonEmpty, ...], Field(min_length=1)]
 
 
+class AuthoredSFTTrainingRow(CompiledRow):
+    demonstration_id: NonEmpty
+    domain_id: NonEmpty
+    competency_id: NonEmpty
+    source_item_id: NonEmpty
+    messages: Annotated[tuple[AuthoredMessage, ...], Field(min_length=1)]
+    prompt: NonEmpty
+    target_events: Annotated[tuple[AuthoredTargetEvent, ...], Field(min_length=1)]
+    final_answer: dict[str, Any] | str
+    verification: dict[str, Any]
+    quality_evidence_refs: Annotated[tuple[NonEmpty, ...], Field(min_length=1)]
+
+    @model_validator(mode="after")
+    def target_matches_answer(self) -> AuthoredSFTTrainingRow:
+        expected_content = (
+            self.final_answer
+            if isinstance(self.final_answer, str)
+            else canonical_json_bytes(self.final_answer).decode("utf-8")
+        )
+        if self.target_events[-1].content != expected_content:
+            raise ValueError("authored SFT target differs from its final answer")
+        if len(self.quality_evidence_refs) != len(set(self.quality_evidence_refs)):
+            raise ValueError("authored SFT evidence references must be unique")
+        if tuple(sorted(self.quality_evidence_refs)) != self.quality_evidence_refs:
+            raise ValueError("authored SFT evidence references must be canonically ordered")
+        return self
+
+
 class PreferenceTrainingRow(CompiledRow):
     episode_id: NonEmpty
     checkpoint_id: NonEmpty
@@ -340,6 +431,7 @@ class TrainingBundleManifest(StrictRecord):
     checkpoint_identities: tuple[CheckpointSourceIdentity, ...]
     source_episode_ids: tuple[NonEmpty, ...]
     source_document_ids: tuple[NonEmpty, ...]
+    source_demonstration_ids: tuple[NonEmpty, ...]
     source_artifact_digests: tuple[Sha256, ...]
     verifier_fingerprints: tuple[Sha256, ...]
     environment_fingerprints: tuple[Sha256, ...]
@@ -365,6 +457,7 @@ class TrainingBundleManifest(StrictRecord):
         for name, values in (
             ("source episodes", self.source_episode_ids),
             ("source documents", self.source_document_ids),
+            ("source demonstrations", self.source_demonstration_ids),
             ("source artifacts", self.source_artifact_digests),
             ("verifier fingerprints", self.verifier_fingerprints),
             ("environment fingerprints", self.environment_fingerprints),

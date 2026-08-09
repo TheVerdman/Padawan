@@ -36,6 +36,7 @@ def test_builtin_registry_validates_real_algebra_items() -> None:
         "legal.appellate.fourth_circuit",
         "math.algebra",
         "math.lean",
+        "temporal.grounding",
     ]
 
 

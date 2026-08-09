@@ -1,0 +1,834 @@
+{
+  "$defs": {
+    "ActiveOperation": {
+      "additionalProperties": false,
+      "properties": {
+        "cancellable": {
+          "default": false,
+          "title": "Cancellable",
+          "type": "boolean"
+        },
+        "duration_profile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DurationProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "enqueued_at": {
+          "format": "date-time",
+          "title": "Enqueued At",
+          "type": "string"
+        },
+        "expected_completion_p50": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Completion P50"
+        },
+        "expected_completion_p90": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Completion P90"
+        },
+        "last_progress_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Progress At"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "next_safe_poll_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Next Safe Poll At"
+        },
+        "operation_id": {
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "operation_type": {
+          "minLength": 1,
+          "title": "Operation Type",
+          "type": "string"
+        },
+        "progress": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Progress"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "status": {
+          "$ref": "#/$defs/OperationStatus"
+        },
+        "timeout_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout At"
+        }
+      },
+      "required": [
+        "operation_id",
+        "operation_type",
+        "status",
+        "enqueued_at"
+      ],
+      "title": "ActiveOperation",
+      "type": "object"
+    },
+    "ActivityInterval": {
+      "additionalProperties": false,
+      "properties": {
+        "activity_id": {
+          "minLength": 1,
+          "title": "Activity Id",
+          "type": "string"
+        },
+        "ended_at": {
+          "format": "date-time",
+          "title": "Ended At",
+          "type": "string"
+        },
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "operation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operation Id"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "activity_id",
+        "started_at",
+        "ended_at",
+        "kind"
+      ],
+      "title": "ActivityInterval",
+      "type": "object"
+    },
+    "DurationForecast": {
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "minLength": 1,
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "p50_completed_at": {
+          "format": "date-time",
+          "title": "P50 Completed At",
+          "type": "string"
+        },
+        "p90_completed_at": {
+          "format": "date-time",
+          "title": "P90 Completed At",
+          "type": "string"
+        },
+        "source_profile_id": {
+          "minLength": 1,
+          "title": "Source Profile Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id",
+        "p50_completed_at",
+        "p90_completed_at",
+        "source_profile_id"
+      ],
+      "title": "DurationForecast",
+      "type": "object"
+    },
+    "DurationProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "as_of": {
+          "format": "date-time",
+          "title": "As Of",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "environment_fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Environment Fingerprint",
+          "type": "string"
+        },
+        "operation_type": {
+          "minLength": 1,
+          "title": "Operation Type",
+          "type": "string"
+        },
+        "p50_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P50 Seconds"
+        },
+        "p90_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P90 Seconds"
+        },
+        "p95_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P95 Seconds"
+        },
+        "profile_id": {
+          "minLength": 1,
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "sample_count": {
+          "minimum": 1,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "source_span_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Source Span Ids",
+          "type": "array"
+        },
+        "success_count": {
+          "minimum": 0,
+          "title": "Success Count",
+          "type": "integer"
+        },
+        "timeout_count": {
+          "minimum": 0,
+          "title": "Timeout Count",
+          "type": "integer"
+        },
+        "timeout_probability": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Timeout Probability",
+          "type": "number"
+        },
+        "workload_class": {
+          "minLength": 1,
+          "title": "Workload Class",
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile_id",
+        "operation_type",
+        "environment_fingerprint",
+        "workload_class",
+        "sample_count",
+        "success_count",
+        "timeout_count",
+        "timeout_probability",
+        "source_span_ids",
+        "as_of",
+        "created_at"
+      ],
+      "title": "DurationProfile",
+      "type": "object"
+    },
+    "FreshnessDisposition": {
+      "enum": [
+        "fresh",
+        "stale",
+        "unknown",
+        "immutable"
+      ],
+      "title": "FreshnessDisposition",
+      "type": "string"
+    },
+    "OperationStatus": {
+      "enum": [
+        "queued",
+        "running",
+        "waiting",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "timed_out"
+      ],
+      "title": "OperationStatus",
+      "type": "string"
+    },
+    "TemporalAction": {
+      "additionalProperties": false,
+      "properties": {
+        "execute_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execute At"
+        },
+        "kind": {
+          "$ref": "#/$defs/TemporalActionKind"
+        },
+        "rationale_code": {
+          "minLength": 1,
+          "title": "Rationale Code",
+          "type": "string"
+        },
+        "subject": {
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "subject",
+        "rationale_code"
+      ],
+      "title": "TemporalAction",
+      "type": "object"
+    },
+    "TemporalActionKind": {
+      "enum": [
+        "continue",
+        "wait",
+        "poll",
+        "revalidate",
+        "inspect",
+        "retry",
+        "cancel",
+        "reschedule",
+        "notify_user"
+      ],
+      "title": "TemporalActionKind",
+      "type": "string"
+    },
+    "TemporalContinuity": {
+      "enum": [
+        "immediate_continuation",
+        "resume_after_gap",
+        "reestablish_context"
+      ],
+      "title": "TemporalContinuity",
+      "type": "string"
+    },
+    "TemporalConversationMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "message_id": {
+          "minLength": 1,
+          "title": "Message Id",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "user",
+            "assistant"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sent_at": {
+          "format": "date-time",
+          "title": "Sent At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message_id",
+        "role",
+        "content",
+        "sent_at"
+      ],
+      "title": "TemporalConversationMessage",
+      "type": "object"
+    },
+    "TemporalEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
+        },
+        "event_id": {
+          "minLength": 1,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/TemporalEventKind"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "subject": {
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "kind",
+        "occurred_at",
+        "subject"
+      ],
+      "title": "TemporalEvent",
+      "type": "object"
+    },
+    "TemporalEventKind": {
+      "enum": [
+        "user_message",
+        "assistant_message",
+        "tool_call",
+        "tool_observation",
+        "operation_status",
+        "system"
+      ],
+      "title": "TemporalEventKind",
+      "type": "string"
+    },
+    "TemporalFrame": {
+      "additionalProperties": false,
+      "properties": {
+        "active_operations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ActiveOperation"
+          },
+          "title": "Active Operations",
+          "type": "array"
+        },
+        "agent_activity_since_last_exchange": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ActivityInterval"
+          },
+          "title": "Agent Activity Since Last Exchange",
+          "type": "array"
+        },
+        "conversation_started_at": {
+          "format": "date-time",
+          "title": "Conversation Started At",
+          "type": "string"
+        },
+        "current_event_at": {
+          "format": "date-time",
+          "title": "Current Event At",
+          "type": "string"
+        },
+        "elapsed_since_previous_exchange_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Elapsed Since Previous Exchange Seconds"
+        },
+        "events": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TemporalEvent"
+          },
+          "title": "Events",
+          "type": "array"
+        },
+        "frame_id": {
+          "minLength": 1,
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "now_utc": {
+          "format": "date-time",
+          "title": "Now Utc",
+          "type": "string"
+        },
+        "observations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TemporalObservation"
+          },
+          "title": "Observations",
+          "type": "array"
+        },
+        "previous_assistant_message_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous Assistant Message At"
+        },
+        "previous_user_message_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous User Message At"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "user_timezone": {
+          "minLength": 1,
+          "title": "User Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "frame_id",
+        "sequence",
+        "now_utc",
+        "user_timezone",
+        "conversation_started_at",
+        "current_event_at"
+      ],
+      "title": "TemporalFrame",
+      "type": "object"
+    },
+    "TemporalObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "freshness": {
+          "$ref": "#/$defs/FreshnessDisposition"
+        },
+        "freshness_policy": {
+          "minLength": 1,
+          "title": "Freshness Policy",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "observation_id": {
+          "minLength": 1,
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "subject": {
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid Until"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "observation_id",
+        "subject",
+        "observed_at",
+        "freshness",
+        "freshness_policy"
+      ],
+      "title": "TemporalObservation",
+      "type": "object"
+    },
+    "TemporalScenarioFamily": {
+      "enum": [
+        "gap_continuity",
+        "activity_honesty",
+        "observation_freshness",
+        "duration_calibration",
+        "eta_revision"
+      ],
+      "title": "TemporalScenarioFamily",
+      "type": "string"
+    },
+    "TemporalScenarioOracle": {
+      "additionalProperties": false,
+      "properties": {
+        "acknowledge_gap": {
+          "title": "Acknowledge Gap",
+          "type": "boolean"
+        },
+        "claims_continuous_activity": {
+          "const": false,
+          "default": false,
+          "title": "Claims Continuous Activity",
+          "type": "boolean"
+        },
+        "continuity": {
+          "$ref": "#/$defs/TemporalContinuity"
+        },
+        "forbidden_response_fragments": {
+          "default": [],
+          "items": {
+            "minLength": 2,
+            "type": "string"
+          },
+          "title": "Forbidden Response Fragments",
+          "type": "array"
+        },
+        "next_check_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Next Check At"
+        },
+        "required_actions": {
+          "items": {
+            "$ref": "#/$defs/TemporalAction"
+          },
+          "minItems": 1,
+          "title": "Required Actions",
+          "type": "array"
+        },
+        "required_duration_forecasts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DurationForecast"
+          },
+          "title": "Required Duration Forecasts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "continuity",
+        "acknowledge_gap",
+        "required_actions"
+      ],
+      "title": "TemporalScenarioOracle",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/temporal-scenario-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "current_user_message": {
+      "$ref": "#/$defs/TemporalConversationMessage"
+    },
+    "family": {
+      "$ref": "#/$defs/TemporalScenarioFamily"
+    },
+    "frame": {
+      "$ref": "#/$defs/TemporalFrame"
+    },
+    "oracle": {
+      "$ref": "#/$defs/TemporalScenarioOracle"
+    },
+    "prior_conversation": {
+      "items": {
+        "$ref": "#/$defs/TemporalConversationMessage"
+      },
+      "title": "Prior Conversation",
+      "type": "array"
+    },
+    "scenario_id": {
+      "minLength": 1,
+      "title": "Scenario Id",
+      "type": "string"
+    },
+    "split": {
+      "minLength": 1,
+      "title": "Split",
+      "type": "string"
+    }
+  },
+  "required": [
+    "scenario_id",
+    "family",
+    "frame",
+    "prior_conversation",
+    "current_user_message",
+    "oracle",
+    "split",
+    "created_at"
+  ],
+  "title": "TemporalScenarioManifest",
+  "type": "object"
+}

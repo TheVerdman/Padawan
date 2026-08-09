@@ -54,6 +54,16 @@
       "sha256": "43f572769b056bdb88afceb5555e2dc100cace51a5257dc6df29a6fd60f9f72f"
     },
     {
+      "name": "authored-demonstration",
+      "schema": "authored-demonstration.schema.json",
+      "sha256": "8638ae4c6ce014a4f315e9b4134244bdd538a47c93f4a5a4c697ecbb5cf879f5"
+    },
+    {
+      "name": "authored-sft-training-row",
+      "schema": "authored-sft-training-row.schema.json",
+      "sha256": "2705d3d38c9717e7f150c3b5d09648f4a556fab1175fa43d5824203a9f9d7cb5"
+    },
+    {
       "name": "checkpoint-comparison",
       "schema": "checkpoint-comparison.schema.json",
       "sha256": "47a9b68a8969db925806e30998eee8ce3e501dea2755505a69ba84e5fff7ed85"
@@ -109,6 +119,11 @@
       "sha256": "2efe65d6f1035a6410d3d7c9c0ef1a621f7124ef02b39cfd2b027f85f996d4f2"
     },
     {
+      "name": "duration-profile",
+      "schema": "duration-profile.schema.json",
+      "sha256": "72b7e7a4e38fb8a1afc43b80093c7297d4d84b26528577d36ddafd8c3b083e3f"
+    },
+    {
       "name": "environment-snapshot",
       "schema": "environment-snapshot.schema.json",
       "sha256": "a74f6664d996b54d839019a7446550c2c8e112265821da155559c7626fce1e9c"
@@ -116,7 +131,7 @@
     {
       "name": "evidence-ledger-entry",
       "schema": "evidence-ledger-entry.schema.json",
-      "sha256": "c52b236dae9264ee5e6044a210b67ccafd04472c720608b887eae5338f5d6855"
+      "sha256": "c498957af71c89422782bf665061c5c36db112b810b2bab74a8edae5c8a9ca47"
     },
     {
       "name": "evaluation-outcome",
@@ -194,6 +209,16 @@
       "sha256": "427a63c87837d35cf0ea6e7722bf403c6b24b1ebc10f1a29f82de0c1e19158bc"
     },
     {
+      "name": "operation-span",
+      "schema": "operation-span.schema.json",
+      "sha256": "90c093a26313c0042826e1a33fc66139a53eaa32a26f1574f312389e3f8b1999"
+    },
+    {
+      "name": "operation-span-event",
+      "schema": "operation-span-event.schema.json",
+      "sha256": "61215693d7c4200c5ae2f64065f10e89bf7ea4cf836b723b127e48e3bb05b720"
+    },
+    {
       "name": "preference-training-row",
       "schema": "preference-training-row.schema.json",
       "sha256": "6ffe95aa050d326807bcd91125eb6a41f2d429ca399486822c688256d9f1d01a"
@@ -259,6 +284,26 @@
       "sha256": "58df1b549a9135fb947733d43b31f627542a75990c87150de7b90d0bc24faf5a"
     },
     {
+      "name": "temporal-decision",
+      "schema": "temporal-decision.schema.json",
+      "sha256": "a62c8bad241094c13cac7e780a914e4aa24a94501654a60a2e7b3273466a3929"
+    },
+    {
+      "name": "temporal-frame",
+      "schema": "temporal-frame.schema.json",
+      "sha256": "966475607b3311686b555aed45e4a3773dcd5c2d69705ec7d28adfdad3213dd0"
+    },
+    {
+      "name": "temporal-scenario-manifest",
+      "schema": "temporal-scenario-manifest.schema.json",
+      "sha256": "ce70661191e0b92993559c4ab61f0d3f3484f3350589674cb037bb3bb2da88ee"
+    },
+    {
+      "name": "temporal-scenario-oracle",
+      "schema": "temporal-scenario-oracle.schema.json",
+      "sha256": "f4388a8033582082ea814d450ad26845330fc721c8ced66430a4f4e5db52baf4"
+    },
+    {
       "name": "transfer-trial",
       "schema": "transfer-trial.schema.json",
       "sha256": "d0db6caa42ed103bfe9e72cefc147c0a9e50570bccbddc9afa50471e894ed467"
@@ -271,22 +316,22 @@
     {
       "name": "training-bundle-manifest",
       "schema": "training-bundle-manifest.schema.json",
-      "sha256": "24c3af701b6fe971d13a38820fd06ea42688c92c0268d28827b8f28eac797f5b"
+      "sha256": "c9cde4a41e2183a942d9faaad51d3c34f12e3ee808615e0b26055dd3d017efa2"
     },
     {
       "name": "training-bundle-verification",
       "schema": "training-bundle-verification.schema.json",
-      "sha256": "0021666ac538fc371883aa6a1b61e0735fadd9603212f57266ada50193c27431"
+      "sha256": "606760e5109a14ed373357b244615c4c4efabfd3b4aacffad810b98a128753e7"
     },
     {
       "name": "training-exclusion",
       "schema": "training-exclusion.schema.json",
-      "sha256": "921e0e682dbcb873867e5099803cf5bce3ac07f2009de0781e715512b9157bd1"
+      "sha256": "550452f23fa011fd704e22c028e96cf4c06b975c0054257ae4369a9898b56c79"
     },
     {
       "name": "training-product-manifest",
       "schema": "training-product-manifest.schema.json",
-      "sha256": "827894f5bb9f1ba036606803b72566074025c090ad67093faa2fa4b812066b09"
+      "sha256": "d3da9dc6d72a5ed5409ba5fb3ddb77b5b4ac6527fbd964c872083ad05ba11c36"
     },
     {
       "name": "training-source-decision",

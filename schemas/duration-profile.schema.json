@@ -1,0 +1,120 @@
+{
+  "$id": "https://schemas.padawan.local/v1/duration-profile.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "operation_type": {
+      "minLength": 1,
+      "title": "Operation Type",
+      "type": "string"
+    },
+    "p50_seconds": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "P50 Seconds"
+    },
+    "p90_seconds": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "P90 Seconds"
+    },
+    "p95_seconds": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "P95 Seconds"
+    },
+    "profile_id": {
+      "minLength": 1,
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "sample_count": {
+      "minimum": 1,
+      "title": "Sample Count",
+      "type": "integer"
+    },
+    "source_span_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Source Span Ids",
+      "type": "array"
+    },
+    "success_count": {
+      "minimum": 0,
+      "title": "Success Count",
+      "type": "integer"
+    },
+    "timeout_count": {
+      "minimum": 0,
+      "title": "Timeout Count",
+      "type": "integer"
+    },
+    "timeout_probability": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Timeout Probability",
+      "type": "number"
+    },
+    "workload_class": {
+      "minLength": 1,
+      "title": "Workload Class",
+      "type": "string"
+    }
+  },
+  "required": [
+    "profile_id",
+    "operation_type",
+    "environment_fingerprint",
+    "workload_class",
+    "sample_count",
+    "success_count",
+    "timeout_count",
+    "timeout_probability",
+    "source_span_ids",
+    "as_of",
+    "created_at"
+  ],
+  "title": "DurationProfile",
+  "type": "object"
+}

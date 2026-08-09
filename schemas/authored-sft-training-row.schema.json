@@ -1,0 +1,191 @@
+{
+  "$defs": {
+    "AuthoredMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "developer",
+            "system",
+            "user",
+            "assistant",
+            "tool"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "content"
+      ],
+      "title": "AuthoredMessage",
+      "type": "object"
+    },
+    "AuthoredTargetEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "role": {
+          "const": "assistant",
+          "default": "assistant",
+          "title": "Role",
+          "type": "string"
+        },
+        "type": {
+          "const": "assistant_message",
+          "default": "assistant_message",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "content"
+      ],
+      "title": "AuthoredTargetEvent",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/authored-sft-training-row.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "competency_id": {
+      "minLength": 1,
+      "title": "Competency Id",
+      "type": "string"
+    },
+    "compiler_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "demonstration_id": {
+      "minLength": 1,
+      "title": "Demonstration Id",
+      "type": "string"
+    },
+    "domain_id": {
+      "minLength": 1,
+      "title": "Domain Id",
+      "type": "string"
+    },
+    "final_answer": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "Final Answer"
+    },
+    "messages": {
+      "items": {
+        "$ref": "#/$defs/AuthoredMessage"
+      },
+      "minItems": 1,
+      "title": "Messages",
+      "type": "array"
+    },
+    "prompt": {
+      "minLength": 1,
+      "title": "Prompt",
+      "type": "string"
+    },
+    "quality_evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Quality Evidence Refs",
+      "type": "array"
+    },
+    "rights_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Rights Digests",
+      "type": "array"
+    },
+    "row_id": {
+      "minLength": 1,
+      "title": "Row Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Evidence Refs",
+      "type": "array"
+    },
+    "source_item_id": {
+      "minLength": 1,
+      "title": "Source Item Id",
+      "type": "string"
+    },
+    "source_record_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Record Digests",
+      "type": "array"
+    },
+    "target_events": {
+      "items": {
+        "$ref": "#/$defs/AuthoredTargetEvent"
+      },
+      "minItems": 1,
+      "title": "Target Events",
+      "type": "array"
+    },
+    "verification": {
+      "additionalProperties": true,
+      "title": "Verification",
+      "type": "object"
+    }
+  },
+  "required": [
+    "row_id",
+    "source_evidence_refs",
+    "source_record_digests",
+    "demonstration_id",
+    "domain_id",
+    "competency_id",
+    "source_item_id",
+    "messages",
+    "prompt",
+    "target_events",
+    "final_answer",
+    "verification",
+    "quality_evidence_refs"
+  ],
+  "title": "AuthoredSFTTrainingRow",
+  "type": "object"
+}

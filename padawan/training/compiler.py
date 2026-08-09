@@ -21,6 +21,7 @@ from padawan.domains.contracts import (
     RewardRecord,
     TrainingEligibilityDecision,
     TrainingLane,
+    VerifierDisposition,
     VerifierResult,
 )
 from padawan.models.contracts import (
@@ -43,6 +44,7 @@ from padawan.models.research_contracts import CheckpointManifest
 from padawan.models.tables import (
     ArtifactRow,
     AttemptRow,
+    AuthoredDemonstrationRow,
     CheckpointRow,
     CorpusItemRow,
     EpisodeRow,
@@ -61,6 +63,8 @@ from padawan.models.tables import (
 from padawan.training.contracts import (
     RIGHTS_POLICY_VERSION,
     TRAINING_COMPILER_VERSION,
+    AuthoredDemonstration,
+    AuthoredSFTTrainingRow,
     CheckpointSourceIdentity,
     CompiledRow,
     CompilerInvocation,
@@ -137,6 +141,12 @@ class _DocumentSource:
 
 
 @dataclass(frozen=True)
+class _DemonstrationSource:
+    demonstration: AuthoredDemonstration
+    record_digest: str
+
+
+@dataclass(frozen=True)
 class _EvidenceSource:
     kind: EvidenceSourceKind
     source_id: str
@@ -166,11 +176,13 @@ class _Snapshot:
     eligibilities: dict[str, _EligibilitySource]
     checkpoints: dict[str, _CheckpointSource]
     documents: dict[str, _DocumentSource]
+    demonstrations: dict[str, _DemonstrationSource]
     evidence_sources: tuple[_EvidenceSource, ...]
     source_snapshot_digest: str
 
 
 _ROW_MODELS: dict[TrainingProductKind, type[CompiledRow]] = {
+    TrainingProductKind.AUTHORED_SFT: AuthoredSFTTrainingRow,
     TrainingProductKind.EVIDENCE_LEDGER: EvidenceLedgerEntry,
     TrainingProductKind.NORMALIZED_EPISODES: NormalizedEpisodeEntry,
     TrainingProductKind.SFT: SFTTrainingRow,
@@ -183,6 +195,7 @@ _ROW_MODELS: dict[TrainingProductKind, type[CompiledRow]] = {
 }
 
 _ROW_SCHEMA_NAMES: dict[TrainingProductKind, str] = {
+    TrainingProductKind.AUTHORED_SFT: "authored-sft-training-row",
     TrainingProductKind.EVIDENCE_LEDGER: "evidence-ledger-entry",
     TrainingProductKind.NORMALIZED_EPISODES: "normalized-episode-entry",
     TrainingProductKind.SFT: "sft-training-row",
@@ -195,6 +208,7 @@ _ROW_SCHEMA_NAMES: dict[TrainingProductKind, str] = {
 }
 
 _PRODUCT_LANES: dict[TrainingProductKind, TrainingLane | None] = {
+    TrainingProductKind.AUTHORED_SFT: TrainingLane.SFT,
     TrainingProductKind.EVIDENCE_LEDGER: None,
     TrainingProductKind.NORMALIZED_EPISODES: None,
     TrainingProductKind.SFT: TrainingLane.SFT,
@@ -287,6 +301,10 @@ class TrainingCompiler:
                 {source.rights_digest for source in snapshot.corpus.values()}
                 | {source.document.rights_digest for source in snapshot.documents.values()}
                 | {
+                    source.demonstration.rights_digest
+                    for source in snapshot.demonstrations.values()
+                }
+                | {
                     sha256_digest(attempt.output_rights.model_dump(mode="json"))
                     for attempt in snapshot.attempts.values()
                     if attempt.output_rights is not None
@@ -329,6 +347,7 @@ class TrainingCompiler:
             ],
             "source_episode_ids": tuple(sorted(snapshot.episodes)),
             "source_document_ids": tuple(sorted(snapshot.documents)),
+            "source_demonstration_ids": tuple(sorted(snapshot.demonstrations)),
             "source_artifact_digests": source_artifact_digests,
             "verifier_fingerprints": verifier_fingerprints,
             "environment_fingerprints": environment_fingerprints,
@@ -786,6 +805,63 @@ async def _load_snapshot(session: AsyncSession, invocation: CompilerInvocation) 
             decisions=tuple(decisions_by_document.get(source_row.document_id, ())),
         )
 
+    demonstration_rows = (
+        await session.scalars(
+            select(AuthoredDemonstrationRow)
+            .where(AuthoredDemonstrationRow.created_at <= as_of)
+            .order_by(AuthoredDemonstrationRow.demonstration_id)
+        )
+    ).all()
+    demonstrations: dict[str, _DemonstrationSource] = {}
+    for demonstration_row in demonstration_rows:
+        demonstration = AuthoredDemonstration.model_validate(
+            demonstration_row.record_json, strict=False
+        )
+        demonstration_digest = sha256_digest(demonstration.model_dump(mode="json"))
+        if (
+            demonstration_row.record_digest != demonstration_digest
+            or demonstration_row.rights_digest != demonstration.rights_digest
+            or demonstration_row.domain_id != demonstration.domain_id
+            or demonstration_row.competency_id != demonstration.competency_id
+            or demonstration_row.source_item_id != demonstration.source_item_id
+            or demonstration_row.verifier_result_id != demonstration.verifier_result_id
+        ):
+            raise TrainingCompilationError(
+                "authored demonstration index or digest is invalid: "
+                f"{demonstration_row.demonstration_id}"
+            )
+        source = corpus.get(demonstration.source_item_id)
+        if source is None or source.record.competency_id != demonstration.competency_id:
+            raise TrainingCompilationError(
+                "authored demonstration source item is invalid: "
+                f"{demonstration_row.demonstration_id}"
+            )
+        verifier = verifiers.get(demonstration.verifier_result_id)
+        if verifier is None:
+            raise TrainingCompilationError(
+                f"authored demonstration verifier is missing: {demonstration_row.demonstration_id}"
+            )
+        verifier_record, verifier_digest = verifier
+        if (
+            demonstration.verifier_result_digest != verifier_digest
+            or demonstration.verification_scope != verifier_record.scope
+        ):
+            raise TrainingCompilationError(
+                "authored demonstration verifier lineage is invalid: "
+                f"{demonstration_row.demonstration_id}"
+            )
+        if _utc(demonstration.created_at) < max(
+            _utc(source.record.created_at), _utc(verifier_record.created_at)
+        ):
+            raise TrainingCompilationError(
+                "authored demonstration predates its source evidence: "
+                f"{demonstration_row.demonstration_id}"
+            )
+        demonstrations[demonstration.demonstration_id] = _DemonstrationSource(
+            demonstration=demonstration,
+            record_digest=demonstration_digest,
+        )
+
     provisional = _Snapshot(
         as_of=as_of,
         corpus=corpus,
@@ -800,6 +876,7 @@ async def _load_snapshot(session: AsyncSession, invocation: CompilerInvocation) 
         eligibilities=eligibilities,
         checkpoints=checkpoints,
         documents=documents,
+        demonstrations=demonstrations,
         evidence_sources=(),
         source_snapshot_digest=sha256_digest([]),
     )
@@ -828,6 +905,9 @@ def _compile_rows(
     products[TrainingProductKind.EVIDENCE_LEDGER].extend(_evidence_rows(snapshot))
     products[TrainingProductKind.NORMALIZED_EPISODES].extend(_normalized_episode_rows(snapshot))
     exclusions: list[TrainingExclusionRecord] = []
+    authored_rows, authored_exclusions = _authored_sft_rows(snapshot)
+    products[TrainingProductKind.AUTHORED_SFT].extend(authored_rows)
+    exclusions.extend(authored_exclusions)
     teacher_influenced = _teacher_influenced_attempt_ids(snapshot)
     grades_by_attempt = {grade.attempt_id: grade for grade in snapshot.grades.values()}
 
@@ -1187,6 +1267,110 @@ def _normalized_episode_rows(snapshot: _Snapshot) -> list[NormalizedEpisodeEntry
             )
         )
     return rows
+
+
+def _authored_sft_rows(
+    snapshot: _Snapshot,
+) -> tuple[list[AuthoredSFTTrainingRow], list[TrainingExclusionRecord]]:
+    rows: list[AuthoredSFTTrainingRow] = []
+    exclusions: list[TrainingExclusionRecord] = []
+    for demonstration_id, source in sorted(snapshot.demonstrations.items()):
+        demonstration = source.demonstration
+        corpus = snapshot.corpus[demonstration.source_item_id]
+        verifier, verifier_digest = snapshot.verifiers[demonstration.verifier_result_id]
+        refs = tuple(
+            sorted(
+                (
+                    _source_ref(
+                        EvidenceSourceKind.AUTHORED_DEMONSTRATION,
+                        demonstration_id,
+                    ),
+                    _source_ref(
+                        EvidenceSourceKind.CORPUS_ITEM,
+                        demonstration.source_item_id,
+                    ),
+                    _source_ref(
+                        EvidenceSourceKind.VERIFIER_RESULT,
+                        demonstration.verifier_result_id,
+                    ),
+                )
+            )
+        )
+        digests = tuple(sorted((source.record_digest, corpus.record_digest, verifier_digest)))
+        rights = tuple(sorted({demonstration.rights_digest, corpus.rights_digest}))
+        lineage = (refs, digests, rights)
+        reasons: dict[TrainingExclusionReason, str] = {}
+        if corpus.record.pool != CorpusPool.CURRICULUM:
+            reasons[TrainingExclusionReason.EVALUATION_SOURCE] = (
+                "authored SFT demonstrations require curriculum source items"
+            )
+        if corpus.visibility_class != "training":
+            reasons[TrainingExclusionReason.EVALUATION_SOURCE] = (
+                "authored SFT demonstrations require training-visible source items"
+            )
+        if corpus.lineage_contaminated:
+            reasons[TrainingExclusionReason.CONTAMINATED_LINEAGE] = (
+                "authored demonstration source lineage is contaminated"
+            )
+        if corpus.record.status.value not in {"active", "leased"}:
+            reasons[TrainingExclusionReason.QUARANTINED_SOURCE] = (
+                "authored demonstration source item is not active"
+            )
+        if corpus.record.rights.review_status != RightsReviewStatus.CONFIRMED:
+            reasons[TrainingExclusionReason.RIGHTS_REVIEW_REQUIRED] = (
+                "authored demonstration source rights are not confirmed"
+            )
+        elif not corpus.record.rights.permits(RightsUse.SFT):
+            reasons[TrainingExclusionReason.RIGHTS_USE_NOT_PERMITTED] = (
+                "authored demonstration source rights do not permit SFT"
+            )
+        if demonstration.rights.review_status != RightsReviewStatus.CONFIRMED:
+            reasons[TrainingExclusionReason.OUTPUT_RIGHTS_REVIEW_REQUIRED] = (
+                "authored demonstration output rights are not confirmed"
+            )
+        elif not demonstration.rights.permits(RightsUse.SFT):
+            reasons[TrainingExclusionReason.OUTPUT_RIGHTS_USE_NOT_PERMITTED] = (
+                "authored demonstration output rights do not permit SFT"
+            )
+        if not verifier.deterministic or verifier.disposition != VerifierDisposition.VERIFIED:
+            reasons[TrainingExclusionReason.HARD_GATE_FAILED] = (
+                "authored demonstration lacks deterministic verified evidence"
+            )
+        if reasons:
+            exclusions.append(
+                _exclusion(
+                    candidate_id=demonstration_id,
+                    candidate_kind="authored_demonstration",
+                    product_kind=TrainingProductKind.AUTHORED_SFT,
+                    lane=TrainingLane.SFT,
+                    reasons=reasons,
+                    lineage=lineage,
+                )
+            )
+            continue
+        identity = {
+            "demonstration_id": demonstration_id,
+            "source_record_digests": digests,
+        }
+        rows.append(
+            AuthoredSFTTrainingRow(
+                row_id=_row_id("authored-sft", identity),
+                source_evidence_refs=refs,
+                source_record_digests=digests,
+                rights_digests=rights,
+                demonstration_id=demonstration_id,
+                domain_id=demonstration.domain_id,
+                competency_id=demonstration.competency_id,
+                source_item_id=demonstration.source_item_id,
+                messages=demonstration.messages,
+                prompt=demonstration.prompt,
+                target_events=demonstration.target_events,
+                final_answer=demonstration.final_answer,
+                verification=verifier.model_dump(mode="json"),
+                quality_evidence_refs=demonstration.quality_evidence_refs,
+            )
+        )
+    return rows, exclusions
 
 
 def _attempt_reasons(
@@ -1957,6 +2141,16 @@ def _checkpoint_identities(snapshot: _Snapshot) -> tuple[CheckpointSourceIdentit
 def _evidence_sources(snapshot: _Snapshot) -> tuple[_EvidenceSource, ...]:
     sources: list[_EvidenceSource] = []
     attempt_by_id = snapshot.attempts
+    for demonstration_id, demonstration_source in snapshot.demonstrations.items():
+        sources.append(
+            _make_evidence_source(
+                EvidenceSourceKind.AUTHORED_DEMONSTRATION,
+                demonstration_id,
+                demonstration_source.demonstration.model_dump(mode="json"),
+                record_digest=demonstration_source.record_digest,
+                rights_digests=(demonstration_source.demonstration.rights_digest,),
+            )
+        )
     for item_id, source in snapshot.corpus.items():
         payload = {
             **source.record.model_dump(mode="json"),
@@ -2191,6 +2385,7 @@ def _corpus_record(row: CorpusItemRow) -> CorpusItemRecord:
 
 async def _snapshot_watermark(session: AsyncSession) -> datetime:
     tables = (
+        AuthoredDemonstrationRow,
         CorpusItemRow,
         EpisodeRow,
         AttemptRow,

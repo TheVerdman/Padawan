@@ -23,7 +23,7 @@ Configuration is loaded once at the CLI composition boundary. Important variable
 | `PADAWAN_CODE_REVISION` | revision committed into provenance |
 | `PADAWAN_WORKER_ID` | stable worker identity |
 | `PADAWAN_LEASE_SECONDS` | item and run lease period |
-| `PADAWAN_DOMAIN_ID` | active workflow domain (`math.algebra`, `math.lean`, or `legal.appellate.fourth_circuit`) |
+| `PADAWAN_DOMAIN_ID` | active workflow domain (`math.algebra`, `math.lean`, `legal.appellate.fourth_circuit`, or `temporal.grounding`) |
 | `PADAWAN_OPENAI_MODEL`, `OPENAI_API_KEY` | Responses API baseline and/or teacher |
 | `PADAWAN_ANTHROPIC_MODEL`, `ANTHROPIC_API_KEY` | Anthropic teacher |
 | `PADAWAN_INKLING_BASE_URL`, `PADAWAN_INKLING_MODEL` | Inkling Responses endpoint |
@@ -128,7 +128,17 @@ PADAWAN_DOMAIN_ID=legal.appellate.fourth_circuit \
   padawan experiment run --blocks 1 --bootstrap \
     --student-provider inkling --student-model "$PADAWAN_INKLING_MODEL" \
     --teacher-provider anthropic --teacher-model "$PADAWAN_ANTHROPIC_MODEL"
+
+PADAWAN_DOMAIN_ID=temporal.grounding \
+  padawan experiment run --blocks 1 --bootstrap \
+    --student-provider inkling --student-model "$PADAWAN_INKLING_MODEL" \
+    --teacher-provider openai --teacher-model "$PADAWAN_OPENAI_MODEL"
 ```
+
+Temporal bootstrap scenarios are synthetic and include gap continuity, activity honesty,
+observation freshness, duration calibration, and online ETA revision. They do not attach real user
+timestamps or activity metadata to ordinary provider calls. See
+[temporal grounding and duration calibration](temporal-grounding.md).
 
 In the appellate composition, the configured teacher transport also executes separately identified
 semantic-adjudicator calls. Those calls use their own durable purpose, strict assessment schema,
@@ -233,9 +243,10 @@ padawan --json training inspect BUNDLE_ID
 The compiler never calls a trainer. Baseline and teacher outputs remain in the evidence ledger but
 are excluded from target-training views by default. Source rights, explicit lane eligibility,
 checkpoint/tokenizer registration, contamination state, and split all gate admission. Continued
-pretraining accepts only separately admitted source documents; see [internal training
-products](training-products.md) for rights manifests, source admission, reproduction timestamps,
-and the complete exclusion policy.
+pretraining accepts only separately admitted source documents. Verifier-backed project-authored
+gold appears in the separate `authored_sft` product and never impersonates a successful student
+attempt. See [internal training products](training-products.md) for rights manifests, source
+admission, reproduction timestamps, and the complete exclusion policy.
 
 ## Recovery and inspection
 

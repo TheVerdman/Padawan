@@ -19,6 +19,8 @@ hard-gated Magellan agentic environment protocol:
   deterministic rule/citation/quotation/leakage gates, and evidence-bound semantic adjudication;
 - Magellan scenario, environment, world, plan/tool trace, approval, replay, reward, and training
   eligibility contracts with a deterministic verifier;
+- temporal grounding with dual clocks, authoritative event frames, activity/freshness policy,
+  durable operation spans, duration profiles, matched counterfactuals, and calibrated ETA actions;
 - Responses-API-first OpenAI and OpenAI-compatible adapters, an Inkling/vLLM adapter, and an
   Anthropic teacher adapter;
 - evidence-citing teacher contracts and deterministic comment validation;
@@ -28,8 +30,9 @@ hard-gated Magellan agentic environment protocol:
 - durable verifier/reward ledgers with versioned meta-utility recomputation and training eligibility;
 - versioned multi-experiment studies plus fresh-item retention and interference scheduling;
 - an external frozen-checkpoint registry with sealed-suite comparison, promotion, and revocation;
-- a deterministic, rights-aware internal compiler for evidence, SFT, preference, RLVR, process,
-  continued-pretraining, and sealed-evaluation products with reason-coded exclusions;
+- a deterministic, rights-aware internal compiler for evidence, observed SFT, separately identified
+  authored SFT, preference, RLVR, process, continued-pretraining, and sealed-evaluation products
+  with reason-coded exclusions;
 - versioned lesson memory with branch isolation, negative retrieval evidence, snapshots, and
   rollback;
 - an evidence-gated memory consolidation backend and an explicit refusal for unsupported parameter
@@ -39,8 +42,9 @@ Live model execution is never replaced by a dummy. A pilot can proceed only when
 endpoint and real teacher credentials are configured; unavailable integrations are recorded as
 failures rather than converted into passing evidence.
 
-The current scope is explicit: algebra retains its original complete path, while Lean mathematics
-and appellate briefing now bind their own authorities to a shared, durable developmental workflow.
+The current scope is explicit: algebra retains its original complete path, while Lean mathematics,
+appellate briefing, and temporal grounding bind their own authorities to a shared, durable
+developmental workflow.
 Lean correctness still comes only from the pinned kernel. Appellate deterministic hard gates run
 before a typed, evidence-bound semantic adjudicator; the closed pack still reports authority
 currentness as unknown because no dependable citator is configured. Magellan's audited tree does
@@ -49,6 +53,8 @@ requirements, so this repository reports it as blocked rather than fabricating a
 GCS is operational, and delayed-retention/interference scheduling is durable and tested. Live
 target outcomes still require the Inkling endpoint. Training compilation is operational as an
 internal, restricted artifact path, but no external trainer or parameter-update backend is bundled.
+Temporal scenarios and authored bootstrap rows are implemented, but no claim is made that an
+existing checkpoint has already learned the behavior.
 No S3 backend is planned for the current GCS deployment. Parameter calls fail as unsupported rather
 than degrading to a no-op.
 The first real-provider pilot attempt is documented in
@@ -85,6 +91,8 @@ verified Padawan boundary and the still-blocked external acceptance gate. The
 rights-aware product boundary and its verification scope.
 The [appellate briefing contract](docs/appellate-briefing.md) documents the closed court pack,
 verification layers, currentness boundary, and offline training eligibility.
+The [temporal grounding contract](docs/temporal-grounding.md) documents event-time evidence,
+duration calibration, authored SFT provenance, and the real-versus-virtual clock boundary.
 The [citator ADR](docs/adr/0011-citator-currentness-boundary.md) defines the licensed-API or
 governed-import path required before currentness may become verified.
 The [R2.6 verification report](reports/verification/2026-08-02-r2-6-appellate-briefing.md) records
