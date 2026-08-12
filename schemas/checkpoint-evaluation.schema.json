@@ -109,6 +109,19 @@
       "title": "Checkpoint Id",
       "type": "string"
     },
+    "condition_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Condition Id"
+    },
     "created_at": {
       "format": "date-time",
       "title": "Created At",

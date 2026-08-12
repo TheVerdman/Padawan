@@ -52,7 +52,7 @@ from padawan.domains.magellan_improvement import (
     MagellanScenarioGenerator,
 )
 from padawan.episodes.store import EpisodeStore
-from padawan.experiments.controls import ResearchControlRegistry
+from padawan.experiments.controls import ResearchControlRegistry, research_corpus_digest
 from padawan.experiments.defaults import build_standardized_developmental_control
 from padawan.experiments.engine import ExperimentEngine
 from padawan.governance.manifests import CommandManifest, ManifestWriter, now
@@ -542,6 +542,7 @@ def worker_run(
     student_model: str | None = typer.Option(None, "--student-model"),
     teacher_model: str | None = typer.Option(None, "--teacher-model"),
     compatible_base_url: str | None = typer.Option(None, "--compatible-base-url"),
+    allow_legacy_student_fallback: bool = typer.Option(False, "--allow-legacy-student-fallback"),
 ) -> None:
     async def operation() -> dict[str, Any]:
         application = await build_live_application(
@@ -551,6 +552,7 @@ def worker_run(
             student_model=student_model,
             teacher_model=teacher_model,
             compatible_base_url=compatible_base_url,
+            allow_legacy_student_fallback=allow_legacy_student_fallback,
         )
         try:
             completed = await application.supervisor.run(budget=action_budget)
@@ -1116,27 +1118,7 @@ async def _live_research_run(
                     .order_by(CorpusItemRow.item_id)
                 )
             ).all()
-            corpus_digest = sha256_digest(
-                [
-                    {
-                        "item_id": row.item_id,
-                        "competency_id": row.competency_id,
-                        "template_family_id": row.template_family_id,
-                        "instance_group_id": row.instance_group_id,
-                        "generation_seed": row.generation_seed,
-                        "generator_version": row.generator_version,
-                        "difficulty": row.difficulty,
-                        "prompt_digest": sha256_digest(row.prompt),
-                        "expected_answer_digest": sha256_digest(row.expected_answer),
-                        "verifier_spec_digest": sha256_digest(row.verifier_spec),
-                        "pool": row.pool,
-                        "source": row.source,
-                        "rights_digest": row.rights_digest,
-                        "contamination_scope": row.contamination_scope,
-                    }
-                    for row in inventory
-                ]
-            )
+            corpus_digest = research_corpus_digest(list(inventory))
         research_controls = ResearchControlRegistry()
         control_configuration = build_standardized_developmental_control(
             settings=settings,
@@ -1157,6 +1139,8 @@ async def _live_research_run(
             teacher_provider=teacher_provider,
             teacher_model_id=selected_teacher_model,
             corpus_digest=corpus_digest,
+            allow_legacy_student_fallback=allow_legacy_student_fallback,
+            worker_configuration=application.research_worker,
         )
         loop = AutonomousResearchLoop(
             database=application.database,

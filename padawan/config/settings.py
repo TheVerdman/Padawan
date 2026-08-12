@@ -72,6 +72,11 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("PADAWAN_INKLING_API_KEY", "INKLING_API_KEY"),
     )
     inkling_runtime_revision: str = "aa2e7dd0f8f5fd1be0e4449f802ae5b72ffc534a"
+    inkling_edge_image_digest: str | None = Field(
+        default=None,
+        pattern=r"^sha256:[0-9a-f]{64}$",
+    )
+    inkling_edge_deployment_revision: str | None = Field(default=None, min_length=1)
     inkling_tensor_parallel_size: int = Field(default=4, ge=1, le=64)
     inkling_timeout_seconds: float = Field(default=3_600.0, ge=3_600.0, le=3_600.0)
     compatible_base_url: str | None = None

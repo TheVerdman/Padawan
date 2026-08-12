@@ -3,6 +3,7 @@
     "IdentityEvidenceStatus": {
       "enum": [
         "pinned",
+        "verified",
         "declared",
         "unknown"
       ],
@@ -58,6 +59,17 @@
         },
         "serving_artifact": {
           "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "transport_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionedComponentIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -73,6 +85,69 @@
         "runtime_parameters_digest"
       ],
       "title": "ModelServingIdentity",
+      "type": "object"
+    },
+    "ParentStateIdentity": {
+      "additionalProperties": false,
+      "description": "Exact learned state presented to the execution as a causal input.",
+      "properties": {
+        "branch_id": {
+          "minLength": 1,
+          "title": "Branch Id",
+          "type": "string"
+        },
+        "checkpoint_id": {
+          "minLength": 1,
+          "title": "Checkpoint Id",
+          "type": "string"
+        },
+        "parent_state_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent State Id"
+        },
+        "research_role": {
+          "$ref": "#/$defs/ResearchRole"
+        },
+        "runtime_id": {
+          "minLength": 1,
+          "title": "Runtime Id",
+          "type": "string"
+        },
+        "state_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "State Hash",
+          "type": "string"
+        },
+        "state_id": {
+          "minLength": 1,
+          "title": "State Id",
+          "type": "string"
+        },
+        "student_id": {
+          "minLength": 1,
+          "title": "Student Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state_id",
+        "state_hash",
+        "student_id",
+        "checkpoint_id",
+        "runtime_id",
+        "research_role",
+        "branch_id"
+      ],
+      "title": "ParentStateIdentity",
       "type": "object"
     },
     "ResearchRole": {
@@ -249,6 +324,9 @@
       "title": "Harness Profile Version",
       "type": "string"
     },
+    "parent_state": {
+      "$ref": "#/$defs/ParentStateIdentity"
+    },
     "schema_version": {
       "const": "1.0.0",
       "default": "1.0.0",
@@ -273,6 +351,7 @@
     "harness_profile_digest",
     "student_model",
     "task",
+    "parent_state",
     "harness_parameters",
     "environment",
     "environment_parameters",

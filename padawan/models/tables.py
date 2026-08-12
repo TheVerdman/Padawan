@@ -600,6 +600,7 @@ class ResearchExecutionRow(Base):
     __tablename__ = "research_executions"
     __table_args__ = (
         Index("ix_research_execution_checkpoint", "checkpoint_id", "created_at"),
+        Index("ix_research_execution_parent_state", "parent_state_id", "created_at"),
         Index("ix_research_execution_task", "task_id", "environment_fingerprint"),
     )
 
@@ -611,6 +612,10 @@ class ResearchExecutionRow(Base):
     checkpoint_id: Mapped[str] = mapped_column(String(256), nullable=False)
     runtime_id: Mapped[str] = mapped_column(String(256), nullable=False)
     research_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    parent_state_id: Mapped[str] = mapped_column(
+        ForeignKey("student_states.state_id", ondelete="RESTRICT"), nullable=False
+    )
+    parent_state_hash: Mapped[str] = mapped_column(String(71), nullable=False)
     task_id: Mapped[str] = mapped_column(String(192), nullable=False)
     task_manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False)
     corpus_digest: Mapped[str] = mapped_column(String(71), nullable=False)
@@ -775,6 +780,31 @@ class StudyExperimentRow(Base):
     assignment_propensity: Mapped[float | None] = mapped_column(Float)
 
 
+class StudyResultRow(Base):
+    __tablename__ = "study_results"
+    __table_args__ = (
+        UniqueConstraint(
+            "study_id",
+            "condition_id",
+            "checkpoint_id",
+            name="uq_study_result_condition_checkpoint",
+        ),
+        Index("ix_study_result_suite", "suite_manifest_digest", "checkpoint_id"),
+    )
+
+    result_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    study_id: Mapped[str] = mapped_column(
+        ForeignKey("studies.study_id", ondelete="RESTRICT"), nullable=False
+    )
+    study_manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    suite_manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    condition_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    checkpoint_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class EvaluationTrialRow(Base):
     __tablename__ = "evaluation_trials"
     __table_args__ = (
@@ -900,7 +930,11 @@ class CheckpointEvaluationRow(Base):
     __tablename__ = "checkpoint_evaluations"
     __table_args__ = (
         UniqueConstraint(
-            "checkpoint_id", "study_id", "suite_manifest_digest", name="uq_checkpoint_evaluation"
+            "checkpoint_id",
+            "study_id",
+            "condition_id",
+            "suite_manifest_digest",
+            name="uq_checkpoint_evaluation_condition",
         ),
         Index("ix_checkpoint_evaluation_suite", "suite_manifest_digest", "created_at"),
     )
@@ -912,6 +946,7 @@ class CheckpointEvaluationRow(Base):
     study_id: Mapped[str] = mapped_column(
         ForeignKey("studies.study_id", ondelete="RESTRICT"), nullable=False
     )
+    condition_id: Mapped[str | None] = mapped_column(String(128))
     suite_manifest_digest: Mapped[str] = mapped_column(
         ForeignKey("evaluation_suites.manifest_digest", ondelete="RESTRICT"), nullable=False
     )

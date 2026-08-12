@@ -42,6 +42,8 @@ def upgrade() -> None:
         sa.Column("checkpoint_id", sa.String(length=256), nullable=False),
         sa.Column("runtime_id", sa.String(length=256), nullable=False),
         sa.Column("research_role", sa.String(length=32), nullable=False),
+        sa.Column("parent_state_id", sa.String(length=96), nullable=False),
+        sa.Column("parent_state_hash", sa.String(length=71), nullable=False),
         sa.Column("task_id", sa.String(length=192), nullable=False),
         sa.Column("task_manifest_digest", sa.String(length=71), nullable=False),
         sa.Column("corpus_digest", sa.String(length=71), nullable=False),
@@ -54,6 +56,11 @@ def upgrade() -> None:
             ["harness_profiles.profile_digest"],
             ondelete="RESTRICT",
         ),
+        sa.ForeignKeyConstraint(
+            ["parent_state_id"],
+            ["student_states.state_id"],
+            ondelete="RESTRICT",
+        ),
         sa.PrimaryKeyConstraint("execution_digest"),
         sa.UniqueConstraint("execution_id"),
     )
@@ -61,6 +68,11 @@ def upgrade() -> None:
         batch.create_index(
             "ix_research_execution_checkpoint",
             ["checkpoint_id", "created_at"],
+            unique=False,
+        )
+        batch.create_index(
+            "ix_research_execution_parent_state",
+            ["parent_state_id", "created_at"],
             unique=False,
         )
         batch.create_index(
@@ -113,8 +125,52 @@ def upgrade() -> None:
             ondelete="RESTRICT",
         )
 
+    with op.batch_alter_table("checkpoint_evaluations") as batch:
+        batch.drop_constraint("uq_checkpoint_evaluation", type_="unique")
+        batch.add_column(sa.Column("condition_id", sa.String(length=128), nullable=True))
+        batch.create_unique_constraint(
+            "uq_checkpoint_evaluation_condition",
+            ["checkpoint_id", "study_id", "condition_id", "suite_manifest_digest"],
+        )
+
+    op.create_table(
+        "study_results",
+        sa.Column("result_id", sa.String(length=128), nullable=False),
+        sa.Column("study_id", sa.String(length=128), nullable=False),
+        sa.Column("study_manifest_digest", sa.String(length=71), nullable=False),
+        sa.Column("suite_manifest_digest", sa.String(length=71), nullable=False),
+        sa.Column("condition_id", sa.String(length=128), nullable=False),
+        sa.Column("checkpoint_id", sa.String(length=256), nullable=False),
+        sa.Column("record_digest", sa.String(length=71), nullable=False),
+        sa.Column("record_json", sa.JSON(), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.ForeignKeyConstraint(["study_id"], ["studies.study_id"], ondelete="RESTRICT"),
+        sa.PrimaryKeyConstraint("result_id"),
+        sa.UniqueConstraint("record_digest"),
+        sa.UniqueConstraint(
+            "study_id",
+            "condition_id",
+            "checkpoint_id",
+            name="uq_study_result_condition_checkpoint",
+        ),
+    )
+    with op.batch_alter_table("study_results") as batch:
+        batch.create_index(
+            "ix_study_result_suite",
+            ["suite_manifest_digest", "checkpoint_id"],
+            unique=False,
+        )
+
 
 def downgrade() -> None:
+    op.drop_table("study_results")
+    with op.batch_alter_table("checkpoint_evaluations") as batch:
+        batch.drop_constraint("uq_checkpoint_evaluation_condition", type_="unique")
+        batch.drop_column("condition_id")
+        batch.create_unique_constraint(
+            "uq_checkpoint_evaluation",
+            ["checkpoint_id", "study_id", "suite_manifest_digest"],
+        )
     with op.batch_alter_table("study_experiments") as batch:
         batch.drop_constraint("fk_study_experiments_research_execution", type_="foreignkey")
         batch.drop_column("factor_values")

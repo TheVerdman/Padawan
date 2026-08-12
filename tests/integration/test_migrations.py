@@ -28,12 +28,31 @@ def _tables(database_path: Path) -> set[str]:
         }
 
 
+def _unique_indexes(database_path: Path, table: str) -> set[tuple[str, ...]]:
+    with sqlite3.connect(database_path) as connection:
+        indexes = connection.execute(f"PRAGMA index_list('{table}')").fetchall()
+        return {
+            tuple(
+                str(column[2])
+                for column in connection.execute(f"PRAGMA index_info('{index[1]}')").fetchall()
+            )
+            for index in indexes
+            if bool(index[2])
+        }
+
+
 def test_empty_database_upgrade_and_schema_match(tmp_path, monkeypatch) -> None:
     database_path = tmp_path / "migration.sqlite3"
     configuration = _config(database_path, monkeypatch)
     command.upgrade(configuration, "head")
     expected = set(Base.metadata.tables)
     assert expected <= _tables(database_path)
+    assert (
+        "checkpoint_id",
+        "study_id",
+        "condition_id",
+        "suite_manifest_digest",
+    ) in _unique_indexes(database_path, "checkpoint_evaluations")
     command.check(configuration)
 
 

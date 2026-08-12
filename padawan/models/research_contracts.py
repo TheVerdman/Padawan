@@ -23,6 +23,7 @@ NonNegativeFinite = Annotated[FiniteFloat, Field(ge=0.0)]
 
 class IdentityEvidenceStatus(StrEnum):
     PINNED = "pinned"
+    VERIFIED = "verified"
     DECLARED = "declared"
     UNKNOWN = "unknown"
 
@@ -177,6 +178,7 @@ class ModelServingIdentity(StrictRecord):
     quantization: VersionedComponentIdentity
     runtime: VersionedComponentIdentity
     serving_artifact: VersionedComponentIdentity
+    transport_artifact: VersionedComponentIdentity | None = None
     protocol: NonEmpty
     runtime_parameters: Annotated[dict[NonEmpty, NonEmpty], Field(min_length=1)]
     runtime_parameters_digest: Sha256
@@ -201,6 +203,19 @@ class TaskCorpusIdentity(StrictRecord):
     evidence_status: IdentityEvidenceStatus
 
 
+class ParentStateIdentity(StrictRecord):
+    """Exact learned state presented to the execution as a causal input."""
+
+    state_id: NonEmpty
+    state_hash: Sha256
+    student_id: NonEmpty
+    checkpoint_id: NonEmpty
+    runtime_id: NonEmpty
+    research_role: ResearchRole
+    parent_state_id: NonEmpty | None = None
+    branch_id: NonEmpty
+
+
 class ResearchExecutionManifest(StrictRecord):
     schema_version: Literal["1.0.0"] = SCHEMA_VERSION
     execution_id: NonEmpty
@@ -210,6 +225,7 @@ class ResearchExecutionManifest(StrictRecord):
     student_model: ModelServingIdentity
     auxiliary_models: tuple[ModelServingIdentity, ...] = ()
     task: TaskCorpusIdentity
+    parent_state: ParentStateIdentity
     harness_parameters: Annotated[dict[NonEmpty, NonEmpty], Field(min_length=1)]
     environment: VersionedComponentIdentity
     environment_parameters: Annotated[dict[NonEmpty, NonEmpty], Field(min_length=1)]
@@ -242,6 +258,7 @@ class ResearchAxis(StrEnum):
     CHECKPOINT = "checkpoint"
     QUANTIZATION = "quantization"
     TASK = "task"
+    PARENT_STATE = "parent_state"
     HARNESS = "harness"
     CONTINUATION = "continuation"
     CONTEXT_POLICY = "context_policy"
@@ -342,6 +359,104 @@ class StudyManifest(StrictRecord):
         for binding in self.experiments:
             if list(binding.factor_values) != sorted(binding.factor_values):
                 raise ValueError("study factor values must use canonical lexical order")
+        return self
+
+
+class StudyResultMetric(StrictRecord):
+    metric_id: NonEmpty
+    value: FiniteFloat | None
+    missing_reason: NonEmpty | None = None
+
+    @model_validator(mode="after")
+    def missing_value_has_reason(self) -> StudyResultMetric:
+        if (self.value is None) != (self.missing_reason is not None):
+            raise ValueError("missing study-result metrics require exactly one reason")
+        return self
+
+
+class StudyBlockEvidence(StrictRecord):
+    block_id: NonEmpty
+    experiment_id: NonEmpty
+    block_digest: Sha256
+
+
+class StudyResultRecord(StrictRecord):
+    """Immutable aggregate for one study condition and checkpoint."""
+
+    schema_version: Literal["1.0.0"] = SCHEMA_VERSION
+    result_id: NonEmpty
+    study_id: NonEmpty
+    study_manifest_digest: Sha256
+    suite_manifest_digest: Sha256
+    condition_id: NonEmpty
+    checkpoint_id: NonEmpty
+    aggregation_policy_id: NonEmpty
+    aggregation_policy_version: NonEmpty
+    experiment_ids: Annotated[tuple[NonEmpty, ...], Field(min_length=1)]
+    research_execution_digests: tuple[Sha256, ...]
+    source_blocks: Annotated[tuple[StudyBlockEvidence, ...], Field(min_length=1)]
+    total_blocks: Annotated[int, Field(ge=1)]
+    analyzed_blocks: Annotated[int, Field(ge=0)]
+    missing_blocks: Annotated[int, Field(ge=0)]
+    excluded_contaminated: Annotated[int, Field(ge=0)]
+    excluded_infrastructure: Annotated[int, Field(ge=0)]
+    metrics: Annotated[tuple[StudyResultMetric, ...], Field(min_length=1)]
+    research_controls_complete: bool
+    causal_claim_permitted: bool
+    created_at: datetime
+
+    @model_validator(mode="after")
+    def contents_are_canonical(self) -> StudyResultRecord:
+        if tuple(sorted(self.experiment_ids)) != self.experiment_ids:
+            raise ValueError("study-result experiment IDs must use canonical lexical order")
+        if len(self.experiment_ids) != len(set(self.experiment_ids)):
+            raise ValueError("study-result experiment IDs must be unique")
+        if tuple(sorted(self.research_execution_digests)) != self.research_execution_digests:
+            raise ValueError("study-result execution digests must use canonical lexical order")
+        if len(self.research_execution_digests) != len(set(self.research_execution_digests)):
+            raise ValueError("study-result execution digests must be unique")
+        block_keys = [(block.experiment_id, block.block_id) for block in self.source_blocks]
+        if tuple(sorted(block_keys)) != tuple(block_keys):
+            raise ValueError("study-result source blocks must use canonical lexical order")
+        if len(block_keys) != len(set(block_keys)):
+            raise ValueError("study-result source blocks must be unique")
+        if self.total_blocks != len(self.source_blocks):
+            raise ValueError("study-result block count differs from its source evidence")
+        if self.analyzed_blocks > self.total_blocks:
+            raise ValueError("study-result analyzed count exceeds its source blocks")
+        if self.causal_claim_permitted and (
+            self.analyzed_blocks != self.total_blocks
+            or self.missing_blocks != 0
+            or self.excluded_contaminated != 0
+            or self.excluded_infrastructure != 0
+        ):
+            raise ValueError("a causal study result requires complete analyzable block evidence")
+        metric_ids = [metric.metric_id for metric in self.metrics]
+        if tuple(sorted(metric_ids)) != tuple(metric_ids):
+            raise ValueError("study-result metrics must use canonical lexical order")
+        if len(metric_ids) != len(set(metric_ids)):
+            raise ValueError("study-result metric IDs must be unique")
+        if self.causal_claim_permitted and not self.research_controls_complete:
+            raise ValueError("a causal study result requires complete research controls")
+        identity = {
+            "study_id": self.study_id,
+            "study_manifest_digest": self.study_manifest_digest,
+            "suite_manifest_digest": self.suite_manifest_digest,
+            "condition_id": self.condition_id,
+            "checkpoint_id": self.checkpoint_id,
+            "aggregation_policy_id": self.aggregation_policy_id,
+            "aggregation_policy_version": self.aggregation_policy_version,
+            "source_blocks": [block.model_dump(mode="json") for block in self.source_blocks],
+            "total_blocks": self.total_blocks,
+            "analyzed_blocks": self.analyzed_blocks,
+            "missing_blocks": self.missing_blocks,
+            "excluded_contaminated": self.excluded_contaminated,
+            "excluded_infrastructure": self.excluded_infrastructure,
+            "metrics": [metric.model_dump(mode="json") for metric in self.metrics],
+        }
+        expected_id = f"study-result-{sha256_digest(identity)[7:31]}"
+        if self.result_id != expected_id:
+            raise ValueError("study result ID disagrees with its immutable evidence")
         return self
 
 
@@ -477,10 +592,30 @@ class MetricObservation(StrictRecord):
         return self
 
 
+class CheckpointGateEvidenceScope(StrictRecord):
+    """Immutable study-result coordinates a checkpoint hard gate must verify."""
+
+    gate_id: NonEmpty
+    study_id: NonEmpty
+    study_manifest_digest: Sha256
+    suite_manifest_digest: Sha256
+    condition_id: NonEmpty
+    checkpoint_id: NonEmpty
+    study_result_id: NonEmpty
+    study_result_digest: Sha256
+
+
+def checkpoint_gate_verifier_scope(scope: CheckpointGateEvidenceScope) -> str:
+    """Return the fixed-width verifier scope for one exact checkpoint gate lineage."""
+
+    return f"checkpoint_evaluation:{sha256_digest(scope.model_dump(mode='json'))}"
+
+
 class CheckpointEvaluationRecord(StrictRecord):
     evaluation_id: NonEmpty
     checkpoint_id: NonEmpty
     study_id: NonEmpty
+    condition_id: NonEmpty | None = None
     suite_manifest_digest: Sha256
     metrics: Annotated[tuple[MetricObservation, ...], Field(min_length=1)]
     hard_gates: Annotated[tuple[HardGateResult, ...], Field(min_length=1)]

@@ -63,7 +63,13 @@ Temporal scenarios and authored bootstrap rows are implemented, but no claim is 
 existing checkpoint has already learned the behavior.
 The standardized developmental harness is now a versioned research object. Legacy evidence remains
 readable, while new comparative claims fail closed if research controls are absent or changed axes
-were not declared.
+were not declared. Controlled work also binds its exact learned parent state and may be leased only
+by a worker whose complete harness, current task/corpus, model, transport, domain, and environment
+identity matches the recorded execution. Sealed checkpoint metrics must resolve to immutable
+results from a fully observed study condition, and hard gates must verify the same immutable result,
+suite, condition, and checkpoint. Suite labels, favorable subsets, and free-form evidence references
+are not accepted as promotion lineage. Mutable Inkling edge identity is admitted only after the
+responding endpoint reports and matches the configured deployment identity.
 No S3 backend is planned for the current GCS deployment. Parameter calls fail as unsupported rather
 than degrading to a no-op.
 The first real-provider pilot attempt is documented in

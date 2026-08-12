@@ -23,6 +23,8 @@ def _settings(**updates: object) -> Settings:
     values: dict[str, object] = {
         "inkling_base_url": "https://inkling.example",
         "inkling_model": INKLING_SMALL_AMPERE.served_model_name,
+        "inkling_edge_image_digest": f"sha256:{'d' * 64}",
+        "inkling_edge_deployment_revision": "inkling-edge-00004-test",
         "INKLING_API_KEY": "edge-secret",
         "openai_model": "teacher-model",
         "OPENAI_API_KEY": "teacher-secret",
@@ -40,6 +42,16 @@ def test_validated_inkling_live_configuration_accepts_authenticated_edge() -> No
 def test_remote_inkling_edge_requires_bearer_credential() -> None:
     with pytest.raises(ValueError, match="requires INKLING_API_KEY"):
         _validate(_settings(inkling_api_key=None))
+
+
+def test_inkling_edge_requires_versioned_artifact_identity() -> None:
+    with pytest.raises(ValueError, match="EDGE_IMAGE_DIGEST"):
+        _validate(
+            _settings(
+                inkling_edge_image_digest=None,
+                inkling_edge_deployment_revision=None,
+            )
+        )
 
 
 def test_inkling_live_configuration_rejects_unvalidated_identity_and_fallback() -> None:

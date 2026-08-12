@@ -63,6 +63,7 @@ from padawan.models.research_contracts import (
     CheckpointComparisonRecord,
     CheckpointDecisionRecord,
     CheckpointEvaluationRecord,
+    CheckpointGateEvidenceScope,
     CheckpointManifest,
     CheckpointPromotionPolicy,
     EvaluationOutcome,
@@ -72,6 +73,7 @@ from padawan.models.research_contracts import (
     ResearchComparabilityAssessment,
     ResearchExecutionManifest,
     StudyManifest,
+    StudyResultRecord,
 )
 from padawan.temporal.contracts import (
     DurationProfile,
@@ -119,6 +121,7 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("checkpoint-comparison", CheckpointComparisonRecord),
     ("checkpoint-decision", CheckpointDecisionRecord),
     ("checkpoint-evaluation", CheckpointEvaluationRecord),
+    ("checkpoint-gate-evidence-scope", CheckpointGateEvidenceScope),
     ("checkpoint-manifest", CheckpointManifest),
     ("checkpoint-promotion-policy", CheckpointPromotionPolicy),
     ("compiler-invocation", CompilerInvocation),
@@ -161,6 +164,7 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("state-fork", StateForkRecord),
     ("student-state", StudentStateRecord),
     ("study-manifest", StudyManifest),
+    ("study-result", StudyResultRecord),
     ("task-manifest", TaskManifest),
     ("teacher-intervention", TeacherInterventionRecord),
     ("temporal-decision", TemporalDecision),

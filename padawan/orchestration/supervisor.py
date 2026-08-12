@@ -5,13 +5,19 @@ import signal
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 import structlog
 
 from padawan.models.contracts import RunState
 from padawan.models.database import Database
 from padawan.orchestration.state_machine import ClaimedRun, RunStore
+
+if TYPE_CHECKING:
+    from padawan.experiments.controls import (
+        ResearchControlRegistry,
+        ResearchWorkerConfiguration,
+    )
 
 log = structlog.get_logger(__name__)
 
@@ -46,6 +52,8 @@ class AutonomousSupervisor:
         worker_id: str,
         lease_for: timedelta = timedelta(minutes=5),
         idle_poll_seconds: float = 1.0,
+        research_worker: ResearchWorkerConfiguration | None = None,
+        research_controls: ResearchControlRegistry | None = None,
     ) -> None:
         self.database = database
         self.runs = runs
@@ -53,6 +61,13 @@ class AutonomousSupervisor:
         self.worker_id = worker_id
         self.lease_for = lease_for
         self.idle_poll_seconds = idle_poll_seconds
+        self.research_worker = research_worker
+        if research_controls is None:
+            # Import lazily: research contracts also depend on orchestration domain types.
+            from padawan.experiments.controls import ResearchControlRegistry
+
+            research_controls = ResearchControlRegistry()
+        self.research_controls = research_controls
         self._stop = asyncio.Event()
 
     def request_stop(self) -> None:
@@ -66,14 +81,39 @@ class AutonomousSupervisor:
                 await self.runs.recover_stale_workers(
                     session, stale_before=datetime.now(UTC) - self.lease_for * 2
                 )
+                eligible_controls = (
+                    await self.research_controls.compatible_execution_digests(
+                        session,
+                        worker=self.research_worker,
+                    )
+                    if self.research_worker is not None
+                    else ()
+                )
+                continuation_controls = (
+                    await self.research_controls.compatible_execution_digests(
+                        session,
+                        worker=self.research_worker,
+                        require_current_corpus=False,
+                    )
+                    if self.research_worker is not None
+                    else ()
+                )
                 claimed = await self.runs.claim_next(
-                    session, worker_id=self.worker_id, lease_for=self.lease_for
+                    session,
+                    worker_id=self.worker_id,
+                    lease_for=self.lease_for,
+                    eligible_research_execution_digests=eligible_controls,
+                    continuation_research_execution_digests=continuation_controls,
                 )
                 await self.runs.heartbeat_worker(
                     session,
                     worker_id=self.worker_id,
                     current_run_id=claimed.run_id if claimed else None,
-                    capabilities={"runner": "padawan-v1"},
+                    capabilities={
+                        "runner": "padawan-v1",
+                        "controlled_execution_admissions": len(eligible_controls),
+                        "controlled_continuation_admissions": len(continuation_controls),
+                    },
                 )
             if claimed is None:
                 await asyncio.sleep(self.idle_poll_seconds)

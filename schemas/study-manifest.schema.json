@@ -5,6 +5,7 @@
         "checkpoint",
         "quantization",
         "task",
+        "parent_state",
         "harness",
         "continuation",
         "context_policy",

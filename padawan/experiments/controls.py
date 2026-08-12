@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -8,12 +9,16 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from padawan.models.contracts import ItemStatus, ResearchRole
 from padawan.models.hashing import sha256_digest
 from padawan.models.research_contracts import (
+    BudgetDisposition,
     ComparabilityDisposition,
+    EvaluationSuiteManifest,
     HarnessProfile,
     IdentityEvidenceStatus,
     ModelServingIdentity,
+    ParentStateIdentity,
     ResearchAxis,
     ResearchComparabilityAssessment,
     ResearchExecutionManifest,
@@ -22,6 +27,8 @@ from padawan.models.research_contracts import (
     VersionedComponentIdentity,
 )
 from padawan.models.tables import (
+    CorpusItemRow,
+    EvaluationSuiteRow,
     ExperimentRow,
     HarnessProfileRow,
     ResearchExecutionRow,
@@ -50,6 +57,7 @@ class ResearchControlConfiguration:
         execution_id: str,
         seed: int,
         created_at: datetime,
+        parent_state: ParentStateIdentity,
     ) -> ResearchExecutionManifest:
         profile_digest = sha256_digest(self.profile.model_dump(mode="json"))
         return ResearchExecutionManifest(
@@ -60,6 +68,7 @@ class ResearchControlConfiguration:
             student_model=self.student_model,
             auxiliary_models=self.auxiliary_models,
             task=self.task,
+            parent_state=parent_state,
             harness_parameters=dict(sorted(self.harness_parameters.items())),
             environment=self.environment,
             environment_parameters=dict(sorted(self.environment_parameters.items())),
@@ -67,6 +76,23 @@ class ResearchControlConfiguration:
             seed=seed,
             created_at=created_at,
         )
+
+
+@dataclass(frozen=True)
+class ResearchWorkerConfiguration:
+    """Effective non-secret composition that may execute controlled work."""
+
+    profile: HarnessProfile
+    task: TaskCorpusIdentity
+    corpus_competency_ids: tuple[str, ...]
+    harness_parameters: dict[str, str]
+    student_model: ModelServingIdentity
+    auxiliary_models: tuple[ModelServingIdentity, ...]
+    environment: VersionedComponentIdentity
+    environment_parameters: dict[str, str]
+    environment_fingerprint: str
+    domain_id: str
+    workflow: str
 
 
 @dataclass(frozen=True)
@@ -139,6 +165,8 @@ class ResearchControlRegistry:
             raise ValueError("research execution runtime differs from parent state")
         if state.research_role != manifest.student_model.research_role.value:
             raise ValueError("research execution role differs from parent state")
+        if manifest.parent_state != parent_state_identity(state):
+            raise ValueError("research execution parent-state identity differs from parent state")
         if manifest.environment.digest != manifest.environment_fingerprint:
             raise ValueError("environment component digest must equal the environment fingerprint")
 
@@ -163,6 +191,8 @@ class ResearchControlRegistry:
             checkpoint_id=manifest.student_model.checkpoint.component_id,
             runtime_id=manifest.student_model.runtime.component_id,
             research_role=manifest.student_model.research_role.value,
+            parent_state_id=manifest.parent_state.state_id,
+            parent_state_hash=manifest.parent_state.state_hash,
             task_id=manifest.task.task_id,
             task_manifest_digest=manifest.task.task_manifest_digest,
             corpus_digest=manifest.task.corpus_digest,
@@ -241,9 +271,113 @@ class ResearchControlRegistry:
             execution_id=manifest.execution_id,
             seed=seed,
             created_at=manifest.created_at,
+            parent_state=manifest.parent_state,
         )
         if profile != configuration.profile or manifest != expected:
             raise ValueError("active run research controls differ from this invocation")
+
+    async def validate_run_payload(
+        self,
+        session: AsyncSession,
+        *,
+        execution_digest: str,
+        payload: dict[str, Any],
+        retry_budget: int,
+    ) -> None:
+        """Reject controlled work whose durable payload contradicts its manifest."""
+
+        control = await self._load_control(session, execution_digest)
+        if control is None:
+            raise ValueError("controlled run cites unavailable research controls")
+        execution, profile = control
+        for key in (
+            "domain_id",
+            "pool",
+            "teacher_mode",
+            "treatment_condition",
+            "control_condition",
+        ):
+            expected = execution.harness_parameters.get(key)
+            if expected is None:
+                raise ValueError(f"research execution omits controlled payload field: {key}")
+            if payload.get(key) != expected:
+                raise ValueError(f"run {key} differs from its research execution")
+        if execution.task.task_id != execution.harness_parameters["domain_id"]:
+            raise ValueError("research execution task differs from its harness domain")
+        if execution.task.split != execution.harness_parameters["pool"]:
+            raise ValueError("research execution task split differs from its harness pool")
+        retries = profile.budgets.retries
+        if retries.disposition == BudgetDisposition.CAPPED and (
+            retries.value is None or float(retry_budget) != retries.value
+        ):
+            raise ValueError("run retry budget differs from its harness profile")
+
+    async def validate_experiment_conditions(
+        self,
+        session: AsyncSession,
+        *,
+        execution_digest: str,
+        treatment_condition: str,
+        control_condition: str,
+    ) -> None:
+        control = await self._load_control(session, execution_digest)
+        if control is None:
+            raise ValueError("controlled experiment cites unavailable research controls")
+        execution, _profile = control
+        if execution.harness_parameters.get("treatment_condition") != treatment_condition:
+            raise ValueError("experiment treatment condition differs from its research execution")
+        if execution.harness_parameters.get("control_condition") != control_condition:
+            raise ValueError("experiment control condition differs from its research execution")
+
+    async def compatible_execution_digests(
+        self,
+        session: AsyncSession,
+        *,
+        worker: ResearchWorkerConfiguration,
+        require_current_corpus: bool = True,
+    ) -> tuple[str, ...]:
+        """Return executions this worker may start, or continue after sampling is frozen."""
+
+        effective_task = worker.task
+        if require_current_corpus and worker.corpus_competency_ids:
+            rows = (
+                await session.scalars(
+                    select(CorpusItemRow)
+                    .where(
+                        CorpusItemRow.pool == worker.task.split,
+                        CorpusItemRow.competency_id.in_(worker.corpus_competency_ids),
+                        CorpusItemRow.status.in_(
+                            (ItemStatus.ACTIVE.value, ItemStatus.LEASED.value)
+                        ),
+                    )
+                    .order_by(CorpusItemRow.item_id)
+                )
+            ).all()
+            effective_task = worker.task.model_copy(
+                update={"corpus_digest": research_corpus_digest(rows)}
+            )
+        digests = (
+            await session.scalars(
+                select(ResearchExecutionRow.execution_digest).order_by(
+                    ResearchExecutionRow.execution_digest
+                )
+            )
+        ).all()
+        compatible: list[str] = []
+        for digest in digests:
+            control = await self._load_control(session, digest)
+            if control is None:
+                continue
+            execution, profile = control
+            if _worker_matches_execution(
+                worker,
+                effective_task,
+                execution,
+                profile,
+                require_current_corpus=require_current_corpus,
+            ):
+                compatible.append(digest)
+        return tuple(compatible)
 
     async def assess_study(self, session: AsyncSession, *, study_id: str) -> StudyControlAssessment:
         study = await session.get(StudyRow, study_id)
@@ -260,6 +394,19 @@ class ResearchControlRegistry:
         controls: list[tuple[ResearchExecutionManifest, HarnessProfile]] = []
         gaps: list[str] = []
         digests: list[str] = []
+        suite_manifest: EvaluationSuiteManifest | None = None
+        suite = await session.get(EvaluationSuiteRow, manifest.suite_manifest_digest)
+        if suite is None:
+            gaps.append("study evaluation suite is not registered")
+        elif suite.manifest_digest != sha256_digest(suite.record_json):
+            gaps.append("study evaluation suite digest is invalid")
+        else:
+            try:
+                suite_manifest = EvaluationSuiteManifest.model_validate(
+                    suite.record_json, strict=False
+                )
+            except ValidationError:
+                gaps.append("study evaluation suite manifest is invalid")
         for binding in bindings:
             experiment = await session.get(ExperimentRow, binding.experiment_id)
             if experiment is None:
@@ -286,10 +433,33 @@ class ResearchControlRegistry:
                 gaps.append(f"missing research execution: {digest}")
                 continue
             execution, profile = control
+            parent_state = await session.get(StudentStateRow, experiment.parent_state_id)
+            if parent_state is None:
+                gaps.append(f"experiment parent state is missing: {binding.experiment_id}")
+            elif execution.parent_state != parent_state_identity(parent_state):
+                gaps.append(f"parent-state binding mismatch: {binding.experiment_id}")
             if binding.checkpoint_id != execution.student_model.checkpoint.component_id:
                 gaps.append(f"checkpoint binding mismatch: {binding.experiment_id}")
             if binding.environment_fingerprint != execution.environment_fingerprint:
                 gaps.append(f"environment binding mismatch: {binding.experiment_id}")
+            if experiment.design.get("treatment_condition") != execution.harness_parameters.get(
+                "treatment_condition"
+            ):
+                gaps.append(f"treatment-condition mismatch: {binding.experiment_id}")
+            if experiment.design.get("control_condition") != execution.harness_parameters.get(
+                "control_condition"
+            ):
+                gaps.append(f"control-condition mismatch: {binding.experiment_id}")
+            if (
+                suite_manifest is not None
+                and execution.task.task_manifest_digest not in suite_manifest.task_manifest_digests
+            ):
+                gaps.append(f"task is outside evaluation suite: {binding.experiment_id}")
+            if (
+                suite_manifest is not None
+                and execution.environment_fingerprint not in suite_manifest.environment_fingerprints
+            ):
+                gaps.append(f"environment is outside evaluation suite: {binding.experiment_id}")
             gaps.extend(_provenance_gaps(execution, profile, label=binding.experiment_id))
             controls.append(control)
         differences = _differing_axes(tuple(controls)) if controls else ()
@@ -331,6 +501,8 @@ class ResearchControlRegistry:
             row.checkpoint_id,
             row.runtime_id,
             row.research_role,
+            row.parent_state_id,
+            row.parent_state_hash,
             row.task_id,
             row.task_manifest_digest,
             row.corpus_digest,
@@ -343,6 +515,8 @@ class ResearchControlRegistry:
             execution.student_model.checkpoint.component_id,
             execution.student_model.runtime.component_id,
             execution.student_model.research_role.value,
+            execution.parent_state.state_id,
+            execution.parent_state.state_hash,
             execution.task.task_id,
             execution.task.task_manifest_digest,
             execution.task.corpus_digest,
@@ -362,6 +536,9 @@ class ResearchControlRegistry:
             execution.harness_profile_id,
             execution.harness_profile_version,
         ) != (profile.profile_id, profile.version):
+            return None
+        parent_state = await session.get(StudentStateRow, execution.parent_state.state_id)
+        if parent_state is None or execution.parent_state != parent_state_identity(parent_state):
             return None
         return execution, profile
 
@@ -388,6 +565,7 @@ def _axis_payloads(
         ResearchAxis.CHECKPOINT: student.checkpoint.model_dump(mode="json"),
         ResearchAxis.QUANTIZATION: student.quantization.model_dump(mode="json"),
         ResearchAxis.TASK: execution.task.model_dump(mode="json"),
+        ResearchAxis.PARENT_STATE: execution.parent_state.model_dump(mode="json"),
         ResearchAxis.HARNESS: {
             "tier": profile.tier,
             "purpose": profile.purpose,
@@ -404,6 +582,11 @@ def _axis_payloads(
             "model_id": student.model_id,
             "runtime": student.runtime.model_dump(mode="json"),
             "serving_artifact": student.serving_artifact.model_dump(mode="json"),
+            "transport_artifact": (
+                student.transport_artifact.model_dump(mode="json")
+                if student.transport_artifact is not None
+                else None
+            ),
             "protocol": student.protocol,
             "runtime_parameters": student.runtime_parameters,
             "runtime_parameters_digest": student.runtime_parameters_digest,
@@ -436,15 +619,43 @@ def _provenance_gaps(
         *profile.prompt_templates,
         *profile.tools,
     ]
+    if execution.student_model.transport_artifact is not None:
+        components.append(execution.student_model.transport_artifact)
+    if profile.context.compactor is not None:
+        components.append(profile.context.compactor)
+    components.extend(
+        component
+        for component in (
+            profile.instrumentation.capability_atlas_schema,
+            profile.instrumentation.interactive_trajectory_schema,
+            profile.instrumentation.mechanistic_telemetry_schema,
+            profile.instrumentation.checkpoint_evaluation_schema,
+        )
+        if component is not None
+    )
     for model in execution.auxiliary_models:
         components.extend(
             (model.checkpoint, model.quantization, model.runtime, model.serving_artifact)
         )
+        if model.transport_artifact is not None:
+            components.append(model.transport_artifact)
     gaps = [
         f"{label}: unknown component identity {component.component_id}@{component.version}"
         for component in components
         if component.evidence_status == IdentityEvidenceStatus.UNKNOWN
     ]
+    for model in (execution.student_model, *execution.auxiliary_models):
+        transport = model.transport_artifact
+        if transport is not None and transport.evidence_status not in {
+            IdentityEvidenceStatus.PINNED,
+            IdentityEvidenceStatus.VERIFIED,
+        }:
+            gaps.append(
+                f"{label}: transport artifact is not endpoint-verified "
+                f"{transport.component_id}@{transport.version}"
+            )
+        if "edge_image_digest" in model.runtime_parameters and transport is None:
+            gaps.append(f"{label}: serving edge has no transport artifact identity")
     if execution.task.evidence_status == IdentityEvidenceStatus.UNKNOWN:
         gaps.append(f"{label}: task or corpus identity is unknown")
     if (
@@ -453,3 +664,78 @@ def _provenance_gaps(
     ):
         gaps.append(f"{label}: effective context limit is not established")
     return tuple(gaps)
+
+
+def parent_state_identity(state: StudentStateRow) -> ParentStateIdentity:
+    return ParentStateIdentity(
+        state_id=state.state_id,
+        state_hash=state.state_hash,
+        student_id=state.student_id,
+        checkpoint_id=state.checkpoint_id,
+        runtime_id=state.runtime_id,
+        research_role=ResearchRole(state.research_role),
+        parent_state_id=state.parent_state_id,
+        branch_id=state.branch_id,
+    )
+
+
+def _worker_matches_execution(
+    worker: ResearchWorkerConfiguration,
+    effective_task: TaskCorpusIdentity,
+    execution: ResearchExecutionManifest,
+    profile: HarnessProfile,
+    *,
+    require_current_corpus: bool,
+) -> bool:
+    task_matches = (
+        execution.task == effective_task
+        if require_current_corpus
+        else execution.task.model_copy(update={"corpus_digest": worker.task.corpus_digest})
+        == worker.task
+    )
+    return (
+        profile == worker.profile
+        and task_matches
+        and execution.harness_parameters == worker.harness_parameters
+        and execution.student_model == worker.student_model
+        and execution.auxiliary_models == worker.auxiliary_models
+        and execution.environment == worker.environment
+        and execution.environment_parameters == worker.environment_parameters
+        and execution.environment_fingerprint == worker.environment_fingerprint
+        and execution.task.task_id == worker.domain_id
+        and execution.harness_parameters.get("domain_id") == worker.domain_id
+        and execution.harness_parameters.get("workflow") == worker.workflow
+    )
+
+
+def research_corpus_digest(rows: Sequence[CorpusItemRow]) -> str:
+    """Digest the exact non-secret corpus inventory executable by a live worker."""
+
+    eligible_statuses = {ItemStatus.ACTIVE.value, ItemStatus.LEASED.value}
+    return sha256_digest(
+        [
+            {
+                "item_id": row.item_id,
+                "competency_id": row.competency_id,
+                "template_family_id": row.template_family_id,
+                "instance_group_id": row.instance_group_id,
+                "generation_seed": row.generation_seed,
+                "generator_version": row.generator_version,
+                "difficulty": row.difficulty,
+                "prompt_digest": sha256_digest(row.prompt),
+                "expected_answer_digest": sha256_digest(row.expected_answer),
+                "verifier_spec_digest": sha256_digest(row.verifier_spec),
+                "pool": row.pool,
+                "source": row.source,
+                "rights_digest": row.rights_digest,
+                "contamination_scope": row.contamination_scope,
+                # Active-to-leased is a transient ownership change, not a corpus
+                # mutation. Retirement or quarantine removes the item entirely.
+                "status": "executable",
+            }
+            for row in sorted(
+                (item for item in rows if item.status in eligible_statuses),
+                key=lambda item: item.item_id,
+            )
+        ]
+    )

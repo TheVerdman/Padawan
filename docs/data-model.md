@@ -111,15 +111,19 @@ the exclusion counts.
 profile binds its open tier/purpose, continuation and reasoning-retention semantics, context /
 truncation / compaction policy, versioned prompt and tool identities, explicit resource budgets,
 and optional later instrumentation contracts. `research_executions` binds that profile digest to
-the exact student and auxiliary model-serving identities, checkpoint, quantization, task/corpus,
-effective workflow/condition/sampling parameters, environment, and seed used by one run
-configuration.
+the exact student and auxiliary model-serving identities, checkpoint, quantization, learned
+parent-state ID/hash, model-server and transport-edge artifacts, task/corpus, effective
+workflow/condition/sampling parameters, environment, and seed used by one run configuration.
 
 `runs.research_execution_digest` and `experiments.research_execution_digest` are nullable only for
 backward compatibility with evidence created before this contract. New live developmental work
 sets both to the same registered execution. Completed or failed `DevelopmentalEpisode` records and
 workflow provenance repeat the digest. A legacy null is preserved as missing provenance and cannot
 authorize a new comparison.
+Controlled run creation validates its domain, pool, teacher mode, treatment/control conditions,
+and retry budget against that execution. Controlled experiment creation validates its design
+conditions as well; the foreign key alone is not treated as evidence that payload and manifest
+agree.
 
 ## Studies and scheduled evaluation
 
@@ -129,6 +133,13 @@ fingerprints, research-execution digests, open factor values, and optional assig
 Study aggregation reads the original experiment blocks; it reports missingness, exclusion classes,
 observed research-axis differences, declared comparison axes, and provenance gaps. It never
 manufactures a paired outcome or treats a missing control as equality.
+
+The active-to-complete transition first requires an outcome for every bound block. It then stores in
+`study_results` one immutable, content-addressed aggregate per `(study, condition, checkpoint)`.
+Each result binds the study/suite/policy identity, source experiment and execution IDs, digests of
+every persisted block, exact metric values and missingness, control completeness, and causal-claim
+eligibility. Missing, contaminated, or infrastructure-excluded blocks make the result ineligible;
+legacy studies can still complete with explicitly ineligible results when their controls are absent.
 
 `evaluation_trials` is a due-time queue for delayed retention and interference probes. Each row
 binds a source episode, exact immutable state snapshot, source competency, fresh evaluation-only
@@ -143,13 +154,20 @@ reasons, contamination checks, verifier result IDs, and the matching prompt expo
 lineage, model/tokenizer digests, optional training-bundle digest, compatibility metadata, and one
 of candidate, evaluating, promoted, rejected, quarantined, or revoked status. It is not a trainer.
 
-`evaluation_suites` pins task and environment manifests. `checkpoint_evaluations` can cite only a
-registered study with the same suite digest and hard gates backed by persisted verifier results.
+`evaluation_suites` pins task and environment manifests. Controlled study bindings must use tasks
+and environments admitted by that exact digest-valid manifest. `checkpoint_evaluations` can cite
+only a sealed suite and completed registered study with the same suite digest, an exact
+condition/checkpoint participation binding, metrics matching one eligible `study_results` row, and
+hard gates backed by persisted verifier results scoped to that exact study manifest, suite,
+condition, checkpoint, and result digest. `condition_id` is nullable in storage only so legacy
+evaluation records remain readable; new evaluation admission requires it, and the uniqueness key
+includes it so one checkpoint may be evaluated under multiple factorial conditions.
 `checkpoint_promotion_policies` defines required metrics, regression tolerances, and minimum gains.
 `checkpoint_comparisons` records metric deltas, explicit missingness, hard-gate failures, and the
 lexicographic recommendation. `checkpoint_decisions` forms the immutable lifecycle audit trail.
 Comparison recomputation verifies source evaluation, policy, and record digests; promotion decision
-verification rechecks that the same candidate and recomputed recommendation support the action.
+verification rechecks that the same candidate and recomputed recommendation support the action;
+promotion re-runs that lineage verification before changing checkpoint state.
 
 ## Operations, artifacts, and provenance
 
@@ -176,5 +194,6 @@ study, scheduled-evaluation, suite, checkpoint, comparison, and decision tables.
 head revision with SQLAlchemy metadata and exercises downgrade/upgrade across every checked-in
 revision. The temporal revision adds operation spans/events, duration profiles, and governed
 authored demonstrations.
-The research-control revision adds harness profiles, research executions, nullable legacy-safe
-run/experiment bindings, and study factor/control bindings.
+The research-control revision adds harness profiles, research executions with learned parent-state
+and transport identity, nullable legacy-safe run/experiment bindings, study factor/control
+bindings, condition-aware checkpoint evaluations, and immutable study results.

@@ -142,6 +142,23 @@ async def test_study_aggregation_preserves_missingness_and_attrition(database) -
         )
         await studies.create(session, manifest, status=StudyStatus.ACTIVE)
         report = await studies.aggregate(session, study_id=manifest.study_id)
+        with pytest.raises(ValueError, match="unfinished blocks"):
+            await studies.transition(
+                session,
+                study_id=manifest.study_id,
+                to_status=StudyStatus.COMPLETE,
+                completed_at=_NOW + timedelta(hours=1),
+            )
+        await experiments.record_block(
+            session,
+            block_id=candidate_blocks[2].block_id,
+            treatment_success=None,
+            control_success=None,
+            treatment_score=None,
+            control_score=None,
+            contamination_checks={"fresh": True, "matched": True},
+            infrastructure_failures=("provider_result_absent",),
+        )
         await studies.transition(
             session,
             study_id=manifest.study_id,
@@ -168,6 +185,16 @@ async def test_study_aggregation_preserves_missingness_and_attrition(database) -
     assert by_condition["baseline"].paired_gain == 0.0
     assert durable_report["format"] == "padawan.study_report"
     assert durable_report["status"] == StudyStatus.COMPLETE.value
+    assert {
+        (result["condition_id"], result["checkpoint_id"])
+        for result in durable_report["immutable_results"]
+    } == {
+        ("baseline", "checkpoint-baseline"),
+        ("candidate", "checkpoint-candidate"),
+    }
+    assert not any(
+        result["causal_claim_permitted"] for result in durable_report["immutable_results"]
+    )
 
 
 async def test_retention_and_interference_trials_are_fresh_leased_and_recoverable(

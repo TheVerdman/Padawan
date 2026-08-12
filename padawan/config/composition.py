@@ -22,6 +22,8 @@ from padawan.domains.builtin import build_builtin_domain_registry
 from padawan.domains.registry import DomainRegistry, WorkflowDomainPackage
 from padawan.domains.runtime import DomainRuntimeContext
 from padawan.episodes.store import EpisodeStore
+from padawan.experiments.controls import ResearchWorkerConfiguration
+from padawan.experiments.defaults import build_live_worker_configuration
 from padawan.experiments.engine import ExperimentEngine
 from padawan.memory.lessons import LessonMemory
 from padawan.models.contracts import ResearchRole
@@ -55,6 +57,7 @@ class LiveApplication:
     student_runtime_id: str
     student_runtime_version: str
     student_checkpoint_id: str
+    research_worker: ResearchWorkerConfiguration
 
     async def close(self) -> None:
         for client in self.clients:
@@ -101,6 +104,8 @@ async def build_live_application(
     memory = LessonMemory()
     runs = RunStore()
     clients: list[Any] = []
+    verified_edge_image_digest: str | None = None
+    verified_edge_deployment_revision: str | None = None
 
     if student_provider == "inkling":
         student_role = ResearchRole.TARGET
@@ -116,10 +121,19 @@ async def build_live_application(
             tensor_parallel_size=settings.inkling_tensor_parallel_size,
             protocol="responses",
             allow_legacy_fallback=allow_legacy_student_fallback,
+            expected_edge_image_digest=settings.inkling_edge_image_digest,
+            expected_edge_deployment_revision=settings.inkling_edge_deployment_revision,
             api_key=_secret(settings.inkling_api_key),
             timeout_seconds=settings.inkling_timeout_seconds,
             contract=INKLING_SMALL_AMPERE,
         )
+        try:
+            await student.negotiate()
+        except BaseException:
+            await student.close()
+            raise
+        verified_edge_image_digest = student.verified_edge_identity.image_digest
+        verified_edge_deployment_revision = student.verified_edge_identity.deployment_revision
         student_client: Any = student
         student_runtime_id = student.runtime_id
         student_runtime_version = student.runtime_version
@@ -231,12 +245,39 @@ async def build_live_application(
         lease_for=timedelta(seconds=settings.lease_seconds),
     )
     handler = domain.build_workflow(runtime_context)
+    research_worker = build_live_worker_configuration(
+        settings=settings,
+        domain=domain.spec,
+        student_provider=student_provider,
+        student_model_id=selected_student_model,
+        student_runtime_id=student_runtime_id,
+        student_runtime_version=student_runtime_version,
+        student_checkpoint_id=checkpoint_id,
+        student_role=student_role,
+        student_base_url=(
+            settings.inkling_base_url
+            if student_provider == "inkling"
+            else settings.openai_base_url
+            if student_provider == "openai"
+            else compatible_base_url or settings.compatible_base_url
+        ),
+        teacher_provider=teacher_provider,
+        teacher_model_id=selected_teacher_model,
+        corpus_competency_ids=tuple(
+            sorted(competency.competency_id for competency in domain.competencies())
+        ),
+        allow_legacy_student_fallback=allow_legacy_student_fallback,
+        inkling_edge_image_digest=verified_edge_image_digest,
+        inkling_edge_deployment_revision=verified_edge_deployment_revision,
+        inkling_edge_identity_verified=student_provider == "inkling",
+    )
     supervisor = AutonomousSupervisor(
         database=database,
         runs=runs,
         handler=handler,
         worker_id=settings.worker_id,
         lease_for=timedelta(seconds=settings.lease_seconds),
+        research_worker=research_worker,
     )
     return LiveApplication(
         database=database,
@@ -255,6 +296,7 @@ async def build_live_application(
         student_runtime_id=student_runtime_id,
         student_runtime_version=student_runtime_version,
         student_checkpoint_id=checkpoint_id,
+        research_worker=research_worker,
     )
 
 
@@ -296,6 +338,11 @@ def _validate_live_configuration(
             )
         if settings.inkling_runtime_revision != INKLING_SMALL_AMPERE.runtime_revision:
             raise ValueError("Inkling runtime revision differs from the validated serving image")
+        if not (settings.inkling_edge_image_digest or settings.inkling_edge_deployment_revision):
+            raise ValueError(
+                "Inkling requires PADAWAN_INKLING_EDGE_IMAGE_DIGEST or "
+                "PADAWAN_INKLING_EDGE_DEPLOYMENT_REVISION"
+            )
         if settings.inkling_tensor_parallel_size != INKLING_SMALL_AMPERE.tensor_parallel_size:
             raise ValueError("Inkling tensor parallel size differs from the validated topology")
     if student_provider == "openai" and not (

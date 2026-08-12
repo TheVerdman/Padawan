@@ -10,11 +10,12 @@ from sqlalchemy import select
 from padawan.experiments.controls import (
     ResearchControlConfiguration,
     ResearchControlRegistry,
+    parent_state_identity,
 )
 from padawan.models.contracts import ResearchRole, RunState, TeacherMode
 from padawan.models.database import Database
 from padawan.models.research_contracts import BudgetDisposition
-from padawan.models.tables import RunRow, StudentRow
+from padawan.models.tables import RunRow, StudentRow, StudentStateRow
 from padawan.orchestration.state_machine import RunStore
 from padawan.orchestration.supervisor import AutonomousSupervisor
 
@@ -156,6 +157,9 @@ class AutonomousResearchLoop:
                 raise ValueError(f"student has no canonical state: {self.student_id}")
             if student.research_role != self.research_role.value:
                 raise ValueError("student identity has a different research role")
+            parent_state = await session.get(StudentStateRow, student.canonical_state_id)
+            if parent_state is None:
+                raise ValueError("student canonical state is missing")
             run_id = f"run-{uuid4()}"
             execution_digest = None
             if self.research_controls is not None and self.control_configuration is not None:
@@ -166,6 +170,7 @@ class AutonomousResearchLoop:
                     execution_id=f"execution-{run_id}",
                     seed=seed,
                     created_at=datetime.now(UTC),
+                    parent_state=parent_state_identity(parent_state),
                 )
                 execution_row = await self.research_controls.register_execution(
                     session,

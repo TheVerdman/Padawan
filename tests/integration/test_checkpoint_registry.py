@@ -4,21 +4,26 @@ from datetime import UTC, datetime
 
 import pytest
 
-from padawan.checkpoints import CheckpointRegistry, default_promotion_policy
+from padawan.checkpoints import CheckpointRegistry
 from padawan.domains.contracts import HardGateResult, VerifierDisposition, VerifierResult
 from padawan.experiments.controls import ResearchControlRegistry
 from padawan.experiments.engine import ExperimentEngine, MatchedBlock
 from padawan.models.hashing import sha256_digest
 from padawan.models.research_contracts import (
     CheckpointEvaluationRecord,
+    CheckpointGateEvidenceScope,
     CheckpointManifest,
+    CheckpointPromotionPolicy,
     CheckpointStatus,
     EvaluationSuiteManifest,
     MetricObservation,
+    PromotionMetricRule,
     ResearchAxis,
     StudyExperimentBinding,
     StudyManifest,
+    StudyResultRecord,
     StudyStatus,
+    checkpoint_gate_verifier_scope,
 )
 from padawan.models.tables import CheckpointRow
 from padawan.reporting import ReportingService
@@ -28,7 +33,12 @@ from padawan.studies import StudyEngine
 from tests.integration.test_research_controls import (
     _ENVIRONMENT as _CONTROL_ENVIRONMENT,
 )
-from tests.integration.test_research_controls import _execution, _profile
+from tests.integration.test_research_controls import (
+    _TASK_MANIFEST,
+    _execution,
+    _parent_state,
+    _profile,
+)
 
 _NOW = datetime(2026, 8, 1, tzinfo=UTC)
 _ENVIRONMENT = _CONTROL_ENVIRONMENT
@@ -50,15 +60,46 @@ def _checkpoint(
     )
 
 
-def _metrics(values: dict[str, float | None]) -> tuple[MetricObservation, ...]:
+def _metrics(result: StudyResultRecord) -> tuple[MetricObservation, ...]:
     return tuple(
         MetricObservation(
-            metric_id=metric_id,
-            value=value,
-            evidence_refs=(f"study-metric:{metric_id}",),
-            missing_reason=("metric window incomplete" if value is None else None),
+            metric_id=metric.metric_id,
+            value=metric.value,
+            evidence_refs=(result.result_id,),
+            missing_reason=metric.missing_reason,
         )
-        for metric_id, value in values.items()
+        for metric in result.metrics
+    )
+
+
+def _scoped_gate(result: StudyResultRecord) -> tuple[VerifierResult, HardGateResult]:
+    scope = CheckpointGateEvidenceScope(
+        gate_id="release-integrity",
+        study_id=result.study_id,
+        study_manifest_digest=result.study_manifest_digest,
+        suite_manifest_digest=result.suite_manifest_digest,
+        condition_id=result.condition_id,
+        checkpoint_id=result.checkpoint_id,
+        study_result_id=result.result_id,
+        study_result_digest=sha256_digest(result.model_dump(mode="json")),
+    )
+    verifier = VerifierResult(
+        result_id=f"verifier-release-integrity-{result.condition_id}",
+        verifier_id="release.integrity",
+        verifier_version="1",
+        scope=checkpoint_gate_verifier_scope(scope),
+        disposition=VerifierDisposition.VERIFIED,
+        deterministic=True,
+        summary="condition, checkpoint, suite, and immutable result integrity passed",
+        evidence={"checkpoint_evaluation_scope": scope.model_dump(mode="json")},
+        created_at=_NOW,
+    )
+    return verifier, HardGateResult(
+        gate_id="release-integrity",
+        passed=True,
+        disposition=VerifierDisposition.VERIFIED,
+        evidence_refs=(verifier.result_id,),
+        reason=verifier.summary,
     )
 
 
@@ -71,28 +112,17 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
     suite = EvaluationSuiteManifest(
         suite_id="sealed-release-suite",
         version="1",
-        task_manifest_digests=(f"sha256:{'1' * 64}",),
+        task_manifest_digests=(_TASK_MANIFEST,),
         environment_fingerprints=(_ENVIRONMENT,),
         sealed=True,
         created_at=_NOW,
     )
-    verifier = VerifierResult(
-        result_id="verifier-release-integrity",
-        verifier_id="release.integrity",
-        verifier_version="1",
-        scope="sealed-release-suite",
-        disposition=VerifierDisposition.VERIFIED,
-        deterministic=True,
-        summary="suite and environment integrity passed",
-        evidence={"sealed": True},
-        created_at=_NOW,
-    )
-    gate = HardGateResult(
+    active_study_gate = HardGateResult(
         gate_id="release-integrity",
         passed=True,
         disposition=VerifierDisposition.VERIFIED,
-        evidence_refs=(verifier.result_id,),
-        reason=verifier.summary,
+        evidence_refs=("not-yet-scoped-verifier",),
+        reason="study has not sealed an immutable result",
     )
 
     async with database.transaction() as session:
@@ -104,6 +134,14 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
             _checkpoint(
                 "checkpoint-n-plus-1",
                 model_digest_character="c",
+                parent="checkpoint-n",
+            ),
+        )
+        await checkpoints.register_checkpoint(
+            session,
+            _checkpoint(
+                "checkpoint-outsider",
+                model_digest_character="d",
                 parent="checkpoint-n",
             ),
         )
@@ -130,6 +168,7 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
                 checkpoint_id="checkpoint-n",
                 runtime_id="inkling-runtime",
                 seed=101,
+                parent_state=_parent_state(baseline_state),
             ),
             parent_state_id=baseline_state.state_id,
         )
@@ -141,26 +180,43 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
                 checkpoint_id="checkpoint-n-plus-1",
                 runtime_id="inkling-runtime",
                 seed=101,
+                parent_state=_parent_state(candidate_state),
             ),
             parent_state_id=candidate_state.state_id,
         )
-        baseline_experiment, _ = await experiments.create(
+        baseline_experiment, baseline_assignments = await experiments.create(
             session,
             parent_state_id=baseline_state.state_id,
             seed=101,
             blocks=(MatchedBlock("baseline-group", "baseline-a", "baseline-b"),),
-            treatment_condition="checkpoint-n",
-            control_condition="matched-control",
+            treatment_condition="teacher",
+            control_condition="none",
             experiment_id="experiment-checkpoint-n",
             research_execution_digest=baseline_execution.execution_digest,
         )
-        candidate_experiment, _ = await experiments.create(
+        baseline_replicate_experiment, baseline_replicate_assignments = await experiments.create(
+            session,
+            parent_state_id=baseline_state.state_id,
+            seed=101,
+            blocks=(
+                MatchedBlock(
+                    "baseline-replicate-group",
+                    "baseline-replicate-a",
+                    "baseline-replicate-b",
+                ),
+            ),
+            treatment_condition="teacher",
+            control_condition="none",
+            experiment_id="experiment-checkpoint-n-replicate",
+            research_execution_digest=baseline_execution.execution_digest,
+        )
+        candidate_experiment, candidate_assignments = await experiments.create(
             session,
             parent_state_id=candidate_state.state_id,
             seed=101,
             blocks=(MatchedBlock("candidate-group", "candidate-a", "candidate-b"),),
-            treatment_condition="checkpoint-n-plus-1",
-            control_condition="matched-control",
+            treatment_condition="teacher",
+            control_condition="none",
             experiment_id="experiment-checkpoint-n-plus-1",
             research_execution_digest=candidate_execution.execution_digest,
         )
@@ -175,11 +231,20 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
                 suite_manifest_digest=suite_digest,
                 aggregation_policy_id="paired-blocks",
                 aggregation_policy_version="1",
-                comparison_axes=(ResearchAxis.CHECKPOINT,),
+                comparison_axes=(ResearchAxis.CHECKPOINT, ResearchAxis.PARENT_STATE),
                 experiments=(
                     StudyExperimentBinding(
                         experiment_id=baseline_experiment,
                         condition_id="baseline",
+                        checkpoint_id="checkpoint-n",
+                        research_role=baseline_state.research_role,
+                        suite_manifest_digest=suite_digest,
+                        environment_fingerprint=_ENVIRONMENT,
+                        research_execution_digest=baseline_execution.execution_digest,
+                    ),
+                    StudyExperimentBinding(
+                        experiment_id=baseline_replicate_experiment,
+                        condition_id="baseline-replicate",
                         checkpoint_id="checkpoint-n",
                         research_role=baseline_state.research_role,
                         suite_manifest_digest=suite_digest,
@@ -200,7 +265,33 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
             ),
             status=StudyStatus.ACTIVE,
         )
-        await RewardEngine().record_verifier_result(session, verifier)
+        await experiments.record_block(
+            session,
+            block_id=baseline_assignments[0].block_id,
+            treatment_success=False,
+            control_success=False,
+            treatment_score=0.0,
+            control_score=0.0,
+            contamination_checks={"sealed_suite": True},
+        )
+        await experiments.record_block(
+            session,
+            block_id=baseline_replicate_assignments[0].block_id,
+            treatment_success=False,
+            control_success=False,
+            treatment_score=0.0,
+            control_score=0.0,
+            contamination_checks={"sealed_suite": True},
+        )
+        await experiments.record_block(
+            session,
+            block_id=candidate_assignments[0].block_id,
+            treatment_success=True,
+            control_success=False,
+            treatment_score=1.0,
+            control_score=0.0,
+            contamination_checks={"sealed_suite": True},
+        )
         await checkpoints.start_evaluation(
             session,
             checkpoint_id="checkpoint-n",
@@ -229,43 +320,134 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
             decision_id="decision-evaluate-candidate",
             created_at=_NOW,
         )
+        await checkpoints.start_evaluation(
+            session,
+            checkpoint_id="checkpoint-outsider",
+            actor="release-board",
+            reason="exercise study-participation admission",
+            evidence_refs=(suite_digest,),
+            decision_id="decision-evaluate-outsider",
+            created_at=_NOW,
+        )
+        active_study_evaluation = CheckpointEvaluationRecord(
+            evaluation_id="evaluation-active-study",
+            checkpoint_id="checkpoint-n",
+            study_id="study-checkpoint-release",
+            condition_id="baseline",
+            suite_manifest_digest=suite_digest,
+            metrics=(
+                MetricObservation(
+                    metric_id="paired_gain",
+                    value=0.0,
+                    evidence_refs=("invented-study-result",),
+                ),
+            ),
+            hard_gates=(active_study_gate,),
+            created_at=_NOW,
+        )
+        with pytest.raises(ValueError, match="completed study"):
+            await checkpoints.record_evaluation(session, active_study_evaluation)
+        await studies.transition(
+            session,
+            study_id="study-checkpoint-release",
+            to_status=StudyStatus.COMPLETE,
+            completed_at=_NOW,
+        )
+        baseline_result = await studies.result(
+            session,
+            study_id="study-checkpoint-release",
+            condition_id="baseline",
+            checkpoint_id="checkpoint-n",
+        )
+        candidate_result = await studies.result(
+            session,
+            study_id="study-checkpoint-release",
+            condition_id="candidate",
+            checkpoint_id="checkpoint-n-plus-1",
+        )
+        baseline_replicate_result = await studies.result(
+            session,
+            study_id="study-checkpoint-release",
+            condition_id="baseline-replicate",
+            checkpoint_id="checkpoint-n",
+        )
+        baseline_verifier, baseline_gate = _scoped_gate(baseline_result)
+        candidate_verifier, candidate_gate = _scoped_gate(candidate_result)
+        baseline_replicate_verifier, baseline_replicate_gate = _scoped_gate(
+            baseline_replicate_result
+        )
+        await RewardEngine().record_verifier_result(session, baseline_verifier)
+        await RewardEngine().record_verifier_result(session, candidate_verifier)
+        await RewardEngine().record_verifier_result(session, baseline_replicate_verifier)
         baseline_evaluation = CheckpointEvaluationRecord(
             evaluation_id="evaluation-checkpoint-n",
             checkpoint_id="checkpoint-n",
             study_id="study-checkpoint-release",
+            condition_id="baseline",
             suite_manifest_digest=suite_digest,
-            metrics=_metrics(
-                {
-                    "held_out_capability": 0.70,
-                    "unseen_transfer": 0.60,
-                    "delayed_retention": 0.60,
-                    "non_interference": 0.90,
-                    "efficiency": 0.80,
-                }
-            ),
-            hard_gates=(gate,),
+            metrics=_metrics(baseline_result),
+            hard_gates=(baseline_gate,),
             created_at=_NOW,
         )
         candidate_evaluation = CheckpointEvaluationRecord(
             evaluation_id="evaluation-checkpoint-n-plus-1",
             checkpoint_id="checkpoint-n-plus-1",
             study_id="study-checkpoint-release",
+            condition_id="candidate",
             suite_manifest_digest=suite_digest,
-            metrics=_metrics(
-                {
-                    "held_out_capability": 0.75,
-                    "unseen_transfer": 0.62,
-                    "delayed_retention": 0.61,
-                    "non_interference": 0.91,
-                    "efficiency": None,
-                }
-            ),
-            hard_gates=(gate,),
+            metrics=_metrics(candidate_result),
+            hard_gates=(candidate_gate,),
             created_at=_NOW,
         )
+        baseline_replicate_evaluation = CheckpointEvaluationRecord(
+            evaluation_id="evaluation-checkpoint-n-replicate",
+            checkpoint_id="checkpoint-n",
+            study_id="study-checkpoint-release",
+            condition_id="baseline-replicate",
+            suite_manifest_digest=suite_digest,
+            metrics=_metrics(baseline_replicate_result),
+            hard_gates=(baseline_replicate_gate,),
+            created_at=_NOW,
+        )
+        outsider_evaluation = candidate_evaluation.model_copy(
+            update={
+                "evaluation_id": "evaluation-checkpoint-outsider",
+                "checkpoint_id": "checkpoint-outsider",
+            }
+        )
+        with pytest.raises(ValueError, match="does not participate"):
+            await checkpoints.record_evaluation(session, outsider_evaluation)
+        forged_evaluation = baseline_evaluation.model_copy(
+            update={
+                "evaluation_id": "evaluation-forged-metric-lineage",
+                "metrics": (
+                    baseline_evaluation.metrics[0].model_copy(
+                        update={"evidence_refs": ("invented-study-result",)}
+                    ),
+                ),
+            }
+        )
+        with pytest.raises(ValueError, match="unknown study result"):
+            await checkpoints.record_evaluation(session, forged_evaluation)
         await checkpoints.record_evaluation(session, baseline_evaluation)
+        await checkpoints.record_evaluation(session, baseline_replicate_evaluation)
+        wrong_gate_evaluation = candidate_evaluation.model_copy(
+            update={"hard_gates": (baseline_gate,)}
+        )
+        with pytest.raises(ValueError, match="another evaluation scope"):
+            await checkpoints.record_evaluation(session, wrong_gate_evaluation)
         await checkpoints.record_evaluation(session, candidate_evaluation)
-        policy = default_promotion_policy(created_at=_NOW)
+        policy = CheckpointPromotionPolicy(
+            policy_id="paired-block-promotion",
+            version="1.0.0",
+            description="Promote only from immutable paired-block study results.",
+            metric_rules=(
+                PromotionMetricRule(metric_id="control_success_rate"),
+                PromotionMetricRule(metric_id="paired_gain", minimum_delta=0.0),
+                PromotionMetricRule(metric_id="treatment_success_rate", minimum_delta=0.0),
+            ),
+            created_at=_NOW,
+        )
         await checkpoints.register_promotion_policy(session, policy)
         comparison = await checkpoints.compare(
             session,
@@ -309,12 +491,6 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
 
     assert comparison.promotion_recommended
     assert comparison.missing_required_metrics == ()
-    assert (
-        next(
-            metric for metric in comparison.metric_deltas if metric.metric_id == "efficiency"
-        ).missing_reason
-        == "candidate: metric window incomplete"
-    )
     assert promotion.to_status == CheckpointStatus.PROMOTED
     assert revocation.to_status == CheckpointStatus.REVOKED
     assert comparison_recomputation.valid
@@ -348,7 +524,13 @@ async def test_checkpoint_evaluation_cannot_switch_suite_manifests(database) -> 
                     checkpoint_id="unregistered-checkpoint",
                     study_id="unregistered-study",
                     suite_manifest_digest=digest,
-                    metrics=_metrics({"held_out_capability": 1.0}),
+                    metrics=(
+                        MetricObservation(
+                            metric_id="held_out_capability",
+                            value=1.0,
+                            evidence_refs=("unknown-study-result",),
+                        ),
+                    ),
                     hard_gates=(
                         HardGateResult(
                             gate_id="integrity",

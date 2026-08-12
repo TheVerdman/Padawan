@@ -1,0 +1,218 @@
+{
+  "$defs": {
+    "StudyBlockEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "block_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Block Digest",
+          "type": "string"
+        },
+        "block_id": {
+          "minLength": 1,
+          "title": "Block Id",
+          "type": "string"
+        },
+        "experiment_id": {
+          "minLength": 1,
+          "title": "Experiment Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "block_id",
+        "experiment_id",
+        "block_digest"
+      ],
+      "title": "StudyBlockEvidence",
+      "type": "object"
+    },
+    "StudyResultMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "metric_id": {
+          "minLength": 1,
+          "title": "Metric Id",
+          "type": "string"
+        },
+        "missing_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Missing Reason"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "metric_id",
+        "value"
+      ],
+      "title": "StudyResultMetric",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/study-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable aggregate for one study condition and checkpoint.",
+  "properties": {
+    "aggregation_policy_id": {
+      "minLength": 1,
+      "title": "Aggregation Policy Id",
+      "type": "string"
+    },
+    "aggregation_policy_version": {
+      "minLength": 1,
+      "title": "Aggregation Policy Version",
+      "type": "string"
+    },
+    "analyzed_blocks": {
+      "minimum": 0,
+      "title": "Analyzed Blocks",
+      "type": "integer"
+    },
+    "causal_claim_permitted": {
+      "title": "Causal Claim Permitted",
+      "type": "boolean"
+    },
+    "checkpoint_id": {
+      "minLength": 1,
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "condition_id": {
+      "minLength": 1,
+      "title": "Condition Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "excluded_contaminated": {
+      "minimum": 0,
+      "title": "Excluded Contaminated",
+      "type": "integer"
+    },
+    "excluded_infrastructure": {
+      "minimum": 0,
+      "title": "Excluded Infrastructure",
+      "type": "integer"
+    },
+    "experiment_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Experiment Ids",
+      "type": "array"
+    },
+    "metrics": {
+      "items": {
+        "$ref": "#/$defs/StudyResultMetric"
+      },
+      "minItems": 1,
+      "title": "Metrics",
+      "type": "array"
+    },
+    "missing_blocks": {
+      "minimum": 0,
+      "title": "Missing Blocks",
+      "type": "integer"
+    },
+    "research_controls_complete": {
+      "title": "Research Controls Complete",
+      "type": "boolean"
+    },
+    "research_execution_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Research Execution Digests",
+      "type": "array"
+    },
+    "result_id": {
+      "minLength": 1,
+      "title": "Result Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_blocks": {
+      "items": {
+        "$ref": "#/$defs/StudyBlockEvidence"
+      },
+      "minItems": 1,
+      "title": "Source Blocks",
+      "type": "array"
+    },
+    "study_id": {
+      "minLength": 1,
+      "title": "Study Id",
+      "type": "string"
+    },
+    "study_manifest_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Study Manifest Digest",
+      "type": "string"
+    },
+    "suite_manifest_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Suite Manifest Digest",
+      "type": "string"
+    },
+    "total_blocks": {
+      "minimum": 1,
+      "title": "Total Blocks",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "result_id",
+    "study_id",
+    "study_manifest_digest",
+    "suite_manifest_digest",
+    "condition_id",
+    "checkpoint_id",
+    "aggregation_policy_id",
+    "aggregation_policy_version",
+    "experiment_ids",
+    "research_execution_digests",
+    "source_blocks",
+    "total_blocks",
+    "analyzed_blocks",
+    "missing_blocks",
+    "excluded_contaminated",
+    "excluded_infrastructure",
+    "metrics",
+    "research_controls_complete",
+    "causal_claim_permitted",
+    "created_at"
+  ],
+  "title": "StudyResultRecord",
+  "type": "object"
+}

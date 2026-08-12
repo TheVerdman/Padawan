@@ -47,7 +47,9 @@ validated Inkling client is likewise Responses-only: it negotiates the exact
 Inkling-Small-Ampere model, profile, checkpoint, structured-output, streaming, batch-one, TP4, and
 configured-window identity before its first generation. It uses the authenticated consumer edge,
 not the Vertex `Invoke` RPC, requests SSE explicitly, disables response storage/continuation, and
-makes one transport attempt. Only the generic OpenAI-compatible client may use legacy Chat
+makes one transport attempt. The model-server image and mutable Responses-edge image/deployment
+are separate serving identities; the edge origin is credential-sanitized. Only the generic
+OpenAI-compatible client may use legacy Chat
 Completions when the operator explicitly enables compatibility fallback. Anthropic is a distinct
 `/v1/messages` implementation.
 Provider and research role are orthogonal: OpenAI is a baseline or teacher, while Inkling and an
@@ -56,10 +58,18 @@ state, run, attempt, and episode records; baseline runs cannot consolidate targe
 
 The harness is also an experimental object. The live loop registers an immutable `HarnessProfile`
 and one `ResearchExecutionManifest` before it creates a controlled run. The manifest binds student
-and auxiliary model serving, task/corpus, effective workflow/condition/sampling parameters,
-environment, and seed to the profile's continuation, reasoning-retention, context, prompt/tool,
-instrumentation, and budget policies. `runs` and `experiments` point to the same content digest;
-workflow provenance and episode records repeat it.
+and auxiliary model serving, exact learned parent-state identity, task/corpus, effective
+workflow/condition/sampling parameters, environment, and seed to the profile's continuation,
+reasoning-retention, context, prompt/tool, instrumentation, and budget policies. `runs` and
+`experiments` point to the same content digest; workflow provenance and episode records repeat it.
+
+The composition root also derives a worker identity from the full harness, task scope, clients, and
+transport settings it actually constructs. The supervisor recomputes the current executable corpus
+digest and admits a controlled lease only when the profile, every harness parameter, task/corpus,
+model/transport, and environment identity match the registered execution. Missing or mismatched
+identity leaves the controlled run unclaimed. Run and experiment creation separately reject
+payload/design conditions that contradict the manifest. These checks do not weaken the Inkling
+continuation guard.
 
 `DomainRegistry` installs `math.algebra@1.0.0`, `math.lean@1.0.0`,
 `legal.appellate.fourth_circuit@1.0.0`, `agent.magellan_improvement@1.0.0`, and
@@ -131,8 +141,12 @@ outcome is an explicit infrastructure failure.
 
 Study bindings also repeat each experiment's research-execution digest and carry open factor
 values. A study declares which research axes may vary; observed undeclared differences or missing
-controls disable causal-claim permission. New checkpoint evaluation records require this control
-assessment to pass. Legacy experiments remain inspectable but do not acquire comparative authority
+controls disable causal-claim permission. Completion requires an outcome for every bound block and
+content-addresses that evidence into immutable condition/checkpoint results. A result is causal only
+when every block is analyzable with no missingness, contamination, or infrastructure exclusion. New
+checkpoint evaluation records require metrics that exactly resolve to one eligible result for the
+same condition, checkpoint, and sealed suite, plus hard-gate verifier evidence scoped to that same
+immutable lineage. Legacy experiments remain inspectable but do not acquire comparative authority
 from a report generated after the fact.
 
 Checkpoint weights remain external and frozen during a study. `CheckpointRegistry` records model,
@@ -140,8 +154,9 @@ tokenizer, parent, training-bundle, and runtime identities; accepts evaluations 
 registered identical suite; and compares N with N+1 under an immutable lexicographic policy.
 Integrity gates, required missing metrics, and regression limits precede capability or efficiency.
 Comparisons and promotion decisions have independent integrity/recomputation checks. Promotion,
-rejection, quarantine, revocation, and registry-level rollback do not imply that Padawan trained or
-mutated any weights.
+including the promotion transition itself, revalidates the metric-result lineage. Rejection,
+quarantine, revocation, and registry-level rollback do not imply that Padawan trained or mutated
+any weights.
 
 ## Storage
 

@@ -24,6 +24,7 @@ from padawan.models.tables import (
     RunRow,
     StudentStateRow,
     StudyExperimentRow,
+    StudyResultRow,
     StudyRow,
     TeacherInterventionRow,
     TrainingEligibilityRow,
@@ -101,7 +102,13 @@ class ReportingService:
                 and execution.checkpoint_id == parent_state.checkpoint_id
                 and execution.runtime_id == parent_state.runtime_id
                 and execution.research_role == parent_state.research_role
+                and execution.parent_state_id == parent_state.state_id
+                and execution.parent_state_hash == parent_state.state_hash
                 and execution.seed == experiment.seed
+                and experiment.design.get("treatment_condition")
+                == execution.record_json.get("harness_parameters", {}).get("treatment_condition")
+                and experiment.design.get("control_condition")
+                == execution.record_json.get("harness_parameters", {}).get("control_condition")
             )
             if experiment.research_execution_digest is not None and not binding_consistent:
                 recorded_gaps = control_assessment.get("provenance_gaps")
@@ -149,8 +156,10 @@ class ReportingService:
                     }
                     for row in blocks
                 ],
-                "causal_claim_permitted": bool(report.analyzed_blocks)
+                "causal_claim_permitted": report.total_blocks > 0
+                and report.analyzed_blocks == report.total_blocks
                 and not report.excluded_contaminated
+                and not report.excluded_infrastructure
                 and binding_consistent
                 and bool(control_assessment["comparable"]),
             }
@@ -178,9 +187,16 @@ class ReportingService:
                     .order_by(EvaluationTrialRow.due_at, EvaluationTrialRow.trial_id)
                 )
             ).all()
+            results = (
+                await session.scalars(
+                    select(StudyResultRow)
+                    .where(StudyResultRow.study_id == study_id)
+                    .order_by(StudyResultRow.condition_id, StudyResultRow.checkpoint_id)
+                )
+            ).all()
             return {
                 "format": "padawan.study_report",
-                "version": 2,
+                "version": 3,
                 "manifest": row.record_json,
                 "manifest_digest": row.manifest_digest,
                 "status": row.status,
@@ -200,6 +216,7 @@ class ReportingService:
                     }
                     for binding in bindings
                 ],
+                "immutable_results": [result.record_json for result in results],
                 "evaluation_trials": [
                     {
                         "schedule": trial.record_json,

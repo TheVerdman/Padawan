@@ -29,6 +29,8 @@ Configuration is loaded once at the CLI composition boundary. Important variable
 | `PADAWAN_INKLING_BASE_URL`, `PADAWAN_INKLING_MODEL` | authenticated Inkling Responses edge and exact served-model alias |
 | `INKLING_API_KEY` or `PADAWAN_INKLING_API_KEY` | bearer credential for the Inkling Responses edge |
 | `PADAWAN_INKLING_RUNTIME_REVISION` | exact runtime source revision represented by the validated serving image |
+| `PADAWAN_INKLING_EDGE_IMAGE_DIGEST` | expected digest of the mutable Responses-edge image; required unless a deployment revision is supplied and verified against capability preflight |
+| `PADAWAN_INKLING_EDGE_DEPLOYMENT_REVISION` | expected Responses-edge revision; required unless an image digest is supplied and verified against capability preflight |
 | `PADAWAN_INKLING_TENSOR_PARALLEL_SIZE` | validated topology; currently exactly four |
 | `PADAWAN_INKLING_TIMEOUT_SECONDS` | per-request Inkling timeout; currently exactly 3,600 seconds |
 | `PADAWAN_COMPATIBLE_BASE_URL`, `PADAWAN_COMPATIBLE_MODEL` | other real endpoint |
@@ -111,9 +113,13 @@ Padawan calls the separately authenticated ordinary Responses edge. Do not confi
 dedicated-Endpoint DNS: Vertex `Invoke` is a Google RPC and is not an OpenAI base URL. The runtime
 rejects that DNS shape, `/v1`-suffixed base URLs, non-HTTPS remote edges, wrong model/profile/runtime
 identity, Chat Completions fallback, response storage, and continuation. Before its first generation
-it authenticates `GET /v1/models` and `GET /v1/padawan/capabilities`; only a matching service then
-receives the streaming `POST /v1/responses`. Each transport invocation makes one attempt and asks
-for `text/event-stream`; durable workflow recovery remains a separate, recorded decision.
+the live composition authenticates `GET /v1/models` and `GET /v1/padawan/capabilities`; the runtime
+repeats that identity check immediately before every generation so a long-lived worker cannot keep
+using startup evidence after a redeploy. Only a matching service then receives the streaming
+`POST /v1/responses`. The capability response must include `transport.edge_image_digest` and/or
+`transport.edge_deployment_revision`; every configured expectation must match the value reported by
+the responding edge. Each transport invocation makes one attempt and asks for `text/event-stream`;
+durable workflow recovery remains a separate, recorded decision.
 
 The live CLI records these semantics in a versioned standardized `HarnessProfile` before creating a
 new run. For Inkling, response storage, continuation, reasoning retention, truncation, and live
@@ -198,14 +204,30 @@ new court-pack version.
 
 The official OpenAI path always uses `POST /v1/responses`, including structured output under
 `text.format`; it has no Chat Completions fallback. Validated Inkling serving is also Responses-only.
-Generic compatible endpoints use Responses by default. `supervisor run` alone exposes
-`--allow-legacy-student-fallback`, and that option is accepted only for a generic compatible
-student; using it is recorded in provider metadata. An OpenAI run in the student-shaped provider
+Generic compatible endpoints use Responses by default. Both `supervisor run` and `worker run`
+expose `--allow-legacy-student-fallback`, and that option is accepted only for a generic compatible
+student; using it changes the registered transport identity. Endpoint origin, retry count, and
+timeout likewise contribute to the execution digest. An OpenAI run in the student-shaped provider
 slot is labeled `baseline`, never `target`.
+Inkling also requires the expected image digest or deployment revision of the Responses edge
+separately from the model-server image. Startup performs authenticated capability preflight; the
+edge must report its current image digest or deployment revision and match every configured
+expectation. Only that server-observed identity is marked verified and admitted to causal research.
+Endpoint origins are reduced to scheme, hostname, and port before persistence; URL usernames and
+passwords are discarded and must never be used as provenance.
 
 `supervisor run` creates or resumes work for one student until the episode budget or a stop
 condition. `worker run` processes a bounded number of already-created durable actions. Multiple
 workers may share PostgreSQL. Use a unique `PADAWAN_WORKER_ID` per process.
+At startup, each live worker derives an admission identity from its complete harness profile,
+effective parameters, task scope, student, auxiliary models, transport, domain/workflow, and
+environment configuration. Before a run samples items, it recomputes the executable corpus digest
+from active and already-leased items, excluding retired and quarantined inventory. After the exact
+item leases and episode are durable, later actions continue against that frozen sample so expected
+within-run retirement does not strand the run. It can lease controlled work only when all other
+fields exactly match the registered research execution. A differently configured worker leaves that
+run pending; an unconfigured supervisor can claim only legacy runs without a research-execution
+digest.
 
 Every CLI success and failure emits a content-addressed command manifest. With `--json`, place the
 global flag before the subcommand: `padawan --json corpus inspect`.

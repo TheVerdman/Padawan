@@ -78,6 +78,15 @@ class ExperimentEngine:
         if not blocks:
             raise ValueError("experiment needs matched blocks")
         assigned_id = experiment_id or f"experiment-{uuid4()}"
+        if research_execution_digest is not None:
+            await _validate_research_execution(
+                session,
+                execution_digest=research_execution_digest,
+                parent_state_id=parent_state_id,
+                seed=seed,
+                treatment_condition=treatment_condition,
+                control_condition=control_condition,
+            )
         existing = await session.get(ExperimentRow, assigned_id)
         if existing is not None:
             if existing.research_execution_digest != research_execution_digest:
@@ -100,13 +109,6 @@ class ExperimentEngine:
             if stored_assignments != assign_blocks(seed=seed, blocks=blocks):
                 raise ValueError("experiment replay has different matched blocks")
             return assigned_id, stored_assignments
-        if research_execution_digest is not None:
-            await _validate_research_execution(
-                session,
-                execution_digest=research_execution_digest,
-                parent_state_id=parent_state_id,
-                seed=seed,
-            )
         session.add(
             ExperimentRow(
                 experiment_id=assigned_id,
@@ -336,7 +338,11 @@ async def _validate_research_execution(
     execution_digest: str,
     parent_state_id: str,
     seed: int,
+    treatment_condition: str,
+    control_condition: str,
 ) -> None:
+    from padawan.experiments.controls import ResearchControlRegistry
+
     execution = await session.get(ResearchExecutionRow, execution_digest)
     if execution is None:
         raise ValueError("experiment cites an unregistered research execution")
@@ -351,3 +357,13 @@ async def _validate_research_execution(
         raise ValueError("experiment runtime differs from its research execution")
     if execution.research_role != state.research_role:
         raise ValueError("experiment role differs from its research execution")
+    if execution.parent_state_id != state.state_id:
+        raise ValueError("experiment parent state differs from its research execution")
+    if execution.parent_state_hash != state.state_hash:
+        raise ValueError("experiment parent-state hash differs from its research execution")
+    await ResearchControlRegistry().validate_experiment_conditions(
+        session,
+        execution_digest=execution_digest,
+        treatment_condition=treatment_condition,
+        control_condition=control_condition,
+    )

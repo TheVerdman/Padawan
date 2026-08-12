@@ -5,8 +5,8 @@ cold checkpoint is useful for description, but it is not the control for a conti
 The measured system includes its harness:
 
 ```text
-observed performance = f(checkpoint, quantization, task, harness, context policy,
-                         tools, budget, environment, seed)
+observed performance = f(checkpoint, learned parent state, quantization, task, harness,
+                         context policy, tools, budget, environment, seed)
 ```
 
 ## Assignment
@@ -17,11 +17,18 @@ bit chooses the first orientation; later blocks alternate orientation, preventin
 bias while remaining exactly replayable. Block identifiers are semantic hashes of seed, index, and
 group.
 
-A controlled experiment also cites one registered `ResearchExecutionManifest`. Its parent-state
-checkpoint, runtime, role, and seed must agree before the experiment is created. The manifest binds
-the versioned `HarnessProfile`, serving/quantization identity, task/corpus, effective workflow and
-sampling parameters, environment, and seed. The run, experiment, episode, and workflow provenance
-repeat the same digest.
+A controlled experiment also cites one registered `ResearchExecutionManifest`. Its exact
+parent-state ID and hash, checkpoint, runtime, role, and seed must agree before the experiment is
+created. The manifest binds the versioned `HarnessProfile`, serving/quantization identity,
+task/corpus, effective workflow and sampling parameters, environment, and seed. The run,
+experiment, episode, and workflow provenance repeat the same digest. Parent state is its own
+comparison axis: two continuously learning students with different inherited state are not
+"identical controls" merely because their checkpoint and runtime match.
+
+The manifest is checked against executed inputs, not merely attached as a label. Initial run
+creation rejects a different domain, pool, teacher mode, treatment/control condition, or retry
+budget. Experiment creation rejects treatment/control conditions that differ from the same
+manifest, including on replay.
 
 Treatment and control child states contain the same inherited cognition and different branch IDs.
 The intervention description is stored on the fork. Branch-scoped memory rejects cross-branch
@@ -67,6 +74,17 @@ execution digest and may attach arbitrary factor values. Aggregation computes th
 differ; an undeclared difference blocks causal-claim permission. This separates standardized and
 optimized harness results, harness uplift, quantization delta, teaching delta, and checkpoint /
 training delta rather than collapsing them into one score.
+
+For a controlled study, each execution's task-manifest digest and environment fingerprint must
+belong to the registered evaluation suite. Checkpoint evaluation further requires a digest-valid,
+sealed suite and a controlled study binding for the checkpoint and condition being evaluated. The
+study must be complete. The transition is rejected until every bound block has a persisted outcome.
+It then seals content-addressed condition/checkpoint results from that evidence; causal eligibility
+requires all blocks to be analyzable with zero missing, contamination, or infrastructure exclusion.
+Checkpoint metrics must cite and exactly match one eligible result, and hard-gate verifier evidence
+must bind that result's study, suite, condition, and checkpoint. A shared suite label, favorable
+subset, or free-form evidence reference is not evidence that those tasks, environments, weights,
+conditions, gates, or metric values were evaluated.
 
 Reasoning retention and compaction are separate profile fields. A later 2×2 study may vary both via
 factor values and declared context/continuation axes. A gain from changing both is joint harness

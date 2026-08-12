@@ -5,9 +5,10 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import or_, select, update
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.elements import ColumnElement
 
 from padawan.models.contracts import ResearchRole, RunState
 from padawan.models.tables import (
@@ -117,9 +118,17 @@ class RunStore:
             if research_execution_digest is None:
                 return assigned
         if research_execution_digest is not None:
+            from padawan.experiments.controls import ResearchControlRegistry
+
             execution = await session.get(ResearchExecutionRow, research_execution_digest)
             if execution is None:
                 raise ValueError("run cites an unregistered research execution")
+            await ResearchControlRegistry().validate_run_payload(
+                session,
+                execution_digest=research_execution_digest,
+                payload=payload,
+                retry_budget=retry_budget,
+            )
             if execution.research_role != research_role.value:
                 raise ValueError("run role differs from its research execution")
             state_id = payload.get("state_id")
@@ -131,6 +140,8 @@ class RunStore:
             state = await session.get(StudentStateRow, state_id)
             if state is None:
                 raise ValueError("controlled run parent state is missing")
+            if student_id != state.student_id:
+                raise ValueError("run student differs from its parent state")
             if execution.seed != seed:
                 raise ValueError("run seed differs from its research execution")
             if execution.checkpoint_id != state.checkpoint_id:
@@ -139,6 +150,10 @@ class RunStore:
                 raise ValueError("run runtime differs from its research execution")
             if execution.research_role != state.research_role:
                 raise ValueError("run parent-state role differs from its research execution")
+            if execution.parent_state_id != state.state_id:
+                raise ValueError("run parent state differs from its research execution")
+            if execution.parent_state_hash != state.state_hash:
+                raise ValueError("run parent-state hash differs from its research execution")
         if existing_by_id is not None:
             _require_same_controlled_payload(existing_by_id.payload, payload)
             return assigned
@@ -205,14 +220,39 @@ class RunStore:
         worker_id: str,
         lease_for: timedelta,
         now: datetime | None = None,
+        eligible_research_execution_digests: tuple[str, ...] = (),
+        continuation_research_execution_digests: tuple[str, ...] = (),
     ) -> ClaimedRun | None:
         timestamp = now or datetime.now(UTC)
         selectable_states = [state.value for state in RunState if state not in _TERMINAL]
+        research_admission: ColumnElement[bool] = RunRow.research_execution_digest.is_(None)
+        if eligible_research_execution_digests:
+            research_admission = or_(
+                research_admission,
+                RunRow.research_execution_digest.in_(eligible_research_execution_digests),
+            )
+        if continuation_research_execution_digests:
+            sampled_or_later = or_(
+                RunRow.state.not_in((RunState.CREATED.value, RunState.FAILED_RETRYABLE.value)),
+                and_(
+                    RunRow.state == RunState.FAILED_RETRYABLE.value,
+                    RunRow.payload["retry_from_state"].as_string() != RunState.CREATED.value,
+                ),
+            )
+            research_admission = or_(
+                research_admission,
+                and_(
+                    sampled_or_later,
+                    RunRow.episode_id.is_not(None),
+                    RunRow.research_execution_digest.in_(continuation_research_execution_digests),
+                ),
+            )
         query = (
             select(RunRow)
             .where(
                 RunRow.state.in_(selectable_states),
                 RunRow.paused.is_(False),
+                research_admission,
                 or_(RunRow.lease_expires_at.is_(None), RunRow.lease_expires_at <= timestamp),
             )
             .order_by(RunRow.updated_at, RunRow.run_id)
@@ -284,9 +324,24 @@ class RunStore:
             and str(payload_updates["research_role"]) != row.research_role
         ):
             raise InvalidTransitionError("a run transition cannot change research role")
+        next_payload = {**row.payload, **(payload_updates or {})}
+        if row.research_execution_digest is not None and to_state in {
+            RunState.ITEMS_LEASED,
+            RunState.DOMAIN_ITEMS_LEASED,
+        }:
+            episode_id = next_payload.get("episode_id")
+            leases = next_payload.get("leases")
+            if not isinstance(episode_id, str) or not episode_id:
+                raise InvalidTransitionError(
+                    "controlled sampling transition requires a durable episode identity"
+                )
+            if not isinstance(leases, list) or not leases:
+                raise InvalidTransitionError(
+                    "controlled sampling transition requires exact leased-item evidence"
+                )
         row.sequence += 1
         row.state = to_state.value
-        row.payload = {**row.payload, **(payload_updates or {})}
+        row.payload = next_payload
         if payload_updates and payload_updates.get("episode_id"):
             row.episode_id = str(payload_updates["episode_id"])
         row.updated_at = datetime.now(UTC)

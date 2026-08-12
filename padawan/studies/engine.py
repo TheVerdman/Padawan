@@ -11,13 +11,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from padawan.experiments.controls import ResearchControlRegistry
 from padawan.models.hashing import sha256_digest
-from padawan.models.research_contracts import StudyManifest, StudyStatus
+from padawan.models.research_contracts import (
+    EvaluationSuiteManifest,
+    StudyBlockEvidence,
+    StudyManifest,
+    StudyResultMetric,
+    StudyResultRecord,
+    StudyStatus,
+)
 from padawan.models.tables import (
+    EvaluationSuiteRow,
     ExperimentBlockRow,
     ExperimentRow,
     ResearchExecutionRow,
     StudentStateRow,
     StudyExperimentRow,
+    StudyResultRow,
     StudyRow,
 )
 
@@ -81,6 +90,14 @@ class StudyEngine:
             ):
                 raise ValueError("study ID conflicts with persisted manifest")
             return existing
+        suite_manifest: EvaluationSuiteManifest | None = None
+        if any(binding.research_execution_digest is not None for binding in manifest.experiments):
+            suite = await session.get(EvaluationSuiteRow, manifest.suite_manifest_digest)
+            if suite is None:
+                raise ValueError("controlled study requires a registered evaluation suite")
+            if suite.manifest_digest != sha256_digest(suite.record_json):
+                raise ValueError("controlled study evaluation suite digest is invalid")
+            suite_manifest = EvaluationSuiteManifest.model_validate(suite.record_json, strict=False)
         for binding in manifest.experiments:
             experiment = await session.get(ExperimentRow, binding.experiment_id)
             if experiment is None:
@@ -122,10 +139,46 @@ class StudyEngine:
                     raise ValueError(
                         f"study checkpoint differs from research execution: {binding.experiment_id}"
                     )
+                if execution.parent_state_id != state.state_id:
+                    raise ValueError(
+                        f"study parent state differs from research execution: "
+                        f"{binding.experiment_id}"
+                    )
+                if execution.parent_state_hash != state.state_hash:
+                    raise ValueError(
+                        f"study parent-state hash differs from research execution: "
+                        f"{binding.experiment_id}"
+                    )
                 if execution.environment_fingerprint != binding.environment_fingerprint:
                     raise ValueError(
                         f"study environment differs from research execution: "
                         f"{binding.experiment_id}"
+                    )
+                treatment_condition = experiment.design.get("treatment_condition")
+                control_condition = experiment.design.get("control_condition")
+                if not isinstance(treatment_condition, str) or not isinstance(
+                    control_condition, str
+                ):
+                    raise ValueError(
+                        f"study experiment has invalid controlled conditions: "
+                        f"{binding.experiment_id}"
+                    )
+                await self.controls.validate_experiment_conditions(
+                    session,
+                    execution_digest=binding.research_execution_digest,
+                    treatment_condition=treatment_condition,
+                    control_condition=control_condition,
+                )
+                if (
+                    suite_manifest is None
+                    or execution.task_manifest_digest not in suite_manifest.task_manifest_digests
+                ):
+                    raise ValueError(
+                        f"study task is outside evaluation suite: {binding.experiment_id}"
+                    )
+                if execution.environment_fingerprint not in suite_manifest.environment_fingerprints:
+                    raise ValueError(
+                        f"study environment is outside evaluation suite: {binding.experiment_id}"
                     )
         row = StudyRow(
             study_id=manifest.study_id,
@@ -194,10 +247,51 @@ class StudyEngine:
             return
         if to_status not in allowed[current]:
             raise ValueError(f"invalid study transition: {current.value} -> {to_status.value}")
+        terminal_at = completed_at or datetime.now(UTC)
+        if to_status == StudyStatus.COMPLETE:
+            await self._seal_results(session, study=row, created_at=terminal_at)
         row.status = to_status.value
         if to_status in {StudyStatus.COMPLETE, StudyStatus.CANCELLED, StudyStatus.INVALID}:
-            row.completed_at = completed_at or datetime.now(UTC)
+            row.completed_at = terminal_at
         await session.flush()
+
+    async def result(
+        self,
+        session: AsyncSession,
+        *,
+        study_id: str,
+        condition_id: str,
+        checkpoint_id: str,
+    ) -> StudyResultRecord:
+        row = await session.scalar(
+            select(StudyResultRow).where(
+                StudyResultRow.study_id == study_id,
+                StudyResultRow.condition_id == condition_id,
+                StudyResultRow.checkpoint_id == checkpoint_id,
+            )
+        )
+        if row is None:
+            raise KeyError((study_id, condition_id, checkpoint_id))
+        if row.record_digest != sha256_digest(row.record_json):
+            raise ValueError("study result digest is invalid")
+        result = StudyResultRecord.model_validate(row.record_json, strict=False)
+        if (
+            row.result_id,
+            row.study_id,
+            row.study_manifest_digest,
+            row.suite_manifest_digest,
+            row.condition_id,
+            row.checkpoint_id,
+        ) != (
+            result.result_id,
+            result.study_id,
+            result.study_manifest_digest,
+            result.suite_manifest_digest,
+            result.condition_id,
+            result.checkpoint_id,
+        ):
+            raise ValueError("study result columns disagree with immutable content")
+        return result
 
     async def aggregate(self, session: AsyncSession, *, study_id: str) -> StudyAggregateReport:
         study = await session.get(StudyRow, study_id)
@@ -251,14 +345,200 @@ class StudyEngine:
             ),
             research_provenance_gaps=controls.provenance_gaps,
             causal_claim_permitted=bool(conditions)
-            and all(condition.analyzed_blocks > 0 for condition in conditions)
-            and not any(condition.excluded_contaminated for condition in conditions)
+            and all(_condition_is_complete_and_analyzable(condition) for condition in conditions)
             and controls.comparable,
         )
+
+    async def _seal_results(
+        self,
+        session: AsyncSession,
+        *,
+        study: StudyRow,
+        created_at: datetime,
+    ) -> tuple[StudyResultRecord, ...]:
+        if study.manifest_digest != sha256_digest(study.record_json):
+            raise ValueError("study manifest digest is invalid")
+        manifest = StudyManifest.model_validate(study.record_json, strict=False)
+        bindings = (
+            await session.scalars(
+                select(StudyExperimentRow)
+                .where(StudyExperimentRow.study_id == study.study_id)
+                .order_by(
+                    StudyExperimentRow.condition_id,
+                    StudyExperimentRow.checkpoint_id,
+                    StudyExperimentRow.experiment_id,
+                )
+            )
+        ).all()
+        grouped: dict[tuple[str, str], list[StudyExperimentRow]] = {}
+        blocks_by_experiment: dict[str, list[ExperimentBlockRow]] = {}
+        unfinished: list[str] = []
+        for binding in bindings:
+            grouped.setdefault((binding.condition_id, binding.checkpoint_id), []).append(binding)
+            experiment_blocks = list(
+                (
+                    await session.scalars(
+                        select(ExperimentBlockRow)
+                        .where(ExperimentBlockRow.experiment_id == binding.experiment_id)
+                        .order_by(ExperimentBlockRow.block_index)
+                    )
+                ).all()
+            )
+            blocks_by_experiment[binding.experiment_id] = experiment_blocks
+            unfinished.extend(
+                block.block_id for block in experiment_blocks if block.outcomes is None
+            )
+        if unfinished:
+            raise ValueError(
+                "study cannot complete with unfinished blocks: " + ", ".join(sorted(unfinished))
+            )
+        controls = await self.controls.assess_study(session, study_id=study.study_id)
+        results: list[StudyResultRecord] = []
+        for (condition_id, checkpoint_id), group in sorted(grouped.items()):
+            blocks: list[ExperimentBlockRow] = []
+            for binding in group:
+                blocks.extend(blocks_by_experiment[binding.experiment_id])
+            aggregate = _aggregate_condition(
+                condition_id,
+                blocks,
+                experiment_count=len(group),
+            )
+            missing_reason = "no analyzable paired blocks"
+            metrics = tuple(
+                sorted(
+                    (
+                        StudyResultMetric(
+                            metric_id="control_success_rate",
+                            value=aggregate.control_success_rate,
+                            missing_reason=(
+                                missing_reason if aggregate.control_success_rate is None else None
+                            ),
+                        ),
+                        StudyResultMetric(
+                            metric_id="paired_gain",
+                            value=aggregate.paired_gain,
+                            missing_reason=(
+                                missing_reason if aggregate.paired_gain is None else None
+                            ),
+                        ),
+                        StudyResultMetric(
+                            metric_id="treatment_success_rate",
+                            value=aggregate.treatment_success_rate,
+                            missing_reason=(
+                                missing_reason if aggregate.treatment_success_rate is None else None
+                            ),
+                        ),
+                    ),
+                    key=lambda metric: metric.metric_id,
+                )
+            )
+            source_blocks = tuple(
+                StudyBlockEvidence(
+                    block_id=block.block_id,
+                    experiment_id=block.experiment_id,
+                    block_digest=_block_digest(block),
+                )
+                for block in sorted(blocks, key=lambda item: (item.experiment_id, item.block_id))
+            )
+            identity = {
+                "study_id": study.study_id,
+                "study_manifest_digest": study.manifest_digest,
+                "suite_manifest_digest": study.suite_manifest_digest,
+                "condition_id": condition_id,
+                "checkpoint_id": checkpoint_id,
+                "aggregation_policy_id": manifest.aggregation_policy_id,
+                "aggregation_policy_version": manifest.aggregation_policy_version,
+                "source_blocks": [block.model_dump(mode="json") for block in source_blocks],
+                "total_blocks": aggregate.total_blocks,
+                "analyzed_blocks": aggregate.analyzed_blocks,
+                "missing_blocks": aggregate.missing_blocks,
+                "excluded_contaminated": aggregate.excluded_contaminated,
+                "excluded_infrastructure": aggregate.excluded_infrastructure,
+                "metrics": [metric.model_dump(mode="json") for metric in metrics],
+            }
+            result = StudyResultRecord(
+                result_id=f"study-result-{sha256_digest(identity)[7:31]}",
+                study_id=study.study_id,
+                study_manifest_digest=study.manifest_digest,
+                suite_manifest_digest=study.suite_manifest_digest,
+                condition_id=condition_id,
+                checkpoint_id=checkpoint_id,
+                aggregation_policy_id=manifest.aggregation_policy_id,
+                aggregation_policy_version=manifest.aggregation_policy_version,
+                experiment_ids=tuple(sorted(binding.experiment_id for binding in group)),
+                research_execution_digests=tuple(
+                    sorted(
+                        {
+                            binding.research_execution_digest
+                            for binding in group
+                            if binding.research_execution_digest is not None
+                        }
+                    )
+                ),
+                source_blocks=source_blocks,
+                total_blocks=aggregate.total_blocks,
+                analyzed_blocks=aggregate.analyzed_blocks,
+                missing_blocks=aggregate.missing_blocks,
+                excluded_contaminated=aggregate.excluded_contaminated,
+                excluded_infrastructure=aggregate.excluded_infrastructure,
+                metrics=metrics,
+                research_controls_complete=controls.provenance_complete,
+                causal_claim_permitted=(
+                    _condition_is_complete_and_analyzable(aggregate) and controls.comparable
+                ),
+                created_at=created_at,
+            )
+            payload = result.model_dump(mode="json")
+            digest = sha256_digest(payload)
+            existing = await session.get(StudyResultRow, result.result_id)
+            if existing is not None:
+                if existing.record_digest != digest or existing.record_json != payload:
+                    raise ValueError("study result ID conflicts with immutable content")
+            else:
+                session.add(
+                    StudyResultRow(
+                        result_id=result.result_id,
+                        study_id=result.study_id,
+                        study_manifest_digest=result.study_manifest_digest,
+                        suite_manifest_digest=result.suite_manifest_digest,
+                        condition_id=result.condition_id,
+                        checkpoint_id=result.checkpoint_id,
+                        record_digest=digest,
+                        record_json=payload,
+                        created_at=result.created_at,
+                    )
+                )
+            results.append(result)
+        await session.flush()
+        return tuple(results)
 
 
 def _experiment_count(bindings: Sequence[StudyExperimentRow], condition_id: str) -> int:
     return sum(binding.condition_id == condition_id for binding in bindings)
+
+
+def _condition_is_complete_and_analyzable(condition: ConditionAggregate) -> bool:
+    return (
+        condition.total_blocks > 0
+        and condition.analyzed_blocks == condition.total_blocks
+        and condition.missing_blocks == 0
+        and condition.excluded_contaminated == 0
+        and condition.excluded_infrastructure == 0
+    )
+
+
+def _block_digest(block: ExperimentBlockRow) -> str:
+    return sha256_digest(
+        {
+            "block_id": block.block_id,
+            "experiment_id": block.experiment_id,
+            "block_index": block.block_index,
+            "assignment": block.assignment,
+            "outcomes": block.outcomes,
+            "contamination_detected": block.contamination_detected,
+            "infrastructure_failure": block.infrastructure_failure,
+        }
+    )
 
 
 def _aggregate_condition(

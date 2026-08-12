@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import re
+from dataclasses import dataclass
 from typing import Any, Literal
 
 import httpx
@@ -11,6 +13,27 @@ from padawan.adapters.inkling.contract import (
     validate_responses_edge_url,
 )
 from padawan.adapters.openai_compatible.client import OpenAICompatibleClient
+
+
+@dataclass(frozen=True)
+class InklingEdgeIdentity:
+    """Identity reported by the Responses edge that answered capability preflight."""
+
+    image_digest: str | None
+    deployment_revision: str | None
+
+    def __post_init__(self) -> None:
+        if self.image_digest is None and self.deployment_revision is None:
+            raise ValueError(
+                "Inkling edge identity requires an image digest or deployment revision"
+            )
+        if (
+            self.image_digest is not None
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", self.image_digest) is None
+        ):
+            raise ValueError("Inkling edge image digest is not a sha256 identity")
+        if self.deployment_revision is not None and not self.deployment_revision:
+            raise ValueError("Inkling edge deployment revision cannot be empty")
 
 
 class InklingRuntime:
@@ -27,6 +50,8 @@ class InklingRuntime:
         tensor_parallel_size: int = 4,
         protocol: Literal["responses", "chat_completions"] = "responses",
         allow_legacy_fallback: bool = False,
+        expected_edge_image_digest: str | None = None,
+        expected_edge_deployment_revision: str | None = None,
         api_key: str | None = None,
         timeout_seconds: float = 600.0,
         contract: InklingServingContract | None = None,
@@ -53,8 +78,11 @@ class InklingRuntime:
         self.quantization_manifest = quantization_manifest
         self.tensor_parallel_size = tensor_parallel_size
         self.contract = contract
+        self.expected_edge_image_digest = expected_edge_image_digest
+        self.expected_edge_deployment_revision = expected_edge_deployment_revision
         self._negotiation_lock = asyncio.Lock()
         self._negotiated: dict[str, Any] | None = None
+        self._verified_edge_identity: InklingEdgeIdentity | None = None
         self.client = OpenAICompatibleClient(
             base_url=base_url,
             model=model,
@@ -68,18 +96,24 @@ class InklingRuntime:
             capture_private_reasoning=True,
         )
 
-    async def negotiate(self) -> dict[str, Any]:
+    async def negotiate(self, *, refresh: bool = False) -> dict[str, Any]:
         async with self._negotiation_lock:
-            if self._negotiated is not None:
+            if self._negotiated is not None and not refresh:
                 return self._negotiated
             server = await self.client.negotiate()
             if self.contract is not None:
-                errors = _contract_errors(server, self.contract)
+                errors = _contract_errors(
+                    server,
+                    self.contract,
+                    expected_edge_image_digest=self.expected_edge_image_digest,
+                    expected_edge_deployment_revision=self.expected_edge_deployment_revision,
+                )
                 if errors:
                     raise ModelProviderError(
                         "Inkling serving contract negotiation failed: " + "; ".join(errors),
                         provider="inkling",
                     )
+                self._verified_edge_identity = _edge_identity(server)
             self._negotiated = {
                 **server,
                 "runtime_id": self.runtime_id,
@@ -87,8 +121,22 @@ class InklingRuntime:
                 "checkpoint_id": self.checkpoint_id,
                 "quantization_manifest": self.quantization_manifest,
                 "tensor_parallel_size": self.tensor_parallel_size,
+                "edge_identity": (
+                    {
+                        "image_digest": self._verified_edge_identity.image_digest,
+                        "deployment_revision": self._verified_edge_identity.deployment_revision,
+                    }
+                    if self._verified_edge_identity is not None
+                    else None
+                ),
             }
             return self._negotiated
+
+    @property
+    def verified_edge_identity(self) -> InklingEdgeIdentity:
+        if self._verified_edge_identity is None:
+            raise RuntimeError("Inkling edge identity has not passed capability preflight")
+        return self._verified_edge_identity
 
     async def generate(self, request: GenerationRequest) -> GenerationResult:
         if self.contract is not None and (
@@ -98,7 +146,9 @@ class InklingRuntime:
                 "validated Inkling serving disables response storage and continuation",
                 provider="inkling",
             )
-        negotiated = await self.negotiate()
+        # The mutable edge may be redeployed while a worker remains alive. Recheck
+        # its authenticated capability identity immediately before every model call.
+        negotiated = await self.negotiate(refresh=True)
         result = await self.client.generate(request, stream=True)
         telemetry = {
             "checkpoint_id": self.checkpoint_id,
@@ -161,7 +211,13 @@ def _validate_runtime_configuration(
         raise ValueError("; ".join(mismatches))
 
 
-def _contract_errors(server: dict[str, Any], contract: InklingServingContract) -> list[str]:
+def _contract_errors(
+    server: dict[str, Any],
+    contract: InklingServingContract,
+    *,
+    expected_edge_image_digest: str | None,
+    expected_edge_deployment_revision: str | None,
+) -> list[str]:
     errors: list[str] = []
     models = server.get("models")
     records = models.get("data") if isinstance(models, dict) else None
@@ -189,6 +245,7 @@ def _contract_errors(server: dict[str, Any], contract: InklingServingContract) -
     structured = features.get("structured_outputs") if isinstance(features, dict) else None
     continuation = features.get("previous_response_id") if isinstance(features, dict) else None
     runtime = extension.get("runtime")
+    transport = extension.get("transport")
 
     observed = {
         "service": extension.get("service"),
@@ -227,6 +284,12 @@ def _contract_errors(server: dict[str, Any], contract: InklingServingContract) -
         "runtime.chunked_prefill": (
             runtime.get("chunked_prefill") if isinstance(runtime, dict) else None
         ),
+        "transport.edge_image_digest": (
+            transport.get("edge_image_digest") if isinstance(transport, dict) else None
+        ),
+        "transport.edge_deployment_revision": (
+            transport.get("edge_deployment_revision") if isinstance(transport, dict) else None
+        ),
     }
     expected = {
         "service": contract.service,
@@ -251,4 +314,44 @@ def _contract_errors(server: dict[str, Any], contract: InklingServingContract) -
         for name, wanted in expected.items()
         if observed[name] != wanted
     )
+    observed_image = observed["transport.edge_image_digest"]
+    observed_revision = observed["transport.edge_deployment_revision"]
+    if observed_image is None and observed_revision is None:
+        errors.append(
+            "capability transport must report an edge image digest or deployment revision"
+        )
+    if observed_image is not None and (
+        not isinstance(observed_image, str)
+        or re.fullmatch(r"sha256:[0-9a-f]{64}", observed_image) is None
+    ):
+        errors.append("capability transport edge image digest is invalid")
+    if observed_revision is not None and (
+        not isinstance(observed_revision, str) or not observed_revision
+    ):
+        errors.append("capability transport edge deployment revision is invalid")
+    if expected_edge_image_digest is not None and observed_image != expected_edge_image_digest:
+        errors.append(
+            "capability transport edge image digest differs from configured deployment identity"
+        )
+    if (
+        expected_edge_deployment_revision is not None
+        and observed_revision != expected_edge_deployment_revision
+    ):
+        errors.append(
+            "capability transport edge deployment revision differs from configured deployment "
+            "identity"
+        )
     return errors
+
+
+def _edge_identity(server: dict[str, Any]) -> InklingEdgeIdentity:
+    extension = server.get("padawan_extension")
+    transport = extension.get("transport") if isinstance(extension, dict) else None
+    if not isinstance(transport, dict):
+        raise ValueError("Inkling capability response has no transport identity")
+    image_digest = transport.get("edge_image_digest")
+    deployment_revision = transport.get("edge_deployment_revision")
+    return InklingEdgeIdentity(
+        image_digest=image_digest if isinstance(image_digest, str) else None,
+        deployment_revision=(deployment_revision if isinstance(deployment_revision, str) else None),
+    )

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,12 +16,17 @@ from padawan.models.research_contracts import (
     CheckpointDecisionAction,
     CheckpointDecisionRecord,
     CheckpointEvaluationRecord,
+    CheckpointGateEvidenceScope,
     CheckpointManifest,
     CheckpointPromotionPolicy,
     CheckpointStatus,
     EvaluationSuiteManifest,
     MetricObservation,
     PromotionMetricRule,
+    StudyManifest,
+    StudyResultRecord,
+    StudyStatus,
+    checkpoint_gate_verifier_scope,
 )
 from padawan.models.tables import (
     CheckpointComparisonRow,
@@ -29,6 +35,8 @@ from padawan.models.tables import (
     CheckpointPromotionPolicyRow,
     CheckpointRow,
     EvaluationSuiteRow,
+    StudyExperimentRow,
+    StudyResultRow,
     StudyRow,
     VerifierResultRow,
 )
@@ -179,6 +187,8 @@ class CheckpointRegistry:
         if existing is not None:
             if existing.record_digest != digest or existing.record_json != payload:
                 raise ValueError("checkpoint evaluation ID conflicts with persisted record")
+            if not _evaluation_columns_match(existing, record):
+                raise ValueError("checkpoint evaluation index differs from persisted record")
             return existing
         checkpoint = await session.get(CheckpointRow, record.checkpoint_id)
         if checkpoint is None:
@@ -191,11 +201,30 @@ class CheckpointRegistry:
         suite = await session.get(EvaluationSuiteRow, record.suite_manifest_digest)
         if suite is None:
             raise ValueError("checkpoint evaluation suite is not registered")
+        if suite.manifest_digest != sha256_digest(suite.record_json):
+            raise ValueError("checkpoint evaluation suite digest is invalid")
+        suite_manifest = EvaluationSuiteManifest.model_validate(suite.record_json, strict=False)
+        if not suite.sealed or not suite_manifest.sealed:
+            raise ValueError("checkpoint evaluation requires a sealed suite")
         study = await session.get(StudyRow, record.study_id)
         if study is None:
             raise ValueError("checkpoint evaluation study is not registered")
         if study.suite_manifest_digest != record.suite_manifest_digest:
             raise ValueError("checkpoint evaluation and study use different suite manifests")
+        if StudyStatus(study.status) != StudyStatus.COMPLETE or study.completed_at is None:
+            raise ValueError("checkpoint evaluation requires a completed study")
+        if record.condition_id is None:
+            raise ValueError("checkpoint evaluation requires a study condition")
+        participation = await session.scalar(
+            select(StudyExperimentRow).where(
+                StudyExperimentRow.study_id == record.study_id,
+                StudyExperimentRow.condition_id == record.condition_id,
+                StudyExperimentRow.checkpoint_id == record.checkpoint_id,
+                StudyExperimentRow.research_execution_digest.is_not(None),
+            )
+        )
+        if participation is None:
+            raise ValueError("evaluated checkpoint does not participate in the controlled study")
         controls = await ResearchControlRegistry().assess_study(session, study_id=record.study_id)
         if not controls.provenance_complete:
             raise ValueError(
@@ -207,11 +236,18 @@ class CheckpointRegistry:
             raise ValueError(
                 "checkpoint evaluation has undeclared research-control differences: " + axes
             )
-        await self._validate_gate_evidence(session, record)
+        study_result = await self._validate_metric_evidence(session, record, study=study)
+        await self._validate_gate_evidence(
+            session,
+            record,
+            study=study,
+            study_result=study_result,
+        )
         row = CheckpointEvaluationRow(
             evaluation_id=record.evaluation_id,
             checkpoint_id=record.checkpoint_id,
             study_id=record.study_id,
+            condition_id=record.condition_id,
             suite_manifest_digest=record.suite_manifest_digest,
             record_digest=digest,
             record_json=payload,
@@ -268,6 +304,24 @@ class CheckpointRegistry:
         candidate = CheckpointEvaluationRecord.model_validate(
             candidate_row.record_json, strict=False
         )
+        for label, row, evaluation in (
+            ("baseline", baseline_row, baseline),
+            ("candidate", candidate_row, candidate),
+        ):
+            if row.record_digest != sha256_digest(row.record_json):
+                raise ValueError(f"{label} checkpoint evaluation digest is invalid")
+            if not _evaluation_columns_match(row, evaluation):
+                raise ValueError(f"{label} checkpoint evaluation index is invalid")
+            study = await session.get(StudyRow, evaluation.study_id)
+            if study is None:
+                raise ValueError(f"{label} checkpoint evaluation study is missing")
+            study_result = await self._validate_metric_evidence(session, evaluation, study=study)
+            await self._validate_gate_evidence(
+                session,
+                evaluation,
+                study=study,
+                study_result=study_result,
+            )
         record = _build_comparison_record(
             comparison_id=comparison_id,
             baseline=baseline,
@@ -345,10 +399,29 @@ class CheckpointRegistry:
         if stored.policy_digest != policy_row.policy_digest:
             errors.append("stored comparison policy digest differs from registered policy")
         for label, evaluation in (("baseline", baseline), ("candidate", candidate)):
-            try:
-                await self._validate_gate_evidence(session, evaluation)
-            except ValueError as exc:
-                errors.append(f"{label} gate evidence is invalid: {exc}")
+            evaluation_row = baseline_row if label == "baseline" else candidate_row
+            if not _evaluation_columns_match(evaluation_row, evaluation):
+                errors.append(f"{label} evaluation index is invalid")
+            study = await session.get(StudyRow, evaluation.study_id)
+            if study is None:
+                errors.append(f"{label} evaluation study is missing")
+            else:
+                try:
+                    study_result = await self._validate_metric_evidence(
+                        session, evaluation, study=study
+                    )
+                except ValueError as exc:
+                    errors.append(f"{label} metric evidence is invalid: {exc}")
+                else:
+                    try:
+                        await self._validate_gate_evidence(
+                            session,
+                            evaluation,
+                            study=study,
+                            study_result=study_result,
+                        )
+                    except ValueError as exc:
+                        errors.append(f"{label} gate evidence is invalid: {exc}")
         rebuilt = _build_comparison_record(
             comparison_id=stored.comparison_id,
             baseline=baseline,
@@ -453,6 +526,14 @@ class CheckpointRegistry:
         )
         if promote and not comparison.promotion_recommended:
             raise ValueError("checkpoint comparison does not permit promotion")
+        if promote:
+            recomputed = await self.recompute_comparison(session, comparison_id=comparison_id)
+            if not recomputed.valid:
+                raise ValueError(
+                    "checkpoint comparison lineage is invalid: " + "; ".join(recomputed.errors)
+                )
+            if recomputed.recomputed_recommendation is not True:
+                raise ValueError("recomputed checkpoint evidence does not permit promotion")
         return await self._transition(
             session,
             checkpoint_id=checkpoint_id,
@@ -591,10 +672,106 @@ class CheckpointRegistry:
         await session.flush()
         return record
 
+    async def _validate_metric_evidence(
+        self,
+        session: AsyncSession,
+        record: CheckpointEvaluationRecord,
+        *,
+        study: StudyRow,
+    ) -> StudyResultRecord:
+        if StudyStatus(study.status) != StudyStatus.COMPLETE or study.completed_at is None:
+            raise ValueError("checkpoint metrics require a completed study")
+        if study.manifest_digest != sha256_digest(study.record_json):
+            raise ValueError("checkpoint metric study manifest digest is invalid")
+        manifest = StudyManifest.model_validate(study.record_json, strict=False)
+        bound_result: StudyResultRecord | None = None
+        for metric in record.metrics:
+            if len(metric.evidence_refs) != 1:
+                raise ValueError(
+                    f"checkpoint metric must cite exactly one immutable study result: "
+                    f"{metric.metric_id}"
+                )
+            result_id = metric.evidence_refs[0]
+            row = await session.get(StudyResultRow, result_id)
+            if row is None:
+                raise ValueError(f"checkpoint metric cites unknown study result: {result_id}")
+            if row.record_digest != sha256_digest(row.record_json):
+                raise ValueError(f"checkpoint metric cites corrupt study result: {result_id}")
+            result = StudyResultRecord.model_validate(row.record_json, strict=False)
+            if bound_result is not None and result.result_id != bound_result.result_id:
+                raise ValueError("checkpoint metrics must cite one immutable study result")
+            if (
+                row.result_id,
+                row.study_id,
+                row.study_manifest_digest,
+                row.suite_manifest_digest,
+                row.condition_id,
+                row.checkpoint_id,
+            ) != (
+                result.result_id,
+                result.study_id,
+                result.study_manifest_digest,
+                result.suite_manifest_digest,
+                result.condition_id,
+                result.checkpoint_id,
+            ):
+                raise ValueError(f"checkpoint study-result index is corrupt: {result_id}")
+            if result.study_id != record.study_id:
+                raise ValueError("checkpoint metric result belongs to another study")
+            if result.study_manifest_digest != study.manifest_digest:
+                raise ValueError("checkpoint metric result uses another study manifest")
+            if result.suite_manifest_digest != record.suite_manifest_digest:
+                raise ValueError("checkpoint metric result uses another evaluation suite")
+            if result.checkpoint_id != record.checkpoint_id:
+                raise ValueError("checkpoint metric result belongs to another checkpoint")
+            if result.condition_id != record.condition_id:
+                raise ValueError("checkpoint metric result belongs to another study condition")
+            if (
+                result.aggregation_policy_id != manifest.aggregation_policy_id
+                or result.aggregation_policy_version != manifest.aggregation_policy_version
+            ):
+                raise ValueError("checkpoint metric result uses another aggregation policy")
+            if not result.research_controls_complete or not result.causal_claim_permitted:
+                raise ValueError("checkpoint metric result is not eligible for a causal claim")
+            observed = next(
+                (item for item in result.metrics if item.metric_id == metric.metric_id),
+                None,
+            )
+            if observed is None:
+                raise ValueError(
+                    f"checkpoint metric is absent from cited study result: {metric.metric_id}"
+                )
+            if observed.value != metric.value or observed.missing_reason != metric.missing_reason:
+                raise ValueError(
+                    f"checkpoint metric contradicts cited study result: {metric.metric_id}"
+                )
+            bound_result = result
+        if bound_result is None:
+            raise ValueError("checkpoint evaluation has no immutable metric result")
+        return bound_result
+
     async def _validate_gate_evidence(
-        self, session: AsyncSession, record: CheckpointEvaluationRecord
+        self,
+        session: AsyncSession,
+        record: CheckpointEvaluationRecord,
+        *,
+        study: StudyRow,
+        study_result: StudyResultRecord,
     ) -> None:
+        if record.condition_id is None:
+            raise ValueError("checkpoint gate scope requires a study condition")
         for gate in record.hard_gates:
+            expected_evidence_scope = CheckpointGateEvidenceScope(
+                gate_id=gate.gate_id,
+                study_id=record.study_id,
+                study_manifest_digest=study.manifest_digest,
+                suite_manifest_digest=record.suite_manifest_digest,
+                condition_id=record.condition_id,
+                checkpoint_id=record.checkpoint_id,
+                study_result_id=study_result.result_id,
+                study_result_digest=sha256_digest(study_result.model_dump(mode="json")),
+            )
+            expected_verifier_scope = checkpoint_gate_verifier_scope(expected_evidence_scope)
             if not gate.evidence_refs:
                 raise ValueError(f"checkpoint gate has no verifier evidence: {gate.gate_id}")
             for result_id in gate.evidence_refs:
@@ -606,11 +783,48 @@ class CheckpointRegistry:
                 evidence = VerifierResult.model_validate(result.record_json, strict=False)
                 if (
                     evidence.result_id != result.result_id
+                    or evidence.verifier_id != result.verifier_id
+                    or evidence.verifier_version != result.verifier_version
+                    or evidence.scope != result.scope
                     or evidence.disposition.value != result.disposition
+                    or evidence.deterministic != result.deterministic
                 ):
                     raise ValueError(f"checkpoint verifier evidence index is corrupt: {result_id}")
                 if result.disposition != gate.disposition.value:
                     raise ValueError("checkpoint gate conflicts with verifier disposition")
+                if evidence.scope != expected_verifier_scope:
+                    raise ValueError("checkpoint gate verifier belongs to another evaluation scope")
+                raw_scope = evidence.evidence.get("checkpoint_evaluation_scope")
+                try:
+                    actual_scope = CheckpointGateEvidenceScope.model_validate(
+                        raw_scope,
+                        strict=False,
+                    )
+                except ValidationError as exc:
+                    raise ValueError(
+                        "checkpoint gate verifier omits immutable evaluation scope"
+                    ) from exc
+                if actual_scope != expected_evidence_scope:
+                    raise ValueError("checkpoint gate verifier evidence has another lineage")
+
+
+def _evaluation_columns_match(
+    row: CheckpointEvaluationRow,
+    record: CheckpointEvaluationRecord,
+) -> bool:
+    return (
+        row.evaluation_id,
+        row.checkpoint_id,
+        row.study_id,
+        row.condition_id,
+        row.suite_manifest_digest,
+    ) == (
+        record.evaluation_id,
+        record.checkpoint_id,
+        record.study_id,
+        record.condition_id,
+        record.suite_manifest_digest,
+    )
 
 
 def _build_comparison_record(

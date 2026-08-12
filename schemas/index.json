@@ -76,7 +76,12 @@
     {
       "name": "checkpoint-evaluation",
       "schema": "checkpoint-evaluation.schema.json",
-      "sha256": "2ab91cc6bc6cfa03532f8148642a5eadeb9885a0fddcfe3d22fb4a3441e11caf"
+      "sha256": "e3e7f066b9c6710966f191ba42e989d3355a3f0787b696ce2471204d9d34cb9e"
+    },
+    {
+      "name": "checkpoint-gate-evidence-scope",
+      "schema": "checkpoint-gate-evidence-scope.schema.json",
+      "sha256": "efebc639e96f6eec9100857de98a9da33098f3331e916a1b0d7ed6d8c03f904f"
     },
     {
       "name": "checkpoint-manifest",
@@ -161,7 +166,7 @@
     {
       "name": "harness-profile",
       "schema": "harness-profile.schema.json",
-      "sha256": "66b91a896ad57c555adb992a19a6520bd31de8905af5fcde3dbe34a5a25e092a"
+      "sha256": "616faacbdf3a856eaca25ee6266d09c04926dde6258530a29e917632c1745dd9"
     },
     {
       "name": "lesson",
@@ -246,12 +251,12 @@
     {
       "name": "research-comparability-assessment",
       "schema": "research-comparability-assessment.schema.json",
-      "sha256": "fe7357b773e1afe00b6195ca2debc1fe8fa642524baa5b23de72061e9e37740d"
+      "sha256": "07fece9a082030661eab65b8c4a80b1830ab212da3f2b0d928c0b43e88a86953"
     },
     {
       "name": "research-execution-manifest",
       "schema": "research-execution-manifest.schema.json",
-      "sha256": "1acd201fb6374a0722b788fe1b0f42df1752dde81ca2bdd2ab043fd7bdc6eaad"
+      "sha256": "9e5d37fcc13d2b3728d498cf145962eb2216be26ea1d665bb1219a2d3d00102e"
     },
     {
       "name": "rlvr-training-row",
@@ -286,7 +291,12 @@
     {
       "name": "study-manifest",
       "schema": "study-manifest.schema.json",
-      "sha256": "e3edd1f72e16c1668929c819822f755e3e7871efd38c7583c398cdc5076f0678"
+      "sha256": "b09bc794d40c31a4b1b47633a0460d348585faad99bd03de1a35e77a773c260a"
+    },
+    {
+      "name": "study-result",
+      "schema": "study-result.schema.json",
+      "sha256": "04ff9f733111ca470743204a68942e705a74e31a175b43cd85e33862fb25413a"
     },
     {
       "name": "task-manifest",

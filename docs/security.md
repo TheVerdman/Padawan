@@ -15,6 +15,9 @@ Never pass credentials in model prompts, item metadata, command-line arguments, 
 payloads. `.env` and runtime artifact directories are ignored by Git. Production deployments should
 inject secrets from a dedicated manager and use separate least-privilege database/provider
 identities.
+Provider base URLs should not contain userinfo. Research-control endpoint identity nevertheless
+reconstructs only the parsed scheme, hostname, and port, so an accidental URL username/password is
+not persisted in execution records.
 
 `PADAWAN_ENV_FILE` is a bootstrap-only, explicit selection. Padawan does not scan sibling
 repositories, and the selected path is not written into settings manifests. Process environment

@@ -9,6 +9,9 @@ from padawan.adapters.base import GenerationRequest, ModelProviderError
 from padawan.adapters.inkling import INKLING_SMALL_AMPERE, InklingRuntime
 from padawan.models.contracts import SamplingConfiguration
 
+_EDGE_IMAGE_DIGEST = f"sha256:{'d' * 64}"
+_EDGE_DEPLOYMENT_REVISION = "inkling-edge-00004-test"
+
 
 def _request(**updates: object) -> GenerationRequest:
     request = GenerationRequest(
@@ -28,7 +31,12 @@ def _request(**updates: object) -> GenerationRequest:
     return request.model_copy(update=updates)
 
 
-def _capabilities(*, profile_id: str | None = None) -> dict[str, object]:
+def _capabilities(
+    *,
+    profile_id: str | None = None,
+    edge_image_digest: str = _EDGE_IMAGE_DIGEST,
+    edge_deployment_revision: str = _EDGE_DEPLOYMENT_REVISION,
+) -> dict[str, object]:
     contract = INKLING_SMALL_AMPERE
     return {
         "schema_version": "1.0.0",
@@ -59,6 +67,10 @@ def _capabilities(*, profile_id: str | None = None) -> dict[str, object]:
             "max_num_seqs": 1,
             "chunked_prefill": True,
         },
+        "transport": {
+            "edge_image_digest": edge_image_digest,
+            "edge_deployment_revision": edge_deployment_revision,
+        },
     }
 
 
@@ -73,6 +85,8 @@ def _runtime(http_client: httpx.AsyncClient, **updates: object) -> InklingRuntim
         "tensor_parallel_size": contract.tensor_parallel_size,
         "protocol": "responses",
         "allow_legacy_fallback": False,
+        "expected_edge_image_digest": _EDGE_IMAGE_DIGEST,
+        "expected_edge_deployment_revision": _EDGE_DEPLOYMENT_REVISION,
         "api_key": "edge-secret",
         "timeout_seconds": contract.request_timeout_seconds,
         "contract": contract,
@@ -151,6 +165,11 @@ async def test_validated_inkling_runtime_negotiates_then_streams_once() -> None:
         INKLING_SMALL_AMPERE.profile_id
     )
     assert second_negotiation["padawan_extension"]["service"] == (INKLING_SMALL_AMPERE.service)
+    assert second_negotiation["edge_identity"] == {
+        "image_digest": _EDGE_IMAGE_DIGEST,
+        "deployment_revision": _EDGE_DEPLOYMENT_REVISION,
+    }
+    assert runtime.verified_edge_identity.image_digest == _EDGE_IMAGE_DIGEST
     assert runtime.client.retry_attempts == 1
 
 
@@ -172,6 +191,56 @@ async def test_inkling_contract_mismatch_fails_before_generation() -> None:
             await runtime.generate(_request())
 
     assert paths == ["/v1/models", "/v1/padawan/capabilities"]
+
+
+async def test_inkling_rejects_stale_declared_edge_identity() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(
+                200,
+                json={"data": [{"id": INKLING_SMALL_AMPERE.served_model_name}]},
+            )
+        return httpx.Response(
+            200,
+            json=_capabilities(edge_deployment_revision="inkling-edge-00005-redeployed"),
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http_client:
+        runtime = _runtime(http_client)
+        with pytest.raises(ModelProviderError, match="deployment revision differs"):
+            await runtime.negotiate()
+
+
+async def test_inkling_rechecks_edge_identity_before_each_generation() -> None:
+    capability_calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal capability_calls
+        if request.url.path == "/v1/models":
+            return httpx.Response(
+                200,
+                json={"data": [{"id": INKLING_SMALL_AMPERE.served_model_name}]},
+            )
+        if request.url.path == "/v1/padawan/capabilities":
+            capability_calls += 1
+            revision = (
+                _EDGE_DEPLOYMENT_REVISION
+                if capability_calls == 1
+                else "inkling-edge-00005-redeployed"
+            )
+            return httpx.Response(
+                200,
+                json=_capabilities(edge_deployment_revision=revision),
+            )
+        raise AssertionError("generation must not reach a redeployed unverified edge")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http_client:
+        runtime = _runtime(http_client)
+        await runtime.negotiate()
+        with pytest.raises(ModelProviderError, match="deployment revision differs"):
+            await runtime.generate(_request())
+
+    assert capability_calls == 2
 
 
 @pytest.mark.parametrize("updates", [{"store": True}, {"previous_response_id": ""}])

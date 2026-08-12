@@ -8,7 +8,10 @@ from urllib.parse import urlsplit
 
 from padawan.adapters.inkling.contract import INKLING_SMALL_AMPERE
 from padawan.domains.contracts import DomainSpec
-from padawan.experiments.controls import ResearchControlConfiguration
+from padawan.experiments.controls import (
+    ResearchControlConfiguration,
+    ResearchWorkerConfiguration,
+)
 from padawan.models.contracts import ResearchRole, TeacherMode
 from padawan.models.hashing import sha256_digest
 from padawan.models.research_contracts import (
@@ -42,12 +45,81 @@ def build_standardized_developmental_control(
     teacher_provider: Literal["openai", "anthropic"],
     teacher_model_id: str,
     corpus_digest: str,
+    allow_legacy_student_fallback: bool = False,
     teacher_mode: TeacherMode = TeacherMode.DIAGNOSTIC_CRITIQUE,
     treatment_condition: str = "frontier_teacher_critique",
     control_condition: str = "no_intervention",
+    worker_configuration: ResearchWorkerConfiguration | None = None,
 ) -> ResearchControlConfiguration:
     """Build the current live workflow profile without claiming deferred capabilities."""
 
+    profile = _developmental_profile(
+        settings=settings,
+        domain=domain,
+        student_provider=student_provider,
+    )
+
+    task = TaskCorpusIdentity(
+        task_id=domain.domain_id,
+        task_version=domain.version,
+        task_manifest_digest=sha256_digest(
+            {
+                "domain": domain.model_dump(mode="json"),
+                "split": "curriculum",
+            }
+        ),
+        corpus_id=f"{domain.domain_id}.curriculum",
+        corpus_version=domain.version,
+        corpus_digest=corpus_digest,
+        split="curriculum",
+        evidence_status=IdentityEvidenceStatus.PINNED,
+    )
+    harness_parameters = _developmental_harness_parameters(
+        domain_id=domain.domain_id,
+        teacher_mode=teacher_mode,
+        treatment_condition=treatment_condition,
+        control_condition=control_condition,
+        external_transport_max_attempts=settings.external_retry_attempts,
+    )
+    worker = worker_configuration or build_live_worker_configuration(
+        settings=settings,
+        domain=domain,
+        student_provider=student_provider,
+        student_model_id=student_model_id,
+        student_runtime_id=student_runtime_id,
+        student_runtime_version=student_runtime_version,
+        student_checkpoint_id=student_checkpoint_id,
+        student_role=student_role,
+        student_base_url=student_base_url,
+        teacher_provider=teacher_provider,
+        teacher_model_id=teacher_model_id,
+        allow_legacy_student_fallback=allow_legacy_student_fallback,
+    )
+    if (
+        worker.profile != profile
+        or worker.harness_parameters != harness_parameters
+        or worker.domain_id != domain.domain_id
+        or worker.workflow != harness_parameters["workflow"]
+    ):
+        raise ValueError("live worker harness differs from requested research controls")
+    return ResearchControlConfiguration(
+        profile=profile,
+        student_model=worker.student_model,
+        auxiliary_models=worker.auxiliary_models,
+        task=task,
+        harness_parameters=harness_parameters,
+        environment=worker.environment,
+        environment_parameters=worker.environment_parameters,
+        environment_fingerprint=worker.environment_fingerprint,
+    )
+
+
+def _developmental_profile(
+    *,
+    settings: Any,
+    domain: DomainSpec,
+    student_provider: Literal["inkling", "openai", "compatible"],
+) -> HarnessProfile:
     source_status = (
         IdentityEvidenceStatus.PINNED
         if settings.code_revision != "unknown"
@@ -115,7 +187,6 @@ def build_standardized_developmental_control(
                 content={"domain_id": domain.domain_id, "tools": []},
             )
         )
-
     context_window = (
         INKLING_SMALL_AMPERE.configured_max_model_len if student_provider == "inkling" else None
     )
@@ -191,7 +262,7 @@ def build_standardized_developmental_control(
         "tools": [item.model_dump(mode="json") for item in sorted(tools, key=_component_key)],
         "budgets": budgets.model_dump(mode="json"),
     }
-    profile = HarnessProfile(
+    return HarnessProfile(
         profile_id=f"padawan.{domain.domain_id}.developmental",
         version=f"1.0.0+{sha256_digest(profile_seed)[7:19]}",
         tier="standardized",
@@ -205,50 +276,28 @@ def build_standardized_developmental_control(
         created_at=_PROFILE_RELEASED_AT,
     )
 
-    environment_parameters = {
-        "padawan_code_revision": settings.code_revision,
-        "environment": settings.environment,
-        "domain_id": domain.domain_id,
-        "domain_version": domain.version,
-        "python": platform.python_version(),
-        "python_implementation": platform.python_implementation(),
-        "platform_system": platform.system(),
-        "platform_machine": platform.machine(),
-    }
-    environment_parameters.update(
-        {f"dependency.{name}": version for name, version in _dependency_versions().items()}
-    )
-    environment_parameters = dict(sorted(environment_parameters.items()))
-    environment_fingerprint = sha256_digest(environment_parameters)
-    environment = VersionedComponentIdentity(
-        component_id=f"padawan.environment.{settings.environment}",
-        version=settings.code_revision,
-        digest=environment_fingerprint,
-        evidence_status=source_status,
-        evidence="Fingerprint of the non-secret Padawan execution environment identity.",
-    )
-    task = TaskCorpusIdentity(
-        task_id=domain.domain_id,
-        task_version=domain.version,
-        task_manifest_digest=sha256_digest(
-            {
-                "domain": domain.model_dump(mode="json"),
-                "split": "curriculum",
-            }
-        ),
-        corpus_id=f"{domain.domain_id}.curriculum",
-        corpus_version=domain.version,
-        corpus_digest=corpus_digest,
-        split="curriculum",
-        evidence_status=IdentityEvidenceStatus.PINNED,
-    )
-    harness_parameters = _developmental_harness_parameters(
-        domain_id=domain.domain_id,
-        teacher_mode=teacher_mode,
-        treatment_condition=treatment_condition,
-        control_condition=control_condition,
-        external_transport_max_attempts=settings.external_retry_attempts,
-    )
+
+def build_live_worker_configuration(
+    *,
+    settings: Any,
+    domain: DomainSpec,
+    student_provider: Literal["inkling", "openai", "compatible"],
+    student_model_id: str,
+    student_runtime_id: str,
+    student_runtime_version: str,
+    student_checkpoint_id: str,
+    student_role: ResearchRole,
+    student_base_url: str | None,
+    teacher_provider: Literal["openai", "anthropic"],
+    teacher_model_id: str,
+    corpus_competency_ids: tuple[str, ...] = (),
+    allow_legacy_student_fallback: bool = False,
+    inkling_edge_image_digest: str | None = None,
+    inkling_edge_deployment_revision: str | None = None,
+    inkling_edge_identity_verified: bool = False,
+) -> ResearchWorkerConfiguration:
+    """Describe the exact non-secret composition allowed to execute controlled runs."""
+
     student = _student_serving_identity(
         provider=student_provider,
         model_id=student_model_id,
@@ -257,6 +306,28 @@ def build_standardized_developmental_control(
         checkpoint_id=student_checkpoint_id,
         role=student_role,
         base_url=student_base_url,
+        allow_legacy_fallback=allow_legacy_student_fallback,
+        timeout_seconds=(
+            settings.inkling_timeout_seconds
+            if student_provider == "inkling"
+            else settings.external_timeout_seconds
+        ),
+        retry_attempts=(1 if student_provider == "inkling" else settings.external_retry_attempts),
+        edge_image_digest=(
+            inkling_edge_image_digest or getattr(settings, "inkling_edge_image_digest", None)
+            if student_provider == "inkling"
+            else None
+        ),
+        edge_deployment_revision=(
+            inkling_edge_deployment_revision
+            or getattr(settings, "inkling_edge_deployment_revision", None)
+            if student_provider == "inkling"
+            else None
+        ),
+        edge_identity_verified=inkling_edge_identity_verified,
+    )
+    teacher_base_url = (
+        settings.openai_base_url if teacher_provider == "openai" else settings.anthropic_base_url
     )
     auxiliary = [
         _managed_provider_identity(
@@ -264,11 +335,9 @@ def build_standardized_developmental_control(
             model_id=teacher_model_id,
             purpose="teacher",
             role=ResearchRole.TEACHER,
-            base_url=(
-                settings.openai_base_url
-                if teacher_provider == "openai"
-                else settings.anthropic_base_url
-            ),
+            base_url=teacher_base_url,
+            timeout_seconds=settings.external_timeout_seconds,
+            retry_attempts=settings.external_retry_attempts,
         )
     ]
     if domain.domain_id == "legal.appellate.fourth_circuit":
@@ -278,15 +347,41 @@ def build_standardized_developmental_control(
                 model_id=teacher_model_id,
                 purpose="adjudicator",
                 role=ResearchRole.ADJUDICATOR,
-                base_url=(
-                    settings.openai_base_url
-                    if teacher_provider == "openai"
-                    else settings.anthropic_base_url
-                ),
+                base_url=teacher_base_url,
+                timeout_seconds=settings.external_timeout_seconds,
+                retry_attempts=settings.external_retry_attempts,
             )
         )
-    return ResearchControlConfiguration(
-        profile=profile,
+    environment, environment_parameters, environment_fingerprint = _environment_identity(
+        settings=settings,
+        domain=domain,
+    )
+    return ResearchWorkerConfiguration(
+        profile=_developmental_profile(
+            settings=settings,
+            domain=domain,
+            student_provider=student_provider,
+        ),
+        task=TaskCorpusIdentity(
+            task_id=domain.domain_id,
+            task_version=domain.version,
+            task_manifest_digest=sha256_digest(
+                {"domain": domain.model_dump(mode="json"), "split": "curriculum"}
+            ),
+            corpus_id=f"{domain.domain_id}.curriculum",
+            corpus_version=domain.version,
+            corpus_digest=sha256_digest([]),
+            split="curriculum",
+            evidence_status=IdentityEvidenceStatus.PINNED,
+        ),
+        corpus_competency_ids=tuple(sorted(corpus_competency_ids)),
+        harness_parameters=_developmental_harness_parameters(
+            domain_id=domain.domain_id,
+            teacher_mode=TeacherMode.DIAGNOSTIC_CRITIQUE,
+            treatment_condition="frontier_teacher_critique",
+            control_condition="no_intervention",
+            external_transport_max_attempts=settings.external_retry_attempts,
+        ),
         student_model=student,
         auxiliary_models=tuple(
             sorted(
@@ -294,11 +389,11 @@ def build_standardized_developmental_control(
                 key=lambda item: (item.purpose, item.research_role.value, item.model_id),
             )
         ),
-        task=task,
-        harness_parameters=harness_parameters,
         environment=environment,
         environment_parameters=environment_parameters,
         environment_fingerprint=environment_fingerprint,
+        domain_id=domain.domain_id,
+        workflow="padawan.developmental_episode",
     )
 
 
@@ -311,8 +406,15 @@ def _student_serving_identity(
     checkpoint_id: str,
     role: ResearchRole,
     base_url: str | None,
+    allow_legacy_fallback: bool,
+    timeout_seconds: float,
+    retry_attempts: int,
+    edge_image_digest: str | None,
+    edge_deployment_revision: str | None,
+    edge_identity_verified: bool,
 ) -> ModelServingIdentity:
     parameters: dict[str, str]
+    transport_artifact: VersionedComponentIdentity | None = None
     if provider == "inkling":
         checkpoint = VersionedComponentIdentity(
             component_id=checkpoint_id,
@@ -350,6 +452,33 @@ def _student_serving_identity(
             evidence_status=IdentityEvidenceStatus.PINNED,
             evidence="Pinned validated serving image digest and profile identity.",
         )
+        edge_identity = edge_image_digest or edge_deployment_revision
+        if edge_identity_verified and edge_identity is None:
+            raise ValueError("verified Inkling edge identity cannot be empty")
+        transport_artifact = VersionedComponentIdentity(
+            component_id="inkling.responses_edge",
+            version=edge_deployment_revision or "deployment_revision_unreported",
+            digest=(
+                edge_image_digest
+                if edge_image_digest is not None
+                else sha256_digest(edge_deployment_revision or "unknown")
+            ),
+            evidence_status=(
+                IdentityEvidenceStatus.VERIFIED
+                if edge_identity_verified
+                else IdentityEvidenceStatus.DECLARED
+                if edge_identity is not None
+                else IdentityEvidenceStatus.UNKNOWN
+            ),
+            evidence=(
+                "Responses edge identity observed from capability preflight and matched to the "
+                "configured deployment identity; endpoint origin is recorded separately without "
+                "credentials."
+                if edge_identity_verified
+                else "Operator-declared Responses edge image/deployment identity; endpoint origin "
+                "is recorded separately without credentials."
+            ),
+        )
         parameters = {
             "batch_size": "1",
             "configured_max_model_len": str(INKLING_SMALL_AMPERE.configured_max_model_len),
@@ -363,9 +492,15 @@ def _student_serving_identity(
             "maximum_verified_target_input_tokens": str(
                 INKLING_SMALL_AMPERE.maximum_verified_target_input_tokens
             ),
+            "endpoint_origin": _origin(base_url),
+            "edge_deployment_revision": edge_deployment_revision or "unreported",
+            "edge_image_digest": edge_image_digest or "unreported",
+            "legacy_fallback": _boolean_text(allow_legacy_fallback),
             "response_storage": "false",
+            "retry_attempts": str(retry_attempts),
             "serving_profile_sha256": f"sha256:{INKLING_SMALL_AMPERE.profile_sha256}",
             "tensor_parallel_size": str(INKLING_SMALL_AMPERE.tensor_parallel_size),
+            "timeout_seconds": str(float(timeout_seconds)),
             "validation_repository_revision": (INKLING_SMALL_AMPERE.validation_repository_revision),
         }
     else:
@@ -404,9 +539,12 @@ def _student_serving_identity(
         )
         parameters = {
             "continuation": "false",
-            "legacy_fallback": "false",
+            "endpoint_origin": _origin(base_url),
+            "legacy_fallback": _boolean_text(allow_legacy_fallback),
             "protocol": "responses",
             "response_storage": "false",
+            "retry_attempts": str(retry_attempts),
+            "timeout_seconds": str(float(timeout_seconds)),
         }
     parameters = dict(sorted(parameters.items()))
     return ModelServingIdentity(
@@ -417,6 +555,7 @@ def _student_serving_identity(
         quantization=quantization,
         runtime=runtime,
         serving_artifact=serving,
+        transport_artifact=transport_artifact,
         protocol="responses",
         runtime_parameters=parameters,
         runtime_parameters_digest=sha256_digest(parameters),
@@ -430,12 +569,16 @@ def _managed_provider_identity(
     purpose: str,
     role: ResearchRole,
     base_url: str,
+    timeout_seconds: float,
+    retry_attempts: int,
 ) -> ModelServingIdentity:
     protocol = "responses" if provider == "openai" else "messages"
     parameters = {
         "protocol": protocol,
         "provider": provider,
         "response_storage": "false",
+        "retry_attempts": str(retry_attempts),
+        "timeout_seconds": str(float(timeout_seconds)),
     }
     return ModelServingIdentity(
         purpose=purpose,
@@ -560,11 +703,59 @@ def _developmental_harness_parameters(
     return dict(sorted(parameters.items()))
 
 
+def _environment_identity(
+    *,
+    settings: Any,
+    domain: DomainSpec,
+) -> tuple[VersionedComponentIdentity, dict[str, str], str]:
+    parameters = {
+        "padawan_code_revision": settings.code_revision,
+        "environment": settings.environment,
+        "domain_id": domain.domain_id,
+        "domain_version": domain.version,
+        "python": platform.python_version(),
+        "python_implementation": platform.python_implementation(),
+        "platform_system": platform.system(),
+        "platform_machine": platform.machine(),
+    }
+    parameters.update(
+        {f"dependency.{name}": version for name, version in _dependency_versions().items()}
+    )
+    canonical = dict(sorted(parameters.items()))
+    fingerprint = sha256_digest(canonical)
+    source_status = (
+        IdentityEvidenceStatus.PINNED
+        if settings.code_revision != "unknown"
+        else IdentityEvidenceStatus.UNKNOWN
+    )
+    identity = VersionedComponentIdentity(
+        component_id=f"padawan.environment.{settings.environment}",
+        version=settings.code_revision,
+        digest=fingerprint,
+        evidence_status=source_status,
+        evidence="Fingerprint of the non-secret Padawan execution environment identity.",
+    )
+    return identity, canonical, fingerprint
+
+
 def _origin(value: str | None) -> str:
     if not value:
         return "unconfigured"
     parsed = urlsplit(value)
-    return f"{parsed.scheme}://{parsed.netloc}"
+    if not parsed.scheme or parsed.hostname is None:
+        return "invalid-endpoint"
+    hostname = parsed.hostname.lower()
+    if ":" in hostname:
+        hostname = f"[{hostname}]"
+    try:
+        port = f":{parsed.port}" if parsed.port is not None else ""
+    except ValueError:
+        return "invalid-endpoint"
+    return f"{parsed.scheme.lower()}://{hostname}{port}"
+
+
+def _boolean_text(value: bool) -> str:
+    return "true" if value else "false"
 
 
 def _dependency_versions() -> dict[str, str]:
