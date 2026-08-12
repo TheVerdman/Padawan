@@ -145,15 +145,38 @@ class IdempotentGenerationExecutor:
         try:
             result = await self.client.generate(request)
         except ModelProviderError as exc:
+            response_digest = sha256_digest(exc.response_body)
+            error_response_ref = None
+            if exc.response_body:
+                error_response_ref = await artifact_put_bytes(
+                    self.artifacts,
+                    exc.response_body,
+                    media_type="application/vnd.padawan.provider-error-response",
+                    restricted=True,
+                    raw_data=True,
+                )
             async with self.database.transaction() as session:
                 row = await session.get(ExternalCallRow, request.request_id)
                 if row is not None:
+                    if error_response_ref is not None:
+                        await self.catalog.register(session, error_response_ref)
+                        await self.catalog.reference(
+                            session,
+                            error_response_ref,
+                            owner_type="external_call_error_response",
+                            owner_id=request.request_id,
+                        )
                     row.status = "failed_retryable" if exc.retryable else "failed_terminal"
                     row.error = {
                         "message": str(exc),
                         "status_code": exc.status_code,
                         "retryable": exc.retryable,
-                        "response_digest": sha256_digest(exc.response_body),
+                        "response_digest": response_digest,
+                        "response_artifact_id": (
+                            error_response_ref.artifact_id
+                            if error_response_ref is not None
+                            else None
+                        ),
                     }
                     await self.telemetry.transition(
                         session,
@@ -164,7 +187,12 @@ class IdempotentGenerationExecutor:
                         detail={
                             "provider_status_code": exc.status_code,
                             "retryable": exc.retryable,
-                            "response_digest": sha256_digest(exc.response_body),
+                            "response_digest": response_digest,
+                            "response_artifact_id": (
+                                error_response_ref.artifact_id
+                                if error_response_ref is not None
+                                else None
+                            ),
                         },
                     )
             raise

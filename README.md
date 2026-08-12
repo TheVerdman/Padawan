@@ -21,8 +21,8 @@ hard-gated Magellan agentic environment protocol:
   eligibility contracts with a deterministic verifier;
 - temporal grounding with dual clocks, authoritative event frames, activity/freshness policy,
   durable operation spans, duration profiles, matched counterfactuals, and calibrated ETA actions;
-- Responses-API-first OpenAI and OpenAI-compatible adapters, an Inkling/vLLM adapter, and an
-  Anthropic teacher adapter;
+- Responses-API-first OpenAI and OpenAI-compatible adapters, a contract-pinned authenticated
+  Inkling-Small-Ampere/vLLM adapter, and an Anthropic teacher adapter;
 - evidence-citing teacher contracts and deterministic comment validation;
 - algebra and domain-general crash-resumable developmental paths, idempotent external calls,
   worker leases, and stale recovery;
@@ -50,8 +50,12 @@ before a typed, evidence-bound semantic adjudicator; the closed pack still repor
 currentness as unknown because no dependable citator is configured. Magellan's audited tree does
 not yet satisfy Padawan's isolation, authorization, durable replay, approval, or Responses
 requirements, so this repository reports it as blocked rather than fabricating a sandbox result.
-GCS is operational, and delayed-retention/interference scheduling is durable and tested. Live
-target outcomes still require the Inkling endpoint. Training compilation is operational as an
+GCS is operational, and delayed-retention/interference scheduling is durable and tested. The
+external Inkling-Small-Ampere hotfix image and batch-one context ladder are validated through a
+240,000-token target; Padawan now pins that exact Responses-only model/profile/checkpoint identity,
+authenticates its capability preflight, and records the measured scope without calling Vertex
+`Invoke` as though it were an OpenAI URL. Live target outcomes still require a deployed model,
+stable consumer edge, and runtime credential. Training compilation is operational as an
 internal, restricted artifact path, but no external trainer or parameter-update backend is bundled.
 Temporal scenarios and authored bootstrap rows are implemented, but no claim is made that an
 existing checkpoint has already learned the behavior.

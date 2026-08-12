@@ -6,9 +6,17 @@ from typing import Any, cast
 from sqlalchemy import func, select
 
 from padawan.adapters.base import ModelProviderError
-from padawan.models.contracts import CorpusPool, DevelopmentalEpisode, ItemStatus, RunState
+from padawan.artifacts.store import artifact_read_bytes
+from padawan.models.contracts import (
+    ArtifactRef,
+    CorpusPool,
+    DevelopmentalEpisode,
+    ItemStatus,
+    RunState,
+)
 from padawan.models.tables import (
     ArtifactReferenceRow,
+    ArtifactRow,
     CorpusItemRow,
     EpisodeRow,
     ExposureRow,
@@ -69,6 +77,34 @@ async def test_provider_failure_after_episode_start_is_a_valid_failed_episode(
         assert [outcome.value for outcome in record.system_outcomes] == ["provider_failure"]
         assert record.exposure_ids == ("exposure-run-provider-failure-cold-prompt",)
         assert call is not None and call.status == "failed_terminal"
+        assert call.error is not None
+        error_artifact_id = call.error["response_artifact_id"]
+        error_artifact = await session.get(ArtifactRow, error_artifact_id)
+        assert error_artifact is not None
+        assert error_artifact.restricted is True
+        assert error_artifact.raw_data is True
+        assert error_artifact.media_type == "application/vnd.padawan.provider-error-response"
+        error_reference = ArtifactRef.model_validate(
+            {
+                "artifact_id": error_artifact.artifact_id,
+                "uri": error_artifact.uri,
+                "digest": error_artifact.digest,
+                "media_type": error_artifact.media_type,
+                "size_bytes": error_artifact.size_bytes,
+                "restricted": error_artifact.restricted,
+                "raw_data": error_artifact.raw_data,
+            },
+            strict=False,
+        )
+        error_references = await session.scalar(
+            select(func.count())
+            .select_from(ArtifactReferenceRow)
+            .where(
+                ArtifactReferenceRow.owner_type == "external_call_error_response",
+                ArtifactReferenceRow.owner_id == call.request_id,
+            )
+        )
+        assert error_references == 1
         assert await session.scalar(select(func.count()).select_from(ExposureRow)) == 1
         assert all(
             row.status == ItemStatus.ACTIVE.value and row.lease_token is None
@@ -92,6 +128,14 @@ async def test_provider_failure_after_episode_start_is_a_valid_failed_episode(
         )
         assert same_student == ()
         assert len(other_student) == 3
+    assert (
+        await artifact_read_bytes(
+            handler.student_calls.artifacts,
+            error_reference,
+            allow_restricted=True,
+        )
+        == b'{"error":"bad request"}'
+    )
 
 
 async def test_exhausted_teacher_retries_close_review_episode_and_keep_failures(

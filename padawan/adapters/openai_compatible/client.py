@@ -39,6 +39,7 @@ class OpenAICompatibleClient:
         retry_attempts: int = 3,
         client: httpx.AsyncClient | None = None,
         capabilities_override: RuntimeCapabilities | None = None,
+        capture_private_reasoning: bool = False,
     ) -> None:
         if not model:
             raise ValueError("model is required")
@@ -58,6 +59,7 @@ class OpenAICompatibleClient:
             limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
         )
         self.capabilities_override = capabilities_override
+        self.capture_private_reasoning = capture_private_reasoning
 
     async def close(self) -> None:
         if self._owned_client:
@@ -184,7 +186,12 @@ class OpenAICompatibleClient:
         else:
             parsed = _parse_completion(response_json)
         capabilities = self.capabilities_override or _default_capabilities(
-            protocol=protocol, streaming=stream, response=response_json
+            protocol=protocol,
+            streaming=stream,
+            response=response_json,
+            private_reasoning_captured=(
+                self.capture_private_reasoning and parsed.get("private_reasoning") is not None
+            ),
         )
         return GenerationResult(
             request_id=request.request_id,
@@ -198,7 +205,9 @@ class OpenAICompatibleClient:
             usage=parsed["usage"],
             token_ids=parsed["token_ids"],
             token_logprobs=parsed["token_logprobs"],
-            private_reasoning=None,
+            private_reasoning=(
+                parsed.get("private_reasoning") if self.capture_private_reasoning else None
+            ),
             reasoning_summary=parsed["reasoning_summary"],
             finish_reason=parsed["finish_reason"],
             latency_ms=latency_ms,
@@ -253,7 +262,10 @@ class OpenAICompatibleClient:
             async with self.client.stream(
                 "POST",
                 f"{self.base_url}{path}",
-                headers=self._headers(request_id=request_id),
+                headers=self._headers(
+                    request_id=request_id,
+                    accept="text/event-stream",
+                ),
                 json=payload,
             ) as response:
                 if response.status_code >= 400:
@@ -287,12 +299,24 @@ class OpenAICompatibleClient:
                 raise ModelProviderError(
                     "Responses stream ended without response.completed", provider=self.provider
                 )
+            reasoning_text = "\n".join(
+                str(item["text"])
+                for item in events
+                if item.get("type") == "response.reasoning_text.done" and item.get("text")
+            )
+            if reasoning_text:
+                completed = {**completed, "padawan_private_reasoning": reasoning_text}
             return completed, b"".join(raw_parts)
         return _collapse_legacy_stream(events, protocol=protocol), b"".join(raw_parts)
 
-    def _headers(self, *, request_id: str) -> dict[str, str]:
+    def _headers(
+        self,
+        *,
+        request_id: str,
+        accept: str = "application/json",
+    ) -> dict[str, str]:
         headers = {
-            "Accept": "application/json",
+            "Accept": accept,
             "Content-Type": "application/json",
             "Idempotency-Key": request_id,
             "X-Request-ID": request_id,
@@ -413,6 +437,12 @@ def _strict_json_schema(schema: dict[str, Any]) -> dict[str, Any]:
 
 def _parse_responses(payload: dict[str, Any]) -> dict[str, Any]:
     output_texts: list[str] = []
+    extension_reasoning = payload.get("padawan_private_reasoning")
+    private_reasoning: list[str] = (
+        [extension_reasoning]
+        if isinstance(extension_reasoning, str) and extension_reasoning
+        else []
+    )
     summaries: list[str] = []
     logprobs: list[float] = []
     for item in payload.get("output", []):
@@ -428,6 +458,15 @@ def _parse_responses(payload: dict[str, Any]) -> dict[str, Any]:
                         ):
                             logprobs.append(float(token["logprob"]))
         elif item.get("type") == "reasoning":
+            for content in item.get("content") or []:
+                if (
+                    isinstance(content, dict)
+                    and content.get("type") == "reasoning_text"
+                    and content.get("text")
+                ):
+                    text = str(content["text"])
+                    if text not in private_reasoning:
+                        private_reasoning.append(text)
             for summary in item.get("summary") or []:
                 if isinstance(summary, dict) and summary.get("text"):
                     summaries.append(str(summary["text"]))
@@ -440,6 +479,7 @@ def _parse_responses(payload: dict[str, Any]) -> dict[str, Any]:
         "usage": _normalize_usage(usage),
         "token_ids": _optional_int_tuple(payload.get("output_token_ids")),
         "token_logprobs": tuple(logprobs) if logprobs else None,
+        "private_reasoning": "\n".join(private_reasoning) if private_reasoning else None,
         "reasoning_summary": "\n".join(summaries) if summaries else None,
         "finish_reason": finish_reason,
         "telemetry": _optional_dict(payload.get("padawan_telemetry")),
@@ -503,7 +543,11 @@ def _normalize_usage(usage: dict[str, Any]) -> dict[str, int]:
 
 
 def _default_capabilities(
-    *, protocol: str, streaming: bool, response: dict[str, Any]
+    *,
+    protocol: str,
+    streaming: bool,
+    response: dict[str, Any],
+    private_reasoning_captured: bool = False,
 ) -> RuntimeCapabilities:
     logprob_present = bool(
         _parse_responses(response)["token_logprobs"]
@@ -528,13 +572,21 @@ def _default_capabilities(
             token_ids_present,
             "returned by server extension" if token_ids_present else "not returned",
         ),
-        private_reasoning=Capability(
-            availability=CapabilityAvailability.UNAVAILABLE,
-            reason="provider response did not expose raw private reasoning",
+        private_reasoning=_cap(
+            private_reasoning_captured,
+            (
+                "self-hosted Responses reasoning_text channel retained as restricted raw data"
+                if private_reasoning_captured
+                else "provider response was not configured to expose private reasoning"
+            ),
         ),
-        reasoning_boundaries=Capability(
-            availability=CapabilityAvailability.UNAVAILABLE,
-            reason="no raw private channel was exposed",
+        reasoning_boundaries=_cap(
+            private_reasoning_captured,
+            (
+                "Responses reasoning and message items provide explicit channel boundaries"
+                if private_reasoning_captured
+                else "no private reasoning channel was retained"
+            ),
         ),
         gpu_telemetry=_cap(
             telemetry_present,

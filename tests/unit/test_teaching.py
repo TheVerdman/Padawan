@@ -243,6 +243,7 @@ async def test_teacher_retry_preserves_failed_raw_output(tmp_path) -> None:
     )
     assert result.intervention.validation_status == CommentValidationStatus.ACCEPTED
     assert len(result.failed_attempts) == 1
+    assert all(call.sampling.temperature is None for call in client.calls)
     first_prompt = json.loads(str(client.calls[0].input))
     assert "never-disclose-transfer-answer" not in str(client.calls[0].input)
     assert first_prompt["forbidden"]["transfer_item_answers_withheld"] is True

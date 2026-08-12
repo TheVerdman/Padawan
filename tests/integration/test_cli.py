@@ -111,6 +111,39 @@ def test_cli_failure_has_nonzero_exit_and_manifest(tmp_path, monkeypatch) -> Non
     assert manifest["configuration"]["invocation"]["episode_id"] == "missing"
 
 
+def test_cli_terminal_research_result_has_nonzero_exit_and_failed_manifest(
+    tmp_path, monkeypatch
+) -> None:
+    artifact_root = tmp_path / "artifacts"
+    monkeypatch.setenv("PADAWAN_ARTIFACT_ROOT", str(artifact_root))
+
+    async def failed_research_run(**_kwargs):
+        return {
+            "closed_episodes": 1,
+            "runs": [
+                {
+                    "run_id": "run-provider-failure",
+                    "state": "FAILED_TERMINAL",
+                    "last_error": {"error_class": "ModelProviderError"},
+                }
+            ],
+            "stop_reason": "terminal_infrastructure_problem",
+        }
+
+    monkeypatch.setattr("padawan.cli.app._live_research_run", failed_research_run)
+    result = CliRunner().invoke(app, ["--json", "experiment", "run"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stderr)
+    assert payload["error"]["type"] == "TerminalRunFailure"
+    assert payload["runs"][0]["state"] == "FAILED_TERMINAL"
+    manifest_ref = ArtifactRef.model_validate(payload["manifest"], strict=False)
+    manifest = json.loads(LocalArtifactStore(artifact_root).read_text(manifest_ref))
+    assert manifest["status"] == "failed"
+    assert manifest["error"]["type"] == "TerminalRunFailure"
+    assert manifest["result"]["runs"][0]["run_id"] == "run-provider-failure"
+
+
 def test_cli_compiles_and_verifies_internal_training_bundle(tmp_path, monkeypatch) -> None:
     database_path = tmp_path / "training.sqlite3"
     artifact_root = tmp_path / "artifacts"

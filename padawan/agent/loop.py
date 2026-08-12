@@ -46,13 +46,17 @@ class AutonomousResearchLoop:
         student_id: str,
         research_role: ResearchRole = ResearchRole.TARGET,
         domain_id: str = "math.algebra",
+        retry_budget: int = 3,
     ) -> None:
+        if retry_budget < 0:
+            raise ValueError("retry budget cannot be negative")
         self.database = database
         self.runs = runs
         self.supervisor = supervisor
         self.student_id = student_id
         self.research_role = research_role
         self.domain_id = domain_id
+        self.retry_budget = retry_budget
 
     async def run(
         self,
@@ -133,7 +137,7 @@ class AutonomousResearchLoop:
                     "treatment_condition": "frontier_teacher_critique",
                     "control_condition": "no_intervention",
                 },
-                retry_budget=3,
+                retry_budget=self.retry_budget,
             )
 
     async def _run_row(self, run_id: str) -> RunRow:

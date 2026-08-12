@@ -109,7 +109,10 @@ class TeacherService:
                 ),
                 input=prompt,
                 sampling=SamplingConfiguration(
-                    temperature=0.2,
+                    # Frontier reasoning teachers can reject explicit sampling
+                    # controls. Use the provider/model default unless a future
+                    # capability contract explicitly authorizes temperature.
+                    temperature=None,
                     top_p=None,
                     max_output_tokens=context.guidance_budget_tokens,
                     seed=None,

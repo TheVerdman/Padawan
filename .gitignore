@@ -14,6 +14,15 @@ __pycache__/
 *.sqlite3-shm
 *.sqlite3-wal
 /artifacts/
+# Live request/response bytes and process logs can contain prompts, provider
+# payloads, and model-emitted private reasoning. Keep only sanitized evidence
+# summaries under reports/live in Git.
+/reports/live/**/*.request.json
+/reports/live/**/request.json
+/reports/live/**/*.response.bin
+/reports/live/**/response.bin
+/reports/live/**/prediction-container-logs.json
+/reports/live/**/*.log
 dist/
 htmlcov/
 runs/

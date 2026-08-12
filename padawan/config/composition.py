@@ -4,9 +4,14 @@ import inspect
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, Literal
+from urllib.parse import urlsplit
 
 from padawan.adapters.frontier_anthropic.client import AnthropicMessagesClient
 from padawan.adapters.frontier_openai.client import OpenAIResponsesClient
+from padawan.adapters.inkling.contract import (
+    INKLING_SMALL_AMPERE,
+    validate_responses_edge_url,
+)
 from padawan.adapters.inkling.runtime import InklingRuntime
 from padawan.adapters.openai_compatible.client import OpenAICompatibleClient
 from padawan.artifacts.factory import build_artifact_backend
@@ -47,6 +52,9 @@ class LiveApplication:
     supervisor: AutonomousSupervisor
     clients: tuple[Any, ...]
     student_role: ResearchRole
+    student_runtime_id: str
+    student_runtime_version: str
+    student_checkpoint_id: str
 
     async def close(self) -> None:
         for client in self.clients:
@@ -81,6 +89,7 @@ async def build_live_application(
         student_model=student_model,
         teacher_model=teacher_model,
         compatible_base_url=compatible_base_url,
+        allow_legacy_student_fallback=allow_legacy_student_fallback,
     )
     domains = build_builtin_domain_registry()
     domain = domains.get_workflow(settings.domain_id)
@@ -101,16 +110,15 @@ async def build_live_application(
         student = InklingRuntime(
             base_url=settings.inkling_base_url,
             model=selected_student_model,
-            checkpoint_id=selected_student_model,
+            checkpoint_id=INKLING_SMALL_AMPERE.checkpoint_id,
             runtime_revision=settings.inkling_runtime_revision,
-            quantization_manifest={
-                "availability": "unknown",
-                "reason": "server identity must supply a checkpoint quantization manifest",
-            },
+            quantization_manifest=INKLING_SMALL_AMPERE.quantization_manifest(),
             tensor_parallel_size=settings.inkling_tensor_parallel_size,
             protocol="responses",
             allow_legacy_fallback=allow_legacy_student_fallback,
-            timeout_seconds=settings.external_timeout_seconds,
+            api_key=_secret(settings.inkling_api_key),
+            timeout_seconds=settings.inkling_timeout_seconds,
+            contract=INKLING_SMALL_AMPERE,
         )
         student_client: Any = student
         student_runtime_id = student.runtime_id
@@ -244,6 +252,9 @@ async def build_live_application(
         supervisor=supervisor,
         clients=tuple(clients),
         student_role=student_role,
+        student_runtime_id=student_runtime_id,
+        student_runtime_version=student_runtime_version,
+        student_checkpoint_id=checkpoint_id,
     )
 
 
@@ -261,9 +272,32 @@ def _validate_live_configuration(
     student_model: str | None,
     teacher_model: str | None,
     compatible_base_url: str | None,
+    allow_legacy_student_fallback: bool,
 ) -> None:
-    if student_provider == "inkling" and not (student_model or settings.inkling_model):
-        raise ValueError("Inkling requires --student-model or PADAWAN_INKLING_MODEL")
+    if allow_legacy_student_fallback and student_provider != "compatible":
+        raise ValueError("legacy student fallback is available only for compatible providers")
+    if student_provider == "inkling":
+        selected_model = student_model or settings.inkling_model
+        if not selected_model:
+            raise ValueError("Inkling requires --student-model or PADAWAN_INKLING_MODEL")
+        if selected_model != INKLING_SMALL_AMPERE.served_model_name:
+            raise ValueError(
+                "validated Inkling serving requires model "
+                f"{INKLING_SMALL_AMPERE.served_model_name!r}"
+            )
+        validate_responses_edge_url(settings.inkling_base_url)
+        hostname = urlsplit(settings.inkling_base_url).hostname
+        if hostname not in {"127.0.0.1", "::1", "localhost"} and not _secret(
+            settings.inkling_api_key
+        ):
+            raise ValueError(
+                "authenticated Inkling Responses edge requires INKLING_API_KEY or "
+                "PADAWAN_INKLING_API_KEY"
+            )
+        if settings.inkling_runtime_revision != INKLING_SMALL_AMPERE.runtime_revision:
+            raise ValueError("Inkling runtime revision differs from the validated serving image")
+        if settings.inkling_tensor_parallel_size != INKLING_SMALL_AMPERE.tensor_parallel_size:
+            raise ValueError("Inkling tensor parallel size differs from the validated topology")
     if student_provider == "openai" and not (
         (student_model or settings.openai_model) and _secret(settings.openai_api_key)
     ):

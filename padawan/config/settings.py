@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     heartbeat_seconds: int = Field(default=15, ge=1, le=300)
     external_timeout_seconds: float = Field(default=120.0, gt=0, le=3600)
     external_retry_attempts: int = Field(default=3, ge=1, le=10)
+    run_retry_budget: int = Field(default=3, ge=0, le=100)
     openai_base_url: str = "https://api.openai.com"
     openai_model: str | None = None
     openai_api_key: SecretStr | None = Field(
@@ -66,8 +67,13 @@ class Settings(BaseSettings):
     )
     inkling_base_url: str = "http://127.0.0.1:8000"
     inkling_model: str | None = None
-    inkling_runtime_revision: str = "aa0a70e40ddab8f5fb00f111814ae9a3073e952a"
+    inkling_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("PADAWAN_INKLING_API_KEY", "INKLING_API_KEY"),
+    )
+    inkling_runtime_revision: str = "aa2e7dd0f8f5fd1be0e4449f802ae5b72ffc534a"
     inkling_tensor_parallel_size: int = Field(default=4, ge=1, le=64)
+    inkling_timeout_seconds: float = Field(default=3_600.0, ge=3_600.0, le=3_600.0)
     compatible_base_url: str | None = None
     compatible_model: str | None = None
     compatible_api_key: SecretStr | None = None
@@ -117,6 +123,7 @@ class Settings(BaseSettings):
             exclude={
                 "openai_api_key",
                 "anthropic_api_key",
+                "inkling_api_key",
                 "compatible_api_key",
                 "magellan_repository_root",
                 "magellan_handshake_path",
@@ -126,6 +133,7 @@ class Settings(BaseSettings):
         values["database_url"] = make_url(self.database_url).render_as_string(hide_password=True)
         values["openai_api_key_configured"] = self.openai_api_key is not None
         values["anthropic_api_key_configured"] = self.anthropic_api_key is not None
+        values["inkling_api_key_configured"] = self.inkling_api_key is not None
         values["compatible_api_key_configured"] = self.compatible_api_key is not None
         values["magellan_repository_configured"] = self.magellan_repository_root is not None
         values["magellan_handshake_configured"] = self.magellan_handshake_path is not None

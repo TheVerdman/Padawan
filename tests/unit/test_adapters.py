@@ -77,6 +77,10 @@ async def test_responses_api_payload_and_raw_round_trip() -> None:
                 "status": "completed",
                 "output": [
                     {
+                        "type": "reasoning",
+                        "content": [{"type": "reasoning_text", "text": "provider-private-trace"}],
+                    },
+                    {
                         "type": "message",
                         "content": [
                             {
@@ -85,7 +89,7 @@ async def test_responses_api_payload_and_raw_round_trip() -> None:
                                 "logprobs": [{"logprob": -0.1}],
                             }
                         ],
-                    }
+                    },
                 ],
                 "usage": {"input_tokens": 3, "output_tokens": 4, "total_tokens": 7},
             },
@@ -155,6 +159,7 @@ async def test_legacy_fallback_requires_explicit_opt_in() -> None:
 
 
 async def test_responses_stream_requires_and_preserves_completed_event() -> None:
+    captured_headers: dict[str, str] = {}
     completed = {
         "type": "response.completed",
         "response": {
@@ -172,7 +177,8 @@ async def test_responses_stream_requires_and_preserves_completed_event() -> None
     }
     sse = f"data: {json.dumps(completed)}\n\ndata: [DONE]\n\n".encode()
 
-    def handler(_request: httpx.Request) -> httpx.Response:
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured_headers.update(request.headers)
         return httpx.Response(200, content=sse, headers={"content-type": "text/event-stream"})
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as transport:
@@ -181,6 +187,7 @@ async def test_responses_stream_requires_and_preserves_completed_event() -> None
         )
         result = await client.generate(_request(), stream=True)
     assert result.output_text == '{"answer":"stream"}'
+    assert captured_headers["accept"] == "text/event-stream"
     assert b"response.completed" in result.raw_response
     assert result.capabilities.streaming.availability == CapabilityAvailability.AVAILABLE
 

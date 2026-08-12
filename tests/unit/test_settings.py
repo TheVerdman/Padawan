@@ -14,6 +14,7 @@ def test_explicit_env_file_loads_allowlisted_secrets_without_manifest_disclosure
     env_file.write_text(
         "OPENAI_API_KEY=test-openai-secret\n"
         "ANTHROPIC_API_KEY=test-anthropic-secret\n"
+        "INKLING_API_KEY=test-inkling-secret\n"
         "PADAWAN_OPENAI_MODEL=test-openai-model\n"
         "UNRELATED_SECRET=must-not-enter-settings\n"
     )
@@ -26,10 +27,13 @@ def test_explicit_env_file_loads_allowlisted_secrets_without_manifest_disclosure
     assert settings.openai_api_key.get_secret_value() == "test-openai-secret"
     assert settings.anthropic_api_key is not None
     assert settings.anthropic_api_key.get_secret_value() == "test-anthropic-secret"
+    assert settings.inkling_api_key is not None
+    assert settings.inkling_api_key.get_secret_value() == "test-inkling-secret"
     assert settings.openai_model == "test-openai-model"
     serialized = json.dumps(settings.redacted_manifest(), sort_keys=True)
     assert "test-openai-secret" not in serialized
     assert "test-anthropic-secret" not in serialized
+    assert "test-inkling-secret" not in serialized
     assert str(env_file) not in serialized
     assert "UNRELATED_SECRET" not in serialized
 
@@ -94,3 +98,9 @@ def test_magellan_local_paths_are_replaced_by_configuration_flags(tmp_path) -> N
     assert str(handshake) not in serialized
     assert settings.redacted_manifest()["magellan_repository_configured"] is True
     assert settings.redacted_manifest()["magellan_handshake_configured"] is True
+
+
+def test_run_retry_budget_can_disable_durable_action_retries() -> None:
+    settings = Settings(run_retry_budget=0)
+
+    assert settings.run_retry_budget == 0

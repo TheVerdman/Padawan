@@ -26,7 +26,11 @@ Configuration is loaded once at the CLI composition boundary. Important variable
 | `PADAWAN_DOMAIN_ID` | active workflow domain (`math.algebra`, `math.lean`, `legal.appellate.fourth_circuit`, or `temporal.grounding`) |
 | `PADAWAN_OPENAI_MODEL`, `OPENAI_API_KEY` | Responses API baseline and/or teacher |
 | `PADAWAN_ANTHROPIC_MODEL`, `ANTHROPIC_API_KEY` | Anthropic teacher |
-| `PADAWAN_INKLING_BASE_URL`, `PADAWAN_INKLING_MODEL` | Inkling Responses endpoint |
+| `PADAWAN_INKLING_BASE_URL`, `PADAWAN_INKLING_MODEL` | authenticated Inkling Responses edge and exact served-model alias |
+| `INKLING_API_KEY` or `PADAWAN_INKLING_API_KEY` | bearer credential for the Inkling Responses edge |
+| `PADAWAN_INKLING_RUNTIME_REVISION` | exact runtime source revision represented by the validated serving image |
+| `PADAWAN_INKLING_TENSOR_PARALLEL_SIZE` | validated topology; currently exactly four |
+| `PADAWAN_INKLING_TIMEOUT_SECONDS` | per-request Inkling timeout; currently exactly 3,600 seconds |
 | `PADAWAN_COMPATIBLE_BASE_URL`, `PADAWAN_COMPATIBLE_MODEL` | other real endpoint |
 | `PADAWAN_EXPORT_HMAC_KEY` | opaque Heirloom audit identifiers |
 | `PADAWAN_LEAN_PROJECT_ROOT` | pinned Lake project (default `./lean`) |
@@ -93,6 +97,42 @@ workers and use a secret manager rather than Compose credentials.
 
 ## Corpus and live execution
 
+### Validated Inkling-Small-Ampere contract
+
+The Inkling student integration is pinned to the validated
+`responses-256k-candidate-v1` profile, served model `w8a16-balanced-v1`, converted checkpoint
+`conversion-e747e8121d5cd12c54c9`, TP4 topology, and EOS-hotfix runtime revision
+`aa2e7dd0f8f5fd1be0e4449f802ae5b72ffc534a`. The configured runtime window is 262,144 tokens. The
+promoted evidence is narrower: single-request, batch-one exact retrieval through a 240,000-token
+target (239,997 measured input tokens). It does not establish literal 262,144-token input,
+concurrency, batching, availability, or task quality.
+
+Padawan calls the separately authenticated ordinary Responses edge. Do not configure the Vertex
+dedicated-Endpoint DNS: Vertex `Invoke` is a Google RPC and is not an OpenAI base URL. The runtime
+rejects that DNS shape, `/v1`-suffixed base URLs, non-HTTPS remote edges, wrong model/profile/runtime
+identity, Chat Completions fallback, response storage, and continuation. Before its first generation
+it authenticates `GET /v1/models` and `GET /v1/padawan/capabilities`; only a matching service then
+receives the streaming `POST /v1/responses`. Each transport invocation makes one attempt and asks
+for `text/event-stream`; durable workflow recovery remains a separate, recorded decision.
+
+Select the consumer edge and secret at runtime:
+
+```text
+export PADAWAN_INKLING_BASE_URL='https://your-stable-responses-edge.example'
+export PADAWAN_INKLING_MODEL='w8a16-balanced-v1'
+export INKLING_API_KEY='secret-manager-supplied-value'
+export PADAWAN_INKLING_TIMEOUT_SECONDS=3600
+```
+
+The edge must have a deployed model behind it. Static model/capability documents alone do not make
+a live student run successful, and the external validation teardown did not leave GPU compute
+running. Padawan itself does not deploy or warm the serving stack.
+
+Student state is immutable. A student identity whose canonical state was created by an older
+Padawan build with the served-model alias in place of the conversion checkpoint, or with runtime ID
+`inkling` instead of `inkling-vllm`, is rejected rather than silently relabeled. Start the validated
+runtime with a new `--student-id` so the old evidence lineage remains intact.
+
 Generate three-sibling curriculum groups and inspect them:
 
 ```text
@@ -148,10 +188,11 @@ citator: currentness remains unknown until a licensed provider or governed impor
 new court-pack version.
 
 The official OpenAI path always uses `POST /v1/responses`, including structured output under
-`text.format`; it has no Chat Completions fallback. Inkling and generic compatible endpoints also
-use Responses by default. `supervisor run` alone exposes `--allow-legacy-student-fallback`; using
-it is an explicit non-OpenAI compatibility decision and is recorded in provider metadata. An
-OpenAI run in the student-shaped provider slot is labeled `baseline`, never `target`.
+`text.format`; it has no Chat Completions fallback. Validated Inkling serving is also Responses-only.
+Generic compatible endpoints use Responses by default. `supervisor run` alone exposes
+`--allow-legacy-student-fallback`, and that option is accepted only for a generic compatible
+student; using it is recorded in provider metadata. An OpenAI run in the student-shaped provider
+slot is labeled `baseline`, never `target`.
 
 `supervisor run` creates or resumes work for one student until the episode budget or a stop
 condition. `worker run` processes a bounded number of already-created durable actions. Multiple

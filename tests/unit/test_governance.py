@@ -51,8 +51,9 @@ def test_command_configuration_manifest_redacts_all_credentials() -> None:
     settings = Settings.model_validate(
         {
             "database_url": "postgresql://padawan:database-secret@localhost/padawan",
-            "openai_api_key": "openai-secret",
-            "anthropic_api_key": "anthropic-secret",
+            "OPENAI_API_KEY": "openai-secret",
+            "ANTHROPIC_API_KEY": "anthropic-secret",
+            "INKLING_API_KEY": "inkling-secret",
             "compatible_api_key": "compatible-secret",
         }
     )
@@ -62,7 +63,11 @@ def test_command_configuration_manifest_redacts_all_credentials() -> None:
     assert "database-secret" not in serialized
     assert "openai-secret" not in serialized
     assert "anthropic-secret" not in serialized
+    assert "inkling-secret" not in serialized
     assert "compatible-secret" not in serialized
+    assert settings.redacted_manifest()["openai_api_key_configured"] is True
+    assert settings.redacted_manifest()["anthropic_api_key_configured"] is True
+    assert settings.redacted_manifest()["inkling_api_key_configured"] is True
     assert settings.redacted_manifest()["compatible_api_key_configured"] is True
 
 

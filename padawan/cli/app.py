@@ -527,6 +527,7 @@ def supervisor_run(
             allow_legacy_student_fallback=allow_legacy_student_fallback,
             bootstrap=bootstrap,
         ),
+        result_failure=_terminal_run_failure,
     )
 
 
@@ -615,6 +616,7 @@ def experiment_run(
             allow_legacy_student_fallback=False,
             bootstrap=bootstrap,
         ),
+        result_failure=_terminal_run_failure,
     )
 
 
@@ -1057,8 +1059,8 @@ async def _live_research_run(
                 await application.states.create_student(
                     session,
                     student_id=student_id,
-                    checkpoint_id=selected_model,
-                    runtime_id=student_provider,
+                    checkpoint_id=application.student_checkpoint_id,
+                    runtime_id=application.student_runtime_id,
                     research_role=application.student_role,
                     initial_working_state={
                         "institution": "padawan",
@@ -1070,6 +1072,21 @@ async def _live_research_run(
                     f"research identity {student_id} is {student.research_role}, not "
                     f"{application.student_role.value}; use a separate baseline identity"
                 )
+            elif student.canonical_state_id is None:
+                raise ValueError(f"research identity {student_id} has no canonical state")
+            else:
+                state = await application.states.get(
+                    session,
+                    state_id=student.canonical_state_id,
+                )
+                if (
+                    state.checkpoint_id != application.student_checkpoint_id
+                    or state.runtime_id != application.student_runtime_id
+                ):
+                    raise ValueError(
+                        f"research identity {student_id} is bound to a different runtime or "
+                        "checkpoint; use a new student identity"
+                    )
             if bootstrap:
                 for competency in application.domain.competencies():
                     await application.registry.register_competency(session, competency)
@@ -1087,6 +1104,7 @@ async def _live_research_run(
             student_id=student_id,
             research_role=application.student_role,
             domain_id=application.domain.spec.domain_id,
+            retry_budget=settings.run_retry_budget,
         )
         result = await loop.run(
             episode_budget=episode_budget,
@@ -1102,6 +1120,8 @@ def _run_command(
     ctx: typer.Context,
     command_name: str,
     operation: Callable[[], object],
+    *,
+    result_failure: Callable[[dict[str, Any]], dict[str, str] | None] | None = None,
 ) -> None:
     settings = _settings(ctx)
     started = now()
@@ -1114,17 +1134,24 @@ def _run_command(
         else:
             result = result_or_awaitable
         result_data = cast(dict[str, Any], _jsonable(result))
+        semantic_error = result_failure(result_data) if result_failure is not None else None
         manifest = CommandManifest(
             command=command_name,
-            status="complete",
+            status="failed" if semantic_error is not None else "complete",
             started_at=started,
             completed_at=now(),
             configuration=_manifest_configuration(ctx, settings),
             result=result_data,
-            error=None,
+            error=semantic_error,
         )
         reference = writer.write(manifest, known_secrets=_known_secrets(settings))
-        _emit(ctx, {**result_data, "manifest": reference.model_dump(mode="json")})
+        payload = {**result_data, "manifest": reference.model_dump(mode="json")}
+        if semantic_error is not None:
+            _emit(ctx, {**payload, "error": semantic_error}, error=True)
+            raise typer.Exit(code=1)
+        _emit(ctx, payload)
+    except typer.Exit:
+        raise
     except Exception as exc:
         error = {"type": type(exc).__name__, "message": str(exc)}
         manifest = CommandManifest(
@@ -1141,6 +1168,24 @@ def _run_command(
         raise typer.Exit(code=1) from exc
     finally:
         _close_resource_sync(manifest_backend)
+
+
+def _terminal_run_failure(result: dict[str, Any]) -> dict[str, str] | None:
+    runs = result.get("runs")
+    if not isinstance(runs, list):
+        return None
+    terminal = [
+        run for run in runs if isinstance(run, dict) and run.get("state") == "FAILED_TERMINAL"
+    ]
+    if not terminal:
+        return None
+    run_ids = ", ".join(
+        str(run.get("run_id", "unknown")) for run in terminal if isinstance(run, dict)
+    )
+    return {
+        "type": "TerminalRunFailure",
+        "message": (f"{len(terminal)} research run(s) ended in FAILED_TERMINAL: {run_ids}"),
+    }
 
 
 async def _await_value(value: Awaitable[object]) -> object:

@@ -41,10 +41,14 @@ domain cannot masquerade as a complete autonomous workflow. The authorities rema
 | governance | `governance.*` | access, retention, export, and command-manifest policy |
 | consolidation | `MemoryConsolidationBackend` | evidence-gated lesson consolidation and rollback |
 
-The official OpenAI adapter is fixed to `POST /v1/responses` and has no legacy fallback.
-OpenAI-compatible and Inkling clients also
-start with the Responses protocol; the legacy Chat Completions path is used only when the operator
-explicitly enables compatibility fallback. Anthropic is a distinct `/v1/messages` implementation.
+The official OpenAI adapter is fixed to `POST /v1/responses` and has no legacy fallback. The
+validated Inkling client is likewise Responses-only: it negotiates the exact
+Inkling-Small-Ampere model, profile, checkpoint, structured-output, streaming, batch-one, TP4, and
+configured-window identity before its first generation. It uses the authenticated consumer edge,
+not the Vertex `Invoke` RPC, requests SSE explicitly, disables response storage/continuation, and
+makes one transport attempt. Only the generic OpenAI-compatible client may use legacy Chat
+Completions when the operator explicitly enables compatibility fallback. Anthropic is a distinct
+`/v1/messages` implementation.
 Provider and research role are orthogonal: OpenAI is a baseline or teacher, while Inkling and an
 explicit compatible open-weight runtime are target candidates. Role is persisted through student
 state, run, attempt, and episode records; baseline runs cannot consolidate target memory.
@@ -144,9 +148,10 @@ recomputes the stream rather than trusting a stored boolean.
 
 ## Repository integrations
 
-- Inkling remains an independently served vLLM/OpenAI-compatible runtime. Padawan records its
-  configured checkpoint, runtime revision, quantization availability, tensor parallelism, and any
-  server telemetry; it never invents unavailable token or reasoning data.
+- Inkling remains an independently served vLLM/OpenAI-compatible runtime. Padawan pins the validated
+  conversion checkpoint separately from its served-model alias, records the conversion/profile/image
+  evidence, runtime revision, configured and measured context limits, tensor parallelism, negotiated
+  server identity, and any server telemetry; it never invents unavailable token or reasoning data.
 - Heirloom is a restricted audit export. Padawan emits a signed, policy-filtered bundle that the
   sibling Heirloom structural validator can inspect. This does not upgrade structural validation
   into semantic correctness.
