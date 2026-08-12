@@ -1,0 +1,275 @@
+{
+  "cleanup": {
+    "completed_at": "2026-08-11T04:04:06.514173+00:00",
+    "endpoint_empty": true,
+    "model_absent": true,
+    "model_delete_operation": "projects/232930557062/locations/us-central1/models/inkling-small-w8a16-gate-e-v8/operations/638576119821369344",
+    "model_delete_submission_count": 1,
+    "started_at": "2026-08-11T04:04:01.122731+00:00",
+    "undeploy_operation": "projects/232930557062/locations/us-central1/endpoints/inkling-small-responses-gate-e/operations/7531898299465334784",
+    "undeploy_submission_count": 1
+  },
+  "completed_at": "2026-08-11T04:04:09.357484+00:00",
+  "cost_arithmetic": {
+    "actual_billing_status": "not-yet-verifiable",
+    "deploy_to_cleanup_seconds": 3947.815852,
+    "full_rate_arithmetic_usd": 25.361854243961098,
+    "observed_node_rate_usd_per_hour": 23.1273896
+  },
+  "endpoint_inference_timeout_seconds": 3600,
+  "evidence": {
+    "logs": {
+      "entry_count": 227,
+      "path": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-10-padawan-first-pass-live-run/vertex-controller/prediction-container-logs.json",
+      "status": "pass"
+    },
+    "metrics": {
+      "path": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-10-padawan-first-pass-live-run/vertex-controller/vertex-monitoring-metrics.json",
+      "time_series_counts": {
+        "aiplatform.googleapis.com/prediction/online/accelerator/duty_cycle": 1,
+        "aiplatform.googleapis.com/prediction/online/accelerator/memory/bytes_used": 1,
+        "aiplatform.googleapis.com/prediction/online/prediction_latencies": 0,
+        "aiplatform.googleapis.com/prediction/online/response_count": 0
+      }
+    }
+  },
+  "infrastructure_controller_kind": "inkling-vertex-production-context-ladder-run",
+  "kind": "inkling-vertex-padawan-first-pass-run",
+  "mutations": {
+    "deploy": {
+      "automatic_retries": 0,
+      "body_sha256": "b83a137e6287a5d8ad945dbe30e2027809dc87cb4d85fee6d55eb1e2617b9408",
+      "deployed_model_id": "8900393244974645248",
+      "operation": "projects/232930557062/locations/us-central1/endpoints/inkling-small-responses-gate-e/operations/7865103099239596032",
+      "submission_count": 1,
+      "submitted_at": "2026-08-11T02:58:18.698321+00:00",
+      "terminal_at": "2026-08-11T04:03:55.965772+00:00"
+    },
+    "endpoint_update": {
+      "already_satisfied": true,
+      "submission_count": 0
+    },
+    "model_upload": {
+      "body_sha256": "926622a3f5810ed6125a18e14f1e8d0ea7035ec8f8229923553700d6ce379e21",
+      "operation": "projects/232930557062/locations/us-central1/models/inkling-small-w8a16-gate-e-v8/operations/838150674402246656",
+      "submission_count": 1,
+      "submitted_at": "2026-08-11T02:55:38.925613+00:00"
+    }
+  },
+  "plan": {
+    "automatic_mutation_retries": 0,
+    "deploy": {
+      "api_version": "v1beta1",
+      "body": {
+        "deployedModel": {
+          "dedicatedResources": {
+            "machineSpec": {
+              "acceleratorCount": 4,
+              "acceleratorType": "NVIDIA_A100_80GB",
+              "machineType": "a2-ultragpu-4g"
+            },
+            "maxReplicaCount": 1,
+            "minReplicaCount": 1
+          },
+          "displayName": "inkling-small-w8a16-balanced-v1-gate-e-v8-256k",
+          "enableAccessLogging": false,
+          "enableContainerLogging": true,
+          "model": "projects/project-49b1b523-d248-434f-bd4/locations/us-central1/models/inkling-small-w8a16-gate-e-v8"
+        },
+        "trafficSplit": {
+          "0": 100
+        }
+      },
+      "method": "POST",
+      "resource": "projects/project-49b1b523-d248-434f-bd4/locations/us-central1/endpoints/inkling-small-responses-gate-e:deployModel",
+      "sha256": "b83a137e6287a5d8ad945dbe30e2027809dc87cb4d85fee6d55eb1e2617b9408"
+    },
+    "endpoint_update": {
+      "api_version": "v1",
+      "body": {
+        "endpoint": {
+          "clientConnectionConfig": {
+            "inferenceTimeout": "3600s"
+          },
+          "dedicatedEndpointEnabled": true,
+          "description": "Dedicated Responses-only Gate E endpoint",
+          "displayName": "inkling-small-responses-gate-e",
+          "etag": "<live-etag>",
+          "labels": {
+            "gate": "e",
+            "protocol": "responses"
+          },
+          "name": "projects/232930557062/locations/us-central1/endpoints/inkling-small-responses-gate-e"
+        }
+      },
+      "method": "POST",
+      "resource": "projects/232930557062/locations/us-central1/endpoints/inkling-small-responses-gate-e:update",
+      "sha256": "8e0d0e6435fd142b0388d157069f17503fb294657ffbca6a4bfa9b1c406a68fb"
+    },
+    "kind": "inkling-vertex-padawan-first-pass-plan",
+    "model_upload": {
+      "api_version": "v1beta1",
+      "body": {
+        "model": {
+          "artifactUri": "gs://project-49b1b523-d248-434f-bd4-vecl-qb-artifacts/inkling-small-ampere/conversions/conversion-e747e8121d5cd12c54c9",
+          "containerSpec": {
+            "args": [
+              "--profile",
+              "/opt/inkling/app/configs/serving/responses-256k-candidate-v1.json"
+            ],
+            "deploymentTimeout": "5400s",
+            "env": [
+              {
+                "name": "INKLING_MODEL_PATH",
+                "value": "/tmp/inkling-small-ampere"
+              },
+              {
+                "name": "INKLING_SERVING_PROFILE",
+                "value": "/opt/inkling/app/configs/serving/responses-256k-candidate-v1.json"
+              },
+              {
+                "name": "INKLING_VERTEX_PLAN",
+                "value": "/opt/inkling/app/configs/serving/vertex-gate-e-plan-v1.json"
+              }
+            ],
+            "healthProbe": {
+              "failureThreshold": 4,
+              "httpGet": {
+                "path": "/health",
+                "port": 8080
+              },
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 15
+            },
+            "healthRoute": "/health",
+            "imageUri": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-small-ampere@sha256:5cd713ab404a051892e98f624858f2550e50781489fa916d47f971974c310575",
+            "invokeRoutePrefix": "/*",
+            "livenessProbe": {
+              "exec": {
+                "command": [
+                  "/bin/sh",
+                  "-c",
+                  "kill -0 1"
+                ]
+              },
+              "failureThreshold": 4,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 15
+            },
+            "ports": [
+              {
+                "containerPort": 8080
+              }
+            ],
+            "sharedMemorySizeMb": "32768",
+            "startupProbe": {
+              "failureThreshold": 540,
+              "httpGet": {
+                "path": "/health",
+                "port": 8080
+              },
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 15
+            }
+          },
+          "description": "Immutable Responses-only TP4 256K production-topology validation",
+          "displayName": "inkling-small-w8a16-balanced-v1-gate-e-v8-256k",
+          "labels": {
+            "gate": "e",
+            "profile": "responses-256k"
+          }
+        },
+        "modelId": "inkling-small-w8a16-gate-e-v8"
+      },
+      "method": "POST",
+      "resource": "projects/project-49b1b523-d248-434f-bd4/locations/us-central1/models:upload",
+      "sha256": "926622a3f5810ed6125a18e14f1e8d0ea7035ec8f8229923553700d6ce379e21"
+    },
+    "mutation_performed": false,
+    "probe": {
+      "blocks": 1,
+      "bootstrap": true,
+      "durable_action_retry_budget": 0,
+      "kind": "padawan-algebra-first-pass",
+      "request_timeout_seconds": 3600,
+      "student_id": "inkling-small-research-20260810-first-pass",
+      "student_model": "w8a16-balanced-v1",
+      "student_transport_retries": 0,
+      "teacher_model": "gpt-5.6-sol",
+      "teacher_provider": "openai",
+      "teacher_transport_retries": 0
+    },
+    "resources": {
+      "artifact_uri": "gs://project-49b1b523-d248-434f-bd4-vecl-qb-artifacts/inkling-small-ampere/conversions/conversion-e747e8121d5cd12c54c9",
+      "endpoint": "projects/project-49b1b523-d248-434f-bd4/locations/us-central1/endpoints/inkling-small-responses-gate-e",
+      "image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-small-ampere@sha256:5cd713ab404a051892e98f624858f2550e50781489fa916d47f971974c310575",
+      "model": "projects/project-49b1b523-d248-434f-bd4/locations/us-central1/models/inkling-small-w8a16-gate-e-v8"
+    },
+    "schema_version": "1.0.0",
+    "stop_on_first_probe_failure": true,
+    "teardown": [
+      {
+        "method": "POST",
+        "resource": "projects/project-49b1b523-d248-434f-bd4/locations/us-central1/endpoints/inkling-small-responses-gate-e:undeployModel"
+      },
+      {
+        "method": "DELETE",
+        "resource": "projects/project-49b1b523-d248-434f-bd4/locations/us-central1/models/inkling-small-w8a16-gate-e-v8"
+      }
+    ]
+  },
+  "preflight": {
+    "active_custom_jobs": 0,
+    "active_persistent_resources": 0,
+    "endpoint_dedicated": true,
+    "endpoint_empty": true,
+    "model_absent": true,
+    "observed_at": "2026-08-11T02:55:38.422372+00:00",
+    "read_only_cloud_inventory_reconfirmed_before_controller": true,
+    "serving_quota_effective_limit": 4,
+    "validated_image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-small-ampere@sha256:5cd713ab404a051892e98f624858f2550e50781489fa916d47f971974c310575"
+  },
+  "probe": {
+    "automatic_retries": 0,
+    "command": [
+      "/Users/andrewverdiramo/Desktop/Padawan/.venv/bin/padawan",
+      "--json",
+      "experiment",
+      "run",
+      "--student-id",
+      "inkling-small-research-20260810-first-pass",
+      "--blocks",
+      "1",
+      "--seed",
+      "20260810",
+      "--student-provider",
+      "inkling",
+      "--student-model",
+      "w8a16-balanced-v1",
+      "--teacher-provider",
+      "openai",
+      "--teacher-model",
+      "gpt-5.6-sol",
+      "--bootstrap"
+    ],
+    "completed_at": "2026-08-11T04:04:01.122361+00:00",
+    "return_code": 0,
+    "semantic_status": "fail",
+    "run_outcome": {
+      "error_class": "ModelProviderError",
+      "failed_from_state": "COLD_ATTEMPT_RUNNING",
+      "http_status_code": 400,
+      "reason": "The command process exited zero, but its structured run result reported FAILED_TERMINAL.",
+      "run_id": "run-2224a1db-453f-4d58-aaf7-d8b5d5d892de",
+      "state": "FAILED_TERMINAL",
+      "stop_reason": "terminal_infrastructure_problem"
+    }
+  },
+  "schema_version": "1.0.0",
+  "source_commit": "236d50e3f7f388e37fd6f37389b7ce50b9bb491c",
+  "started_at": "2026-08-11T02:55:37.388327+00:00",
+  "status": "fail-and-fully-torn-down"
+}

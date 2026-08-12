@@ -1,0 +1,168 @@
+{
+  "automatic_inference_retries": 0,
+  "automatic_mutation_retries": 0,
+  "code_identity": {
+    "code_revision": "f78d743bd5e25adced2d8fdf927daf5970934b93+worktree-sha256-4b50f8ff78354d35a50e4338f8ca3e17c00bc3c16921d98fd910fee37c5a9427",
+    "head": "f78d743bd5e25adced2d8fdf927daf5970934b93",
+    "untracked_paths": [
+      "padawan/adapters/inkling/contract.py",
+      "reports/live/2026-08-10-padawan-first-pass-run/first-pass-run.json",
+      "reports/live/2026-08-10-padawan-first-pass/first-pass-run.json",
+      "tests/unit/test_inkling_runtime.py",
+      "tests/unit/test_live_composition.py"
+    ],
+    "worktree_sha256": "4b50f8ff78354d35a50e4338f8ca3e17c00bc3c16921d98fd910fee37c5a9427"
+  },
+  "completed_at": "2026-08-11T04:04:09.358208+00:00",
+  "edge": {
+    "create_submission_count": 0,
+    "image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-responses-edge@sha256:41a32fc5906955f790693861ae6b8e7a333d1073194ef0757a06cba882ad3239",
+    "max_instance_count": 1,
+    "min_instance_count": 0,
+    "profile": "/opt/inkling/app/configs/serving/responses-256k-candidate-v1.json",
+    "resource": "projects/project-49b1b523-d248-434f-bd4/locations/us-central1/services/inkling-small-responses-edge",
+    "revision": "projects/project-49b1b523-d248-434f-bd4/locations/us-central1/services/inkling-small-responses-edge/revisions/inkling-small-responses-edge-00002-p2d",
+    "static_validation": {
+      "capabilities": {
+        "features": {
+          "function_tools": {
+            "parser": "inkling",
+            "supported_by_runtime": true,
+            "validation": "unvalidated"
+          },
+          "previous_response_id": {
+            "durable": false,
+            "reason": "vLLM storage is process-local, unbounded, and intentionally disabled",
+            "replica_safe": false,
+            "requires_store_true": true,
+            "scope": "disabled",
+            "supported": false
+          },
+          "reasoning": {
+            "parser": "inkling",
+            "validation": "unvalidated"
+          },
+          "streaming": {
+            "supported": true,
+            "terminal_event": "response.completed",
+            "validation": "unvalidated"
+          },
+          "structured_outputs": {
+            "json_schema": true,
+            "validation": "unvalidated"
+          }
+        },
+        "model": {
+          "checkpoint_id": "conversion-e747e8121d5cd12c54c9",
+          "id": "w8a16-balanced-v1",
+          "quantization": "w8a16-balanced-v1"
+        },
+        "profile_id": "responses-256k-candidate-v1",
+        "profile_status": "projected-unvalidated",
+        "protocol": {
+          "chat_completions_contract": false,
+          "primary": "responses",
+          "routes": {
+            "capabilities": "/v1/padawan/capabilities",
+            "models": "/v1/models",
+            "responses": "/v1/responses"
+          }
+        },
+        "runtime": {
+          "chunked_prefill": true,
+          "dtype": "bfloat16",
+          "kv_cache_memory_bytes": 3221225472,
+          "language_model_only": true,
+          "max_model_len": 262144,
+          "max_num_batched_tokens": 512,
+          "max_num_seqs": 1,
+          "prefix_caching": false,
+          "tensor_parallel_size": 4,
+          "vllm_commit": "ffd46bfab2128bb84146050e98b51a617c6575ab",
+          "vllm_version": "0.26.0"
+        },
+        "schema_version": "1.0.0",
+        "service": "inkling-small-ampere",
+        "validation": {
+          "long_context": "projected-unvalidated",
+          "maximum_verified_model_len": 2048,
+          "model_runtime": "gate-d-verified-through-2048",
+          "responses_api": "unvalidated"
+        }
+      },
+      "health": {
+        "status": "pass"
+      },
+      "models": {
+        "data": [
+          {
+            "id": "w8a16-balanced-v1",
+            "object": "model",
+            "owned_by": "inkling-small-ampere"
+          }
+        ],
+        "object": "list"
+      },
+      "statuses": {
+        "authenticated_models": 200,
+        "capabilities": 200,
+        "health": 200,
+        "unauthenticated_models": 401
+      }
+    },
+    "update_submission_count": 1,
+    "uri": "https://inkling-small-responses-edge-ltv3nmgz4a-uc.a.run.app"
+  },
+  "kind": "padawan-inkling-first-pass-run",
+  "preflight": {
+    "active_custom_jobs": 0,
+    "active_persistent_resources": 0,
+    "edge_image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-responses-edge@sha256:41a32fc5906955f790693861ae6b8e7a333d1073194ef0757a06cba882ad3239",
+    "endpoint": "projects/232930557062/locations/us-central1/endpoints/inkling-small-responses-gate-e",
+    "endpoint_dedicated": true,
+    "endpoint_empty": true,
+    "endpoint_predict_binding": true,
+    "quota": {
+      "effective_limit": 4,
+      "metric": "aiplatform.googleapis.com/custom_model_serving_nvidia_a100_80gb_gpus",
+      "region": "us-central1"
+    },
+    "secret_accessor_binding": true,
+    "serving_image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-small-ampere@sha256:5cd713ab404a051892e98f624858f2550e50781489fa916d47f971974c310575",
+    "temporary_model_absent": true
+  },
+  "schema_version": "1.0.0",
+  "started_at": "2026-08-11T02:54:53.985828+00:00",
+  "status": "fail",
+  "outcome_reconciliation": {
+    "automatic_retries": 0,
+    "error_class": "ModelProviderError",
+    "failed_from_state": "COLD_ATTEMPT_RUNNING",
+    "http_status_code": 400,
+    "reason": "The Padawan command returned process exit code 0 while its structured result reported FAILED_TERMINAL; semantic run state is authoritative.",
+    "run_id": "run-2224a1db-453f-4d58-aaf7-d8b5d5d892de",
+    "run_state": "FAILED_TERMINAL",
+    "stop_reason": "terminal_infrastructure_problem"
+  },
+  "vertex_controller": {
+    "cleanup": {
+      "completed_at": "2026-08-11T04:04:06.514173+00:00",
+      "endpoint_empty": true,
+      "model_absent": true,
+      "model_delete_operation": "projects/232930557062/locations/us-central1/models/inkling-small-w8a16-gate-e-v8/operations/638576119821369344",
+      "model_delete_submission_count": 1,
+      "started_at": "2026-08-11T04:04:01.122731+00:00",
+      "undeploy_operation": "projects/232930557062/locations/us-central1/endpoints/inkling-small-responses-gate-e/operations/7531898299465334784",
+      "undeploy_submission_count": 1
+    },
+    "cost_arithmetic": {
+      "actual_billing_status": "not-yet-verifiable",
+      "deploy_to_cleanup_seconds": 3947.815852,
+      "full_rate_arithmetic_usd": 25.361854243961098,
+      "observed_node_rate_usd_per_hour": 23.1273896
+    },
+    "exit_code": 0,
+    "state_path": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-10-padawan-first-pass-live-run/vertex-controller/controller-state.json",
+    "status": "fail-and-fully-torn-down"
+  }
+}

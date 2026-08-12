@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "padawan-inkling-live-run-root-cause",
+  "status": "superseded-by-retry-2-live-evidence",
+  "observed_at": "2026-08-11T14:20:12.483981+00:00",
+  "reconciled_at": "2026-08-11T14:29:26.891669+00:00",
+  "superseded_by": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-2-live-run/final-run-summary.json",
+  "supersession_reason": "The v1beta1 InvokeRequest.httpBody interpretation was disproven by the next live deployment. The stable v1 custom invoke route accepts the public Responses payload as raw application/json and returned HTTP 200.",
+  "root_cause": {
+    "hypothesis_status": "disproven-by-retry-2-live-evidence",
+    "component": "Inkling Responses edge Vertex Invoke request encoder",
+    "defect": "The retained edge image sent the public Responses JSON directly as the Vertex Invoke RPC body instead of explicitly encoding it as InvokeRequest.httpBody.",
+    "effect": "The serving container received an Invoke RPC envelope rather than the inner Responses request. vLLM therefore could not find the required top-level input field and returned HTTP 400.",
+    "classification": "deterministic transport-contract defect",
+    "not_model_failure": true,
+    "not_padawan_composition_failure": true
+  },
+  "live_evidence": {
+    "canary": "plain_nonstream",
+    "request": {
+      "bytes": 148,
+      "path": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-1-live-run/vertex-controller/canaries/plain_nonstream.request.json",
+      "sha256": "4bce05627005f8a516f7b26bf18bdeb1010663a929e3f41f9ee5426b6c2b9cec"
+    },
+    "response": {
+      "bytes": 465,
+      "path": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-1-live-run/vertex-controller/canaries/plain_nonstream.response.bin",
+      "sha256": "66c55aad9b398ee2db6970b3d47241b56875e0d64113a8bc2e287508f9f7d508",
+      "status_code": 400,
+      "error_param": "body.input",
+      "error_message_summary": "The validation input contained httpBody.contentType and base64 httpBody.data, while required body.input was missing."
+    },
+    "official_contract": {
+      "source": "https://aiplatform.googleapis.com/$discovery/rest?version=v1beta1",
+      "verified_at": "2026-08-11T14:29:26.891669+00:00",
+      "request_type": "GoogleCloudAiplatformV1beta1InvokeRequest",
+      "required_payload_field": "httpBody",
+      "http_body_content_type_field": "contentType",
+      "http_body_binary_field": "data",
+      "binary_json_encoding": "base64"
+    }
+  },
+  "separate_controller_incident": {
+    "type": "TypeError",
+    "message": "event() got multiple values for argument 'name'",
+    "timing": "after the first canary request and response were durably written",
+    "impact": "The controller aborted the remaining canaries and Padawan attempt, then its finally path fully tore down the Vertex deployment.",
+    "fixed": true
+  },
+  "remediation": {
+    "source_files": [
+      "/Users/andrewverdiramo/Desktop/inkling-small-ampere/src/inkling_ampere/serving/edge.py",
+      "/Users/andrewverdiramo/Desktop/inkling-small-ampere/src/inkling_ampere/serving/vertex_plan.py",
+      "/Users/andrewverdiramo/Desktop/inkling-small-ampere/configs/serving/vertex-gate-e-plan-v1.json",
+      "/Users/andrewverdiramo/Desktop/inkling-small-ampere/scripts/gpu/remote_long_context_responses_probe.py",
+      "/Users/andrewverdiramo/Desktop/inkling-small-ampere/tests/unit/test_serving_edge.py",
+      "/Users/andrewverdiramo/Desktop/inkling-small-ampere/tests/unit/test_long_context_probe.py"
+    ],
+    "encoding": "invoke-request-httpbody-base64-with-inkling-strict-schema-adapter",
+    "edge_image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-responses-edge@sha256:d3db4f27626fdde6aaac9d17655fe99e17d5423e30c881d98864cfe095e2e3b8",
+    "cloud_run_revision": "inkling-small-responses-edge-00003-6js",
+    "cloud_run_min_instance_count": 0,
+    "cloud_run_max_instance_count": 1,
+    "offline_container_contract_validation": "pass",
+    "cloud_run_static_route_validation": "pass",
+    "inkling_make_check": {
+      "status": "pass",
+      "tests_passed": 122
+    },
+    "padawan_make_check": {
+      "status": "pass",
+      "tests_passed": 184
+    }
+  },
+  "retry_outcome": {
+    "padawan_attempted": false,
+    "openai_inference_calls": 0,
+    "anthropic_inference_calls": 0,
+    "vertex_replica_fully_torn_down": true,
+    "endpoint_empty": true,
+    "temporary_model_absent": true,
+    "active_custom_jobs": 0,
+    "active_persistent_resources": 0,
+    "full_rate_cost_arithmetic_usd": 20.95638226023133,
+    "actual_billing_status": "not-yet-verifiable"
+  },
+  "next_gate": "Completed by retry-2; see superseded_by for the validated root cause and successful Padawan outcome."
+}

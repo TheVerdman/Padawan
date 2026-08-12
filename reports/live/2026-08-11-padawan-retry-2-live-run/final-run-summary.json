@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "padawan-inkling-live-run-final-summary",
+  "status": "pass-and-fully-torn-down",
+  "completed_at": "2026-08-11T16:00:40.766006+00:00",
+  "root_cause": {
+    "classification": "deterministic edge-to-Vertex transport-contract defect",
+    "component": "Inkling Responses edge",
+    "defect": "The edge used the v1beta1 Invoke RPC and encoded the Responses request inside InvokeRequest.httpBody. For this Vertex custom-route deployment, the validated contract is a raw application/json body sent to the stable v1 /invoke/v1/responses path.",
+    "effect": "The prediction container received the wrong envelope, could not find top-level input, and returned HTTP 400 with body.input missing.",
+    "proof": {
+      "v1beta1_special_route_status_code": 400,
+      "v1_raw_invoke_status_code": 200,
+      "v1_raw_invoke_evidence": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-2-live-run/direct-v1-raw-invoke-probe/evidence.json"
+    }
+  },
+  "remediation": {
+    "request_api_version": "v1",
+    "request_body_encoding": "raw-application-json",
+    "edge_image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-responses-edge@sha256:d75102ff6ca54d25404154f8bf3cde736856cfa62c3f5351f93bd7c722eb2574",
+    "cloud_run_revision": "inkling-small-responses-edge-00004-bhz",
+    "cloud_run_min_instance_count": 0,
+    "cloud_run_max_instance_count": 1
+  },
+  "live_validation": {
+    "initial_wrong-contract_canaries": {
+      "count": 6,
+      "http_400_count": 6
+    },
+    "corrected_contract_canaries": {
+      "count": 6,
+      "http_200_count": 6,
+      "streaming_terminal_success_count": 5,
+      "plain_nonstream_16_token_result": "HTTP 200 but incomplete due to output-token budget",
+      "plain_nonstream_128_token_replacement": "HTTP 200 and complete"
+    },
+    "automatic_transport_retries": 0,
+    "automatic_mutation_retries": 0
+  },
+  "padawan": {
+    "first_attempt": {
+      "student_id": "inkling-small-research-20260811-first-pass-v1-raw",
+      "run_id": "run-f94d7568-b3e6-471e-8b00-889ac6d9022b",
+      "state": "FAILED_TERMINAL",
+      "cause": "OpenAI teacher rejected temperature for gpt-5.6-sol",
+      "student_leg_completed": true
+    },
+    "teacher_adapter_fix": "Omit unsupported temperature by sending null for the gpt-5.6-sol teacher request.",
+    "successful_attempt": {
+      "student_id": "inkling-small-research-20260811-first-pass-v1-raw-v2",
+      "run_id": "run-9763e682-47db-4159-a58c-d23179f604c6",
+      "episode_id": "episode-run-9763e682-47db-4159-a58c-d23179f604c6",
+      "state": "COMPLETE",
+      "closed_episodes": 1,
+      "stop_reason": "episode_budget_exhausted",
+      "manifest_artifact_id": "art-f34ac8042e38afe5be4726a2258809025661a0a2ded0de17f582dff9b8b4a263"
+    }
+  },
+  "inkling_reasoning": {
+    "capture_scope": "model-emitted Responses reasoning_text channel; not hidden activations or un-emitted internal state",
+    "storage_policy": "restricted raw artifacts linked to each attempt; contents omitted from this summary",
+    "filesystem_mode": "0600-verified-for-all-four-artifacts",
+    "attempt_count": 4,
+    "total_characters": 3183,
+    "artifacts": [
+      {
+        "artifact_id": "art-85b3909b942e5a21849ae7cc4c43f8f9e1924ffa5ead067b797677047806dba3",
+        "characters": 1156
+      },
+      {
+        "artifact_id": "art-8a36e671dd7a0cef7db3870a49ff2a9efa2e6771b4461ecfef482d18412baf57",
+        "characters": 681
+      },
+      {
+        "artifact_id": "art-87c476ff7818e84137e67d7ea849b53581a345e0d324851e7d13e01ce2ed92c7",
+        "characters": 1023
+      },
+      {
+        "artifact_id": "art-32c11e8b87a7f782b3e7219fab38c7fd83cb1cd89db1a7626fc534f7a45d5abf",
+        "characters": 323
+      }
+    ],
+    "verification": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-2-live-run/private-reasoning-backfill-verification.json"
+  },
+  "verification": {
+    "inkling_make_check": {
+      "status": "pass",
+      "tests_passed": 122
+    },
+    "padawan_make_check": {
+      "status": "pass",
+      "tests_passed": 184,
+      "tests_deselected": 6
+    },
+    "post_run": {
+      "gpu_compute_active": false,
+      "endpoint_empty": true,
+      "temporary_model_absent": true,
+      "active_custom_jobs": 0,
+      "active_persistent_resources": 0,
+      "edge_min_instance_count": 0,
+      "evidence": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-2-live-run/post-run-verification.json"
+    }
+  },
+  "cost_arithmetic": {
+    "deploy_to_cleanup_seconds": 4999.441716,
+    "observed_node_rate_usd_per_hour": 23.1273896,
+    "full_rate_arithmetic_usd": 32.11778787456238,
+    "actual_billing_status": "not-yet-verifiable"
+  },
+  "primary_evidence": {
+    "controller_state": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-2-live-run/vertex-controller/controller-state.json",
+    "instrumented_probe": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-2-live-run/vertex-controller/instrumented-probe.json",
+    "reasoning_verification": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-2-live-run/private-reasoning-backfill-verification.json",
+    "post_run_verification": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-2-live-run/post-run-verification.json"
+  }
+}

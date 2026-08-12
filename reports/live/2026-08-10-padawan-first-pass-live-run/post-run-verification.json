@@ -1,0 +1,25 @@
+{
+  "kind": "padawan-first-pass-post-run-cloud-verification",
+  "observed_at": "2026-08-11T04:25:18Z",
+  "schema_version": "1.0.0",
+  "status": "pass",
+  "verification_mode": "read-only-gcloud-inventory",
+  "vertex_ai": {
+    "active_custom_jobs": 0,
+    "active_persistent_resources": 0,
+    "endpoint": "projects/232930557062/locations/us-central1/endpoints/inkling-small-responses-gate-e",
+    "endpoint_deployed_models": 0,
+    "endpoint_traffic_split": {},
+    "temporary_model_id": "inkling-small-w8a16-gate-e-v8",
+    "temporary_models_present": 0
+  },
+  "cloud_run_edge": {
+    "gpu_attached": false,
+    "latest_ready_revision": "inkling-small-responses-edge-00002-p2d",
+    "maximum_instances": 1,
+    "minimum_instances": 0,
+    "service": "inkling-small-responses-edge",
+    "status": "ready"
+  },
+  "conclusion": "No Vertex AI model-serving replica, temporary model, custom job, or persistent resource remains. The CPU-only edge has a zero-instance floor."
+}

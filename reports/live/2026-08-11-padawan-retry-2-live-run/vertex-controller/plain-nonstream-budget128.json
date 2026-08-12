@@ -1,0 +1,15 @@
+{
+  "error_body": null,
+  "name": "plain_nonstream_budget128",
+  "request_bytes": 149,
+  "request_path": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-2-live-run/vertex-controller/canaries/plain_nonstream_budget128.request.json",
+  "request_sha256": "1e16da77e02c632b9128fe36e08db26bac424716151decd828f9e0737dd92630",
+  "response_bytes": 1406,
+  "response_content_type": "application/json",
+  "response_path": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-2-live-run/vertex-controller/canaries/plain_nonstream_budget128.response.bin",
+  "response_sha256": "22d2f2ec57b9b5d3edac2effa3224e5d7aab050c7c6823cb57fff2ce9c358df3",
+  "status_code": 200,
+  "stream": false,
+  "success": true,
+  "terminal_event_observed": false
+}

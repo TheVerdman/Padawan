@@ -1,0 +1,53 @@
+{
+  "automatic_transport_retries": 0,
+  "code_identity": {
+    "code_revision": "f78d743bd5e25adced2d8fdf927daf5970934b93+worktree-sha256-4b50f8ff78354d35a50e4338f8ca3e17c00bc3c16921d98fd910fee37c5a9427",
+    "head": "f78d743bd5e25adced2d8fdf927daf5970934b93",
+    "untracked_paths": [
+      "padawan/adapters/inkling/contract.py",
+      "reports/live/2026-08-10-padawan-first-pass-run/first-pass-run.json",
+      "reports/live/2026-08-10-padawan-first-pass/first-pass-run.json",
+      "tests/unit/test_inkling_runtime.py",
+      "tests/unit/test_live_composition.py"
+    ],
+    "worktree_sha256": "4b50f8ff78354d35a50e4338f8ca3e17c00bc3c16921d98fd910fee37c5a9427"
+  },
+  "command": [
+    "/Users/andrewverdiramo/Desktop/Padawan/.venv/bin/padawan",
+    "--json",
+    "experiment",
+    "run",
+    "--student-id",
+    "inkling-small-research-20260810-first-pass",
+    "--blocks",
+    "1",
+    "--seed",
+    "20260810",
+    "--student-provider",
+    "inkling",
+    "--student-model",
+    "w8a16-balanced-v1",
+    "--teacher-provider",
+    "openai",
+    "--teacher-model",
+    "gpt-5.6-sol",
+    "--bootstrap"
+  ],
+  "durable_action_retry_budget": 0,
+  "edge_uri": "https://inkling-small-responses-edge-ltv3nmgz4a-uc.a.run.app",
+  "return_code": 0,
+  "semantic_status": "fail",
+  "run_outcome": {
+    "automatic_retries": 0,
+    "error_class": "ModelProviderError",
+    "failed_from_state": "COLD_ATTEMPT_RUNNING",
+    "http_status_code": 400,
+    "reason": "The command process exited zero, but its structured run result reported FAILED_TERMINAL.",
+    "run_id": "run-2224a1db-453f-4d58-aaf7-d8b5d5d892de",
+    "state": "FAILED_TERMINAL",
+    "stop_reason": "terminal_infrastructure_problem"
+  },
+  "student_id": "inkling-small-research-20260810-first-pass",
+  "student_model": "w8a16-balanced-v1",
+  "teacher_model": "gpt-5.6-sol"
+}

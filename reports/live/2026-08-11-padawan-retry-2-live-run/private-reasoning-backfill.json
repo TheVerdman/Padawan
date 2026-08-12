@@ -1,0 +1,45 @@
+{
+  "applied": true,
+  "attempt_count": 4,
+  "attempts": [
+    {
+      "applied": true,
+      "attempt_id": "attempt-cold-run-9763e682-47db-4159-a58c-d23179f604c6:student:cold",
+      "private_reasoning_artifact_id": "art-85b3909b942e5a21849ae7cc4c43f8f9e1924ffa5ead067b797677047806dba3",
+      "private_reasoning_characters": 1156,
+      "private_reasoning_sha256": "85b3909b942e5a21849ae7cc4c43f8f9e1924ffa5ead067b797677047806dba3",
+      "raw_generation_artifact_id": "art-1957e1c6f82068732448acfec4007ee40aeca3a14714f556cc2760a8658040a2",
+      "request_id": "run-9763e682-47db-4159-a58c-d23179f604c6:student:cold"
+    },
+    {
+      "applied": true,
+      "attempt_id": "attempt-revision-run-9763e682-47db-4159-a58c-d23179f604c6:student:revision",
+      "private_reasoning_artifact_id": "art-8a36e671dd7a0cef7db3870a49ff2a9efa2e6771b4461ecfef482d18412baf57",
+      "private_reasoning_characters": 681,
+      "private_reasoning_sha256": "8a36e671dd7a0cef7db3870a49ff2a9efa2e6771b4461ecfef482d18412baf57",
+      "raw_generation_artifact_id": "art-2673769b89e0cd02a79f1c4515ecf76078fe22f59f986e558e80a10efce890a5",
+      "request_id": "run-9763e682-47db-4159-a58c-d23179f604c6:student:revision"
+    },
+    {
+      "applied": true,
+      "attempt_id": "attempt-transfer-treatment-run-9763e682-47db-4159-a58c-d23179f604c6:student:transfer:treatment",
+      "private_reasoning_artifact_id": "art-87c476ff7818e84137e67d7ea849b53581a345e0d324851e7d13e01ce2ed92c7",
+      "private_reasoning_characters": 1023,
+      "private_reasoning_sha256": "87c476ff7818e84137e67d7ea849b53581a345e0d324851e7d13e01ce2ed92c7",
+      "raw_generation_artifact_id": "art-e826974d1bf48e608587778e83a021459e6111b2f1130d7e8d31ad815646e05e",
+      "request_id": "run-9763e682-47db-4159-a58c-d23179f604c6:student:transfer:treatment"
+    },
+    {
+      "applied": true,
+      "attempt_id": "attempt-transfer-control-run-9763e682-47db-4159-a58c-d23179f604c6:student:transfer:control",
+      "private_reasoning_artifact_id": "art-32c11e8b87a7f782b3e7219fab38c7fd83cb1cd89db1a7626fc534f7a45d5abf",
+      "private_reasoning_characters": 323,
+      "private_reasoning_sha256": "32c11e8b87a7f782b3e7219fab38c7fd83cb1cd89db1a7626fc534f7a45d5abf",
+      "raw_generation_artifact_id": "art-bfc76c413609f5924204d8b19340bf514f256d4314e72e88eac65dda0b6bcfee",
+      "request_id": "run-9763e682-47db-4159-a58c-d23179f604c6:student:transfer:control"
+    }
+  ],
+  "kind": "inkling-private-reasoning-backfill",
+  "run_id": "run-9763e682-47db-4159-a58c-d23179f604c6",
+  "schema_version": "1.0.0"
+}

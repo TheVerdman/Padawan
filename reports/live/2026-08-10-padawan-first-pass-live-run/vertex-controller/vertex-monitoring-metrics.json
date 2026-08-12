@@ -1,0 +1,584 @@
+{
+  "aiplatform.googleapis.com/prediction/online/accelerator/duty_cycle": {
+    "timeSeries": [
+      {
+        "metric": {
+          "labels": {
+            "deployed_model_id": "8900393244974645248",
+            "replica_id": "predictor-resource-pool-9156355703630200832-b9f95cccd-chlmz",
+            "spot": "false"
+          },
+          "type": "aiplatform.googleapis.com/prediction/online/accelerator/duty_cycle"
+        },
+        "metricKind": "GAUGE",
+        "points": [
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:59:00Z",
+              "startTime": "2026-08-11T03:59:00Z"
+            },
+            "value": {
+              "doubleValue": 0.17250000000000001
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:58:00Z",
+              "startTime": "2026-08-11T03:58:00Z"
+            },
+            "value": {
+              "doubleValue": 0.155
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:57:00Z",
+              "startTime": "2026-08-11T03:57:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:56:00Z",
+              "startTime": "2026-08-11T03:56:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:55:00Z",
+              "startTime": "2026-08-11T03:55:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:54:00Z",
+              "startTime": "2026-08-11T03:54:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:53:00Z",
+              "startTime": "2026-08-11T03:53:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:52:00Z",
+              "startTime": "2026-08-11T03:52:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:51:00Z",
+              "startTime": "2026-08-11T03:51:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:50:00Z",
+              "startTime": "2026-08-11T03:50:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:49:00Z",
+              "startTime": "2026-08-11T03:49:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:48:00Z",
+              "startTime": "2026-08-11T03:48:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:47:00Z",
+              "startTime": "2026-08-11T03:47:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:46:00Z",
+              "startTime": "2026-08-11T03:46:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:45:00Z",
+              "startTime": "2026-08-11T03:45:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:44:00Z",
+              "startTime": "2026-08-11T03:44:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:43:00Z",
+              "startTime": "2026-08-11T03:43:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:42:00Z",
+              "startTime": "2026-08-11T03:42:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:41:00Z",
+              "startTime": "2026-08-11T03:41:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:40:00Z",
+              "startTime": "2026-08-11T03:40:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:39:00Z",
+              "startTime": "2026-08-11T03:39:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:38:00Z",
+              "startTime": "2026-08-11T03:38:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:37:00Z",
+              "startTime": "2026-08-11T03:37:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:36:00Z",
+              "startTime": "2026-08-11T03:36:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:35:00Z",
+              "startTime": "2026-08-11T03:35:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:34:00Z",
+              "startTime": "2026-08-11T03:34:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:33:00Z",
+              "startTime": "2026-08-11T03:33:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:32:00Z",
+              "startTime": "2026-08-11T03:32:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:31:00Z",
+              "startTime": "2026-08-11T03:31:00Z"
+            },
+            "value": {
+              "doubleValue": 0
+            }
+          }
+        ],
+        "resource": {
+          "labels": {
+            "endpoint_id": "inkling-small-responses-gate-e",
+            "location": "us-central1",
+            "project_id": "project-49b1b523-d248-434f-bd4"
+          },
+          "type": "aiplatform.googleapis.com/Endpoint"
+        },
+        "valueType": "DOUBLE"
+      }
+    ],
+    "unit": "10^2.%"
+  },
+  "aiplatform.googleapis.com/prediction/online/accelerator/memory/bytes_used": {
+    "timeSeries": [
+      {
+        "metric": {
+          "labels": {
+            "deployed_model_id": "8900393244974645248",
+            "replica_id": "predictor-resource-pool-9156355703630200832-b9f95cccd-chlmz",
+            "spot": "false"
+          },
+          "type": "aiplatform.googleapis.com/prediction/online/accelerator/memory/bytes_used"
+        },
+        "metricKind": "GAUGE",
+        "points": [
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:59:00Z",
+              "startTime": "2026-08-11T03:59:00Z"
+            },
+            "value": {
+              "int64Value": "85890039808"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:58:00Z",
+              "startTime": "2026-08-11T03:58:00Z"
+            },
+            "value": {
+              "int64Value": "85879554048"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:57:00Z",
+              "startTime": "2026-08-11T03:57:00Z"
+            },
+            "value": {
+              "int64Value": "808976384"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:56:00Z",
+              "startTime": "2026-08-11T03:56:00Z"
+            },
+            "value": {
+              "int64Value": "808976384"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:55:00Z",
+              "startTime": "2026-08-11T03:55:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:54:00Z",
+              "startTime": "2026-08-11T03:54:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:53:00Z",
+              "startTime": "2026-08-11T03:53:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:52:00Z",
+              "startTime": "2026-08-11T03:52:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:51:00Z",
+              "startTime": "2026-08-11T03:51:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:50:00Z",
+              "startTime": "2026-08-11T03:50:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:49:00Z",
+              "startTime": "2026-08-11T03:49:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:48:00Z",
+              "startTime": "2026-08-11T03:48:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:47:00Z",
+              "startTime": "2026-08-11T03:47:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:46:00Z",
+              "startTime": "2026-08-11T03:46:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:45:00Z",
+              "startTime": "2026-08-11T03:45:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:44:00Z",
+              "startTime": "2026-08-11T03:44:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:43:00Z",
+              "startTime": "2026-08-11T03:43:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:42:00Z",
+              "startTime": "2026-08-11T03:42:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:41:00Z",
+              "startTime": "2026-08-11T03:41:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:40:00Z",
+              "startTime": "2026-08-11T03:40:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:39:00Z",
+              "startTime": "2026-08-11T03:39:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:38:00Z",
+              "startTime": "2026-08-11T03:38:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:37:00Z",
+              "startTime": "2026-08-11T03:37:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:36:00Z",
+              "startTime": "2026-08-11T03:36:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:35:00Z",
+              "startTime": "2026-08-11T03:35:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:34:00Z",
+              "startTime": "2026-08-11T03:34:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:33:00Z",
+              "startTime": "2026-08-11T03:33:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:32:00Z",
+              "startTime": "2026-08-11T03:32:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          },
+          {
+            "interval": {
+              "endTime": "2026-08-11T03:31:00Z",
+              "startTime": "2026-08-11T03:31:00Z"
+            },
+            "value": {
+              "int64Value": "805568512"
+            }
+          }
+        ],
+        "resource": {
+          "labels": {
+            "endpoint_id": "inkling-small-responses-gate-e",
+            "location": "us-central1",
+            "project_id": "project-49b1b523-d248-434f-bd4"
+          },
+          "type": "aiplatform.googleapis.com/Endpoint"
+        },
+        "valueType": "INT64"
+      }
+    ],
+    "unit": "By"
+  },
+  "aiplatform.googleapis.com/prediction/online/prediction_latencies": {
+    "unit": "ms"
+  },
+  "aiplatform.googleapis.com/prediction/online/response_count": {
+    "unit": "1"
+  }
+}

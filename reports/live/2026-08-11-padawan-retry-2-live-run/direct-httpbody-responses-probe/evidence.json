@@ -1,0 +1,10 @@
+{
+  "query_has_deployed_model_id": true,
+  "request_bytes": 148,
+  "request_sha256": "4bce05627005f8a516f7b26bf18bdeb1010663a929e3f41f9ee5426b6c2b9cec",
+  "response_bytes": 254,
+  "response_content_type": "application/json",
+  "response_sha256": "8fa2ed8c322065f54cd4cd18998a321a03eab3d117f3460d6bab794da151fbb8",
+  "status_code": 400,
+  "url_path": "/v1beta1/projects/project-49b1b523-d248-434f-bd4/locations/us-central1/endpoints/openapi/responses"
+}

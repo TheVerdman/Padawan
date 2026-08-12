@@ -1,0 +1,31 @@
+{
+  "automatic_retries": 0,
+  "canaries": [
+    {
+      "error_code": 400,
+      "error_param": "body.input",
+      "error_type": "Bad Request",
+      "name": "plain_nonstream",
+      "request_bytes": 148,
+      "request_path": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-1-live-run/vertex-controller/canaries/plain_nonstream.request.json",
+      "request_sha256": "4bce05627005f8a516f7b26bf18bdeb1010663a929e3f41f9ee5426b6c2b9cec",
+      "response_bytes": 465,
+      "response_path": "/Users/andrewverdiramo/Desktop/Padawan/reports/live/2026-08-11-padawan-retry-1-live-run/vertex-controller/canaries/plain_nonstream.response.bin",
+      "response_sha256": "66c55aad9b398ee2db6970b3d47241b56875e0d64113a8bc2e287508f9f7d508",
+      "status_code": 400,
+      "stream": false,
+      "success": false,
+      "terminal_event_observed": false
+    }
+  ],
+  "controller_error": {
+    "message": "event() got multiple values for argument 'name'",
+    "occurred_after_response_was_persisted": true,
+    "type": "TypeError"
+  },
+  "edge_uri": "https://inkling-small-responses-edge-ltv3nmgz4a-uc.a.run.app",
+  "kind": "padawan-instrumented-retry-probe",
+  "padawan_attempts": [],
+  "schema_version": "1.0.0",
+  "status": "controller-aborted-after-first-canary-and-fully-torn-down"
+}

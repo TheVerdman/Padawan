@@ -1,0 +1,11 @@
+{
+  "api_version": "v1",
+  "body_encoding": "raw-application-json",
+  "request_bytes": 148,
+  "request_sha256": "4bce05627005f8a516f7b26bf18bdeb1010663a929e3f41f9ee5426b6c2b9cec",
+  "response_bytes": 1185,
+  "response_content_type": "application/json",
+  "response_sha256": "9279e23c34f75c636ef44400b6d3a6e5c4730bee84a105bf810846bd60fa81e5",
+  "status_code": 200,
+  "url_path": "/v1/projects/project-49b1b523-d248-434f-bd4/locations/us-central1/endpoints/inkling-small-responses-gate-e/invoke/v1/responses"
+}

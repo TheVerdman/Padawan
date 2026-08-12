@@ -1,0 +1,38 @@
+{
+  "diagnostic_status": "root-cause-unresolved",
+  "kind": "padawan-first-pass-failure-diagnosis",
+  "observed_failure": {
+    "automatic_retries": 0,
+    "error_class": "ModelProviderError",
+    "failed_from_state": "COLD_ATTEMPT_RUNNING",
+    "http_status_code": 400,
+    "request_count": 1,
+    "response_digest": "sha256:3492ac74555750d264f07699f3ee0b94f2897a8e2fbf175b6e83ba7f9478729a",
+    "run_id": "run-2224a1db-453f-4d58-aaf7-d8b5d5d892de",
+    "run_state": "FAILED_TERMINAL",
+    "teacher_requests": 0
+  },
+  "serving_evidence": {
+    "checkpoint_artifacts_verified": 43,
+    "request_log": "POST /v1/responses HTTP/1.1 400 Bad Request",
+    "runtime_profile": "responses-256k-candidate-v1",
+    "tensor_payload_bytes_verified": 271560750596,
+    "tensor_parallel_size": 4,
+    "vllm_version": "0.26.0"
+  },
+  "offline_checks": {
+    "exact_adapted_request_pydantic_validation": "pass",
+    "exact_chat_rendering_with_checkpoint_tokenizer": "pass",
+    "exact_json_schema_grammar_construction": "pass",
+    "exact_sampling_parameter_conversion": "pass",
+    "exact_structural_tag_compilation_with_checkpoint_tokenizer": "pass",
+    "prompt_tokens": 301
+  },
+  "limitation": "The original client persisted only the provider response digest, not the restricted error body, and the server was configured not to log exception stacks. The precise vLLM validation or preprocessing message therefore cannot be recovered from this run.",
+  "remediation": {
+    "provider_error_body_retention": "implemented as a restricted raw artifact",
+    "terminal_run_cli_exit": "implemented as nonzero with a failed command manifest",
+    "relaunch_performed": false
+  },
+  "schema_version": "1.0.0"
+}

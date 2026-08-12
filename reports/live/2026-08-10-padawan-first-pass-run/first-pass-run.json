@@ -1,0 +1,40 @@
+{
+  "automatic_inference_retries": 0,
+  "automatic_mutation_retries": 0,
+  "code_identity": {
+    "code_revision": "f78d743bd5e25adced2d8fdf927daf5970934b93+worktree-sha256-71dbd49148a70888c945cd071e0dc1bc99b23dc3be7af677aa7e0730d42d084d",
+    "head": "f78d743bd5e25adced2d8fdf927daf5970934b93",
+    "untracked_paths": [
+      "padawan/adapters/inkling/contract.py",
+      "reports/live/2026-08-10-padawan-first-pass/first-pass-run.json",
+      "tests/unit/test_inkling_runtime.py",
+      "tests/unit/test_live_composition.py"
+    ],
+    "worktree_sha256": "71dbd49148a70888c945cd071e0dc1bc99b23dc3be7af677aa7e0730d42d084d"
+  },
+  "completed_at": "2026-08-11T02:53:17.334111+00:00",
+  "error": "Cloud Run static edge checks failed: validated_profile_advertised",
+  "error_type": "ControllerError",
+  "kind": "padawan-inkling-first-pass-run",
+  "preflight": {
+    "active_custom_jobs": 0,
+    "active_persistent_resources": 0,
+    "edge_image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-responses-edge@sha256:41a32fc5906955f790693861ae6b8e7a333d1073194ef0757a06cba882ad3239",
+    "endpoint": "projects/232930557062/locations/us-central1/endpoints/inkling-small-responses-gate-e",
+    "endpoint_dedicated": true,
+    "endpoint_empty": true,
+    "endpoint_predict_binding": true,
+    "quota": {
+      "effective_limit": 4,
+      "metric": "aiplatform.googleapis.com/custom_model_serving_nvidia_a100_80gb_gpus",
+      "region": "us-central1"
+    },
+    "secret_accessor_binding": true,
+    "serving_image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-small-ampere@sha256:5cd713ab404a051892e98f624858f2550e50781489fa916d47f971974c310575",
+    "temporary_model_absent": true
+  },
+  "schema_version": "1.0.0",
+  "started_at": "2026-08-11T02:52:50.843420+00:00",
+  "status": "failed-before-or-outside-vertex-controller",
+  "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/padawan_first_pass_controller.py\", line 624, in main\n    static_evidence = validate_static_edge(edge_uri, secret)\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/padawan_first_pass_controller.py\", line 340, in validate_static_edge\n    raise vertex.ControllerError(\"Cloud Run static edge checks failed: \" + \", \".join(failed))\nscripts.gcp.run_vertex_production_context_ladder.ControllerError: Cloud Run static edge checks failed: validated_profile_advertised\n"
+}

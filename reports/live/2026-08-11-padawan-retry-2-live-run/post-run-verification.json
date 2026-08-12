@@ -1,0 +1,31 @@
+{
+  "edge": {
+    "exists": true,
+    "image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-responses-edge@sha256:d75102ff6ca54d25404154f8bf3cde736856cfa62c3f5351f93bd7c722eb2574",
+    "latest_created_revision": "projects/project-49b1b523-d248-434f-bd4/locations/us-central1/services/inkling-small-responses-edge/revisions/inkling-small-responses-edge-00004-bhz",
+    "latest_ready_revision": "projects/project-49b1b523-d248-434f-bd4/locations/us-central1/services/inkling-small-responses-edge/revisions/inkling-small-responses-edge-00004-bhz",
+    "max_instance_count": 1,
+    "min_instance_count": 0
+  },
+  "gpu_compute_active": false,
+  "kind": "padawan-retry-post-run-verification",
+  "observed_at": "2026-08-11T16:01:54.215709+00:00",
+  "schema_version": "1.0.0",
+  "vertex": {
+    "active_custom_jobs": 0,
+    "active_persistent_resources": 0,
+    "edge_image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-responses-edge@sha256:d75102ff6ca54d25404154f8bf3cde736856cfa62c3f5351f93bd7c722eb2574",
+    "endpoint": "projects/232930557062/locations/us-central1/endpoints/inkling-small-responses-gate-e",
+    "endpoint_dedicated": true,
+    "endpoint_empty": true,
+    "endpoint_predict_binding": true,
+    "quota": {
+      "effective_limit": 4,
+      "metric": "aiplatform.googleapis.com/custom_model_serving_nvidia_a100_80gb_gpus",
+      "region": "us-central1"
+    },
+    "secret_accessor_binding": true,
+    "serving_image": "us-central1-docker.pkg.dev/project-49b1b523-d248-434f-bd4/inkling-serving/inkling-small-ampere@sha256:5cd713ab404a051892e98f624858f2550e50781489fa916d47f971974c310575",
+    "temporary_model_absent": true
+  }
+}
