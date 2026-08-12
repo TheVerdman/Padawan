@@ -20,6 +20,8 @@ class GenerationRequest(BaseModel):
     schema_name: str | None = None
     json_schema: dict[str, Any] | None = None
     metadata: dict[str, str] = Field(default_factory=dict)
+    tools: tuple[dict[str, Any], ...] = ()
+    tool_choice: str | dict[str, Any] | None = None
     previous_response_id: str | None = None
     store: bool = False
 

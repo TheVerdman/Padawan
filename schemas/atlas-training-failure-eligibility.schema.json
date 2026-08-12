@@ -1,0 +1,141 @@
+{
+  "$defs": {
+    "EvaluationClass": {
+      "enum": [
+        "development",
+        "adaptive_search",
+        "challenge",
+        "sealed_promotion"
+      ],
+      "title": "EvaluationClass",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-training-failure-eligibility.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adaptive_search_excluded": {
+      "title": "Adaptive Search Excluded",
+      "type": "boolean"
+    },
+    "allowed_lanes": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Allowed Lanes",
+      "type": "array"
+    },
+    "assessment_id": {
+      "minLength": 1,
+      "title": "Assessment Id",
+      "type": "string"
+    },
+    "blocking_reasons": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Blocking Reasons",
+      "type": "array"
+    },
+    "contamination_cleared": {
+      "title": "Contamination Cleared",
+      "type": "boolean"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "direct_compiler_ingestion_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Direct Compiler Ingestion Permitted",
+      "type": "boolean"
+    },
+    "eligible": {
+      "title": "Eligible",
+      "type": "boolean"
+    },
+    "evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "failure_cluster_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Failure Cluster Digest",
+      "type": "string"
+    },
+    "harness_effects_ruled_out": {
+      "title": "Harness Effects Ruled Out",
+      "type": "boolean"
+    },
+    "independently_reproduced": {
+      "title": "Independently Reproduced",
+      "type": "boolean"
+    },
+    "model_failure_confirmed": {
+      "title": "Model Failure Confirmed",
+      "type": "boolean"
+    },
+    "promotion_suite_excluded": {
+      "title": "Promotion Suite Excluded",
+      "type": "boolean"
+    },
+    "requires_governed_corpus_materialization": {
+      "const": true,
+      "default": true,
+      "title": "Requires Governed Corpus Materialization",
+      "type": "boolean"
+    },
+    "rights_permit_training": {
+      "title": "Rights Permit Training",
+      "type": "boolean"
+    },
+    "source_evaluation_class": {
+      "$ref": "#/$defs/EvaluationClass"
+    },
+    "source_suite_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Source Suite Digest",
+      "type": "string"
+    },
+    "stable": {
+      "title": "Stable",
+      "type": "boolean"
+    },
+    "verifier_authority_confirmed": {
+      "title": "Verifier Authority Confirmed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "failure_cluster_digest",
+    "source_suite_digest",
+    "source_evaluation_class",
+    "independently_reproduced",
+    "stable",
+    "model_failure_confirmed",
+    "harness_effects_ruled_out",
+    "verifier_authority_confirmed",
+    "rights_permit_training",
+    "contamination_cleared",
+    "promotion_suite_excluded",
+    "adaptive_search_excluded",
+    "eligible",
+    "allowed_lanes",
+    "blocking_reasons",
+    "evidence_refs",
+    "created_at"
+  ],
+  "title": "TrainingFailureEligibility",
+  "type": "object"
+}

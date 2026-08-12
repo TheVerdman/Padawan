@@ -113,6 +113,63 @@ async def test_responses_api_payload_and_raw_round_trip() -> None:
     assert result.private_reasoning is None
 
 
+async def test_responses_payload_transmits_declared_effort_and_tool_surface() -> None:
+    captured: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = request.content
+        return httpx.Response(
+            200,
+            json={
+                "id": "resp-effort",
+                "model": "inkling-test",
+                "status": "completed",
+                "output": [
+                    {
+                        "type": "message",
+                        "content": [{"type": "output_text", "text": "ok"}],
+                    }
+                ],
+                "usage": {"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
+            },
+        )
+
+    request = GenerationRequest(
+        request_id="atlas-effort-tool",
+        instructions="Use the declared harness.",
+        input="probe",
+        sampling=SamplingConfiguration(
+            max_output_tokens=64,
+            reasoning_effort="max",
+        ),
+        tools=(
+            {
+                "type": "function",
+                "name": "lookup",
+                "description": "Lookup deterministic evidence.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": False,
+                },
+            },
+        ),
+        tool_choice="auto",
+    )
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as transport:
+        client = OpenAICompatibleClient(
+            base_url="http://local",
+            model="inkling-test",
+            client=transport,
+            retry_attempts=1,
+        )
+        await client.generate(request)
+    sent = json.loads(cast_bytes(captured["body"]))
+    assert sent["reasoning"] == {"effort": "max"}
+    assert sent["tool_choice"] == "auto"
+    assert sent["tools"] == list(request.tools)
+
+
 async def test_legacy_fallback_requires_explicit_opt_in() -> None:
     paths: list[str] = []
 

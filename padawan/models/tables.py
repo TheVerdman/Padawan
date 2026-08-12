@@ -1094,6 +1094,15 @@ class ExternalCallRow(Base):
     provider_response_id: Mapped[str | None] = mapped_column(String(256))
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     error: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    result_envelope_digest: Mapped[str | None] = mapped_column(String(71))
+    result_model_id: Mapped[str | None] = mapped_column(String(256))
+    result_protocol: Mapped[str | None] = mapped_column(String(128))
+    result_raw_request_digest: Mapped[str | None] = mapped_column(String(71))
+    result_raw_response_digest: Mapped[str | None] = mapped_column(String(71))
+    result_output_text_digest: Mapped[str | None] = mapped_column(String(71))
+    result_usage: Mapped[dict[str, int] | None] = mapped_column(JSON)
+    result_capabilities_digest: Mapped[str | None] = mapped_column(String(71))
+    result_latency_ms: Mapped[float | None] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
@@ -1208,6 +1217,837 @@ class ReviewQueueRow(Base):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class AtlasBenchmarkClaimRow(Base):
+    __tablename__ = "atlas_benchmark_claims"
+    __table_args__ = (
+        CheckConstraint(
+            "source_kind IN ('vendor', 'upstream', 'community')",
+            name="ck_atlas_benchmark_claim_source_kind",
+        ),
+        UniqueConstraint("supersedes_claim_id", name="uq_atlas_claim_supersession"),
+        Index(
+            "ix_atlas_claim_benchmark",
+            "benchmark_id",
+            "benchmark_version",
+            "metric_id",
+        ),
+        Index("ix_atlas_claim_model", "model_id", "model_revision"),
+    )
+
+    claim_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    supersedes_claim_id: Mapped[str | None] = mapped_column(
+        ForeignKey("atlas_benchmark_claims.claim_id", ondelete="RESTRICT")
+    )
+    source_kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    source_revision: Mapped[str] = mapped_column(String(192), nullable=False)
+    model_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    model_revision: Mapped[str] = mapped_column(String(192), nullable=False)
+    benchmark_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    benchmark_version: Mapped[str] = mapped_column(String(128), nullable=False)
+    split: Mapped[str] = mapped_column(String(128), nullable=False)
+    metric_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    source_artifact_id: Mapped[str | None] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT")
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasDatasetGovernanceRow(Base):
+    __tablename__ = "atlas_dataset_governance"
+    __table_args__ = (
+        CheckConstraint(
+            "access_classification IN ('local', 'registration_only', 'requires_approval', "
+            "'unavailable', 'legally_unclear')",
+            name="ck_atlas_dataset_access",
+        ),
+        CheckConstraint(
+            "redistribution_classification IN ('permitted', 'metadata_only', 'prohibited', "
+            "'unknown')",
+            name="ck_atlas_dataset_redistribution",
+        ),
+        CheckConstraint(
+            "contamination_classification IN ('unassessed', 'no_known_exposure', 'suspected', "
+            "'confirmed')",
+            name="ck_atlas_dataset_contamination",
+        ),
+        CheckConstraint(
+            "evaluation_class IN ('development', 'adaptive_search', 'challenge', "
+            "'sealed_promotion')",
+            name="ck_atlas_dataset_evaluation_class",
+        ),
+        UniqueConstraint(
+            "benchmark_id",
+            "benchmark_version",
+            "dataset_revision",
+            name="uq_atlas_dataset_revision",
+        ),
+        Index(
+            "ix_atlas_dataset_benchmark",
+            "benchmark_id",
+            "benchmark_version",
+            "dataset_revision",
+        ),
+    )
+
+    governance_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    benchmark_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    benchmark_version: Mapped[str] = mapped_column(String(128), nullable=False)
+    dataset_revision: Mapped[str] = mapped_column(String(192), nullable=False)
+    access_classification: Mapped[str] = mapped_column(String(32), nullable=False)
+    redistribution_classification: Mapped[str] = mapped_column(String(32), nullable=False)
+    contamination_classification: Mapped[str] = mapped_column(String(32), nullable=False)
+    evaluation_class: Mapped[str] = mapped_column(String(32), nullable=False)
+    executable: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    rights_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasItemRow(Base):
+    __tablename__ = "atlas_items"
+    __table_args__ = (
+        CheckConstraint(
+            "adapter_kind IN ('static_qa', 'generated_verifier', 'coding_agentic', "
+            "'interactive_environment', 'context_memory', 'multimodal')",
+            name="ck_atlas_item_adapter_kind",
+        ),
+        Index("ix_atlas_item_family", "family_id", "difficulty"),
+    )
+
+    item_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    item_id: Mapped[str] = mapped_column(String(192), nullable=False, unique=True)
+    family_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    difficulty: Mapped[float] = mapped_column(Float, nullable=False)
+    adapter_kind: Mapped[str] = mapped_column(String(48), nullable=False)
+    prompt_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasSuiteRow(Base):
+    __tablename__ = "atlas_suites"
+    __table_args__ = (
+        UniqueConstraint("suite_id", "version", name="uq_atlas_suite_version"),
+        CheckConstraint(
+            "status IN ('planned', 'ready', 'sealed', 'blocked', 'retired')",
+            name="ck_atlas_suite_status",
+        ),
+        CheckConstraint(
+            "evaluation_class IN ('development', 'adaptive_search', 'challenge', "
+            "'sealed_promotion')",
+            name="ck_atlas_suite_evaluation_class",
+        ),
+        CheckConstraint(
+            "adapter_kind IN ('static_qa', 'generated_verifier', 'coding_agentic', "
+            "'interactive_environment', 'context_memory', 'multimodal')",
+            name="ck_atlas_suite_adapter_kind",
+        ),
+        Index("ix_atlas_suite_benchmark", "benchmark_id", "benchmark_version", "split"),
+        Index("ix_atlas_suite_evaluation_suite", "evaluation_suite_manifest_digest"),
+    )
+
+    suite_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    suite_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    version: Mapped[str] = mapped_column(String(128), nullable=False)
+    governance_id: Mapped[str] = mapped_column(
+        ForeignKey("atlas_dataset_governance.governance_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    benchmark_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    benchmark_version: Mapped[str] = mapped_column(String(128), nullable=False)
+    split: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    evaluation_class: Mapped[str] = mapped_column(String(32), nullable=False)
+    adapter_kind: Mapped[str] = mapped_column(String(48), nullable=False)
+    item_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    evaluation_suite_manifest_digest: Mapped[str | None] = mapped_column(
+        ForeignKey("evaluation_suites.manifest_digest", ondelete="RESTRICT")
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasSuiteItemRow(Base):
+    __tablename__ = "atlas_suite_items"
+    __table_args__ = (
+        UniqueConstraint("suite_digest", "position", name="uq_atlas_suite_item_position"),
+    )
+
+    suite_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_suites.suite_digest", ondelete="RESTRICT"), primary_key=True
+    )
+    item_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_items.item_digest", ondelete="RESTRICT"), primary_key=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class AtlasOntologyRow(Base):
+    __tablename__ = "atlas_ontologies"
+    __table_args__ = (UniqueConstraint("ontology_id", "version", name="uq_atlas_ontology_version"),)
+
+    ontology_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    ontology_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    version: Mapped[str] = mapped_column(String(128), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasCampaignRow(Base):
+    __tablename__ = "atlas_campaigns"
+    __table_args__ = (
+        UniqueConstraint("campaign_id", "version", name="uq_atlas_campaign_version"),
+        CheckConstraint(
+            "status IN ('planned', 'ready', 'externally_gated', 'complete', 'invalid')",
+            name="ck_atlas_campaign_status",
+        ),
+        Index("ix_atlas_campaign_status", "status", "created_at"),
+    )
+
+    campaign_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    campaign_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    version: Mapped[str] = mapped_column(String(128), nullable=False)
+    ontology_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_ontologies.ontology_digest", ondelete="RESTRICT"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasCampaignClaimRow(Base):
+    __tablename__ = "atlas_campaign_claims"
+
+    campaign_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_campaigns.campaign_digest", ondelete="RESTRICT"), primary_key=True
+    )
+    claim_id: Mapped[str] = mapped_column(
+        ForeignKey("atlas_benchmark_claims.claim_id", ondelete="RESTRICT"), primary_key=True
+    )
+
+
+class AtlasCampaignConditionRow(Base):
+    __tablename__ = "atlas_campaign_conditions"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["campaign_digest"],
+            ["atlas_campaigns.campaign_digest"],
+            ondelete="RESTRICT",
+            name="fk_atlas_campaign_condition_campaign",
+        ),
+        ForeignKeyConstraint(
+            ["required_execution_digest"],
+            ["research_executions.execution_digest"],
+            ondelete="RESTRICT",
+            name="fk_atlas_campaign_condition_execution",
+        ),
+    )
+
+    campaign_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    condition_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    required_execution_digest: Mapped[str | None] = mapped_column(String(71))
+    externally_gated: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    condition_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
+class AtlasCampaignSuiteRow(Base):
+    __tablename__ = "atlas_campaign_suites"
+    __table_args__ = (
+        CheckConstraint(
+            "evaluation_class IN ('development', 'adaptive_search', 'challenge', "
+            "'sealed_promotion')",
+            name="ck_atlas_campaign_suite_evaluation_class",
+        ),
+    )
+
+    campaign_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_campaigns.campaign_digest", ondelete="RESTRICT"), primary_key=True
+    )
+    suite_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_suites.suite_digest", ondelete="RESTRICT"), primary_key=True
+    )
+    evaluation_class: Mapped[str] = mapped_column(String(32), nullable=False)
+    planned_item_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    trials_per_item: Mapped[int] = mapped_column(Integer, nullable=False)
+    adaptive: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+
+class AtlasCampaignSuiteConditionRow(Base):
+    __tablename__ = "atlas_campaign_suite_conditions"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["campaign_digest", "suite_digest"],
+            ["atlas_campaign_suites.campaign_digest", "atlas_campaign_suites.suite_digest"],
+            ondelete="RESTRICT",
+            name="fk_atlas_campaign_suite_condition_suite",
+        ),
+        ForeignKeyConstraint(
+            ["campaign_digest", "condition_id"],
+            ["atlas_campaign_conditions.campaign_digest", "atlas_campaign_conditions.condition_id"],
+            ondelete="RESTRICT",
+            name="fk_atlas_campaign_suite_condition_condition",
+        ),
+    )
+
+    campaign_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    suite_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    condition_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+
+
+class AtlasCampaignExecutionBindingRow(Base):
+    __tablename__ = "atlas_campaign_execution_bindings"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["campaign_digest", "suite_digest", "condition_id"],
+            [
+                "atlas_campaign_suite_conditions.campaign_digest",
+                "atlas_campaign_suite_conditions.suite_digest",
+                "atlas_campaign_suite_conditions.condition_id",
+            ],
+            ondelete="RESTRICT",
+            name="fk_atlas_execution_binding_suite_condition",
+        ),
+        UniqueConstraint(
+            "campaign_digest",
+            "condition_id",
+            "research_execution_digest",
+            name="uq_atlas_execution_binding_coordinates",
+        ),
+        UniqueConstraint(
+            "campaign_digest",
+            "condition_id",
+            "suite_digest",
+            "research_execution_digest",
+            name="uq_atlas_execution_binding_request_target",
+        ),
+        Index(
+            "ix_atlas_execution_binding_execution",
+            "research_execution_digest",
+            "harness_profile_digest",
+        ),
+    )
+
+    binding_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    binding_id: Mapped[str] = mapped_column(String(192), nullable=False, unique=True)
+    campaign_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    condition_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    suite_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    research_execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("research_executions.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    harness_profile_digest: Mapped[str] = mapped_column(
+        ForeignKey("harness_profiles.profile_digest", ondelete="RESTRICT"), nullable=False
+    )
+    external_authorization_ref: Mapped[str | None] = mapped_column(String(512))
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasAllocationRow(Base):
+    __tablename__ = "atlas_allocations"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["campaign_digest", "suite_digest"],
+            ["atlas_campaign_suites.campaign_digest", "atlas_campaign_suites.suite_digest"],
+            ondelete="RESTRICT",
+            name="fk_atlas_allocation_campaign_suite",
+        ),
+        ForeignKeyConstraint(
+            ["campaign_digest", "condition_id"],
+            ["atlas_campaign_conditions.campaign_digest", "atlas_campaign_conditions.condition_id"],
+            ondelete="RESTRICT",
+            name="fk_atlas_allocation_campaign_condition",
+        ),
+        ForeignKeyConstraint(
+            ["suite_digest", "item_digest"],
+            ["atlas_suite_items.suite_digest", "atlas_suite_items.item_digest"],
+            ondelete="RESTRICT",
+            name="fk_atlas_allocation_suite_item",
+        ),
+        UniqueConstraint(
+            "campaign_digest",
+            "condition_id",
+            "suite_digest",
+            "item_digest",
+            "trial_index",
+            name="uq_atlas_allocation_trial",
+        ),
+        UniqueConstraint(
+            "campaign_digest",
+            "condition_id",
+            "suite_digest",
+            "decision_sequence",
+            name="uq_atlas_allocation_decision_sequence",
+        ),
+        Index("ix_atlas_allocation_campaign", "campaign_digest", "condition_id"),
+    )
+
+    allocation_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    campaign_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    condition_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    suite_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    item_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    trial_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    decision_sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    decision_evidence_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasRunManifestRow(Base):
+    __tablename__ = "atlas_run_manifests"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            [
+                "campaign_digest",
+                "condition_id",
+                "suite_digest",
+                "research_execution_digest",
+            ],
+            [
+                "atlas_campaign_execution_bindings.campaign_digest",
+                "atlas_campaign_execution_bindings.condition_id",
+                "atlas_campaign_execution_bindings.suite_digest",
+                "atlas_campaign_execution_bindings.research_execution_digest",
+            ],
+            ondelete="RESTRICT",
+            name="fk_atlas_run_manifest_execution_binding",
+        ),
+        CheckConstraint(
+            "run_kind IN ('offline_verification', 'model_evaluation', 'replay_grading')",
+            name="ck_atlas_run_manifest_kind",
+        ),
+        CheckConstraint(
+            "evaluation_class IN ('development', 'adaptive_search', 'challenge', "
+            "'sealed_promotion')",
+            name="ck_atlas_run_manifest_evaluation_class",
+        ),
+        Index("ix_atlas_run_manifest_campaign", "campaign_digest", "condition_id"),
+    )
+
+    manifest_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    run_manifest_id: Mapped[str] = mapped_column(String(192), nullable=False, unique=True)
+    run_id: Mapped[str] = mapped_column(
+        ForeignKey("runs.run_id", ondelete="RESTRICT"), nullable=False, unique=True
+    )
+    run_kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    binding_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_campaign_execution_bindings.binding_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    campaign_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    condition_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    suite_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    research_execution_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    harness_profile_digest: Mapped[str] = mapped_column(
+        ForeignKey("harness_profiles.profile_digest", ondelete="RESTRICT"), nullable=False
+    )
+    evaluation_class: Mapped[str] = mapped_column(String(32), nullable=False)
+    adaptive: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    allocation_policy_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    allocation_policy_version: Mapped[str] = mapped_column(String(128), nullable=False)
+    stop_rule_id: Mapped[str | None] = mapped_column(String(192))
+    request_template_digest: Mapped[str | None] = mapped_column(String(71))
+    planned_request_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_retry_requests: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_input_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_output_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_actions: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_cost_usd: Mapped[float] = mapped_column(Float, nullable=False)
+    external_execution: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    external_authorization_ref: Mapped[str | None] = mapped_column(String(512))
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasTrialRequestRow(Base):
+    __tablename__ = "atlas_trial_requests"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["campaign_digest", "condition_id"],
+            ["atlas_campaign_conditions.campaign_digest", "atlas_campaign_conditions.condition_id"],
+            ondelete="RESTRICT",
+            name="fk_atlas_trial_request_campaign_condition",
+        ),
+        ForeignKeyConstraint(
+            ["suite_digest", "item_digest"],
+            ["atlas_suite_items.suite_digest", "atlas_suite_items.item_digest"],
+            ondelete="RESTRICT",
+            name="fk_atlas_trial_request_suite_item",
+        ),
+        ForeignKeyConstraint(
+            [
+                "campaign_digest",
+                "condition_id",
+                "suite_digest",
+                "research_execution_digest",
+            ],
+            [
+                "atlas_campaign_execution_bindings.campaign_digest",
+                "atlas_campaign_execution_bindings.condition_id",
+                "atlas_campaign_execution_bindings.suite_digest",
+                "atlas_campaign_execution_bindings.research_execution_digest",
+            ],
+            ondelete="RESTRICT",
+            name="fk_atlas_trial_request_execution_binding",
+        ),
+        UniqueConstraint("allocation_id", "attempt_index", name="uq_atlas_request_attempt"),
+        UniqueConstraint(
+            "campaign_digest",
+            "condition_id",
+            "suite_digest",
+            "item_digest",
+            "trial_index",
+            "attempt_index",
+            name="uq_atlas_request_trial_attempt",
+        ),
+        Index("ix_atlas_request_execution", "research_execution_digest", "created_at"),
+    )
+
+    request_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    allocation_id: Mapped[str] = mapped_column(
+        ForeignKey("atlas_allocations.allocation_id", ondelete="RESTRICT"), nullable=False
+    )
+    parent_request_id: Mapped[str | None] = mapped_column(
+        ForeignKey("atlas_trial_requests.request_id", ondelete="RESTRICT")
+    )
+    run_id: Mapped[str] = mapped_column(
+        ForeignKey("atlas_run_manifests.run_id", ondelete="RESTRICT"), nullable=False
+    )
+    campaign_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    research_execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("research_executions.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    condition_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    suite_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    item_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    trial_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    attempt_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    prompt_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    tool_manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    adapter_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    adapter_version: Mapped[str] = mapped_column(String(128), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasTrialResultRow(Base):
+    __tablename__ = "atlas_trial_results"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('verified_success', 'verified_failure', 'partial', 'abstained', "
+            "'malformed', 'unscorable', 'verifier_failure', 'parser_failure', 'timeout', "
+            "'infrastructure_failure', 'contaminated', 'not_run')",
+            name="ck_atlas_trial_result_status",
+        ),
+        Index("ix_atlas_result_execution", "research_execution_digest", "completed_at"),
+    )
+
+    result_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    request_id: Mapped[str] = mapped_column(
+        ForeignKey("atlas_trial_requests.request_id", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+    )
+    research_execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("research_executions.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    success: Mapped[bool | None] = mapped_column(Boolean)
+    score: Mapped[float | None] = mapped_column(Float)
+    response_artifact_id: Mapped[str | None] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT")
+    )
+    result_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasPhenomenonRow(Base):
+    __tablename__ = "atlas_phenomena"
+
+    phenomenon_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    phenomenon_id: Mapped[str] = mapped_column(String(192), nullable=False, unique=True)
+    ontology_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_ontologies.ontology_digest", ondelete="RESTRICT"), nullable=False
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasProbeSetRow(Base):
+    __tablename__ = "atlas_probe_sets"
+
+    probe_set_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    probe_set_id: Mapped[str] = mapped_column(String(192), nullable=False, unique=True)
+    phenomenon_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_phenomena.phenomenon_digest", ondelete="RESTRICT"), nullable=False
+    )
+    suite_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_suites.suite_digest", ondelete="RESTRICT"), nullable=False
+    )
+    outcome_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasProbeItemRow(Base):
+    __tablename__ = "atlas_probe_items"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["suite_digest", "item_digest"],
+            ["atlas_suite_items.suite_digest", "atlas_suite_items.item_digest"],
+            ondelete="RESTRICT",
+            name="fk_atlas_probe_item_suite_item",
+        ),
+    )
+
+    probe_set_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_probe_sets.probe_set_digest", ondelete="RESTRICT"), primary_key=True
+    )
+    suite_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    item_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+
+
+class AtlasProbeResultRow(Base):
+    __tablename__ = "atlas_probe_results"
+
+    probe_set_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_probe_sets.probe_set_digest", ondelete="RESTRICT"), primary_key=True
+    )
+    result_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_trial_results.result_digest", ondelete="RESTRICT"), primary_key=True
+    )
+
+
+class AtlasFailureClusterRow(Base):
+    __tablename__ = "atlas_failure_clusters"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('proposed', 'admitted', 'rejected', 'superseded')",
+            name="ck_atlas_failure_cluster_status",
+        ),
+        Index("ix_atlas_failure_cluster_campaign", "campaign_digest", "status"),
+    )
+
+    cluster_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    cluster_id: Mapped[str] = mapped_column(String(192), nullable=False, unique=True)
+    campaign_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_campaigns.campaign_digest", ondelete="RESTRICT"), nullable=False
+    )
+    ontology_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_ontologies.ontology_digest", ondelete="RESTRICT"), nullable=False
+    )
+    probe_set_digest: Mapped[str | None] = mapped_column(
+        ForeignKey("atlas_probe_sets.probe_set_digest", ondelete="RESTRICT")
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    severity: Mapped[int] = mapped_column(Integer, nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasFailureClusterResultRow(Base):
+    __tablename__ = "atlas_failure_cluster_results"
+
+    cluster_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_failure_clusters.cluster_digest", ondelete="RESTRICT"), primary_key=True
+    )
+    result_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_trial_results.result_digest", ondelete="RESTRICT"), primary_key=True
+    )
+    exemplar: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+
+class AtlasSnapshotRow(Base):
+    __tablename__ = "atlas_snapshots"
+    __table_args__ = (
+        Index("ix_atlas_snapshot_execution", "research_execution_digest", "created_at"),
+    )
+
+    snapshot_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    snapshot_id: Mapped[str] = mapped_column(String(192), nullable=False, unique=True)
+    campaign_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_campaigns.campaign_digest", ondelete="RESTRICT"), nullable=False
+    )
+    research_execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("research_executions.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    harness_profile_digest: Mapped[str] = mapped_column(
+        ForeignKey("harness_profiles.profile_digest", ondelete="RESTRICT"), nullable=False
+    )
+    ontology_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_ontologies.ontology_digest", ondelete="RESTRICT"), nullable=False
+    )
+    complete: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    promotion_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasComparisonRow(Base):
+    __tablename__ = "atlas_comparisons"
+    __table_args__ = (
+        CheckConstraint(
+            "left_snapshot_digest <> right_snapshot_digest",
+            name="ck_atlas_comparison_distinct_snapshots",
+        ),
+        Index(
+            "ix_atlas_comparison_snapshots",
+            "left_snapshot_digest",
+            "right_snapshot_digest",
+        ),
+    )
+
+    comparison_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    comparison_id: Mapped[str] = mapped_column(String(192), nullable=False, unique=True)
+    left_snapshot_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_snapshots.snapshot_digest", ondelete="RESTRICT"), nullable=False
+    )
+    right_snapshot_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_snapshots.snapshot_digest", ondelete="RESTRICT"), nullable=False
+    )
+    causal_claim_permitted: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasExploratoryProposalRow(Base):
+    __tablename__ = "atlas_exploratory_proposals"
+    __table_args__ = (
+        CheckConstraint(
+            "raw_chat_promoted = false", name="ck_atlas_proposal_raw_chat_not_promoted"
+        ),
+    )
+
+    proposal_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    deduplication_key: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    consent_evidence_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    source_trace_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    source_trace_artifact_id: Mapped[str] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT"), nullable=False
+    )
+    raw_chat_promoted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasExploratoryReproductionRow(Base):
+    __tablename__ = "atlas_exploratory_reproductions"
+
+    reproduction_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    proposal_id: Mapped[str] = mapped_column(
+        ForeignKey("atlas_exploratory_proposals.proposal_id", ondelete="RESTRICT"), nullable=False
+    )
+    research_execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("research_executions.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    independent_item_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_items.item_digest", ondelete="RESTRICT"), nullable=False
+    )
+    reproduced: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasExploratoryReproductionResultRow(Base):
+    __tablename__ = "atlas_exploratory_reproduction_results"
+
+    reproduction_id: Mapped[str] = mapped_column(
+        ForeignKey("atlas_exploratory_reproductions.reproduction_id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    result_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_trial_results.result_digest", ondelete="RESTRICT"), primary_key=True
+    )
+
+
+class AtlasChallengeAdmissionRow(Base):
+    __tablename__ = "atlas_challenge_admissions"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["challenge_suite_digest", "admitted_item_digest"],
+            ["atlas_suite_items.suite_digest", "atlas_suite_items.item_digest"],
+            ondelete="RESTRICT",
+            name="fk_atlas_challenge_admission_suite_item",
+        ),
+        CheckConstraint("action IN ('admit', 'reject')", name="ck_atlas_challenge_action"),
+        UniqueConstraint("reproduction_id", name="uq_atlas_challenge_reproduction_decision"),
+    )
+
+    decision_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    proposal_id: Mapped[str] = mapped_column(
+        ForeignKey("atlas_exploratory_proposals.proposal_id", ondelete="RESTRICT"), nullable=False
+    )
+    reproduction_id: Mapped[str] = mapped_column(
+        ForeignKey("atlas_exploratory_reproductions.reproduction_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    action: Mapped[str] = mapped_column(String(16), nullable=False)
+    challenge_suite_digest: Mapped[str | None] = mapped_column(String(71))
+    admitted_item_digest: Mapped[str | None] = mapped_column(String(71))
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasTrainingEligibilityRow(Base):
+    __tablename__ = "atlas_training_eligibility"
+    __table_args__ = (Index("ix_atlas_training_eligible", "eligible", "created_at"),)
+
+    assessment_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    failure_cluster_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_failure_clusters.cluster_digest", ondelete="RESTRICT"), nullable=False
+    )
+    source_suite_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_suites.suite_digest", ondelete="RESTRICT"), nullable=False
+    )
+    eligible: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AtlasMemoryEligibilityRow(Base):
+    __tablename__ = "atlas_memory_eligibility"
+    __table_args__ = (Index("ix_atlas_memory_eligible", "eligible", "created_at"),)
+
+    assessment_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    failure_cluster_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_failure_clusters.cluster_digest", ondelete="RESTRICT"), nullable=False
+    )
+    source_suite_digest: Mapped[str] = mapped_column(
+        ForeignKey("atlas_suites.suite_digest", ondelete="RESTRICT"), nullable=False
+    )
+    research_execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("research_executions.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    eligible: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 def _immutable(_mapper: Any, _connection: Any, target: Any) -> None:
     raise ValueError(f"{type(target).__name__} is immutable")
 
@@ -1224,6 +2064,36 @@ for _immutable_type in (
     ResearchExecutionRow,
     OperationSpanEventRow,
     DurationProfileRow,
+    AtlasBenchmarkClaimRow,
+    AtlasDatasetGovernanceRow,
+    AtlasItemRow,
+    AtlasSuiteRow,
+    AtlasSuiteItemRow,
+    AtlasOntologyRow,
+    AtlasCampaignRow,
+    AtlasCampaignClaimRow,
+    AtlasCampaignConditionRow,
+    AtlasCampaignSuiteRow,
+    AtlasCampaignSuiteConditionRow,
+    AtlasCampaignExecutionBindingRow,
+    AtlasAllocationRow,
+    AtlasRunManifestRow,
+    AtlasTrialRequestRow,
+    AtlasTrialResultRow,
+    AtlasPhenomenonRow,
+    AtlasProbeSetRow,
+    AtlasProbeItemRow,
+    AtlasProbeResultRow,
+    AtlasFailureClusterRow,
+    AtlasFailureClusterResultRow,
+    AtlasSnapshotRow,
+    AtlasComparisonRow,
+    AtlasExploratoryProposalRow,
+    AtlasExploratoryReproductionRow,
+    AtlasExploratoryReproductionResultRow,
+    AtlasChallengeAdmissionRow,
+    AtlasTrainingEligibilityRow,
+    AtlasMemoryEligibilityRow,
 ):
     event.listen(_immutable_type, "before_update", _immutable)
     event.listen(_immutable_type, "before_delete", _immutable)

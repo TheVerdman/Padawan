@@ -1,0 +1,312 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "ClaimSourceKind": {
+      "enum": [
+        "vendor",
+        "upstream",
+        "community"
+      ],
+      "title": "ClaimSourceKind",
+      "type": "string"
+    },
+    "ExtractionProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "extracted_at": {
+          "format": "date-time",
+          "title": "Extracted At",
+          "type": "string"
+        },
+        "extracted_by": {
+          "minLength": 1,
+          "title": "Extracted By",
+          "type": "string"
+        },
+        "method": {
+          "minLength": 1,
+          "title": "Method",
+          "type": "string"
+        },
+        "notes": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "source_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source_excerpt_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Source Excerpt Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "extracted_by",
+        "extracted_at",
+        "source_excerpt_digest"
+      ],
+      "title": "ExtractionProvenance",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-source-claim.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A reported external claim. It is never a Padawan observation.",
+  "properties": {
+    "benchmark_id": {
+      "minLength": 1,
+      "title": "Benchmark Id",
+      "type": "string"
+    },
+    "benchmark_version": {
+      "minLength": 1,
+      "title": "Benchmark Version",
+      "type": "string"
+    },
+    "budget_assumptions": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Budget Assumptions",
+      "type": "array"
+    },
+    "claim_id": {
+      "minLength": 1,
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "contamination_caveats": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Contamination Caveats",
+      "type": "array"
+    },
+    "context_assumptions": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Context Assumptions",
+      "type": "array"
+    },
+    "correction_reason": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Correction Reason"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "effort": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Effort"
+    },
+    "extraction": {
+      "$ref": "#/$defs/ExtractionProvenance"
+    },
+    "harness_assumptions": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Harness Assumptions",
+      "type": "array"
+    },
+    "metric_id": {
+      "minLength": 1,
+      "title": "Metric Id",
+      "type": "string"
+    },
+    "model_id": {
+      "minLength": 1,
+      "title": "Model Id",
+      "type": "string"
+    },
+    "model_revision": {
+      "minLength": 1,
+      "title": "Model Revision",
+      "type": "string"
+    },
+    "publication_title": {
+      "minLength": 1,
+      "title": "Publication Title",
+      "type": "string"
+    },
+    "reported_unit": {
+      "minLength": 1,
+      "title": "Reported Unit",
+      "type": "string"
+    },
+    "reported_value": {
+      "title": "Reported Value",
+      "type": "number"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_kind": {
+      "$ref": "#/$defs/ClaimSourceKind"
+    },
+    "source_published_at": {
+      "format": "date-time",
+      "title": "Source Published At",
+      "type": "string"
+    },
+    "source_revision": {
+      "minLength": 1,
+      "title": "Source Revision",
+      "type": "string"
+    },
+    "source_url": {
+      "pattern": "^https://[^\\s]+$",
+      "title": "Source Url",
+      "type": "string"
+    },
+    "split": {
+      "minLength": 1,
+      "title": "Split",
+      "type": "string"
+    },
+    "supersedes_claim_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Supersedes Claim Id"
+    },
+    "tool_assumptions": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Tool Assumptions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "claim_id",
+    "source_kind",
+    "source_url",
+    "publication_title",
+    "source_revision",
+    "source_published_at",
+    "model_id",
+    "model_revision",
+    "benchmark_id",
+    "benchmark_version",
+    "split",
+    "metric_id",
+    "reported_value",
+    "reported_unit",
+    "harness_assumptions",
+    "tool_assumptions",
+    "context_assumptions",
+    "budget_assumptions",
+    "contamination_caveats",
+    "extraction",
+    "created_at"
+  ],
+  "title": "BenchmarkClaim",
+  "type": "object"
+}

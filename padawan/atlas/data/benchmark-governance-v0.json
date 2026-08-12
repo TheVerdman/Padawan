@@ -1,0 +1,17 @@
+{
+  "catalog_version": "1.0.0",
+  "reviewed_at": "2026-08-12T00:00:00Z",
+  "rule": "Public names, URLs, repository licenses, or configured modalities never make a suite executable; exact permitted content and authoritative evaluators must be frozen first.",
+  "registrations": [
+    {"benchmark_id": "gpqa-diamond", "source_url": "https://github.com/idavidrein/gpqa", "declared_license": "MIT", "state": "registration_only"},
+    {"benchmark_id": "aime-2026", "source_url": "https://github.com/eth-sri/matharena", "declared_license": "CC-BY-NC-SA-4.0 data; MIT code", "state": "registration_only"},
+    {"benchmark_id": "swe-bench-verified", "source_url": "https://www.swebench.com/SWE-bench/guides/datasets/", "declared_license": "MIT framework; target repositories retain separate licenses", "state": "legally_unclear"},
+    {"benchmark_id": "ifbench", "source_url": "https://github.com/allenai/IFBench", "declared_license": "ODC-BY-1.0 data; Apache-2.0 code", "state": "requires_approval"},
+    {"benchmark_id": "humanitys-last-exam", "source_url": "https://huggingface.co/datasets/cais/hle", "declared_license": null, "state": "requires_approval_and_no_redistribution"},
+    {"benchmark_id": "mmmu-pro", "source_url": "https://github.com/MMMU-Benchmark/MMMU", "declared_license": "Apache-2.0 repository; embedded-media review required", "state": "legally_unclear"},
+    {"benchmark_id": "mmau", "source_url": "https://github.com/Sakshi113/MMAU", "declared_license": "Apache-2.0 code; media and private-answer authority unresolved", "state": "unavailable"},
+    {"benchmark_id": "arc-agi-2", "source_url": "https://github.com/arcprize/ARC-AGI-2", "declared_license": "Apache-2.0", "state": "registration_only"},
+    {"benchmark_id": "arc-agi-3", "source_url": "https://arcprize.org/competitions/2026", "declared_license": "MIT public toolkit; private evaluator governed separately", "state": "unavailable"}
+  ],
+  "media_gate": "image, audio, video, and mixed-media suites remain blocked pending the complete Inkling runtime gate"
+}

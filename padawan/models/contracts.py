@@ -525,6 +525,7 @@ class SamplingConfiguration(StrictRecord):
     seed: int | None = None
     top_logprobs: Annotated[int, Field(ge=0, le=20)] | None = None
     stop: tuple[str, ...] = ()
+    reasoning_effort: NonEmpty | None = None
 
 
 class ChannelSpan(StrictRecord):

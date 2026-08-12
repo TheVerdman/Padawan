@@ -1,0 +1,92 @@
+{
+  "$id": "https://schemas.padawan.local/v1/atlas-challenge-admission.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "enum": [
+        "admit",
+        "reject"
+      ],
+      "title": "Action",
+      "type": "string"
+    },
+    "admitted_item_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Admitted Item Digest"
+    },
+    "challenge_suite_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Challenge Suite Digest"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "proposal_id": {
+      "minLength": 1,
+      "title": "Proposal Id",
+      "type": "string"
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "reproduction_id": {
+      "minLength": 1,
+      "title": "Reproduction Id",
+      "type": "string"
+    },
+    "reviewer": {
+      "minLength": 1,
+      "title": "Reviewer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "decision_id",
+    "proposal_id",
+    "reproduction_id",
+    "action",
+    "reviewer",
+    "reason",
+    "evidence_refs",
+    "created_at"
+  ],
+  "title": "ChallengeAdmissionDecision",
+  "type": "object"
+}

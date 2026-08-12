@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "campaign_id": "inkling-small-ampere-w8a16-capability-atlas-v0",
+  "campaign_digest": "sha256:68f8cabe7912b68ef08924e4d04514d5a1c68bd6a5da8e66405b0d8e6fe5ba92",
+  "ontology_digest": "sha256:810f07fac633e51b88f321c1589579141c706ea9c1db21c604feb026c46a7016",
+  "offline_verification_digest": "sha256:04944ef22b7c0bc0efb82125968adfd8575215b83bf057fa63eba0c7808cc4e4",
+  "offline": {
+    "external_cost_usd": 0.0,
+    "external_requests": 0,
+    "frozen_items": 100,
+    "matched_neighborhoods": 45,
+    "verified_oracle_payloads": 70
+  },
+  "live_authorization_plan": {
+    "command_mode": "preparation_only",
+    "execution_gateway": "unavailable_fail_closed",
+    "total": {"requests": 7238, "input_tokens": 248508928, "output_tokens": 130326528, "actions": 34590, "cost_usd": 14839.0, "serial_runtime_minutes": 106360},
+    "stages": [
+      {"stage_id": "w8a16-content-ready", "requests": 1306, "input_tokens": 51642368, "output_tokens": 19111936, "actions": 3196, "cost_usd": 2049.0, "serial_runtime_minutes": 16660, "command": "padawan atlas campaign prepare --preparation-only --campaign-digest sha256:68f8cabe7912b68ef08924e4d04514d5a1c68bd6a5da8e66405b0d8e6fe5ba92 --allocation-set w8a16-content-ready --authorization-ref REPLACE_WITH_AUTHORIZATION_REFERENCE --max-requests 1306 --max-input-tokens 51642368 --max-output-tokens 19111936 --max-actions 3196 --max-cost-usd 2049.00 --max-runtime-minutes 16660"},
+      {"stage_id": "w8a16-blocked-expansion", "requests": 4192, "input_tokens": 139850240, "output_tokens": 82706432, "actions": 29654, "cost_usd": 8440.0, "serial_runtime_minutes": 72300, "command": "padawan atlas campaign prepare --preparation-only --campaign-digest sha256:68f8cabe7912b68ef08924e4d04514d5a1c68bd6a5da8e66405b0d8e6fe5ba92 --allocation-set w8a16-blocked-expansion --authorization-ref REPLACE_WITH_AUTHORIZATION_REFERENCE --max-requests 4192 --max-input-tokens 139850240 --max-output-tokens 82706432 --max-actions 29654 --max-cost-usd 8440.00 --max-runtime-minutes 72300"},
+      {"stage_id": "source-bf16-reference", "requests": 1740, "input_tokens": 57016320, "output_tokens": 28508160, "actions": 1740, "cost_usd": 4350.0, "serial_runtime_minutes": 17400, "command": "padawan atlas campaign prepare --preparation-only --campaign-digest sha256:68f8cabe7912b68ef08924e4d04514d5a1c68bd6a5da8e66405b0d8e6fe5ba92 --allocation-set source-bf16-reference --authorization-ref REPLACE_WITH_AUTHORIZATION_REFERENCE --max-requests 1740 --max-input-tokens 57016320 --max-output-tokens 28508160 --max-actions 1740 --max-cost-usd 4350.00 --max-runtime-minutes 17400"}
+    ]
+  },
+  "warning": "Every command is preparation-only and emits a non-executable envelope. A supplied authorization reference is not verified; actual execution fails closed until the governed gateway exists. This file is not authorization, spend, or benchmark evidence."
+}

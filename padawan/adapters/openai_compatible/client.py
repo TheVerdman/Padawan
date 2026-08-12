@@ -338,6 +338,12 @@ def _responses_payload(request: GenerationRequest, model: str, *, stream: bool) 
     }
     if request.previous_response_id is not None:
         payload["previous_response_id"] = request.previous_response_id
+    if request.tools:
+        payload["tools"] = list(request.tools)
+    if request.tool_choice is not None:
+        payload["tool_choice"] = request.tool_choice
+    if request.sampling.reasoning_effort is not None:
+        payload["reasoning"] = {"effort": request.sampling.reasoning_effort}
     if request.sampling.temperature is not None:
         payload["temperature"] = request.sampling.temperature
     if request.sampling.top_p is not None:
@@ -371,6 +377,10 @@ def _chat_payload(request: GenerationRequest, model: str, *, stream: bool) -> di
         "max_tokens": request.sampling.max_output_tokens,
         "stream": stream,
     }
+    if request.tools:
+        payload["tools"] = list(request.tools)
+    if request.tool_choice is not None:
+        payload["tool_choice"] = request.tool_choice
     if request.sampling.temperature is not None:
         payload["temperature"] = request.sampling.temperature
     if request.sampling.top_p is not None:

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from statistics import mean
-from typing import Any, cast
+from typing import Any, Protocol, cast
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -66,11 +66,56 @@ class StudyAggregateReport:
     causal_claim_permitted: bool
 
 
+@dataclass(frozen=True)
+class StudySealingContext:
+    """Read-only inputs available to a registered study aggregation policy."""
+
+    study: StudyRow
+    manifest: StudyManifest
+    bindings: tuple[StudyExperimentRow, ...]
+    blocks_by_experiment: Mapping[str, tuple[ExperimentBlockRow, ...]]
+    research_controls_complete: bool
+    research_controls_comparable: bool
+    created_at: datetime
+
+
+class StudyAggregationPolicy(Protocol):
+    """A named policy that seals ordinary, content-addressed study results."""
+
+    policy_id: str
+    policy_version: str
+
+    async def seal_results(
+        self,
+        session: AsyncSession,
+        context: StudySealingContext,
+    ) -> tuple[StudyResultRecord, ...]: ...
+
+
 class StudyEngine:
     """Immutable study definitions with block-level, missingness-preserving aggregation."""
 
-    def __init__(self, controls: ResearchControlRegistry | None = None) -> None:
+    def __init__(
+        self,
+        controls: ResearchControlRegistry | None = None,
+        *,
+        aggregation_policies: Sequence[StudyAggregationPolicy] = (),
+    ) -> None:
         self.controls = controls or ResearchControlRegistry()
+        self._aggregation_policies: dict[tuple[str, str], StudyAggregationPolicy] = {}
+        # Import lazily so Atlas can implement the protocol without making the
+        # core Study module depend on Atlas at module-import time.
+        from padawan.atlas.studies import AtlasFixedTrialsStudyPolicy
+
+        self.register_aggregation_policy(AtlasFixedTrialsStudyPolicy())
+        for policy in aggregation_policies:
+            self.register_aggregation_policy(policy)
+
+    def register_aggregation_policy(self, policy: StudyAggregationPolicy) -> None:
+        key = (policy.policy_id, policy.policy_version)
+        if key in self._aggregation_policies:
+            raise ValueError(f"study aggregation policy is already registered: {key[0]}@{key[1]}")
+        self._aggregation_policies[key] = policy
 
     async def create(
         self,
@@ -393,6 +438,37 @@ class StudyEngine:
                 "study cannot complete with unfinished blocks: " + ", ".join(sorted(unfinished))
             )
         controls = await self.controls.assess_study(session, study_id=study.study_id)
+        policy = self._aggregation_policies.get(
+            (manifest.aggregation_policy_id, manifest.aggregation_policy_version)
+        )
+        if policy is not None:
+            policy_results = await policy.seal_results(
+                session,
+                StudySealingContext(
+                    study=study,
+                    manifest=manifest,
+                    bindings=tuple(bindings),
+                    blocks_by_experiment={
+                        experiment_id: tuple(blocks)
+                        for experiment_id, blocks in blocks_by_experiment.items()
+                    },
+                    research_controls_complete=controls.provenance_complete,
+                    research_controls_comparable=controls.comparable,
+                    created_at=created_at,
+                ),
+            )
+            _validate_policy_results(
+                study=study,
+                manifest=manifest,
+                bindings=bindings,
+                blocks_by_experiment=blocks_by_experiment,
+                results=policy_results,
+                research_controls_complete=controls.provenance_complete,
+                research_controls_comparable=controls.comparable,
+            )
+            await _persist_results(session, policy_results)
+            return policy_results
+
         results: list[StudyResultRecord] = []
         for (condition_id, checkpoint_id), group in sorted(grouped.items()):
             blocks: list[ExperimentBlockRow] = []
@@ -488,29 +564,97 @@ class StudyEngine:
                 ),
                 created_at=created_at,
             )
-            payload = result.model_dump(mode="json")
-            digest = sha256_digest(payload)
-            existing = await session.get(StudyResultRow, result.result_id)
-            if existing is not None:
-                if existing.record_digest != digest or existing.record_json != payload:
-                    raise ValueError("study result ID conflicts with immutable content")
-            else:
-                session.add(
-                    StudyResultRow(
-                        result_id=result.result_id,
-                        study_id=result.study_id,
-                        study_manifest_digest=result.study_manifest_digest,
-                        suite_manifest_digest=result.suite_manifest_digest,
-                        condition_id=result.condition_id,
-                        checkpoint_id=result.checkpoint_id,
-                        record_digest=digest,
-                        record_json=payload,
-                        created_at=result.created_at,
-                    )
-                )
             results.append(result)
-        await session.flush()
+        await _persist_results(session, tuple(results))
         return tuple(results)
+
+
+def _validate_policy_results(
+    *,
+    study: StudyRow,
+    manifest: StudyManifest,
+    bindings: Sequence[StudyExperimentRow],
+    blocks_by_experiment: Mapping[str, Sequence[ExperimentBlockRow]],
+    results: tuple[StudyResultRecord, ...],
+    research_controls_complete: bool,
+    research_controls_comparable: bool,
+) -> None:
+    expected_groups: dict[tuple[str, str], list[StudyExperimentRow]] = {}
+    for binding in bindings:
+        expected_groups.setdefault((binding.condition_id, binding.checkpoint_id), []).append(
+            binding
+        )
+    actual_keys = [(result.condition_id, result.checkpoint_id) for result in results]
+    if len(actual_keys) != len(set(actual_keys)):
+        raise ValueError("study aggregation policy returned duplicate condition results")
+    if set(actual_keys) != set(expected_groups):
+        raise ValueError("study aggregation policy omitted or substituted a condition result")
+
+    for result in results:
+        key = (result.condition_id, result.checkpoint_id)
+        group = expected_groups[key]
+        expected_experiments = tuple(sorted(binding.experiment_id for binding in group))
+        expected_executions = tuple(
+            sorted(
+                {
+                    binding.research_execution_digest
+                    for binding in group
+                    if binding.research_execution_digest is not None
+                }
+            )
+        )
+        expected_blocks = {
+            (block.experiment_id, block.block_id, _block_digest(block))
+            for binding in group
+            for block in blocks_by_experiment[binding.experiment_id]
+        }
+        actual_blocks = {
+            (block.experiment_id, block.block_id, block.block_digest)
+            for block in result.source_blocks
+        }
+        if (
+            result.study_id != study.study_id
+            or result.study_manifest_digest != study.manifest_digest
+            or result.suite_manifest_digest != study.suite_manifest_digest
+            or result.aggregation_policy_id != manifest.aggregation_policy_id
+            or result.aggregation_policy_version != manifest.aggregation_policy_version
+        ):
+            raise ValueError("study aggregation policy changed immutable study coordinates")
+        if result.experiment_ids != expected_experiments:
+            raise ValueError("study aggregation policy omitted or substituted an experiment")
+        if result.research_execution_digests != expected_executions:
+            raise ValueError("study aggregation policy changed research execution evidence")
+        if result.research_controls_complete != research_controls_complete:
+            raise ValueError("study aggregation policy misstated research-control completeness")
+        if result.causal_claim_permitted and not research_controls_comparable:
+            raise ValueError("study aggregation policy bypassed research-control comparability")
+        if actual_blocks != expected_blocks or len(actual_blocks) != len(expected_blocks):
+            raise ValueError("study aggregation policy omitted or substituted source blocks")
+
+
+async def _persist_results(session: AsyncSession, results: tuple[StudyResultRecord, ...]) -> None:
+    for result in results:
+        payload = result.model_dump(mode="json")
+        digest = sha256_digest(payload)
+        existing = await session.get(StudyResultRow, result.result_id)
+        if existing is not None:
+            if existing.record_digest != digest or existing.record_json != payload:
+                raise ValueError("study result ID conflicts with immutable content")
+            continue
+        session.add(
+            StudyResultRow(
+                result_id=result.result_id,
+                study_id=result.study_id,
+                study_manifest_digest=result.study_manifest_digest,
+                suite_manifest_digest=result.suite_manifest_digest,
+                condition_id=result.condition_id,
+                checkpoint_id=result.checkpoint_id,
+                record_digest=digest,
+                record_json=payload,
+                created_at=result.created_at,
+            )
+        )
+    await session.flush()
 
 
 def _experiment_count(bindings: Sequence[StudyExperimentRow], condition_id: str) -> int:

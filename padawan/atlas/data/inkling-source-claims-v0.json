@@ -1,0 +1,38 @@
+{
+  "catalog_version": "1.0.0",
+  "evidence_class": "reported_upstream_claims_only",
+  "model_id": "thinkingmachines/Inkling-Small",
+  "sources": {
+    "model_card": {
+      "inspected_revision": "b2d4f225a02032c5d154bff748ab5a00c5ca26e4",
+      "url": "https://huggingface.co/thinkingmachines/Inkling-Small"
+    },
+    "preview": {
+      "published_at": "2026-07-15T00:00:00Z",
+      "revision": "preview-2026-07-15-unreleased",
+      "title": "Introducing Inkling",
+      "url": "https://thinkingmachines.ai/news/introducing-inkling/"
+    },
+    "release": {
+      "published_at": "2026-07-30T00:00:00Z",
+      "revision": "released-2026-07-30-after-additional-post-training-and-coding-rl",
+      "title": "Inkling-Small: our first open-weight model",
+      "url": "https://thinkingmachines.ai/news/inkling-small/"
+    }
+  },
+  "scores_percent": [
+    {"benchmark_id": "gpqa-diamond", "preview": 88.3, "release": 89.5},
+    {"benchmark_id": "aime-2026", "preview": 95.1, "release": 95.5},
+    {"benchmark_id": "swe-bench-verified", "preview": 77.4, "release": 80.2},
+    {"benchmark_id": "humanitys-last-exam", "preview": 46.6, "release": 47.8},
+    {"benchmark_id": "ifbench", "preview": 83.4, "release": 82.2},
+    {"benchmark_id": "mmmu-pro", "preview": 73.1, "release": 74.0},
+    {"benchmark_id": "mmau", "preview": 77.5, "release": 77.0}
+  ],
+  "shared_caveats": [
+    "The publications label the table effort=0.99; this vendor harness label is not a validated W8A16 Responses wire value.",
+    "The release reports temperature=1, and labels SWE-bench tools as Bash only.",
+    "Exact content, grader, prompt, trial, retry, token, action, and cost manifests are not fully bound in the publication tables.",
+    "No score is a Padawan observation, W8A16 reproduction, or quantization comparison."
+  ]
+}

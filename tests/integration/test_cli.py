@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import shlex
 import subprocess
 from datetime import UTC, datetime
 
 from typer.testing import CliRunner
 
 from padawan.artifacts.store import LocalArtifactStore
+from padawan.atlas.campaigns import build_first_inkling_campaign_bundle
 from padawan.cli.app import app
 from padawan.domains.contracts import VerifierDisposition, VerifierResult
 from padawan.domains.legal.appellate import (
@@ -15,6 +17,89 @@ from padawan.domains.legal.appellate import (
 )
 from padawan.models.contracts import ArtifactRef
 from tests.appellate_helpers import NOW, build_submission
+
+
+def test_cli_atlas_offline_plan_verification_and_report(tmp_path, monkeypatch) -> None:
+    artifact_root = tmp_path / "artifacts"
+    report_path = tmp_path / "capability-atlas-v0.md"
+    monkeypatch.setenv("PADAWAN_ARTIFACT_ROOT", str(artifact_root))
+    runner = CliRunner()
+
+    planned = runner.invoke(app, ["--json", "atlas", "plan"])
+    verified = runner.invoke(app, ["--json", "atlas", "verify-offline"])
+    rendered = runner.invoke(
+        app,
+        ["--json", "atlas", "report", "--output", str(report_path)],
+    )
+
+    assert planned.exit_code == 0, planned.output
+    assert verified.exit_code == 0, verified.output
+    assert rendered.exit_code == 0, rendered.output
+    plan = json.loads(planned.stdout)
+    verification = json.loads(verified.stdout)
+    report = json.loads(rendered.stdout)
+    assert plan["evidence_lanes"]["locally_reproduced_observations"] == []
+    assert plan["live_campaign_plan"]["authorization_required"] is True
+    assert verification["external_requests_made"] == 0
+    assert verification["promotion_eligible"] is False
+    assert report["output"] == str(report_path)
+    text = report_path.read_text(encoding="utf-8")
+    assert "upstream prior only" in text
+    assert "no locally reproduced Inkling capability scores" in text
+
+
+def test_cli_atlas_campaign_prepare_is_pure_exact_and_fail_closed(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("PADAWAN_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
+
+    def forbidden_live_application(*_args, **_kwargs):
+        raise AssertionError("campaign preparation must not compose a live application")
+
+    monkeypatch.setattr("padawan.cli.app.build_live_application", forbidden_live_application)
+    bundle = build_first_inkling_campaign_bundle()
+    runner = CliRunner()
+    prepared_arguments: list[str] = []
+    for stage in bundle.live_plan.stages:
+        command = stage.command.replace(
+            "REPLACE_WITH_AUTHORIZATION_REFERENCE", f"approval://atlas-{stage.stage_id}"
+        )
+        arguments = shlex.split(command)
+        assert arguments[0] == "padawan"
+        # Invoke the generated command verbatim apart from the installed executable name.
+        # Pretty output is still JSON and therefore remains machine-readable.
+        prepared = runner.invoke(app, arguments[1:])
+        assert prepared.exit_code == 0, prepared.output
+        envelope = json.loads(prepared.stdout)
+        assert envelope["contract"] == "padawan.atlas.campaign-preparation.v1"
+        assert envelope["mode"] == "preparation_only"
+        assert envelope["allocation_set"] == stage.stage_id
+        assert envelope["execution_gateway_status"] == "unavailable_fail_closed"
+        assert envelope["execution_permitted"] is False
+        assert envelope["authorization_verified"] is False
+        assert envelope["network_calls_made"] == 0
+        assert envelope["database_writes"] == 0
+        assert envelope["artifact_writes"] == 0
+        assert envelope["external_requests_made"] == 0
+        assert envelope["external_cost_usd"] == 0.0
+        assert envelope["gpu_actions"] == 0
+        assert envelope["evidence_artifact_plan"]
+        prepared_arguments = arguments[1:]
+    assert not (tmp_path / "artifacts").exists()
+
+    stage = bundle.live_plan.stages[-1]
+    placeholder = runner.invoke(app, ["--json", *shlex.split(stage.command)[1:]])
+    assert placeholder.exit_code == 1
+    assert "placeholder" in placeholder.output
+
+    drifted_arguments = list(prepared_arguments)
+    request_index = drifted_arguments.index("--max-requests") + 1
+    drifted_arguments[request_index] = str(stage.max_requests - 1)
+    drifted = runner.invoke(app, ["--json", *drifted_arguments])
+    assert drifted.exit_code == 1
+    assert "exact predeclared" in drifted.output
+
+    run = runner.invoke(app, ["--json", "atlas", "campaign", "run"])
+    assert run.exit_code == 1
+    assert "execution is unavailable and fails closed" in run.output
 
 
 def test_cli_database_corpus_and_operations_json(tmp_path, monkeypatch) -> None:

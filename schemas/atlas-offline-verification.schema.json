@@ -1,0 +1,114 @@
+{
+  "$id": "https://schemas.padawan.local/v1/atlas-offline-verification.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "campaign_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Campaign Digest",
+      "type": "string"
+    },
+    "checks": {
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "minProperties": 1,
+      "propertyNames": {
+        "minLength": 1
+      },
+      "title": "Checks",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "external_cost_usd": {
+      "default": 0.0,
+      "minimum": 0.0,
+      "title": "External Cost Usd",
+      "type": "number"
+    },
+    "external_requests_made": {
+      "const": 0,
+      "default": 0,
+      "title": "External Requests Made",
+      "type": "integer"
+    },
+    "generated_items": {
+      "minimum": 0,
+      "title": "Generated Items",
+      "type": "integer"
+    },
+    "matched_neighborhood_evidence_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Matched Neighborhood Evidence Digests",
+      "type": "array"
+    },
+    "ontology_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Ontology Digest",
+      "type": "string"
+    },
+    "oracle_evidence_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Oracle Evidence Digests",
+      "type": "array"
+    },
+    "record_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Record Digest",
+      "type": "string"
+    },
+    "structurally_validated_matched_neighborhoods": {
+      "minimum": 0,
+      "title": "Structurally Validated Matched Neighborhoods",
+      "type": "integer"
+    },
+    "suite_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Suite Digests",
+      "type": "array"
+    },
+    "unknowns": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Unknowns",
+      "type": "array"
+    },
+    "verified_oracles": {
+      "minimum": 0,
+      "title": "Verified Oracles",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "campaign_digest",
+    "ontology_digest",
+    "suite_digests",
+    "generated_items",
+    "structurally_validated_matched_neighborhoods",
+    "matched_neighborhood_evidence_digests",
+    "verified_oracles",
+    "oracle_evidence_digests",
+    "checks",
+    "unknowns",
+    "record_digest",
+    "created_at"
+  ],
+  "title": "OfflineVerificationRecord",
+  "type": "object"
+}

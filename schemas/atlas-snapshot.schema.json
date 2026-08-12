@@ -1,0 +1,427 @@
+{
+  "$defs": {
+    "CapabilityCurve": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary_probability": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Boundary Probability",
+          "type": "number"
+        },
+        "condition_id": {
+          "minLength": 1,
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "curve_id": {
+          "minLength": 1,
+          "title": "Curve Id",
+          "type": "string"
+        },
+        "estimated_boundary": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Estimated Boundary"
+        },
+        "evidence_result_digests": {
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Evidence Result Digests",
+          "type": "array"
+        },
+        "family_id": {
+          "minLength": 1,
+          "title": "Family Id",
+          "type": "string"
+        },
+        "monotonic_violations": {
+          "minimum": 0,
+          "title": "Monotonic Violations",
+          "type": "integer"
+        },
+        "points": {
+          "items": {
+            "$ref": "#/$defs/CapabilityCurvePoint"
+          },
+          "minItems": 1,
+          "title": "Points",
+          "type": "array"
+        }
+      },
+      "required": [
+        "curve_id",
+        "family_id",
+        "condition_id",
+        "boundary_probability",
+        "estimated_boundary",
+        "points",
+        "monotonic_violations",
+        "evidence_result_digests"
+      ],
+      "title": "CapabilityCurve",
+      "type": "object"
+    },
+    "CapabilityCurvePoint": {
+      "additionalProperties": false,
+      "properties": {
+        "difficulty": {
+          "title": "Difficulty",
+          "type": "number"
+        },
+        "lower": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Lower"
+        },
+        "missing": {
+          "minimum": 0,
+          "title": "Missing",
+          "type": "integer"
+        },
+        "success_probability": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Success Probability"
+        },
+        "trials": {
+          "minimum": 0,
+          "title": "Trials",
+          "type": "integer"
+        },
+        "upper": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Upper"
+        }
+      },
+      "required": [
+        "difficulty",
+        "success_probability",
+        "lower",
+        "upper",
+        "trials",
+        "missing"
+      ],
+      "title": "CapabilityCurvePoint",
+      "type": "object"
+    },
+    "LocalObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "condition_id": {
+          "minLength": 1,
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "extrapolated": {
+          "default": false,
+          "title": "Extrapolated",
+          "type": "boolean"
+        },
+        "extrapolation_method": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extrapolation Method"
+        },
+        "metric": {
+          "$ref": "#/$defs/MetricEstimate"
+        },
+        "research_execution_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Research Execution Digest",
+          "type": "string"
+        },
+        "suite_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Suite Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "condition_id",
+        "suite_digest",
+        "research_execution_digest"
+      ],
+      "title": "LocalObservation",
+      "type": "object"
+    },
+    "MetricEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence_level": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 1.0,
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Confidence Level"
+        },
+        "contaminated_trials": {
+          "minimum": 0,
+          "title": "Contaminated Trials",
+          "type": "integer"
+        },
+        "evidence_result_digests": {
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Evidence Result Digests",
+          "type": "array"
+        },
+        "infrastructure_failures": {
+          "minimum": 0,
+          "title": "Infrastructure Failures",
+          "type": "integer"
+        },
+        "lower": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Lower"
+        },
+        "metric_id": {
+          "minLength": 1,
+          "title": "Metric Id",
+          "type": "string"
+        },
+        "missing_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Missing Reason"
+        },
+        "missing_trials": {
+          "minimum": 0,
+          "title": "Missing Trials",
+          "type": "integer"
+        },
+        "observed_trials": {
+          "minimum": 0,
+          "title": "Observed Trials",
+          "type": "integer"
+        },
+        "planned_trials": {
+          "minimum": 0,
+          "title": "Planned Trials",
+          "type": "integer"
+        },
+        "upper": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Upper"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "metric_id",
+        "value",
+        "lower",
+        "upper",
+        "confidence_level",
+        "planned_trials",
+        "observed_trials",
+        "missing_trials",
+        "infrastructure_failures",
+        "contaminated_trials",
+        "evidence_result_digests"
+      ],
+      "title": "MetricEstimate",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-snapshot.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "campaign_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Campaign Digest",
+      "type": "string"
+    },
+    "complete": {
+      "title": "Complete",
+      "type": "boolean"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "curves": {
+      "items": {
+        "$ref": "#/$defs/CapabilityCurve"
+      },
+      "title": "Curves",
+      "type": "array"
+    },
+    "failure_cluster_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Failure Cluster Digests",
+      "type": "array"
+    },
+    "harness_profile_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Harness Profile Digest",
+      "type": "string"
+    },
+    "local_observations": {
+      "items": {
+        "$ref": "#/$defs/LocalObservation"
+      },
+      "title": "Local Observations",
+      "type": "array"
+    },
+    "ontology_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Ontology Digest",
+      "type": "string"
+    },
+    "promotion_checkpoint_decision_ids": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Promotion Checkpoint Decision Ids",
+      "type": "array"
+    },
+    "promotion_eligible": {
+      "title": "Promotion Eligible",
+      "type": "boolean"
+    },
+    "research_execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Research Execution Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "snapshot_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Snapshot Digest",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "minLength": 1,
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "unknowns": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Unknowns",
+      "type": "array"
+    },
+    "upstream_claim_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Upstream Claim Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "snapshot_id",
+    "campaign_digest",
+    "research_execution_digest",
+    "harness_profile_digest",
+    "ontology_digest",
+    "upstream_claim_ids",
+    "local_observations",
+    "curves",
+    "failure_cluster_digests",
+    "unknowns",
+    "complete",
+    "promotion_eligible",
+    "snapshot_digest",
+    "created_at"
+  ],
+  "title": "AtlasSnapshot",
+  "type": "object"
+}

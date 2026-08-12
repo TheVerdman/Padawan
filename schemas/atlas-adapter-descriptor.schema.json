@@ -1,0 +1,106 @@
+{
+  "$defs": {
+    "AdapterKind": {
+      "enum": [
+        "static_qa",
+        "generated_verifier",
+        "coding_agentic",
+        "interactive_environment",
+        "context_memory",
+        "multimodal"
+      ],
+      "title": "AdapterKind",
+      "type": "string"
+    },
+    "AuthorityKind": {
+      "enum": [
+        "deterministic",
+        "kernel",
+        "environment",
+        "human",
+        "model"
+      ],
+      "title": "AuthorityKind",
+      "type": "string"
+    },
+    "Modality": {
+      "enum": [
+        "text",
+        "image",
+        "audio",
+        "video"
+      ],
+      "title": "Modality",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-adapter-descriptor.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapter_id": {
+      "minLength": 1,
+      "title": "Adapter Id",
+      "type": "string"
+    },
+    "authority_order": {
+      "items": {
+        "$ref": "#/$defs/AuthorityKind"
+      },
+      "minItems": 1,
+      "title": "Authority Order",
+      "type": "array"
+    },
+    "deterministic_authority_required": {
+      "title": "Deterministic Authority Required",
+      "type": "boolean"
+    },
+    "implementation_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Implementation Digest",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/AdapterKind"
+    },
+    "supported_modalities": {
+      "items": {
+        "$ref": "#/$defs/Modality"
+      },
+      "minItems": 1,
+      "title": "Supported Modalities",
+      "type": "array"
+    },
+    "supports_interaction": {
+      "title": "Supports Interaction",
+      "type": "boolean"
+    },
+    "supports_repeated_trials": {
+      "title": "Supports Repeated Trials",
+      "type": "boolean"
+    },
+    "supports_tools": {
+      "title": "Supports Tools",
+      "type": "boolean"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "adapter_id",
+    "version",
+    "kind",
+    "supported_modalities",
+    "authority_order",
+    "deterministic_authority_required",
+    "supports_tools",
+    "supports_interaction",
+    "supports_repeated_trials",
+    "implementation_digest"
+  ],
+  "title": "AdapterDescriptor",
+  "type": "object"
+}

@@ -4,6 +4,121 @@
   "generated_by": "scripts/generate_schemas.py",
   "schemas": [
     {
+      "name": "atlas-adapter-descriptor",
+      "schema": "atlas-adapter-descriptor.schema.json",
+      "sha256": "ff0fd24421e16425960236aadaa4f1a4b191e84174bd379770b225305a3ddc20"
+    },
+    {
+      "name": "atlas-campaign-manifest",
+      "schema": "atlas-campaign-manifest.schema.json",
+      "sha256": "ab621f314897d07299d7cc79681c8681a1e453656debd6fff255232cea651b80"
+    },
+    {
+      "name": "atlas-campaign-execution-binding",
+      "schema": "atlas-campaign-execution-binding.schema.json",
+      "sha256": "14d74305fd9d92d24db97e868c03dc1c81e5f3ff1f3137011350faf3b385540f"
+    },
+    {
+      "name": "atlas-challenge-admission",
+      "schema": "atlas-challenge-admission.schema.json",
+      "sha256": "1738dfb05d98e68981cd08999aed5ea10f0542b93e6a18c53be81231ef0ca2fd"
+    },
+    {
+      "name": "atlas-comparison",
+      "schema": "atlas-comparison.schema.json",
+      "sha256": "8af3b4de483ba224bec8f6ac21b069fe5a81831c02f540cbcf27225b1496024f"
+    },
+    {
+      "name": "atlas-dataset-governance",
+      "schema": "atlas-dataset-governance.schema.json",
+      "sha256": "26db21233dc263262675bd487e11b8f0f54669ada22ad571c3353c8c37d66889"
+    },
+    {
+      "name": "atlas-exploratory-failure-proposal",
+      "schema": "atlas-exploratory-failure-proposal.schema.json",
+      "sha256": "46bc95011c0c502cb726bb8c9eecc18071a4a39626611bc6fb0ddc329be32e41"
+    },
+    {
+      "name": "atlas-exploratory-reproduction",
+      "schema": "atlas-exploratory-reproduction.schema.json",
+      "sha256": "56a2dc9780782be8e7d2d7d88b9231ef384818f615c3c83ce54b05cfd802bba4"
+    },
+    {
+      "name": "atlas-failure-cluster",
+      "schema": "atlas-failure-cluster.schema.json",
+      "sha256": "b6977fdda633baed44ca0613d0b84b66ce564add56927329faa289934e204837"
+    },
+    {
+      "name": "atlas-item-manifest",
+      "schema": "atlas-item-manifest.schema.json",
+      "sha256": "20228a99dcdb020804d0a9ef52e179f0641b2df49cd4f5f00e922782e81e7679"
+    },
+    {
+      "name": "atlas-memory-intervention-eligibility",
+      "schema": "atlas-memory-intervention-eligibility.schema.json",
+      "sha256": "56b1b59a9548cd4523b6d36b980b3099106759a6c15bad371d6ddc18920001e5"
+    },
+    {
+      "name": "atlas-offline-verification",
+      "schema": "atlas-offline-verification.schema.json",
+      "sha256": "40f55eacb9b33bce3f4ab0cae97cbb6a189eb4832082501aba24e4e04706036c"
+    },
+    {
+      "name": "atlas-ontology-manifest",
+      "schema": "atlas-ontology-manifest.schema.json",
+      "sha256": "57367b50a2269f825558f6504fae0899cd0260fa5f5fc1c492b1e091ea829499"
+    },
+    {
+      "name": "atlas-phenomenon-manifest",
+      "schema": "atlas-phenomenon-manifest.schema.json",
+      "sha256": "49bb2e74d1aafa069cd12ba5a9487c0f9af1de0307f67cdf7ddead9172ad236b"
+    },
+    {
+      "name": "atlas-probe-set-manifest",
+      "schema": "atlas-probe-set-manifest.schema.json",
+      "sha256": "ebdbb8e7bb8747966e1319489db4cb39f6dd76fe3834418f0d43229edefd5139"
+    },
+    {
+      "name": "atlas-run-manifest",
+      "schema": "atlas-run-manifest.schema.json",
+      "sha256": "47aed4bcd73fcbbad9165c516bf63965c12ed1046823269646d3d0edde56c6f3"
+    },
+    {
+      "name": "atlas-snapshot",
+      "schema": "atlas-snapshot.schema.json",
+      "sha256": "ee30cae2a69e9793d6b897716ea6ae14004d3b4982c43ae72f0595bea6460858"
+    },
+    {
+      "name": "atlas-source-claim",
+      "schema": "atlas-source-claim.schema.json",
+      "sha256": "0b16f32eb0adb024cac2eab8f360cdcf41d525bec702a562b6f9dfe4d458409e"
+    },
+    {
+      "name": "atlas-suite-manifest",
+      "schema": "atlas-suite-manifest.schema.json",
+      "sha256": "ff45869e63f3724ba8199d4d3bf9da82a6dd1a159382b26a11067e5d2e360535"
+    },
+    {
+      "name": "atlas-training-failure-eligibility",
+      "schema": "atlas-training-failure-eligibility.schema.json",
+      "sha256": "4109c91db271e5fd43d33cb0081cfd71ad9bda055d9faf547d6eac7b09481033"
+    },
+    {
+      "name": "atlas-trial-allocation",
+      "schema": "atlas-trial-allocation.schema.json",
+      "sha256": "b9d016e9149b0b4415dbfa8e10b72e8b022ae1c8b044b4724cddcf2f2ea362de"
+    },
+    {
+      "name": "atlas-trial-request",
+      "schema": "atlas-trial-request.schema.json",
+      "sha256": "ab63f2c15d46db134d3275b28505f09ef510dc9d8825f40505075e8c4de1b1ad"
+    },
+    {
+      "name": "atlas-trial-result",
+      "schema": "atlas-trial-result.schema.json",
+      "sha256": "8f252a2c2586cd9bae01db302f48d417918850d392a7e2cb34e5dbd9100219ed"
+    },
+    {
       "name": "appellate-closed-record",
       "schema": "appellate-closed-record.schema.json",
       "sha256": "0ee571401f1ef3d2782e929de532deaed437e45acb85c5c58f597a6a69b768b9"
@@ -51,7 +166,7 @@
     {
       "name": "attempt",
       "schema": "attempt.schema.json",
-      "sha256": "43f572769b056bdb88afceb5555e2dc100cace51a5257dc6df29a6fd60f9f72f"
+      "sha256": "cc013197dc8edd4dfeffbd6213d70c8704c1481e5667c3631cabd1a4a2291f19"
     },
     {
       "name": "authored-demonstration",

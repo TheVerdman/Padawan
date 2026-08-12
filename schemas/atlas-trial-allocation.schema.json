@@ -1,0 +1,93 @@
+{
+  "$id": "https://schemas.padawan.local/v1/atlas-trial-allocation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allocation_id": {
+      "minLength": 1,
+      "title": "Allocation Id",
+      "type": "string"
+    },
+    "allocation_policy_id": {
+      "minLength": 1,
+      "title": "Allocation Policy Id",
+      "type": "string"
+    },
+    "allocation_policy_version": {
+      "minLength": 1,
+      "title": "Allocation Policy Version",
+      "type": "string"
+    },
+    "campaign_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Campaign Digest",
+      "type": "string"
+    },
+    "condition_id": {
+      "minLength": 1,
+      "title": "Condition Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "decision_evidence_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Decision Evidence Digest",
+      "type": "string"
+    },
+    "decision_sequence": {
+      "minimum": 0,
+      "title": "Decision Sequence",
+      "type": "integer"
+    },
+    "item_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Item Digest",
+      "type": "string"
+    },
+    "prior_result_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Prior Result Digests",
+      "type": "array"
+    },
+    "selection_probability": {
+      "exclusiveMinimum": 0.0,
+      "maximum": 1.0,
+      "title": "Selection Probability",
+      "type": "number"
+    },
+    "suite_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Suite Digest",
+      "type": "string"
+    },
+    "trial_index": {
+      "minimum": 0,
+      "title": "Trial Index",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "allocation_id",
+    "campaign_digest",
+    "condition_id",
+    "suite_digest",
+    "item_digest",
+    "trial_index",
+    "decision_sequence",
+    "selection_probability",
+    "allocation_policy_id",
+    "allocation_policy_version",
+    "decision_evidence_digest",
+    "created_at"
+  ],
+  "title": "TrialAllocation",
+  "type": "object"
+}

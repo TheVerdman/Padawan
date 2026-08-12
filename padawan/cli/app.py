@@ -20,6 +20,14 @@ from padawan.adapters.heirloom.exporter import HeirloomAuditExporter
 from padawan.agent.loop import AutonomousResearchLoop
 from padawan.artifacts.factory import build_artifact_backend
 from padawan.artifacts.store import ArtifactCatalog, artifact_put_bytes
+from padawan.atlas.campaigns import (
+    build_first_inkling_campaign_bundle,
+    prepare_first_inkling_campaign_stage,
+)
+from padawan.atlas.reporting import (
+    build_first_inkling_machine_report,
+    render_first_inkling_report,
+)
 from padawan.config.composition import (
     StudentProvider,
     TeacherProvider,
@@ -99,6 +107,8 @@ export_app = typer.Typer(help="Policy-governed exports.")
 verify_app = typer.Typer(help="Deterministic domain verifier operations.")
 training_app = typer.Typer(help="Rights-aware internal training-product compilation.")
 training_source_app = typer.Typer(help="Governed continued-pretraining source admission.")
+atlas_app = typer.Typer(help="Capability Atlas behavioral evaluation and boundary mapping.")
+atlas_campaign_app = typer.Typer(help="Predeclared Capability Atlas campaigns.")
 
 app.add_typer(db_app, name="db")
 app.add_typer(corpus_app, name="corpus")
@@ -115,6 +125,8 @@ app.add_typer(export_app, name="export")
 app.add_typer(verify_app, name="verify")
 app.add_typer(training_app, name="training")
 training_app.add_typer(training_source_app, name="source")
+app.add_typer(atlas_app, name="atlas")
+atlas_app.add_typer(atlas_campaign_app, name="campaign")
 
 
 @app.callback()
@@ -127,6 +139,137 @@ def root(
     ctx.ensure_object(dict)
     ctx.obj["json"] = json_output
     ctx.obj["settings"] = settings
+
+
+@atlas_app.command("plan")
+def atlas_plan(ctx: typer.Context) -> None:
+    """Render the first campaign without registering or executing external work."""
+
+    def operation() -> dict[str, Any]:
+        report = build_first_inkling_machine_report()
+        live = cast(dict[str, Any], report["live_campaign_plan"])
+        return {
+            "campaign": report["campaign"],
+            "offline_verification": report["offline_verification"],
+            "evidence_lanes": report["evidence_lanes"],
+            "live_campaign_plan": live,
+            "report_id": report["report_id"],
+            "report_digest": report["report_digest"],
+        }
+
+    _run_command(ctx, "atlas plan", operation)
+
+
+@atlas_app.command("verify-offline")
+def atlas_verify_offline(ctx: typer.Context) -> None:
+    """Regenerate all deterministic campaign assets and fail on any local check."""
+
+    def operation() -> dict[str, Any]:
+        bundle = build_first_inkling_campaign_bundle()
+        failed = tuple(name for name, passed in bundle.verification.checks.items() if not passed)
+        if failed:
+            raise ValueError("Capability Atlas offline checks failed: " + ", ".join(failed))
+        return {
+            **bundle.verification.model_dump(mode="json"),
+            "source_claim_count": len(bundle.claims),
+            "suite_count": len(bundle.suites),
+            "condition_count": len(bundle.campaign.conditions),
+            "locally_reproduced_observations": 0,
+            "promotion_eligible": False,
+        }
+
+    _run_command(ctx, "atlas verify-offline", operation)
+
+
+@atlas_app.command("report")
+def atlas_report(
+    ctx: typer.Context,
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        dir_okay=False,
+        writable=True,
+        resolve_path=True,
+        help="Optional Markdown destination; omitted output is returned in the command result.",
+    ),
+) -> None:
+    """Render the human campaign report from the same immutable machine bundle."""
+
+    def operation() -> dict[str, Any]:
+        markdown = render_first_inkling_report()
+        report = build_first_inkling_machine_report()
+        if output is not None:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(markdown, encoding="utf-8")
+        return {
+            "report_id": report["report_id"],
+            "report_digest": report["report_digest"],
+            "output": str(output) if output is not None else None,
+            "markdown": markdown if output is None else None,
+        }
+
+    _run_command(ctx, "atlas report", operation)
+
+
+@atlas_campaign_app.command("prepare")
+def atlas_campaign_prepare(
+    ctx: typer.Context,
+    campaign_digest: str = typer.Option(..., "--campaign-digest"),
+    allocation_set: str = typer.Option(..., "--allocation-set"),
+    authorization_ref: str = typer.Option(..., "--authorization-ref"),
+    max_requests: int = typer.Option(..., "--max-requests", min=1),
+    max_input_tokens: int = typer.Option(..., "--max-input-tokens", min=1),
+    max_output_tokens: int = typer.Option(..., "--max-output-tokens", min=1),
+    max_actions: int = typer.Option(..., "--max-actions", min=1),
+    max_cost_usd: float = typer.Option(..., "--max-cost-usd", min=0.0),
+    max_runtime_minutes: int = typer.Option(..., "--max-runtime-minutes", min=1),
+    preparation_only: bool = typer.Option(
+        False,
+        "--preparation-only",
+        help="Acknowledge that this command emits a plan and cannot execute model work.",
+    ),
+) -> None:
+    """Validate a frozen stage and emit a non-executable activation envelope."""
+
+    def operation() -> object:
+        return prepare_first_inkling_campaign_stage(
+            campaign_digest=campaign_digest,
+            allocation_set=allocation_set,
+            authorization_ref=authorization_ref,
+            max_requests=max_requests,
+            max_input_tokens=max_input_tokens,
+            max_output_tokens=max_output_tokens,
+            max_actions=max_actions,
+            max_cost_usd=max_cost_usd,
+            max_runtime_minutes=max_runtime_minutes,
+            preparation_only=preparation_only,
+        )
+
+    _run_preparation_only_command(ctx, operation)
+
+
+@atlas_campaign_app.command("run", hidden=True)
+def atlas_campaign_run(ctx: typer.Context) -> None:
+    """Fail closed: no governed Atlas execution gateway exists yet."""
+
+    _emit(
+        ctx,
+        {
+            "error": {
+                "type": "AtlasExecutionGatewayUnavailable",
+                "message": (
+                    "Atlas campaign execution is unavailable and fails closed. "
+                    "Use 'atlas campaign prepare' to validate a preparation-only envelope."
+                ),
+            },
+            "execution_permitted": False,
+            "external_requests_made": 0,
+            "external_cost_usd": 0.0,
+            "gpu_actions": 0,
+        },
+        error=True,
+    )
+    raise typer.Exit(code=1)
 
 
 @db_app.command("migrate")
@@ -1215,6 +1358,26 @@ def _run_command(
         raise typer.Exit(code=1) from exc
     finally:
         _close_resource_sync(manifest_backend)
+
+
+def _run_preparation_only_command(
+    ctx: typer.Context,
+    operation: Callable[[], object],
+) -> None:
+    """Run a synchronous pure builder without DB, artifact backend, network, or provider I/O."""
+
+    try:
+        result = operation()
+        _emit(ctx, cast(dict[str, Any], _jsonable(result)))
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        _emit(
+            ctx,
+            {"error": {"type": type(exc).__name__, "message": str(exc)}},
+            error=True,
+        )
+        raise typer.Exit(code=1) from exc
 
 
 def _terminal_run_failure(result: dict[str, Any]) -> dict[str, str] | None:

@@ -1,0 +1,246 @@
+{
+  "$id": "https://schemas.padawan.local/v1/atlas-trial-request.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action_budget": {
+      "exclusiveMinimum": 0,
+      "title": "Action Budget",
+      "type": "integer"
+    },
+    "adapter_descriptor_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Adapter Descriptor Digest",
+      "type": "string"
+    },
+    "adapter_id": {
+      "minLength": 1,
+      "title": "Adapter Id",
+      "type": "string"
+    },
+    "adapter_version": {
+      "minLength": 1,
+      "title": "Adapter Version",
+      "type": "string"
+    },
+    "allocation_id": {
+      "minLength": 1,
+      "title": "Allocation Id",
+      "type": "string"
+    },
+    "attempt_index": {
+      "minimum": 0,
+      "title": "Attempt Index",
+      "type": "integer"
+    },
+    "campaign_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Campaign Digest",
+      "type": "string"
+    },
+    "condition_id": {
+      "minLength": 1,
+      "title": "Condition Id",
+      "type": "string"
+    },
+    "context_limit_tokens": {
+      "exclusiveMinimum": 0,
+      "title": "Context Limit Tokens",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "edge_preflight_evidence_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Edge Preflight Evidence Digest",
+      "type": "string"
+    },
+    "effort": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Effort"
+    },
+    "effort_mapping_evidence_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Effort Mapping Evidence Digest"
+    },
+    "instructions_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Instructions Digest",
+      "type": "string"
+    },
+    "item_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Item Digest",
+      "type": "string"
+    },
+    "item_id": {
+      "minLength": 1,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "max_output_tokens": {
+      "exclusiveMinimum": 0,
+      "title": "Max Output Tokens",
+      "type": "integer"
+    },
+    "parent_request_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Request Id"
+    },
+    "prompt_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Prompt Digest",
+      "type": "string"
+    },
+    "rendered_input_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Rendered Input Digest",
+      "type": "string"
+    },
+    "request_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Request Digest",
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "research_execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Research Execution Digest",
+      "type": "string"
+    },
+    "response_format_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Response Format Digest",
+      "type": "string"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "sampling": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "propertyNames": {
+        "minLength": 1
+      },
+      "title": "Sampling",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "suite_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Suite Digest",
+      "type": "string"
+    },
+    "tool_ids": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Tool Ids",
+      "type": "array"
+    },
+    "tool_manifest_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Tool Manifest Digest",
+      "type": "string"
+    },
+    "tool_preflight_evidence_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tool Preflight Evidence Digest"
+    },
+    "trial_index": {
+      "minimum": 0,
+      "title": "Trial Index",
+      "type": "integer"
+    },
+    "wire_request_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Wire Request Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "request_id",
+    "run_id",
+    "campaign_digest",
+    "research_execution_digest",
+    "condition_id",
+    "suite_digest",
+    "item_id",
+    "item_digest",
+    "allocation_id",
+    "trial_index",
+    "attempt_index",
+    "prompt_digest",
+    "rendered_input_digest",
+    "instructions_digest",
+    "response_format_digest",
+    "wire_request_digest",
+    "adapter_id",
+    "adapter_version",
+    "adapter_descriptor_digest",
+    "edge_preflight_evidence_digest",
+    "context_limit_tokens",
+    "max_output_tokens",
+    "action_budget",
+    "tool_manifest_digest",
+    "sampling",
+    "request_digest",
+    "created_at"
+  ],
+  "title": "AtlasTrialRequest",
+  "type": "object"
+}

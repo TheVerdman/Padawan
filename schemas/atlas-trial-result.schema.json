@@ -1,0 +1,589 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "AuthorityKind": {
+      "enum": [
+        "deterministic",
+        "kernel",
+        "environment",
+        "human",
+        "model"
+      ],
+      "title": "AuthorityKind",
+      "type": "string"
+    },
+    "FailureOrigin": {
+      "enum": [
+        "model",
+        "harness",
+        "verifier",
+        "parser",
+        "infrastructure",
+        "contamination",
+        "unknown"
+      ],
+      "title": "FailureOrigin",
+      "type": "string"
+    },
+    "OutcomeEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Artifact Refs",
+          "type": "array"
+        },
+        "authority": {
+          "$ref": "#/$defs/AuthorityKind"
+        },
+        "deterministic": {
+          "title": "Deterministic",
+          "type": "boolean"
+        },
+        "disposition": {
+          "minLength": 1,
+          "title": "Disposition",
+          "type": "string"
+        },
+        "evaluated_output_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evaluated Output Digest"
+        },
+        "evidence_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Evidence Digest",
+          "type": "string"
+        },
+        "evidence_id": {
+          "minLength": 1,
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "success": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Success"
+        },
+        "verifier_id": {
+          "minLength": 1,
+          "title": "Verifier Id",
+          "type": "string"
+        },
+        "verifier_version": {
+          "minLength": 1,
+          "title": "Verifier Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "authority",
+        "verifier_id",
+        "verifier_version",
+        "disposition",
+        "deterministic",
+        "evidence_digest"
+      ],
+      "title": "OutcomeEvidence",
+      "type": "object"
+    },
+    "TokenAccounting": {
+      "additionalProperties": false,
+      "properties": {
+        "counting_mode": {
+          "minLength": 1,
+          "title": "Counting Mode",
+          "type": "string"
+        },
+        "input_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Input Tokens"
+        },
+        "missing_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Missing Reason"
+        },
+        "output_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Output Tokens"
+        },
+        "total_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Total Tokens"
+        }
+      },
+      "required": [
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "counting_mode"
+      ],
+      "title": "TokenAccounting",
+      "type": "object"
+    },
+    "TrialStatus": {
+      "enum": [
+        "verified_success",
+        "verified_failure",
+        "partial",
+        "abstained",
+        "malformed",
+        "unscorable",
+        "verifier_failure",
+        "parser_failure",
+        "timeout",
+        "infrastructure_failure",
+        "contaminated",
+        "not_run"
+      ],
+      "title": "TrialStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-trial-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "abstained": {
+      "default": false,
+      "title": "Abstained",
+      "type": "boolean"
+    },
+    "capabilities_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Capabilities Digest"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Confidence"
+    },
+    "contamination_checks": {
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "minProperties": 1,
+      "propertyNames": {
+        "minLength": 1
+      },
+      "title": "Contamination Checks",
+      "type": "object"
+    },
+    "cost_usd": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cost Usd"
+    },
+    "external_call_artifact": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "failure_codes": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Failure Codes",
+      "type": "array"
+    },
+    "failure_origin": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FailureOrigin"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "generation_model_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Generation Model Id"
+    },
+    "generation_protocol": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Generation Protocol"
+    },
+    "generation_provider": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Generation Provider"
+    },
+    "grader_artifacts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Grader Artifacts",
+      "type": "array"
+    },
+    "latency_ms": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Latency Ms"
+    },
+    "primary_authority": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AuthorityKind"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "raw_request_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Request Digest"
+    },
+    "raw_response_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Response Digest"
+    },
+    "request_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Request Digest",
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "research_execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Research Execution Digest",
+      "type": "string"
+    },
+    "response_artifact": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "response_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Response Digest"
+    },
+    "result_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Result Digest",
+      "type": "string"
+    },
+    "result_id": {
+      "minLength": 1,
+      "title": "Result Id",
+      "type": "string"
+    },
+    "retry_count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Retry Count",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "score": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Score"
+    },
+    "status": {
+      "$ref": "#/$defs/TrialStatus"
+    },
+    "success": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Success"
+    },
+    "tokens": {
+      "$ref": "#/$defs/TokenAccounting"
+    },
+    "tool_calls": {
+      "default": [],
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Tool Calls",
+      "type": "array"
+    },
+    "verifier_evidence": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/OutcomeEvidence"
+      },
+      "title": "Verifier Evidence",
+      "type": "array"
+    },
+    "wall_time_ms": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Wall Time Ms"
+    }
+  },
+  "required": [
+    "result_id",
+    "request_id",
+    "request_digest",
+    "research_execution_digest",
+    "status",
+    "score",
+    "success",
+    "tokens",
+    "contamination_checks",
+    "result_digest",
+    "completed_at"
+  ],
+  "title": "AtlasTrialResult",
+  "type": "object"
+}

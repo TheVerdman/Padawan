@@ -53,6 +53,19 @@ def test_empty_database_upgrade_and_schema_match(tmp_path, monkeypatch) -> None:
         "condition_id",
         "suite_manifest_digest",
     ) in _unique_indexes(database_path, "checkpoint_evaluations")
+    assert {
+        "atlas_benchmark_claims",
+        "atlas_campaign_execution_bindings",
+        "atlas_run_manifests",
+        "atlas_trial_requests",
+        "atlas_trial_results",
+        "atlas_snapshots",
+        "atlas_comparisons",
+        "atlas_training_eligibility",
+        "atlas_memory_eligibility",
+    } <= _tables(database_path)
+    assert ("request_id",) in _unique_indexes(database_path, "atlas_trial_results")
+    assert ("run_id",) in _unique_indexes(database_path, "atlas_run_manifests")
     command.check(configuration)
 
 

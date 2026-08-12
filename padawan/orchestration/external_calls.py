@@ -52,6 +52,11 @@ class IdempotentGenerationExecutor:
         provider: str,
         request: GenerationRequest,
     ) -> GenerationResult:
+        if purpose == "capability_atlas":
+            raise PermissionError(
+                "Capability Atlas execution requires the governed activation gateway; "
+                "that gateway is unavailable and fails closed in v0"
+            )
         request_hash = sha256_digest(request.model_dump(mode="json"))
         operation_id = _operation_id(request.request_id)
         environment_fingerprint = sha256_digest(
@@ -171,6 +176,9 @@ class IdempotentGenerationExecutor:
                         "message": str(exc),
                         "status_code": exc.status_code,
                         "retryable": exc.retryable,
+                        "classification": (
+                            "timeout" if "timeout" in str(exc).casefold() else "provider_error"
+                        ),
                         "response_digest": response_digest,
                         "response_artifact_id": (
                             error_response_ref.artifact_id
@@ -233,6 +241,17 @@ class IdempotentGenerationExecutor:
             )
             row.response_artifact_id = response_ref.artifact_id
             row.provider_response_id = result.response_id
+            row.result_envelope_digest = response_ref.digest
+            row.result_model_id = result.model_id
+            row.result_protocol = result.protocol
+            row.result_raw_request_digest = sha256_digest(result.raw_request)
+            row.result_raw_response_digest = sha256_digest(result.raw_response)
+            row.result_output_text_digest = sha256_digest(result.output_text)
+            row.result_usage = result.usage
+            row.result_capabilities_digest = sha256_digest(
+                result.capabilities.model_dump(mode="json")
+            )
+            row.result_latency_ms = result.latency_ms
             row.status = "completed"
             row.error = None
             row.completed_at = datetime.now(UTC)
@@ -335,5 +354,7 @@ def _generation_workload(request: GenerationRequest, provider: str) -> dict[str,
         "input_size_chars": input_size,
         "message_count": message_count,
         "max_output_tokens": request.sampling.max_output_tokens,
+        "reasoning_effort": request.sampling.reasoning_effort or "unspecified",
         "schema_constrained": request.json_schema is not None,
+        "tool_count": len(request.tools),
     }

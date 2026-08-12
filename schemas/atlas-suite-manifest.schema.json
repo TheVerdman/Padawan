@@ -1,0 +1,389 @@
+{
+  "$defs": {
+    "AdapterKind": {
+      "enum": [
+        "static_qa",
+        "generated_verifier",
+        "coding_agentic",
+        "interactive_environment",
+        "context_memory",
+        "multimodal"
+      ],
+      "title": "AdapterKind",
+      "type": "string"
+    },
+    "AtlasItemManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_kind": {
+          "$ref": "#/$defs/AdapterKind"
+        },
+        "difficulty": {
+          "title": "Difficulty",
+          "type": "number"
+        },
+        "family_id": {
+          "minLength": 1,
+          "title": "Family Id",
+          "type": "string"
+        },
+        "item_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Item Digest",
+          "type": "string"
+        },
+        "item_id": {
+          "minLength": 1,
+          "title": "Item Id",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "modalities": {
+          "items": {
+            "$ref": "#/$defs/Modality"
+          },
+          "minItems": 1,
+          "title": "Modalities",
+          "type": "array"
+        },
+        "pair_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pair Id"
+        },
+        "prompt": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Prompt"
+        },
+        "prompt_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Prompt Digest",
+          "type": "string"
+        },
+        "variant_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Variant Id"
+        },
+        "verifier_id": {
+          "minLength": 1,
+          "title": "Verifier Id",
+          "type": "string"
+        },
+        "verifier_payload": {
+          "additionalProperties": true,
+          "title": "Verifier Payload",
+          "type": "object"
+        },
+        "verifier_version": {
+          "minLength": 1,
+          "title": "Verifier Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item_id",
+        "item_digest",
+        "family_id",
+        "difficulty",
+        "adapter_kind",
+        "modalities",
+        "prompt",
+        "prompt_digest",
+        "verifier_id",
+        "verifier_version",
+        "verifier_payload"
+      ],
+      "title": "AtlasItemManifest",
+      "type": "object"
+    },
+    "EvaluationClass": {
+      "enum": [
+        "development",
+        "adaptive_search",
+        "challenge",
+        "sealed_promotion"
+      ],
+      "title": "EvaluationClass",
+      "type": "string"
+    },
+    "Modality": {
+      "enum": [
+        "text",
+        "image",
+        "audio",
+        "video"
+      ],
+      "title": "Modality",
+      "type": "string"
+    },
+    "ModalityGateStatus": {
+      "enum": [
+        "unvalidated",
+        "passed",
+        "failed"
+      ],
+      "title": "ModalityGateStatus",
+      "type": "string"
+    },
+    "ModalityValidationEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Digest"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "gate_id": {
+          "minLength": 1,
+          "title": "Gate Id",
+          "type": "string"
+        },
+        "gate_revision": {
+          "minLength": 1,
+          "title": "Gate Revision",
+          "type": "string"
+        },
+        "modality": {
+          "$ref": "#/$defs/Modality"
+        },
+        "status": {
+          "$ref": "#/$defs/ModalityGateStatus"
+        },
+        "validated_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Validated At"
+        }
+      },
+      "required": [
+        "modality",
+        "status",
+        "gate_id",
+        "gate_revision"
+      ],
+      "title": "ModalityValidationEvidence",
+      "type": "object"
+    },
+    "SuiteStatus": {
+      "enum": [
+        "planned",
+        "ready",
+        "sealed",
+        "blocked",
+        "retired"
+      ],
+      "title": "SuiteStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-suite-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapter_kind": {
+      "$ref": "#/$defs/AdapterKind"
+    },
+    "benchmark_id": {
+      "minLength": 1,
+      "title": "Benchmark Id",
+      "type": "string"
+    },
+    "benchmark_version": {
+      "minLength": 1,
+      "title": "Benchmark Version",
+      "type": "string"
+    },
+    "blocking_reasons": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Blocking Reasons",
+      "type": "array"
+    },
+    "content_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Digest",
+      "type": "string"
+    },
+    "corpus_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Corpus Digests",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "environment_fingerprints": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Environment Fingerprints",
+      "type": "array"
+    },
+    "evaluation_class": {
+      "$ref": "#/$defs/EvaluationClass"
+    },
+    "evaluation_suite_manifest_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Evaluation Suite Manifest Digest"
+    },
+    "governance_id": {
+      "minLength": 1,
+      "title": "Governance Id",
+      "type": "string"
+    },
+    "item_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Item Digests",
+      "type": "array"
+    },
+    "items": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AtlasItemManifest"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "modality_gates": {
+      "items": {
+        "$ref": "#/$defs/ModalityValidationEvidence"
+      },
+      "minItems": 1,
+      "title": "Modality Gates",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "split": {
+      "minLength": 1,
+      "title": "Split",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/SuiteStatus"
+    },
+    "suite_id": {
+      "minLength": 1,
+      "title": "Suite Id",
+      "type": "string"
+    },
+    "task_manifest_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Task Manifest Digests",
+      "type": "array"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "suite_id",
+    "version",
+    "title",
+    "benchmark_id",
+    "benchmark_version",
+    "split",
+    "governance_id",
+    "adapter_kind",
+    "status",
+    "evaluation_class",
+    "item_digests",
+    "modality_gates",
+    "environment_fingerprints",
+    "content_digest",
+    "created_at"
+  ],
+  "title": "AtlasSuiteManifest",
+  "type": "object"
+}

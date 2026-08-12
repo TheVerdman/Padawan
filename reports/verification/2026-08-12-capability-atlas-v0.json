@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0.0",
+  "evidence_lane": "offline_verification",
+  "campaign_digest": "sha256:68f8cabe7912b68ef08924e4d04514d5a1c68bd6a5da8e66405b0d8e6fe5ba92",
+  "ontology_digest": "sha256:810f07fac633e51b88f321c1589579141c706ea9c1db21c604feb026c46a7016",
+  "record_digest": "sha256:04944ef22b7c0bc0efb82125968adfd8575215b83bf057fa63eba0c7808cc4e4",
+  "generated_at": "2026-08-12T00:00:00Z",
+  "counts": {
+    "source_claims": 14,
+    "governance_records": 17,
+    "suite_manifests": 17,
+    "ready_suites": 3,
+    "blocked_suites": 14,
+    "generated_items": 100,
+    "structurally_validated_matched_neighborhoods": 45,
+    "verified_oracles": 70
+  },
+  "external_execution": {"requests": 0, "cost_usd": 0.0},
+  "local_validation": {
+    "ruff_format_files": 247,
+    "ruff_lint": "passed",
+    "mypy_source_files": 139,
+    "generated_schemas": 97,
+    "pytest_passed": 269,
+    "pytest_deselected": 6,
+    "migration_round_trip": "passed",
+    "diff_check": "passed",
+    "externally_gated": ["postgres", "live_endpoint_or_provider", "live_gcs", "lean_kernel"]
+  },
+  "checks": {
+    "campaign_partitions_are_pairwise_disjoint": true,
+    "condition_request_ceilings_cover_every_bound_trial": true,
+    "external_benchmark_content_is_absent": true,
+    "local_item_and_suite_digests_validate": true,
+    "matched_neighborhood_structure_is_validated": true,
+    "media_capability_fails_closed": true,
+    "no_external_requests_or_cost": true,
+    "promotion_suite_is_not_falsely_sealed": true,
+    "source_claims_are_not_local_observations": true,
+    "transport_240k_is_not_reasoning_evidence": true
+  },
+  "evidence_lanes": {
+    "reported_upstream_claims": 14,
+    "locally_reproduced_observations": 0,
+    "extrapolations": 0,
+    "unknowns": [
+      "No W8A16 model trial has been executed by Capability Atlas v0.",
+      "No source-BF16 reference endpoint or local comparison result is registered.",
+      "The 45 matched neighborhoods have structural content/axis checks, but no family-specific metamorphic relation has yet been independently verified.",
+      "Only reasoning.effort='none' has sibling transport evidence; all effort mappings and tool structures require behavioral validation.",
+      "Image, audio, video, and mixed-media capability remain unvalidated.",
+      "The promotion suite remains unmaterialized and lacks a core EvaluationSuiteManifest bridge.",
+      "Blocked public benchmark registrations carry no local score."
+    ]
+  },
+  "live_plan": {
+    "authorization_required": true,
+    "command_mode": "preparation_only",
+    "execution_gateway": "unavailable_fail_closed",
+    "total": {"requests": 7238, "input_tokens": 248508928, "output_tokens": 130326528, "actions": 34590, "cost_usd": 14839.0, "serial_runtime_minutes": 106360},
+    "stages": [
+      {"stage_id": "w8a16-content-ready", "requests": 1306, "input_tokens": 51642368, "output_tokens": 19111936, "actions": 3196, "cost_usd": 2049.0, "serial_runtime_minutes": 16660, "command": "padawan atlas campaign prepare --preparation-only --campaign-digest sha256:68f8cabe7912b68ef08924e4d04514d5a1c68bd6a5da8e66405b0d8e6fe5ba92 --allocation-set w8a16-content-ready --authorization-ref REPLACE_WITH_AUTHORIZATION_REFERENCE --max-requests 1306 --max-input-tokens 51642368 --max-output-tokens 19111936 --max-actions 3196 --max-cost-usd 2049.00 --max-runtime-minutes 16660"},
+      {"stage_id": "w8a16-blocked-expansion", "requests": 4192, "input_tokens": 139850240, "output_tokens": 82706432, "actions": 29654, "cost_usd": 8440.0, "serial_runtime_minutes": 72300, "command": "padawan atlas campaign prepare --preparation-only --campaign-digest sha256:68f8cabe7912b68ef08924e4d04514d5a1c68bd6a5da8e66405b0d8e6fe5ba92 --allocation-set w8a16-blocked-expansion --authorization-ref REPLACE_WITH_AUTHORIZATION_REFERENCE --max-requests 4192 --max-input-tokens 139850240 --max-output-tokens 82706432 --max-actions 29654 --max-cost-usd 8440.00 --max-runtime-minutes 72300"},
+      {"stage_id": "source-bf16-reference", "requests": 1740, "input_tokens": 57016320, "output_tokens": 28508160, "actions": 1740, "cost_usd": 4350.0, "serial_runtime_minutes": 17400, "command": "padawan atlas campaign prepare --preparation-only --campaign-digest sha256:68f8cabe7912b68ef08924e4d04514d5a1c68bd6a5da8e66405b0d8e6fe5ba92 --allocation-set source-bf16-reference --authorization-ref REPLACE_WITH_AUTHORIZATION_REFERENCE --max-requests 1740 --max-input-tokens 57016320 --max-output-tokens 28508160 --max-actions 1740 --max-cost-usd 4350.00 --max-runtime-minutes 17400"}
+    ]
+  },
+  "unsupported_conclusions": [
+    "Any vendor-reported score has been locally reproduced.",
+    "Any media capability is validated.",
+    "The 240k transport ladder proves long-horizon reasoning.",
+    "A blocked benchmark was locally executed.",
+    "Checkpoint N+1 improved."
+  ]
+}

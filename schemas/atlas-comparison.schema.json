@@ -1,0 +1,212 @@
+{
+  "$defs": {
+    "ComparisonMetricDelta": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence_level": {
+          "exclusiveMaximum": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Confidence Level",
+          "type": "number"
+        },
+        "delta": {
+          "title": "Delta",
+          "type": "number"
+        },
+        "evidence_result_digests": {
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Evidence Result Digests",
+          "type": "array"
+        },
+        "left_condition_id": {
+          "minLength": 1,
+          "title": "Left Condition Id",
+          "type": "string"
+        },
+        "left_suite_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Left Suite Digest",
+          "type": "string"
+        },
+        "left_value": {
+          "title": "Left Value",
+          "type": "number"
+        },
+        "lower": {
+          "title": "Lower",
+          "type": "number"
+        },
+        "metric_id": {
+          "minLength": 1,
+          "title": "Metric Id",
+          "type": "string"
+        },
+        "right_condition_id": {
+          "minLength": 1,
+          "title": "Right Condition Id",
+          "type": "string"
+        },
+        "right_suite_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Right Suite Digest",
+          "type": "string"
+        },
+        "right_value": {
+          "title": "Right Value",
+          "type": "number"
+        },
+        "upper": {
+          "title": "Upper",
+          "type": "number"
+        }
+      },
+      "required": [
+        "left_condition_id",
+        "left_suite_digest",
+        "right_condition_id",
+        "right_suite_digest",
+        "metric_id",
+        "left_value",
+        "right_value",
+        "delta",
+        "lower",
+        "upper",
+        "confidence_level",
+        "evidence_result_digests"
+      ],
+      "title": "ComparisonMetricDelta",
+      "type": "object"
+    },
+    "ResearchAxis": {
+      "enum": [
+        "checkpoint",
+        "quantization",
+        "task",
+        "parent_state",
+        "harness",
+        "continuation",
+        "context_policy",
+        "prompts",
+        "tools",
+        "budget",
+        "serving",
+        "auxiliary_models",
+        "environment",
+        "instrumentation",
+        "seed"
+      ],
+      "title": "ResearchAxis",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-comparison.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowed_axes": {
+      "items": {
+        "$ref": "#/$defs/ResearchAxis"
+      },
+      "title": "Allowed Axes",
+      "type": "array"
+    },
+    "causal_claim_permitted": {
+      "title": "Causal Claim Permitted",
+      "type": "boolean"
+    },
+    "comparability_evidence_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Comparability Evidence Digest",
+      "type": "string"
+    },
+    "comparison_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Comparison Digest",
+      "type": "string"
+    },
+    "comparison_id": {
+      "minLength": 1,
+      "title": "Comparison Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "improvements": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Improvements",
+      "type": "array"
+    },
+    "left_snapshot_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Left Snapshot Digest",
+      "type": "string"
+    },
+    "metric_deltas": {
+      "items": {
+        "$ref": "#/$defs/ComparisonMetricDelta"
+      },
+      "title": "Metric Deltas",
+      "type": "array"
+    },
+    "observed_axes": {
+      "items": {
+        "$ref": "#/$defs/ResearchAxis"
+      },
+      "title": "Observed Axes",
+      "type": "array"
+    },
+    "regressions": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Regressions",
+      "type": "array"
+    },
+    "right_snapshot_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Right Snapshot Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "unknowns": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Unknowns",
+      "type": "array"
+    }
+  },
+  "required": [
+    "comparison_id",
+    "left_snapshot_digest",
+    "right_snapshot_digest",
+    "allowed_axes",
+    "observed_axes",
+    "comparability_evidence_digest",
+    "metric_deltas",
+    "regressions",
+    "improvements",
+    "unknowns",
+    "causal_claim_permitted",
+    "comparison_digest",
+    "created_at"
+  ],
+  "title": "AtlasComparison",
+  "type": "object"
+}

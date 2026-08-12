@@ -1,0 +1,492 @@
+{
+  "$defs": {
+    "CampaignCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "blocking_reasons": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Blocking Reasons",
+          "type": "array"
+        },
+        "condition_id": {
+          "minLength": 1,
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "expected_runtime_minutes": {
+          "exclusiveMinimum": 0,
+          "title": "Expected Runtime Minutes",
+          "type": "integer"
+        },
+        "externally_gated": {
+          "title": "Externally Gated",
+          "type": "boolean"
+        },
+        "factor_levels": {
+          "additionalProperties": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minProperties": 1,
+          "propertyNames": {
+            "minLength": 1
+          },
+          "title": "Factor Levels",
+          "type": "object"
+        },
+        "harness_tier": {
+          "minLength": 1,
+          "title": "Harness Tier",
+          "type": "string"
+        },
+        "max_actions": {
+          "exclusiveMinimum": 0,
+          "title": "Max Actions",
+          "type": "integer"
+        },
+        "max_cost_usd": {
+          "minimum": 0.0,
+          "title": "Max Cost Usd",
+          "type": "number"
+        },
+        "max_input_tokens": {
+          "exclusiveMinimum": 0,
+          "title": "Max Input Tokens",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "exclusiveMinimum": 0,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        },
+        "max_requests": {
+          "exclusiveMinimum": 0,
+          "title": "Max Requests",
+          "type": "integer"
+        },
+        "required_checkpoint_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Required Checkpoint Id"
+        },
+        "required_execution_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Required Execution Digest"
+        },
+        "required_protocol": {
+          "minLength": 1,
+          "title": "Required Protocol",
+          "type": "string"
+        },
+        "required_quantization_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Required Quantization Id"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "condition_id",
+        "title",
+        "harness_tier",
+        "required_protocol",
+        "factor_levels",
+        "max_requests",
+        "max_input_tokens",
+        "max_output_tokens",
+        "max_actions",
+        "max_cost_usd",
+        "expected_runtime_minutes",
+        "externally_gated"
+      ],
+      "title": "CampaignCondition",
+      "type": "object"
+    },
+    "CampaignStatus": {
+      "enum": [
+        "planned",
+        "ready",
+        "externally_gated",
+        "complete",
+        "invalid"
+      ],
+      "title": "CampaignStatus",
+      "type": "string"
+    },
+    "CampaignSuiteBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "adaptive": {
+          "default": false,
+          "title": "Adaptive",
+          "type": "boolean"
+        },
+        "condition_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Condition Ids",
+          "type": "array"
+        },
+        "evaluation_class": {
+          "$ref": "#/$defs/EvaluationClass"
+        },
+        "planned_item_count": {
+          "exclusiveMinimum": 0,
+          "title": "Planned Item Count",
+          "type": "integer"
+        },
+        "suite_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Suite Digest",
+          "type": "string"
+        },
+        "trials_per_item": {
+          "exclusiveMinimum": 0,
+          "title": "Trials Per Item",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "suite_digest",
+        "evaluation_class",
+        "planned_item_count",
+        "trials_per_item",
+        "condition_ids"
+      ],
+      "title": "CampaignSuiteBinding",
+      "type": "object"
+    },
+    "EvaluationClass": {
+      "enum": [
+        "development",
+        "adaptive_search",
+        "challenge",
+        "sealed_promotion"
+      ],
+      "title": "EvaluationClass",
+      "type": "string"
+    },
+    "Factor": {
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "$ref": "#/$defs/ResearchAxis"
+        },
+        "factor_id": {
+          "minLength": 1,
+          "title": "Factor Id",
+          "type": "string"
+        },
+        "levels": {
+          "items": {
+            "$ref": "#/$defs/FactorLevel"
+          },
+          "minItems": 2,
+          "title": "Levels",
+          "type": "array"
+        }
+      },
+      "required": [
+        "factor_id",
+        "axis",
+        "levels"
+      ],
+      "title": "Factor",
+      "type": "object"
+    },
+    "FactorLevel": {
+      "additionalProperties": false,
+      "properties": {
+        "level_id": {
+          "minLength": 1,
+          "title": "Level Id",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minProperties": 1,
+          "propertyNames": {
+            "minLength": 1
+          },
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "level_id",
+        "parameters"
+      ],
+      "title": "FactorLevel",
+      "type": "object"
+    },
+    "ResearchAxis": {
+      "enum": [
+        "checkpoint",
+        "quantization",
+        "task",
+        "parent_state",
+        "harness",
+        "continuation",
+        "context_policy",
+        "prompts",
+        "tools",
+        "budget",
+        "serving",
+        "auxiliary_models",
+        "environment",
+        "instrumentation",
+        "seed"
+      ],
+      "title": "ResearchAxis",
+      "type": "string"
+    },
+    "StopRule": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary_probability": {
+          "default": 0.5,
+          "exclusiveMaximum": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Boundary Probability",
+          "type": "number"
+        },
+        "confidence_level": {
+          "default": 0.95,
+          "exclusiveMaximum": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Confidence Level",
+          "type": "number"
+        },
+        "fixed_before_results": {
+          "default": true,
+          "title": "Fixed Before Results",
+          "type": "boolean"
+        },
+        "maximum_infrastructure_failure_rate": {
+          "default": 0.05,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Maximum Infrastructure Failure Rate",
+          "type": "number"
+        },
+        "maximum_trials": {
+          "exclusiveMinimum": 0,
+          "title": "Maximum Trials",
+          "type": "integer"
+        },
+        "minimum_trials": {
+          "exclusiveMinimum": 0,
+          "title": "Minimum Trials",
+          "type": "integer"
+        },
+        "rule_id": {
+          "minLength": 1,
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "target_interval_width": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Target Interval Width",
+          "type": "number"
+        }
+      },
+      "required": [
+        "rule_id",
+        "minimum_trials",
+        "maximum_trials",
+        "target_interval_width"
+      ],
+      "title": "StopRule",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-campaign-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adaptive_suite_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Adaptive Suite Digests",
+      "type": "array"
+    },
+    "analysis_policy_id": {
+      "minLength": 1,
+      "title": "Analysis Policy Id",
+      "type": "string"
+    },
+    "analysis_policy_version": {
+      "minLength": 1,
+      "title": "Analysis Policy Version",
+      "type": "string"
+    },
+    "campaign_id": {
+      "minLength": 1,
+      "title": "Campaign Id",
+      "type": "string"
+    },
+    "conditions": {
+      "items": {
+        "$ref": "#/$defs/CampaignCondition"
+      },
+      "minItems": 1,
+      "title": "Conditions",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "description": {
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "factors": {
+      "items": {
+        "$ref": "#/$defs/Factor"
+      },
+      "title": "Factors",
+      "type": "array"
+    },
+    "manifest_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Manifest Digest",
+      "type": "string"
+    },
+    "ontology_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Ontology Digest",
+      "type": "string"
+    },
+    "promotion_suite_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Promotion Suite Digests",
+      "type": "array"
+    },
+    "randomization_seed": {
+      "title": "Randomization Seed",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_claim_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Source Claim Ids",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/CampaignStatus"
+    },
+    "stop_rules": {
+      "items": {
+        "$ref": "#/$defs/StopRule"
+      },
+      "minItems": 1,
+      "title": "Stop Rules",
+      "type": "array"
+    },
+    "suite_bindings": {
+      "items": {
+        "$ref": "#/$defs/CampaignSuiteBinding"
+      },
+      "minItems": 1,
+      "title": "Suite Bindings",
+      "type": "array"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "training_candidate_suite_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Training Candidate Suite Digests",
+      "type": "array"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "campaign_id",
+    "version",
+    "title",
+    "description",
+    "status",
+    "ontology_digest",
+    "source_claim_ids",
+    "suite_bindings",
+    "conditions",
+    "factors",
+    "stop_rules",
+    "randomization_seed",
+    "analysis_policy_id",
+    "analysis_policy_version",
+    "promotion_suite_digests",
+    "adaptive_suite_digests",
+    "training_candidate_suite_digests",
+    "manifest_digest",
+    "created_at"
+  ],
+  "title": "AtlasCampaignManifest",
+  "type": "object"
+}

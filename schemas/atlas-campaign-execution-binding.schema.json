@@ -1,0 +1,98 @@
+{
+  "$id": "https://schemas.padawan.local/v1/atlas-campaign-execution-binding.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One non-circular activation of a campaign condition under exact research controls.",
+  "properties": {
+    "binding_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Binding Digest",
+      "type": "string"
+    },
+    "binding_id": {
+      "minLength": 1,
+      "title": "Binding Id",
+      "type": "string"
+    },
+    "bound_by": {
+      "minLength": 1,
+      "title": "Bound By",
+      "type": "string"
+    },
+    "campaign_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Campaign Digest",
+      "type": "string"
+    },
+    "condition_id": {
+      "minLength": 1,
+      "title": "Condition Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "external_authorization_ref": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "External Authorization Ref"
+    },
+    "factor_levels": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minProperties": 1,
+      "propertyNames": {
+        "minLength": 1
+      },
+      "title": "Factor Levels",
+      "type": "object"
+    },
+    "harness_profile_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Harness Profile Digest",
+      "type": "string"
+    },
+    "research_execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Research Execution Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "suite_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Suite Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "binding_id",
+    "campaign_digest",
+    "condition_id",
+    "suite_digest",
+    "research_execution_digest",
+    "harness_profile_digest",
+    "factor_levels",
+    "bound_by",
+    "binding_digest",
+    "created_at"
+  ],
+  "title": "CampaignExecutionBinding",
+  "type": "object"
+}

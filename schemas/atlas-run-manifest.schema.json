@@ -1,0 +1,342 @@
+{
+  "$defs": {
+    "AdapterDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_id": {
+          "minLength": 1,
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "authority_order": {
+          "items": {
+            "$ref": "#/$defs/AuthorityKind"
+          },
+          "minItems": 1,
+          "title": "Authority Order",
+          "type": "array"
+        },
+        "deterministic_authority_required": {
+          "title": "Deterministic Authority Required",
+          "type": "boolean"
+        },
+        "implementation_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Implementation Digest",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/AdapterKind"
+        },
+        "supported_modalities": {
+          "items": {
+            "$ref": "#/$defs/Modality"
+          },
+          "minItems": 1,
+          "title": "Supported Modalities",
+          "type": "array"
+        },
+        "supports_interaction": {
+          "title": "Supports Interaction",
+          "type": "boolean"
+        },
+        "supports_repeated_trials": {
+          "title": "Supports Repeated Trials",
+          "type": "boolean"
+        },
+        "supports_tools": {
+          "title": "Supports Tools",
+          "type": "boolean"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "adapter_id",
+        "version",
+        "kind",
+        "supported_modalities",
+        "authority_order",
+        "deterministic_authority_required",
+        "supports_tools",
+        "supports_interaction",
+        "supports_repeated_trials",
+        "implementation_digest"
+      ],
+      "title": "AdapterDescriptor",
+      "type": "object"
+    },
+    "AdapterKind": {
+      "enum": [
+        "static_qa",
+        "generated_verifier",
+        "coding_agentic",
+        "interactive_environment",
+        "context_memory",
+        "multimodal"
+      ],
+      "title": "AdapterKind",
+      "type": "string"
+    },
+    "AtlasRunKind": {
+      "enum": [
+        "offline_verification",
+        "model_evaluation",
+        "replay_grading"
+      ],
+      "title": "AtlasRunKind",
+      "type": "string"
+    },
+    "AuthorityKind": {
+      "enum": [
+        "deterministic",
+        "kernel",
+        "environment",
+        "human",
+        "model"
+      ],
+      "title": "AuthorityKind",
+      "type": "string"
+    },
+    "EvaluationClass": {
+      "enum": [
+        "development",
+        "adaptive_search",
+        "challenge",
+        "sealed_promotion"
+      ],
+      "title": "EvaluationClass",
+      "type": "string"
+    },
+    "Modality": {
+      "enum": [
+        "text",
+        "image",
+        "audio",
+        "video"
+      ],
+      "title": "Modality",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-run-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable envelope for an Atlas run using Padawan's existing run state machine.",
+  "properties": {
+    "adaptive": {
+      "title": "Adaptive",
+      "type": "boolean"
+    },
+    "allocation_policy_id": {
+      "minLength": 1,
+      "title": "Allocation Policy Id",
+      "type": "string"
+    },
+    "allocation_policy_version": {
+      "minLength": 1,
+      "title": "Allocation Policy Version",
+      "type": "string"
+    },
+    "campaign_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Campaign Digest",
+      "type": "string"
+    },
+    "campaign_execution_binding_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Campaign Execution Binding Digest",
+      "type": "string"
+    },
+    "condition_id": {
+      "minLength": 1,
+      "title": "Condition Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "evaluation_class": {
+      "$ref": "#/$defs/EvaluationClass"
+    },
+    "external_authorization_ref": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "External Authorization Ref"
+    },
+    "external_execution": {
+      "title": "External Execution",
+      "type": "boolean"
+    },
+    "harness_profile_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Harness Profile Digest",
+      "type": "string"
+    },
+    "manifest_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Manifest Digest",
+      "type": "string"
+    },
+    "max_actions": {
+      "exclusiveMinimum": 0,
+      "title": "Max Actions",
+      "type": "integer"
+    },
+    "max_cost_usd": {
+      "minimum": 0.0,
+      "title": "Max Cost Usd",
+      "type": "number"
+    },
+    "max_input_tokens": {
+      "exclusiveMinimum": 0,
+      "title": "Max Input Tokens",
+      "type": "integer"
+    },
+    "max_output_tokens": {
+      "exclusiveMinimum": 0,
+      "title": "Max Output Tokens",
+      "type": "integer"
+    },
+    "max_retry_requests": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Max Retry Requests",
+      "type": "integer"
+    },
+    "planned_request_count": {
+      "exclusiveMinimum": 0,
+      "title": "Planned Request Count",
+      "type": "integer"
+    },
+    "predeclared_request_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Predeclared Request Digests",
+      "type": "array"
+    },
+    "request_template_adapter": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AdapterDescriptor"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "request_template_configuration": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "propertyNames": {
+            "minLength": 1
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Request Template Configuration"
+    },
+    "request_template_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Request Template Digest"
+    },
+    "research_execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Research Execution Digest",
+      "type": "string"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "run_kind": {
+      "$ref": "#/$defs/AtlasRunKind"
+    },
+    "run_manifest_id": {
+      "minLength": 1,
+      "title": "Run Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stop_rule_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Stop Rule Id"
+    },
+    "suite_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Suite Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_manifest_id",
+    "run_id",
+    "run_kind",
+    "campaign_digest",
+    "campaign_execution_binding_digest",
+    "condition_id",
+    "suite_digest",
+    "research_execution_digest",
+    "harness_profile_digest",
+    "evaluation_class",
+    "adaptive",
+    "allocation_policy_id",
+    "allocation_policy_version",
+    "planned_request_count",
+    "max_input_tokens",
+    "max_output_tokens",
+    "max_actions",
+    "max_cost_usd",
+    "external_execution",
+    "manifest_digest",
+    "created_at"
+  ],
+  "title": "AtlasRunManifest",
+  "type": "object"
+}

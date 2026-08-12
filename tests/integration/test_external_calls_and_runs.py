@@ -46,10 +46,42 @@ async def test_response_persistence_prevents_duplicate_generation_after_crash(
     async with database.transaction() as session:
         call = await session.get(ExternalCallRow, request.request_id)
         assert call is not None and call.status == "completed"
+        assert call.result_model_id == first.model_id
+        assert call.result_protocol == first.protocol
+        assert call.result_raw_request_digest is not None
+        assert call.result_raw_response_digest is not None
+        assert call.result_output_text_digest is not None
+        assert call.result_usage == first.usage
+        assert call.result_capabilities_digest is not None
+        assert call.result_latency_ms == first.latency_ms
         transitions = (
             await session.scalars(select(RunTransitionRow).where(RunTransitionRow.run_id == run_id))
         ).all()
         assert transitions == []
+
+
+async def test_generic_executor_cannot_bypass_atlas_activation_gateway(database, tmp_path) -> None:
+    client = CallbackGenerationClient(lambda _request: '{"ok":true}', "provider")
+    executor = IdempotentGenerationExecutor(
+        database=database,
+        artifacts=LocalArtifactStore(tmp_path / "artifacts"),
+        client=client,
+    )
+    request = GenerationRequest(
+        request_id="atlas-bypass",
+        instructions="respond",
+        input="input",
+        sampling=SamplingConfiguration(max_output_tokens=20),
+        store=False,
+    )
+    with pytest.raises(PermissionError, match="activation gateway"):
+        await executor.execute(
+            run_id="not-dispatched",
+            purpose="capability_atlas",
+            provider="provider",
+            request=request,
+        )
+    assert client.calls == []
 
 
 async def test_run_transition_lease_release_pause_and_stale_recovery(database) -> None:

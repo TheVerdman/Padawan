@@ -1,0 +1,89 @@
+{
+  "$id": "https://schemas.padawan.local/v1/atlas-probe-set-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "item_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Item Digests",
+      "type": "array"
+    },
+    "manifest_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Manifest Digest",
+      "type": "string"
+    },
+    "matched_dimensions": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Matched Dimensions",
+      "type": "array"
+    },
+    "outcome_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Outcome Digest",
+      "type": "string"
+    },
+    "outcome_result_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Outcome Result Digests",
+      "type": "array"
+    },
+    "phenomenon_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Phenomenon Digest",
+      "type": "string"
+    },
+    "phenomenon_id": {
+      "minLength": 1,
+      "title": "Phenomenon Id",
+      "type": "string"
+    },
+    "probe_set_id": {
+      "minLength": 1,
+      "title": "Probe Set Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "suite_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Suite Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "probe_set_id",
+    "phenomenon_id",
+    "phenomenon_digest",
+    "suite_digest",
+    "item_digests",
+    "matched_dimensions",
+    "outcome_result_digests",
+    "outcome_digest",
+    "manifest_digest",
+    "created_at"
+  ],
+  "title": "ProbeSetManifest",
+  "type": "object"
+}

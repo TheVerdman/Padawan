@@ -1,0 +1,139 @@
+{
+  "$defs": {
+    "AdapterKind": {
+      "enum": [
+        "static_qa",
+        "generated_verifier",
+        "coding_agentic",
+        "interactive_environment",
+        "context_memory",
+        "multimodal"
+      ],
+      "title": "AdapterKind",
+      "type": "string"
+    },
+    "Modality": {
+      "enum": [
+        "text",
+        "image",
+        "audio",
+        "video"
+      ],
+      "title": "Modality",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-item-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapter_kind": {
+      "$ref": "#/$defs/AdapterKind"
+    },
+    "difficulty": {
+      "title": "Difficulty",
+      "type": "number"
+    },
+    "family_id": {
+      "minLength": 1,
+      "title": "Family Id",
+      "type": "string"
+    },
+    "item_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Item Digest",
+      "type": "string"
+    },
+    "item_id": {
+      "minLength": 1,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "modalities": {
+      "items": {
+        "$ref": "#/$defs/Modality"
+      },
+      "minItems": 1,
+      "title": "Modalities",
+      "type": "array"
+    },
+    "pair_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pair Id"
+    },
+    "prompt": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Prompt"
+    },
+    "prompt_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Prompt Digest",
+      "type": "string"
+    },
+    "variant_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Variant Id"
+    },
+    "verifier_id": {
+      "minLength": 1,
+      "title": "Verifier Id",
+      "type": "string"
+    },
+    "verifier_payload": {
+      "additionalProperties": true,
+      "title": "Verifier Payload",
+      "type": "object"
+    },
+    "verifier_version": {
+      "minLength": 1,
+      "title": "Verifier Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "item_id",
+    "item_digest",
+    "family_id",
+    "difficulty",
+    "adapter_kind",
+    "modalities",
+    "prompt",
+    "prompt_digest",
+    "verifier_id",
+    "verifier_version",
+    "verifier_payload"
+  ],
+  "title": "AtlasItemManifest",
+  "type": "object"
+}

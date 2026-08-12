@@ -1,0 +1,69 @@
+{
+  "$id": "https://schemas.padawan.local/v1/atlas-exploratory-reproduction.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "independent_item_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Independent Item Digest",
+      "type": "string"
+    },
+    "proposal_id": {
+      "minLength": 1,
+      "title": "Proposal Id",
+      "type": "string"
+    },
+    "reproduced": {
+      "title": "Reproduced",
+      "type": "boolean"
+    },
+    "reproduction_id": {
+      "minLength": 1,
+      "title": "Reproduction Id",
+      "type": "string"
+    },
+    "research_execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Research Execution Digest",
+      "type": "string"
+    },
+    "result_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 2,
+      "title": "Result Digests",
+      "type": "array"
+    },
+    "reviewer": {
+      "minLength": 1,
+      "title": "Reviewer",
+      "type": "string"
+    },
+    "stability": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Stability",
+      "type": "number"
+    }
+  },
+  "required": [
+    "reproduction_id",
+    "proposal_id",
+    "research_execution_digest",
+    "independent_item_digest",
+    "result_digests",
+    "reproduced",
+    "stability",
+    "reviewer",
+    "created_at"
+  ],
+  "title": "ExploratoryReproduction",
+  "type": "object"
+}

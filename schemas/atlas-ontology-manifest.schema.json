@@ -1,0 +1,143 @@
+{
+  "$defs": {
+    "FailureOrigin": {
+      "enum": [
+        "model",
+        "harness",
+        "verifier",
+        "parser",
+        "infrastructure",
+        "contamination",
+        "unknown"
+      ],
+      "title": "FailureOrigin",
+      "type": "string"
+    },
+    "OntologyNode": {
+      "additionalProperties": false,
+      "properties": {
+        "changed_axes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ResearchAxis"
+          },
+          "title": "Changed Axes",
+          "type": "array"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "examples": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Examples",
+          "type": "array"
+        },
+        "node_id": {
+          "minLength": 1,
+          "title": "Node Id",
+          "type": "string"
+        },
+        "origin": {
+          "$ref": "#/$defs/FailureOrigin"
+        },
+        "parent_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Parent Ids",
+          "type": "array"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "node_id",
+        "title",
+        "description",
+        "origin"
+      ],
+      "title": "OntologyNode",
+      "type": "object"
+    },
+    "ResearchAxis": {
+      "enum": [
+        "checkpoint",
+        "quantization",
+        "task",
+        "parent_state",
+        "harness",
+        "continuation",
+        "context_policy",
+        "prompts",
+        "tools",
+        "budget",
+        "serving",
+        "auxiliary_models",
+        "environment",
+        "instrumentation",
+        "seed"
+      ],
+      "title": "ResearchAxis",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-ontology-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "manifest_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Manifest Digest",
+      "type": "string"
+    },
+    "nodes": {
+      "items": {
+        "$ref": "#/$defs/OntologyNode"
+      },
+      "minItems": 1,
+      "title": "Nodes",
+      "type": "array"
+    },
+    "ontology_id": {
+      "minLength": 1,
+      "title": "Ontology Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "ontology_id",
+    "version",
+    "nodes",
+    "manifest_digest",
+    "created_at"
+  ],
+  "title": "OntologyManifest",
+  "type": "object"
+}

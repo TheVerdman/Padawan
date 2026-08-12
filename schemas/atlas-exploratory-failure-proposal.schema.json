@@ -1,0 +1,142 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-exploratory-failure-proposal.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "consent_evidence_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Consent Evidence Digest",
+      "type": "string"
+    },
+    "consent_lane": {
+      "minLength": 1,
+      "title": "Consent Lane",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "deduplication_key": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Deduplication Key",
+      "type": "string"
+    },
+    "proposal_id": {
+      "minLength": 1,
+      "title": "Proposal Id",
+      "type": "string"
+    },
+    "proposed_failure_node_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Proposed Failure Node Ids",
+      "type": "array"
+    },
+    "proposed_phenomenon": {
+      "minLength": 1,
+      "title": "Proposed Phenomenon",
+      "type": "string"
+    },
+    "raw_chat_promoted": {
+      "const": false,
+      "default": false,
+      "title": "Raw Chat Promoted",
+      "type": "boolean"
+    },
+    "redacted_excerpt_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Redacted Excerpt Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_trace_artifact": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "source_trace_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Source Trace Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "proposal_id",
+    "consent_evidence_digest",
+    "consent_lane",
+    "source_trace_digest",
+    "source_trace_artifact",
+    "redacted_excerpt_digest",
+    "proposed_phenomenon",
+    "proposed_failure_node_ids",
+    "deduplication_key",
+    "created_at"
+  ],
+  "title": "ExploratoryFailureProposal",
+  "type": "object"
+}
