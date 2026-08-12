@@ -12,7 +12,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from padawan.models.hashing import sha256_digest
-from padawan.models.tables import ExperimentBlockRow, ExperimentRow
+from padawan.models.tables import (
+    ExperimentBlockRow,
+    ExperimentRow,
+    ResearchExecutionRow,
+    StudentStateRow,
+)
 from padawan.state.store import StateStore
 
 
@@ -68,12 +73,22 @@ class ExperimentEngine:
         treatment_condition: str,
         control_condition: str,
         experiment_id: str | None = None,
+        research_execution_digest: str | None = None,
     ) -> tuple[str, tuple[BlockAssignment, ...]]:
         if not blocks:
             raise ValueError("experiment needs matched blocks")
         assigned_id = experiment_id or f"experiment-{uuid4()}"
         existing = await session.get(ExperimentRow, assigned_id)
         if existing is not None:
+            if existing.research_execution_digest != research_execution_digest:
+                raise ValueError("experiment replay has different research controls")
+            if (
+                existing.parent_state_id != parent_state_id
+                or existing.seed != seed
+                or existing.design.get("treatment_condition") != treatment_condition
+                or existing.design.get("control_condition") != control_condition
+            ):
+                raise ValueError("experiment replay has a different design")
             rows = (
                 await session.scalars(
                     select(ExperimentBlockRow)
@@ -81,17 +96,29 @@ class ExperimentEngine:
                     .order_by(ExperimentBlockRow.block_index)
                 )
             ).all()
-            return assigned_id, tuple(_row_assignment(row) for row in rows)
+            stored_assignments = tuple(_row_assignment(row) for row in rows)
+            if stored_assignments != assign_blocks(seed=seed, blocks=blocks):
+                raise ValueError("experiment replay has different matched blocks")
+            return assigned_id, stored_assignments
+        if research_execution_digest is not None:
+            await _validate_research_execution(
+                session,
+                execution_digest=research_execution_digest,
+                parent_state_id=parent_state_id,
+                seed=seed,
+            )
         session.add(
             ExperimentRow(
                 experiment_id=assigned_id,
                 parent_state_id=parent_state_id,
+                research_execution_digest=research_execution_digest,
                 seed=seed,
                 design={
                     "kind": "state_forked_matched_blocks",
                     "treatment_condition": treatment_condition,
                     "control_condition": control_condition,
                     "counterbalanced": True,
+                    "research_execution_digest": research_execution_digest,
                 },
                 status="active",
                 created_at=datetime.now(UTC),
@@ -301,3 +328,26 @@ def _row_assignment(row: ExperimentBlockRow) -> BlockAssignment:
         treatment_item_id=str(row.assignment["treatment_item_id"]),
         control_item_id=str(row.assignment["control_item_id"]),
     )
+
+
+async def _validate_research_execution(
+    session: AsyncSession,
+    *,
+    execution_digest: str,
+    parent_state_id: str,
+    seed: int,
+) -> None:
+    execution = await session.get(ResearchExecutionRow, execution_digest)
+    if execution is None:
+        raise ValueError("experiment cites an unregistered research execution")
+    state = await session.get(StudentStateRow, parent_state_id)
+    if state is None:
+        raise ValueError("experiment parent state is missing")
+    if execution.seed != seed:
+        raise ValueError("experiment seed differs from its research execution")
+    if execution.checkpoint_id != state.checkpoint_id:
+        raise ValueError("experiment checkpoint differs from its research execution")
+    if execution.runtime_id != state.runtime_id:
+        raise ValueError("experiment runtime differs from its research execution")
+    if execution.research_role != state.research_role:
+        raise ValueError("experiment role differs from its research execution")

@@ -116,7 +116,7 @@
     {
       "name": "developmental-episode",
       "schema": "developmental-episode.schema.json",
-      "sha256": "2efe65d6f1035a6410d3d7c9c0ef1a621f7124ef02b39cfd2b027f85f996d4f2"
+      "sha256": "03445cff9cb8d8d1bbefe333d42d99d26b923288c0c7c2fb60ab74dbedf680a5"
     },
     {
       "name": "duration-profile",
@@ -157,6 +157,11 @@
       "name": "grade",
       "schema": "grade.schema.json",
       "sha256": "9c1f66e729cd5d016f1930756da1d305e7ec7819bd0d18700446d42f9514165d"
+    },
+    {
+      "name": "harness-profile",
+      "schema": "harness-profile.schema.json",
+      "sha256": "66b91a896ad57c555adb992a19a6520bd31de8905af5fcde3dbe34a5a25e092a"
     },
     {
       "name": "lesson",
@@ -239,6 +244,16 @@
       "sha256": "f6c18a6075256f3d59245395ca90610bf4df42bcd93f150d796777690ae6c340"
     },
     {
+      "name": "research-comparability-assessment",
+      "schema": "research-comparability-assessment.schema.json",
+      "sha256": "fe7357b773e1afe00b6195ca2debc1fe8fa642524baa5b23de72061e9e37740d"
+    },
+    {
+      "name": "research-execution-manifest",
+      "schema": "research-execution-manifest.schema.json",
+      "sha256": "1acd201fb6374a0722b788fe1b0f42df1752dde81ca2bdd2ab043fd7bdc6eaad"
+    },
+    {
       "name": "rlvr-training-row",
       "schema": "rlvr-training-row.schema.json",
       "sha256": "ea2b5a441ed021467d99400c561da95001d3d51f672cdc42c914f131485f1dea"
@@ -271,7 +286,7 @@
     {
       "name": "study-manifest",
       "schema": "study-manifest.schema.json",
-      "sha256": "f8815985cc98d6ca64388a61bd53f3b81a7713b1f3b09f1b57c7cbf4622e0f7d"
+      "sha256": "e3edd1f72e16c1668929c819822f755e3e7871efd38c7583c398cdc5076f0678"
     },
     {
       "name": "task-manifest",

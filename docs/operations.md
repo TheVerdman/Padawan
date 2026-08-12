@@ -115,6 +115,15 @@ it authenticates `GET /v1/models` and `GET /v1/padawan/capabilities`; only a mat
 receives the streaming `POST /v1/responses`. Each transport invocation makes one attempt and asks
 for `text/event-stream`; durable workflow recovery remains a separate, recorded decision.
 
+The live CLI records these semantics in a versioned standardized `HarnessProfile` before creating a
+new run. For Inkling, response storage, continuation, reasoning retention, truncation, and live
+state compaction are disabled. Capture of model-emitted `reasoning_text` remains a separate,
+restricted evidence capability and is not reused as future context. The registered execution also
+binds the exact checkpoint/conversion, quantization profile, serving image, runtime, current corpus
+inventory digest, prompt/tool versions, effective workflow and sampling parameters, budgets,
+non-secret environment fingerprint, and seed. Resuming an active run with a different seed or
+effective control configuration is rejected instead of relabeling the old evidence.
+
 Select the consumer edge and secret at runtime:
 
 ```text
@@ -327,9 +336,12 @@ switches:
 
 The report commands are intentionally read-only. `report reward` includes policy/evidence-backed
 recomputation and training eligibility. `report study` includes the immutable manifest, condition
-aggregation, attrition, and trial outcomes without lease secrets. `report checkpoint` includes its
+aggregation, attrition, research-control differences/gaps, and trial outcomes without lease
+secrets. `report experiment` includes the bound execution and harness records and refuses
+causal-claim permission for legacy or incomplete controls. `report checkpoint` includes its
 lineage, frozen-suite evaluations, comparisons, lifecycle decisions, and current integrity checks.
-`report operations` adds counts for rewards, study/trial states, and checkpoint states.
+`report operations` adds counts for rewards, study/trial states, checkpoint states, harness
+profiles, and research executions.
 
 A worker must persist prompt exposure before completing a student retention/interference outcome.
 If the provider or environment fails before any student outcome exists, record an explicit

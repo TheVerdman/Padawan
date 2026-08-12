@@ -2,6 +2,12 @@
 
 The primary causal unit is a matched sibling block inherited from one immutable student state. A
 cold checkpoint is useful for description, but it is not the control for a continuous learner.
+The measured system includes its harness:
+
+```text
+observed performance = f(checkpoint, quantization, task, harness, context policy,
+                         tools, budget, environment, seed)
+```
 
 ## Assignment
 
@@ -10,6 +16,12 @@ block assignments. Each block contains two different items from one instance gro
 bit chooses the first orientation; later blocks alternate orientation, preventing a fixed item-side
 bias while remaining exactly replayable. Block identifiers are semantic hashes of seed, index, and
 group.
+
+A controlled experiment also cites one registered `ResearchExecutionManifest`. Its parent-state
+checkpoint, runtime, role, and seed must agree before the experiment is created. The manifest binds
+the versioned `HarnessProfile`, serving/quantization identity, task/corpus, effective workflow and
+sampling parameters, environment, and seed. The run, experiment, episode, and workflow provenance
+repeat the same digest.
 
 Treatment and control child states contain the same inherited cognition and different branch IDs.
 The intervention description is stored on the fork. Branch-scoped memory rejects cross-branch
@@ -31,7 +43,9 @@ For valid paired binary outcomes the report includes treatment/control success r
 discordant McNemar counts, the exact two-sided binomial p-value, and a seeded 10,000-resample
 bootstrap interval for paired differences. Floor is flagged when both rates are at most 0.1; ceiling
 when both are at least 0.9. A report does not permit a causal claim with no analyzed blocks or any
-recorded contamination.
+recorded contamination. It also does not permit a new causal claim when the research execution is
+missing, carries unknown required component identity, or has no established context limit. Legacy
+blocks remain readable and analyzable; report-time inference does not manufacture their controls.
 
 Revision gain compares the revised cold-item score with the initial cold score. Immediate transfer
 gain compares treatment and control on unseen siblings. These quantities answer different
@@ -47,6 +61,16 @@ bounded developmental episodes, while a versioned `StudyManifest` is the authori
 multiple persisted experiments, conditions, checkpoints, an identical suite digest, environment
 fingerprints, assignment seed, and optional propensities. `report study` aggregates the original
 paired blocks and reports missing, contaminated, and infrastructure attrition without imputation.
+
+The study manifest declares its intentionally varying research axes. Each binding repeats the
+execution digest and may attach arbitrary factor values. Aggregation computes the axes that actually
+differ; an undeclared difference blocks causal-claim permission. This separates standardized and
+optimized harness results, harness uplift, quantization delta, teaching delta, and checkpoint /
+training delta rather than collapsing them into one score.
+
+Reasoning retention and compaction are separate profile fields. A later 2×2 study may vary both via
+factor values and declared context/continuation axes. A gain from changing both is joint harness
+uplift; it cannot be attributed to either factor without the factorial ablation.
 
 Retention and interference trials are now durably scheduled against immutable state snapshots and
 fresh shadow or sealed item groups. Due-item leasing and expiry recovery are implemented. A result

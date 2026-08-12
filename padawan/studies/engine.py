@@ -9,11 +9,13 @@ from typing import Any, cast
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from padawan.experiments.controls import ResearchControlRegistry
 from padawan.models.hashing import sha256_digest
 from padawan.models.research_contracts import StudyManifest, StudyStatus
 from padawan.models.tables import (
     ExperimentBlockRow,
     ExperimentRow,
+    ResearchExecutionRow,
     StudentStateRow,
     StudyExperimentRow,
     StudyRow,
@@ -46,11 +48,20 @@ class StudyAggregateReport:
     excluded_contaminated: int
     excluded_infrastructure: int
     conditions: tuple[ConditionAggregate, ...]
+    research_controls_complete: bool
+    research_execution_digests: tuple[str, ...]
+    differing_research_axes: tuple[str, ...]
+    declared_comparison_axes: tuple[str, ...]
+    blocking_research_differences: tuple[str, ...]
+    research_provenance_gaps: tuple[str, ...]
     causal_claim_permitted: bool
 
 
 class StudyEngine:
     """Immutable study definitions with block-level, missingness-preserving aggregation."""
+
+    def __init__(self, controls: ResearchControlRegistry | None = None) -> None:
+        self.controls = controls or ResearchControlRegistry()
 
     async def create(
         self,
@@ -87,6 +98,35 @@ class StudyEngine:
                 raise ValueError(
                     f"study research role differs from experiment state: {binding.experiment_id}"
                 )
+            if experiment.research_execution_digest != binding.research_execution_digest:
+                raise ValueError(
+                    f"study research execution differs from experiment: {binding.experiment_id}"
+                )
+            if binding.research_execution_digest is not None:
+                if (
+                    experiment.design.get("research_execution_digest")
+                    != binding.research_execution_digest
+                ):
+                    raise ValueError(
+                        f"experiment design differs from research execution: "
+                        f"{binding.experiment_id}"
+                    )
+                execution = await session.get(
+                    ResearchExecutionRow, binding.research_execution_digest
+                )
+                if execution is None:
+                    raise ValueError(
+                        f"study cites unknown research execution: {binding.experiment_id}"
+                    )
+                if execution.checkpoint_id != binding.checkpoint_id:
+                    raise ValueError(
+                        f"study checkpoint differs from research execution: {binding.experiment_id}"
+                    )
+                if execution.environment_fingerprint != binding.environment_fingerprint:
+                    raise ValueError(
+                        f"study environment differs from research execution: "
+                        f"{binding.experiment_id}"
+                    )
         row = StudyRow(
             study_id=manifest.study_id,
             version=manifest.version,
@@ -113,6 +153,8 @@ class StudyEngine:
                     research_role=binding.research_role.value,
                     suite_manifest_digest=binding.suite_manifest_digest,
                     environment_fingerprint=binding.environment_fingerprint,
+                    research_execution_digest=binding.research_execution_digest,
+                    factor_values=dict(binding.factor_values),
                     assignment_propensity=binding.assignment_propensity,
                 )
             )
@@ -184,6 +226,7 @@ class StudyEngine:
             )
             for condition_id, blocks in sorted(by_condition.items())
         )
+        controls = await self.controls.assess_study(session, study_id=study_id)
         return StudyAggregateReport(
             study_id=study_id,
             manifest_digest=study.manifest_digest,
@@ -197,9 +240,20 @@ class StudyEngine:
                 condition.excluded_infrastructure for condition in conditions
             ),
             conditions=conditions,
+            research_controls_complete=controls.provenance_complete,
+            research_execution_digests=controls.execution_digests,
+            differing_research_axes=tuple(axis.value for axis in controls.differing_axes),
+            declared_comparison_axes=tuple(
+                axis.value for axis in controls.declared_comparison_axes
+            ),
+            blocking_research_differences=tuple(
+                axis.value for axis in controls.blocking_differences
+            ),
+            research_provenance_gaps=controls.provenance_gaps,
             causal_claim_permitted=bool(conditions)
             and all(condition.analyzed_blocks > 0 for condition in conditions)
-            and not any(condition.excluded_contaminated for condition in conditions),
+            and not any(condition.excluded_contaminated for condition in conditions)
+            and controls.comparable,
         )
 
 

@@ -35,6 +35,7 @@ domain cannot masquerade as a complete autonomous workflow. The authorities rema
 | episode | `EpisodeStore` | typed attempts, grades, interventions, trials, final episodes |
 | memory | `LessonMemory` | versioned lessons, retrieval decisions, conflicts, rollback |
 | experiment | `ExperimentEngine` | deterministic blocks, counterbalancing, paired analysis |
+| research control | `ResearchControlRegistry` | immutable harness/execution identity and fail-closed comparability |
 | study | `StudyEngine` and `EvaluationScheduler` | versioned aggregation, retention/interference due work |
 | reward | `RewardEngine` | immutable verifier evidence, policies, utility recomputation |
 | checkpoint | `CheckpointRegistry` | external lineage, sealed-suite comparison, lifecycle decisions |
@@ -52,6 +53,13 @@ Completions when the operator explicitly enables compatibility fallback. Anthrop
 Provider and research role are orthogonal: OpenAI is a baseline or teacher, while Inkling and an
 explicit compatible open-weight runtime are target candidates. Role is persisted through student
 state, run, attempt, and episode records; baseline runs cannot consolidate target memory.
+
+The harness is also an experimental object. The live loop registers an immutable `HarnessProfile`
+and one `ResearchExecutionManifest` before it creates a controlled run. The manifest binds student
+and auxiliary model serving, task/corpus, effective workflow/condition/sampling parameters,
+environment, and seed to the profile's continuation, reasoning-retention, context, prompt/tool,
+instrumentation, and budget policies. `runs` and `experiments` point to the same content digest;
+workflow provenance and episode records repeat it.
 
 `DomainRegistry` installs `math.algebra@1.0.0`, `math.lean@1.0.0`,
 `legal.appellate.fourth_circuit@1.0.0`, `agent.magellan_improvement@1.0.0`, and
@@ -121,6 +129,12 @@ rotating-shadow or sealed-anchor item in the source competency. Due claims lease
 exact corpus item together; completion requires a matching persisted prompt exposure unless the
 outcome is an explicit infrastructure failure.
 
+Study bindings also repeat each experiment's research-execution digest and carry open factor
+values. A study declares which research axes may vary; observed undeclared differences or missing
+controls disable causal-claim permission. New checkpoint evaluation records require this control
+assessment to pass. Legacy experiments remain inspectable but do not acquire comparative authority
+from a report generated after the fact.
+
 Checkpoint weights remain external and frozen during a study. `CheckpointRegistry` records model,
 tokenizer, parent, training-bundle, and runtime identities; accepts evaluations only against a
 registered identical suite; and compares N with N+1 under an immutable lexicographic policy.
@@ -145,6 +159,8 @@ accepts the database-derived referenced digest set.
 Provenance is a separate append-only hash chain. Each event commits a canonical payload hash, prior
 chain hash, actor, code revision, environment, state lineage, and episode link. Verification
 recomputes the stream rather than trusting a stored boolean.
+Harness profiles and research execution manifests are immutable content-digested rows. They contain
+component identities and digests, not raw prompts, responses, credentials, or private reasoning.
 
 ## Repository integrations
 
@@ -178,4 +194,6 @@ no live workflow. GCS is implemented; S3 is intentionally absent. There is no pa
 implementation. `UnsupportedParameterUpdateBackend` fails explicitly because no backend can yet
 isolate, evaluate, commit, and restore a real weight update. Retention and interference are durably
 scheduled, leased, completed, and recovered, but no instrumented Inkling extension currently
-supplies live target outcomes or router telemetry.
+supplies router/expert or activation telemetry. The research-control contracts expose typed seams
+for that later instrumentation, capability-atlas ingestion, interactive trajectories, the
+retention × compaction factorial, and checkpoint N+1 evaluation; absent seams are not results.

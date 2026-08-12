@@ -52,6 +52,8 @@ from padawan.domains.magellan_improvement import (
     MagellanScenarioGenerator,
 )
 from padawan.episodes.store import EpisodeStore
+from padawan.experiments.controls import ResearchControlRegistry
+from padawan.experiments.defaults import build_standardized_developmental_control
 from padawan.experiments.engine import ExperimentEngine
 from padawan.governance.manifests import CommandManifest, ManifestWriter, now
 from padawan.governance.policy import ExportPolicy
@@ -1053,6 +1055,13 @@ async def _live_research_run(
         )
         if selected_model is None:
             raise ValueError("student model cannot be resolved")
+        selected_teacher_model = teacher_model or (
+            settings.openai_model if teacher_provider == "openai" else settings.anthropic_model
+        )
+        if selected_teacher_model is None:
+            raise ValueError("teacher model cannot be resolved")
+        competencies = application.domain.competencies()
+        competency_ids = tuple(item.competency_id for item in competencies)
         async with application.database.transaction() as session:
             student = await session.get(StudentRow, student_id)
             if student is None:
@@ -1088,7 +1097,7 @@ async def _live_research_run(
                         "checkpoint; use a new student identity"
                     )
             if bootstrap:
-                for competency in application.domain.competencies():
+                for competency in competencies:
                     await application.registry.register_competency(session, competency)
                 items = application.domain.generate_curriculum(
                     pool=CorpusPool.CURRICULUM,
@@ -1097,6 +1106,58 @@ async def _live_research_run(
                     siblings_per_group=3,
                 )
                 await application.registry.register_items(session, list(items))
+            inventory = (
+                await session.scalars(
+                    select(CorpusItemRow)
+                    .where(
+                        CorpusItemRow.pool == CorpusPool.CURRICULUM.value,
+                        CorpusItemRow.competency_id.in_(competency_ids),
+                    )
+                    .order_by(CorpusItemRow.item_id)
+                )
+            ).all()
+            corpus_digest = sha256_digest(
+                [
+                    {
+                        "item_id": row.item_id,
+                        "competency_id": row.competency_id,
+                        "template_family_id": row.template_family_id,
+                        "instance_group_id": row.instance_group_id,
+                        "generation_seed": row.generation_seed,
+                        "generator_version": row.generator_version,
+                        "difficulty": row.difficulty,
+                        "prompt_digest": sha256_digest(row.prompt),
+                        "expected_answer_digest": sha256_digest(row.expected_answer),
+                        "verifier_spec_digest": sha256_digest(row.verifier_spec),
+                        "pool": row.pool,
+                        "source": row.source,
+                        "rights_digest": row.rights_digest,
+                        "contamination_scope": row.contamination_scope,
+                    }
+                    for row in inventory
+                ]
+            )
+        research_controls = ResearchControlRegistry()
+        control_configuration = build_standardized_developmental_control(
+            settings=settings,
+            domain=application.domain.spec,
+            student_provider=student_provider,
+            student_model_id=selected_model,
+            student_runtime_id=application.student_runtime_id,
+            student_runtime_version=application.student_runtime_version,
+            student_checkpoint_id=application.student_checkpoint_id,
+            student_role=application.student_role,
+            student_base_url=(
+                settings.inkling_base_url
+                if student_provider == "inkling"
+                else settings.openai_base_url
+                if student_provider == "openai"
+                else compatible_base_url or settings.compatible_base_url
+            ),
+            teacher_provider=teacher_provider,
+            teacher_model_id=selected_teacher_model,
+            corpus_digest=corpus_digest,
+        )
         loop = AutonomousResearchLoop(
             database=application.database,
             runs=application.runs,
@@ -1105,6 +1166,8 @@ async def _live_research_run(
             research_role=application.student_role,
             domain_id=application.domain.spec.domain_id,
             retry_budget=settings.run_retry_budget,
+            research_controls=research_controls,
+            control_configuration=control_configuration,
         )
         result = await loop.run(
             episode_budget=episode_budget,

@@ -272,6 +272,7 @@ class AlgebraWorkflowHandler:
                 ),
                 control_condition=str(run.payload.get("control_condition", "no_intervention")),
                 experiment_id=experiment_id,
+                research_execution_digest=run.research_execution_digest,
             )
             block = await session.get(ExperimentBlockRow, assignments[0].block_id)
             if block is None:
@@ -1109,6 +1110,7 @@ class AlgebraWorkflowHandler:
                 student_state_before_id=str(run.payload["state_id"]),
                 task_item_id=str(run.payload["leases"][0]["item"]["item_id"]),
                 research_role=self.student_role,
+                research_execution_digest=run.research_execution_digest,
                 initial_attempt_id=str(run.payload["cold_attempt_id"]),
                 grade_id=str(run.payload["cold_grade_id"]),
                 diagnosis_ids=(),
@@ -1227,6 +1229,8 @@ class AlgebraWorkflowHandler:
             episode_id=episode_id,
             student_state_before_id=str(run.payload["state_id"]),
             task_item_id=str(run.payload["leases"][0]["item"]["item_id"]),
+            research_role=self.student_role,
+            research_execution_digest=run.research_execution_digest,
             initial_attempt_id=(
                 str(run.payload["cold_attempt_id"]) if run.payload.get("cold_attempt_id") else None
             ),
@@ -1521,7 +1525,14 @@ class AlgebraWorkflowHandler:
             session,
             event_type=event_type,
             actor="padawan.algebra_workflow",
-            payload=payload,
+            payload={
+                **payload,
+                **(
+                    {"research_execution_digest": run.research_execution_digest}
+                    if run.research_execution_digest is not None
+                    else {}
+                ),
+            },
             parent_event_ids=prior[-1:] if prior else (),
             state_lineage_id=state_lineage_id,
             episode_id=episode_id,

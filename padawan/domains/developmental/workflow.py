@@ -288,6 +288,7 @@ class DomainDevelopmentalWorkflowHandler:
                 ),
                 control_condition=str(run.payload.get("control_condition", "no_intervention")),
                 experiment_id=experiment_id,
+                research_execution_digest=run.research_execution_digest,
             )
             block = await session.get(ExperimentBlockRow, assignments[0].block_id)
             if block is None:
@@ -960,6 +961,7 @@ class DomainDevelopmentalWorkflowHandler:
                 student_state_before_id=str(run.payload["state_id"]),
                 task_item_id=self._item(run, 0).item_id,
                 research_role=self.student_role,
+                research_execution_digest=run.research_execution_digest,
                 initial_attempt_id=str(run.payload["cold_attempt_id"]),
                 grade_id=cold_grade.grade_id,
                 diagnosis_ids=tuple(evidence.evidence_id for evidence in cold_grade.evidence),
@@ -1083,6 +1085,7 @@ class DomainDevelopmentalWorkflowHandler:
             student_state_before_id=str(run.payload["state_id"]),
             task_item_id=self._item(run, 0).item_id,
             research_role=self.student_role,
+            research_execution_digest=run.research_execution_digest,
             initial_attempt_id=(
                 str(run.payload["cold_attempt_id"]) if run.payload.get("cold_attempt_id") else None
             ),
@@ -1425,7 +1428,14 @@ class DomainDevelopmentalWorkflowHandler:
             session,
             event_type=event_type,
             actor="padawan.domain_developmental_workflow",
-            payload=payload,
+            payload={
+                **payload,
+                **(
+                    {"research_execution_digest": run.research_execution_digest}
+                    if run.research_execution_digest is not None
+                    else {}
+                ),
+            },
             parent_event_ids=prior[-1:] if prior else (),
             state_lineage_id=state_lineage_id,
             episode_id=episode_id,

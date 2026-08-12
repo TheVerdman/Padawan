@@ -10,7 +10,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from padawan.models.contracts import ResearchRole, RunState
-from padawan.models.tables import RunRow, RunTransitionRow, WorkerRow
+from padawan.models.tables import (
+    ResearchExecutionRow,
+    RunRow,
+    RunTransitionRow,
+    StudentStateRow,
+    WorkerRow,
+)
 
 _ALGEBRA_PATH: tuple[RunState, ...] = (
     RunState.CREATED,
@@ -56,6 +62,16 @@ _AUTOMATIC_NEXT = {
     left: right for left, right in zip(_ALGEBRA_PATH, _ALGEBRA_PATH[1:], strict=False)
 }
 _TERMINAL = {RunState.COMPLETE, RunState.FAILED_TERMINAL, RunState.REVIEW_REQUIRED}
+_CONTROLLED_RUN_IDENTITY_FIELDS = (
+    "student_id",
+    "state_id",
+    "domain_id",
+    "pool",
+    "experiment_seed",
+    "teacher_mode",
+    "treatment_condition",
+    "control_condition",
+)
 
 
 class InvalidTransitionError(RuntimeError):
@@ -67,6 +83,7 @@ class ClaimedRun:
     run_id: str
     state: RunState
     research_role: ResearchRole
+    research_execution_digest: str | None
     payload: dict[str, Any]
     lease_token: str
     retry_count: int
@@ -83,6 +100,7 @@ class RunStore:
         payload: dict[str, Any],
         retry_budget: int = 3,
         run_id: str | None = None,
+        research_execution_digest: str | None = None,
     ) -> str:
         if retry_budget < 0:
             raise ValueError("retry budget cannot be negative")
@@ -94,6 +112,35 @@ class RunStore:
         if existing_by_id is not None:
             if existing_by_id.research_role != research_role.value:
                 raise ValueError("existing run ID has a different research role")
+            if existing_by_id.research_execution_digest != research_execution_digest:
+                raise ValueError("existing run ID has different research controls")
+            if research_execution_digest is None:
+                return assigned
+        if research_execution_digest is not None:
+            execution = await session.get(ResearchExecutionRow, research_execution_digest)
+            if execution is None:
+                raise ValueError("run cites an unregistered research execution")
+            if execution.research_role != research_role.value:
+                raise ValueError("run role differs from its research execution")
+            state_id = payload.get("state_id")
+            seed = payload.get("experiment_seed")
+            if not isinstance(state_id, str) or not state_id:
+                raise ValueError("controlled run requires a parent state")
+            if not isinstance(seed, int) or isinstance(seed, bool):
+                raise ValueError("controlled run requires an integer experiment seed")
+            state = await session.get(StudentStateRow, state_id)
+            if state is None:
+                raise ValueError("controlled run parent state is missing")
+            if execution.seed != seed:
+                raise ValueError("run seed differs from its research execution")
+            if execution.checkpoint_id != state.checkpoint_id:
+                raise ValueError("run checkpoint differs from its research execution")
+            if execution.runtime_id != state.runtime_id:
+                raise ValueError("run runtime differs from its research execution")
+            if execution.research_role != state.research_role:
+                raise ValueError("run parent-state role differs from its research execution")
+        if existing_by_id is not None:
+            _require_same_controlled_payload(existing_by_id.payload, payload)
             return assigned
         if student_id is not None:
             existing = await session.scalar(
@@ -102,6 +149,10 @@ class RunStore:
             if existing is not None:
                 if existing.research_role != research_role.value:
                     raise ValueError("active run has a different research role")
+                if existing.research_execution_digest != research_execution_digest:
+                    raise ValueError("active run has different research controls")
+                if research_execution_digest is not None:
+                    _require_same_controlled_payload(existing.payload, payload)
                 return existing.run_id
         timestamp = datetime.now(UTC)
         row = RunRow(
@@ -110,6 +161,7 @@ class RunStore:
             student_id=student_id,
             active_student_id=student_id,
             research_role=research_role.value,
+            research_execution_digest=research_execution_digest,
             state=RunState.CREATED.value,
             sequence=0,
             payload=payload,
@@ -139,6 +191,10 @@ class RunStore:
                 raise
             if existing.research_role != research_role.value:
                 raise ValueError("concurrent active run has a different research role") from None
+            if existing.research_execution_digest != research_execution_digest:
+                raise ValueError("concurrent active run has different research controls") from None
+            if research_execution_digest is not None:
+                _require_same_controlled_payload(existing.payload, payload)
             return str(existing.run_id)
         return assigned
 
@@ -195,6 +251,7 @@ class RunStore:
             run_id=row.run_id,
             state=RunState(row.state),
             research_role=ResearchRole(row.research_role),
+            research_execution_digest=row.research_execution_digest,
             payload=dict(row.payload),
             lease_token=token,
             retry_count=row.retry_count,
@@ -446,3 +503,15 @@ class RunStore:
                 f"invalid transition {from_state.value} -> {to_state.value}; "
                 f"expected one of {expected}"
             )
+
+
+def _require_same_controlled_payload(persisted: dict[str, Any], requested: dict[str, Any]) -> None:
+    mismatches = [
+        field
+        for field in _CONTROLLED_RUN_IDENTITY_FIELDS
+        if persisted.get(field) != requested.get(field)
+    ]
+    if mismatches:
+        raise ValueError(
+            "controlled run payload differs from persisted identity: " + ", ".join(mismatches)
+        )

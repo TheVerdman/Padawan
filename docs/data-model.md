@@ -107,12 +107,28 @@ counterbalanced assignment, treatment/control outcomes, contamination flag, and 
 attrition. Analysis excludes unmatched, contaminated, or infrastructure-failed blocks and reports
 the exclusion counts.
 
+`harness_profiles` stores immutable `(profile_id, version)` contracts under a content digest. A
+profile binds its open tier/purpose, continuation and reasoning-retention semantics, context /
+truncation / compaction policy, versioned prompt and tool identities, explicit resource budgets,
+and optional later instrumentation contracts. `research_executions` binds that profile digest to
+the exact student and auxiliary model-serving identities, checkpoint, quantization, task/corpus,
+effective workflow/condition/sampling parameters, environment, and seed used by one run
+configuration.
+
+`runs.research_execution_digest` and `experiments.research_execution_digest` are nullable only for
+backward compatibility with evidence created before this contract. New live developmental work
+sets both to the same registered execution. Completed or failed `DevelopmentalEpisode` records and
+workflow provenance repeat the digest. A legacy null is preserved as missing provenance and cannot
+authorize a new comparison.
+
 ## Studies and scheduled evaluation
 
 `studies` stores one immutable, versioned study manifest and suite digest. `study_experiments`
 binds persisted experiments to conditions, frozen checkpoints, research roles, environment
-fingerprints, and optional assignment propensities. Study aggregation reads the original experiment
-blocks; it reports missingness and exclusion classes and never manufactures a paired outcome.
+fingerprints, research-execution digests, open factor values, and optional assignment propensities.
+Study aggregation reads the original experiment blocks; it reports missingness, exclusion classes,
+observed research-axis differences, declared comparison axes, and provenance gaps. It never
+manufactures a paired outcome or treats a missing control as equality.
 
 `evaluation_trials` is a due-time queue for delayed retention and interference probes. Each row
 binds a source episode, exact immutable state snapshot, source competency, fresh evaluation-only
@@ -160,3 +176,5 @@ study, scheduled-evaluation, suite, checkpoint, comparison, and decision tables.
 head revision with SQLAlchemy metadata and exercises downgrade/upgrade across every checked-in
 revision. The temporal revision adds operation spans/events, duration profiles, and governed
 authored demonstrations.
+The research-control revision adds harness profiles, research executions, nullable legacy-safe
+run/experiment bindings, and study factor/control bindings.

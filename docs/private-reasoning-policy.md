@@ -3,6 +3,11 @@
 Private reasoning is sensitive observational evidence. It is not required for an attempt, not
 treated as causal truth, and never synthesized when an endpoint does not expose it.
 
+Capture and cross-request retention are different research controls. `HarnessProfile` records both.
+The current validated Inkling profile may capture emitted `reasoning_text` while response storage,
+`previous_response_id`, reasoning retention, and reuse of private reasoning as context all remain
+disabled. A future retention condition requires a new profile; capture alone never implies it.
+
 Every runtime reports capability availability separately for private reasoning, reasoning
 boundaries, token IDs, log probabilities, GPU telemetry, and router telemetry. `unavailable` means
 the endpoint cannot provide it; `unknown` means Padawan has not established the capability. An empty

@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "ComparabilityDisposition": {
+      "enum": [
+        "identical_controls",
+        "controlled_difference",
+        "not_comparable",
+        "insufficient_provenance"
+      ],
+      "title": "ComparabilityDisposition",
+      "type": "string"
+    },
+    "ResearchAxis": {
+      "enum": [
+        "checkpoint",
+        "quantization",
+        "task",
+        "harness",
+        "continuation",
+        "context_policy",
+        "prompts",
+        "tools",
+        "budget",
+        "serving",
+        "auxiliary_models",
+        "environment",
+        "instrumentation",
+        "seed"
+      ],
+      "title": "ResearchAxis",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/research-comparability-assessment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowed_differences": {
+      "items": {
+        "$ref": "#/$defs/ResearchAxis"
+      },
+      "title": "Allowed Differences",
+      "type": "array"
+    },
+    "blocking_differences": {
+      "items": {
+        "$ref": "#/$defs/ResearchAxis"
+      },
+      "title": "Blocking Differences",
+      "type": "array"
+    },
+    "comparable": {
+      "title": "Comparable",
+      "type": "boolean"
+    },
+    "differing_axes": {
+      "items": {
+        "$ref": "#/$defs/ResearchAxis"
+      },
+      "title": "Differing Axes",
+      "type": "array"
+    },
+    "disposition": {
+      "$ref": "#/$defs/ComparabilityDisposition"
+    },
+    "left_execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Left Execution Digest",
+      "type": "string"
+    },
+    "provenance_complete": {
+      "title": "Provenance Complete",
+      "type": "boolean"
+    },
+    "provenance_gaps": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Provenance Gaps",
+      "type": "array"
+    },
+    "right_execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Right Execution Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "left_execution_digest",
+    "right_execution_digest",
+    "disposition",
+    "comparable",
+    "provenance_complete",
+    "differing_axes",
+    "allowed_differences",
+    "blocking_differences",
+    "provenance_gaps"
+  ],
+  "title": "ResearchComparabilityAssessment",
+  "type": "object"
+}

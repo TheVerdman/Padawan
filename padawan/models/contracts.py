@@ -739,6 +739,7 @@ class DevelopmentalEpisode(StrictRecord):
     student_state_before_id: NonEmpty
     task_item_id: NonEmpty
     research_role: ResearchRole = ResearchRole.TARGET
+    research_execution_digest: Sha256 | None = None
     initial_attempt_id: str | None = None
     grade_id: str | None = None
     diagnosis_ids: tuple[str, ...] = ()

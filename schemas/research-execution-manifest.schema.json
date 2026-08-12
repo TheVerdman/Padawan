@@ -1,0 +1,285 @@
+{
+  "$defs": {
+    "IdentityEvidenceStatus": {
+      "enum": [
+        "pinned",
+        "declared",
+        "unknown"
+      ],
+      "title": "IdentityEvidenceStatus",
+      "type": "string"
+    },
+    "ModelServingIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "protocol": {
+          "minLength": 1,
+          "title": "Protocol",
+          "type": "string"
+        },
+        "purpose": {
+          "minLength": 1,
+          "title": "Purpose",
+          "type": "string"
+        },
+        "quantization": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "research_role": {
+          "$ref": "#/$defs/ResearchRole"
+        },
+        "runtime": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "runtime_parameters": {
+          "additionalProperties": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minProperties": 1,
+          "propertyNames": {
+            "minLength": 1
+          },
+          "title": "Runtime Parameters",
+          "type": "object"
+        },
+        "runtime_parameters_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Runtime Parameters Digest",
+          "type": "string"
+        },
+        "serving_artifact": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        }
+      },
+      "required": [
+        "purpose",
+        "research_role",
+        "model_id",
+        "checkpoint",
+        "quantization",
+        "runtime",
+        "serving_artifact",
+        "protocol",
+        "runtime_parameters",
+        "runtime_parameters_digest"
+      ],
+      "title": "ModelServingIdentity",
+      "type": "object"
+    },
+    "ResearchRole": {
+      "enum": [
+        "target",
+        "baseline",
+        "teacher",
+        "verifier",
+        "adjudicator"
+      ],
+      "title": "ResearchRole",
+      "type": "string"
+    },
+    "TaskCorpusIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "corpus_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Corpus Digest",
+          "type": "string"
+        },
+        "corpus_id": {
+          "minLength": 1,
+          "title": "Corpus Id",
+          "type": "string"
+        },
+        "corpus_version": {
+          "minLength": 1,
+          "title": "Corpus Version",
+          "type": "string"
+        },
+        "evidence_status": {
+          "$ref": "#/$defs/IdentityEvidenceStatus"
+        },
+        "split": {
+          "minLength": 1,
+          "title": "Split",
+          "type": "string"
+        },
+        "task_id": {
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        },
+        "task_manifest_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Task Manifest Digest",
+          "type": "string"
+        },
+        "task_version": {
+          "minLength": 1,
+          "title": "Task Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "task_version",
+        "task_manifest_digest",
+        "corpus_id",
+        "corpus_version",
+        "corpus_digest",
+        "split",
+        "evidence_status"
+      ],
+      "title": "TaskCorpusIdentity",
+      "type": "object"
+    },
+    "VersionedComponentIdentity": {
+      "additionalProperties": false,
+      "description": "Content-bound component identity without embedding the component itself.",
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "evidence": {
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "evidence_status": {
+          "$ref": "#/$defs/IdentityEvidenceStatus"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component_id",
+        "version",
+        "digest",
+        "evidence_status",
+        "evidence"
+      ],
+      "title": "VersionedComponentIdentity",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/research-execution-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "auxiliary_models": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ModelServingIdentity"
+      },
+      "title": "Auxiliary Models",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "environment": {
+      "$ref": "#/$defs/VersionedComponentIdentity"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "environment_parameters": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minProperties": 1,
+      "propertyNames": {
+        "minLength": 1
+      },
+      "title": "Environment Parameters",
+      "type": "object"
+    },
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "harness_parameters": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minProperties": 1,
+      "propertyNames": {
+        "minLength": 1
+      },
+      "title": "Harness Parameters",
+      "type": "object"
+    },
+    "harness_profile_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Harness Profile Digest",
+      "type": "string"
+    },
+    "harness_profile_id": {
+      "minLength": 1,
+      "title": "Harness Profile Id",
+      "type": "string"
+    },
+    "harness_profile_version": {
+      "minLength": 1,
+      "title": "Harness Profile Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "title": "Seed",
+      "type": "integer"
+    },
+    "student_model": {
+      "$ref": "#/$defs/ModelServingIdentity"
+    },
+    "task": {
+      "$ref": "#/$defs/TaskCorpusIdentity"
+    }
+  },
+  "required": [
+    "execution_id",
+    "harness_profile_id",
+    "harness_profile_version",
+    "harness_profile_digest",
+    "student_model",
+    "task",
+    "harness_parameters",
+    "environment",
+    "environment_parameters",
+    "environment_fingerprint",
+    "seed",
+    "created_at"
+  ],
+  "title": "ResearchExecutionManifest",
+  "type": "object"
+}

@@ -580,11 +580,54 @@ class RetrievalDecisionRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class HarnessProfileRow(Base):
+    __tablename__ = "harness_profiles"
+    __table_args__ = (
+        UniqueConstraint("profile_id", "version", name="uq_harness_profile_version"),
+        Index("ix_harness_profile_tier", "tier", "purpose"),
+    )
+
+    profile_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    profile_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    version: Mapped[str] = mapped_column(String(96), nullable=False)
+    tier: Mapped[str] = mapped_column(String(96), nullable=False)
+    purpose: Mapped[str] = mapped_column(String(160), nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ResearchExecutionRow(Base):
+    __tablename__ = "research_executions"
+    __table_args__ = (
+        Index("ix_research_execution_checkpoint", "checkpoint_id", "created_at"),
+        Index("ix_research_execution_task", "task_id", "environment_fingerprint"),
+    )
+
+    execution_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    execution_id: Mapped[str] = mapped_column(String(160), nullable=False, unique=True)
+    harness_profile_digest: Mapped[str] = mapped_column(
+        ForeignKey("harness_profiles.profile_digest", ondelete="RESTRICT"), nullable=False
+    )
+    checkpoint_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    runtime_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    research_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    task_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    task_manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    corpus_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    environment_fingerprint: Mapped[str] = mapped_column(String(71), nullable=False)
+    seed: Mapped[int] = mapped_column(Integer, nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class ExperimentRow(Base):
     __tablename__ = "experiments"
 
     experiment_id: Mapped[str] = mapped_column(String(96), primary_key=True)
     parent_state_id: Mapped[str] = mapped_column(String(96), nullable=False)
+    research_execution_digest: Mapped[str | None] = mapped_column(
+        ForeignKey("research_executions.execution_digest", ondelete="RESTRICT")
+    )
     seed: Mapped[int] = mapped_column(Integer, nullable=False)
     design: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -725,6 +768,10 @@ class StudyExperimentRow(Base):
     research_role: Mapped[str] = mapped_column(String(32), nullable=False)
     suite_manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False)
     environment_fingerprint: Mapped[str] = mapped_column(String(71), nullable=False)
+    research_execution_digest: Mapped[str | None] = mapped_column(
+        ForeignKey("research_executions.execution_digest", ondelete="RESTRICT")
+    )
+    factor_values: Mapped[dict[str, str]] = mapped_column(JSON, nullable=False, default=dict)
     assignment_propensity: Mapped[float | None] = mapped_column(Float)
 
 
@@ -964,6 +1011,9 @@ class RunRow(Base):
     student_id: Mapped[str | None] = mapped_column(String(128))
     active_student_id: Mapped[str | None] = mapped_column(String(128))
     research_role: Mapped[str] = mapped_column(String(32), nullable=False, default="target")
+    research_execution_digest: Mapped[str | None] = mapped_column(
+        ForeignKey("research_executions.execution_digest", ondelete="RESTRICT")
+    )
     state: Mapped[str] = mapped_column(String(64), nullable=False)
     sequence: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
@@ -1135,6 +1185,8 @@ for _immutable_type in (
     TrainingSourceDecisionRow,
     AuthoredDemonstrationRow,
     TrainingBundleRow,
+    HarnessProfileRow,
+    ResearchExecutionRow,
     OperationSpanEventRow,
     DurationProfileRow,
 ):

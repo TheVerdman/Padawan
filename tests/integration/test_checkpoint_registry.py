@@ -6,6 +6,7 @@ import pytest
 
 from padawan.checkpoints import CheckpointRegistry, default_promotion_policy
 from padawan.domains.contracts import HardGateResult, VerifierDisposition, VerifierResult
+from padawan.experiments.controls import ResearchControlRegistry
 from padawan.experiments.engine import ExperimentEngine, MatchedBlock
 from padawan.models.hashing import sha256_digest
 from padawan.models.research_contracts import (
@@ -14,6 +15,7 @@ from padawan.models.research_contracts import (
     CheckpointStatus,
     EvaluationSuiteManifest,
     MetricObservation,
+    ResearchAxis,
     StudyExperimentBinding,
     StudyManifest,
     StudyStatus,
@@ -23,9 +25,13 @@ from padawan.reporting import ReportingService
 from padawan.rewards import RewardEngine
 from padawan.state.store import StateStore
 from padawan.studies import StudyEngine
+from tests.integration.test_research_controls import (
+    _ENVIRONMENT as _CONTROL_ENVIRONMENT,
+)
+from tests.integration.test_research_controls import _execution, _profile
 
 _NOW = datetime(2026, 8, 1, tzinfo=UTC)
-_ENVIRONMENT = f"sha256:{'e' * 64}"
+_ENVIRONMENT = _CONTROL_ENVIRONMENT
 
 
 def _checkpoint(
@@ -61,6 +67,7 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
     states = StateStore()
     experiments = ExperimentEngine(states)
     studies = StudyEngine()
+    controls = ResearchControlRegistry()
     suite = EvaluationSuiteManifest(
         suite_id="sealed-release-suite",
         version="1",
@@ -113,6 +120,30 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
             checkpoint_id="checkpoint-n-plus-1",
             runtime_id="inkling-runtime",
         )
+        profile = _profile(profile_id="checkpoint-release-harness")
+        await controls.register_profile(session, profile)
+        baseline_execution = await controls.register_execution(
+            session,
+            _execution(
+                profile,
+                execution_id="execution-checkpoint-release-n",
+                checkpoint_id="checkpoint-n",
+                runtime_id="inkling-runtime",
+                seed=101,
+            ),
+            parent_state_id=baseline_state.state_id,
+        )
+        candidate_execution = await controls.register_execution(
+            session,
+            _execution(
+                profile,
+                execution_id="execution-checkpoint-release-n-plus-1",
+                checkpoint_id="checkpoint-n-plus-1",
+                runtime_id="inkling-runtime",
+                seed=101,
+            ),
+            parent_state_id=candidate_state.state_id,
+        )
         baseline_experiment, _ = await experiments.create(
             session,
             parent_state_id=baseline_state.state_id,
@@ -121,6 +152,7 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
             treatment_condition="checkpoint-n",
             control_condition="matched-control",
             experiment_id="experiment-checkpoint-n",
+            research_execution_digest=baseline_execution.execution_digest,
         )
         candidate_experiment, _ = await experiments.create(
             session,
@@ -130,6 +162,7 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
             treatment_condition="checkpoint-n-plus-1",
             control_condition="matched-control",
             experiment_id="experiment-checkpoint-n-plus-1",
+            research_execution_digest=candidate_execution.execution_digest,
         )
         await studies.create(
             session,
@@ -142,6 +175,7 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
                 suite_manifest_digest=suite_digest,
                 aggregation_policy_id="paired-blocks",
                 aggregation_policy_version="1",
+                comparison_axes=(ResearchAxis.CHECKPOINT,),
                 experiments=(
                     StudyExperimentBinding(
                         experiment_id=baseline_experiment,
@@ -150,6 +184,7 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
                         research_role=baseline_state.research_role,
                         suite_manifest_digest=suite_digest,
                         environment_fingerprint=_ENVIRONMENT,
+                        research_execution_digest=baseline_execution.execution_digest,
                     ),
                     StudyExperimentBinding(
                         experiment_id=candidate_experiment,
@@ -158,6 +193,7 @@ async def test_checkpoint_comparison_promotion_and_revocation_are_governed(datab
                         research_role=candidate_state.research_role,
                         suite_manifest_digest=suite_digest,
                         environment_fingerprint=_ENVIRONMENT,
+                        research_execution_digest=candidate_execution.execution_digest,
                     ),
                 ),
                 created_at=_NOW,

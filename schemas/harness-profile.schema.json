@@ -1,0 +1,410 @@
+{
+  "$defs": {
+    "BudgetDisposition": {
+      "enum": [
+        "capped",
+        "unbounded",
+        "not_applicable"
+      ],
+      "title": "BudgetDisposition",
+      "type": "string"
+    },
+    "BudgetLimit": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "$ref": "#/$defs/BudgetDisposition"
+        },
+        "scope": {
+          "minLength": 1,
+          "title": "Scope",
+          "type": "string"
+        },
+        "unit": {
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "disposition",
+        "scope",
+        "unit"
+      ],
+      "title": "BudgetLimit",
+      "type": "object"
+    },
+    "ContextPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "compaction_enabled": {
+          "title": "Compaction Enabled",
+          "type": "boolean"
+        },
+        "compaction_strategy": {
+          "minLength": 1,
+          "title": "Compaction Strategy",
+          "type": "string"
+        },
+        "compactor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionedComponentIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "configured_context_window_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Configured Context Window Tokens"
+        },
+        "context_limit_evidence": {
+          "minLength": 1,
+          "title": "Context Limit Evidence",
+          "type": "string"
+        },
+        "effective_input_limit_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Effective Input Limit Tokens"
+        },
+        "history_selection": {
+          "minLength": 1,
+          "title": "History Selection",
+          "type": "string"
+        },
+        "policy_id": {
+          "minLength": 1,
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "token_counting_mode": {
+          "minLength": 1,
+          "title": "Token Counting Mode",
+          "type": "string"
+        },
+        "truncation_enabled": {
+          "title": "Truncation Enabled",
+          "type": "boolean"
+        },
+        "truncation_strategy": {
+          "minLength": 1,
+          "title": "Truncation Strategy",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "version",
+        "configured_context_window_tokens",
+        "effective_input_limit_tokens",
+        "context_limit_evidence",
+        "token_counting_mode",
+        "history_selection",
+        "truncation_enabled",
+        "truncation_strategy",
+        "compaction_enabled",
+        "compaction_strategy"
+      ],
+      "title": "ContextPolicy",
+      "type": "object"
+    },
+    "ContinuationPolicy": {
+      "additionalProperties": false,
+      "description": "Cross-request state semantics, separate from observational trace capture.",
+      "properties": {
+        "continuation_mode": {
+          "minLength": 1,
+          "title": "Continuation Mode",
+          "type": "string"
+        },
+        "previous_response_id_enabled": {
+          "title": "Previous Response Id Enabled",
+          "type": "boolean"
+        },
+        "private_reasoning_capture_enabled": {
+          "title": "Private Reasoning Capture Enabled",
+          "type": "boolean"
+        },
+        "private_reasoning_used_as_context": {
+          "title": "Private Reasoning Used As Context",
+          "type": "boolean"
+        },
+        "reasoning_retention_enabled": {
+          "title": "Reasoning Retention Enabled",
+          "type": "boolean"
+        },
+        "reasoning_retention_mode": {
+          "minLength": 1,
+          "title": "Reasoning Retention Mode",
+          "type": "string"
+        },
+        "response_storage_enabled": {
+          "title": "Response Storage Enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "continuation_mode",
+        "response_storage_enabled",
+        "previous_response_id_enabled",
+        "reasoning_retention_enabled",
+        "reasoning_retention_mode",
+        "private_reasoning_capture_enabled",
+        "private_reasoning_used_as_context"
+      ],
+      "title": "ContinuationPolicy",
+      "type": "object"
+    },
+    "HarnessBudgets": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "$ref": "#/$defs/BudgetLimit"
+        },
+        "cost": {
+          "$ref": "#/$defs/BudgetLimit"
+        },
+        "input_tokens": {
+          "$ref": "#/$defs/BudgetLimit"
+        },
+        "latency": {
+          "$ref": "#/$defs/BudgetLimit"
+        },
+        "output_tokens": {
+          "$ref": "#/$defs/BudgetLimit"
+        },
+        "retries": {
+          "$ref": "#/$defs/BudgetLimit"
+        },
+        "wall_time": {
+          "$ref": "#/$defs/BudgetLimit"
+        }
+      },
+      "required": [
+        "actions",
+        "input_tokens",
+        "output_tokens",
+        "latency",
+        "wall_time",
+        "retries",
+        "cost"
+      ],
+      "title": "HarnessBudgets",
+      "type": "object"
+    },
+    "IdentityEvidenceStatus": {
+      "enum": [
+        "pinned",
+        "declared",
+        "unknown"
+      ],
+      "title": "IdentityEvidenceStatus",
+      "type": "string"
+    },
+    "ResearchInstrumentationSeams": {
+      "additionalProperties": false,
+      "description": "Typed extension points; absence means the later phase is not implemented.",
+      "properties": {
+        "capability_atlas_schema": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionedComponentIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "checkpoint_evaluation_schema": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionedComponentIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "interactive_trajectory_schema": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionedComponentIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "mechanistic_telemetry_schema": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionedComponentIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "ResearchInstrumentationSeams",
+      "type": "object"
+    },
+    "VersionedComponentIdentity": {
+      "additionalProperties": false,
+      "description": "Content-bound component identity without embedding the component itself.",
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "evidence": {
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "evidence_status": {
+          "$ref": "#/$defs/IdentityEvidenceStatus"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component_id",
+        "version",
+        "digest",
+        "evidence_status",
+        "evidence"
+      ],
+      "title": "VersionedComponentIdentity",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/harness-profile.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "budgets": {
+      "$ref": "#/$defs/HarnessBudgets"
+    },
+    "context": {
+      "$ref": "#/$defs/ContextPolicy"
+    },
+    "continuation": {
+      "$ref": "#/$defs/ContinuationPolicy"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "instrumentation": {
+      "$ref": "#/$defs/ResearchInstrumentationSeams"
+    },
+    "profile_id": {
+      "minLength": 1,
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "prompt_templates": {
+      "items": {
+        "$ref": "#/$defs/VersionedComponentIdentity"
+      },
+      "minItems": 1,
+      "title": "Prompt Templates",
+      "type": "array"
+    },
+    "purpose": {
+      "minLength": 1,
+      "title": "Purpose",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tier": {
+      "minLength": 1,
+      "title": "Tier",
+      "type": "string"
+    },
+    "tools": {
+      "items": {
+        "$ref": "#/$defs/VersionedComponentIdentity"
+      },
+      "minItems": 1,
+      "title": "Tools",
+      "type": "array"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "profile_id",
+    "version",
+    "tier",
+    "purpose",
+    "continuation",
+    "context",
+    "prompt_templates",
+    "tools",
+    "budgets",
+    "created_at"
+  ],
+  "title": "HarnessProfile",
+  "type": "object"
+}

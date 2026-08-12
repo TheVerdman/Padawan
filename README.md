@@ -27,6 +27,8 @@ hard-gated Magellan agentic environment protocol:
 - algebra and domain-general crash-resumable developmental paths, idempotent external calls,
   worker leases, and stale recovery;
 - matched-block experiments with counterbalancing, McNemar analysis, and bootstrap intervals;
+- immutable harness profiles and execution manifests that bind checkpoint, serving, task, context,
+  prompt/tool, environment, budget, and seed identity to runs, experiments, and comparisons;
 - durable verifier/reward ledgers with versioned meta-utility recomputation and training eligibility;
 - versioned multi-experiment studies plus fresh-item retention and interference scheduling;
 - an external frozen-checkpoint registry with sealed-suite comparison, promotion, and revocation;
@@ -59,6 +61,9 @@ stable consumer edge, and runtime credential. Training compilation is operationa
 internal, restricted artifact path, but no external trainer or parameter-update backend is bundled.
 Temporal scenarios and authored bootstrap rows are implemented, but no claim is made that an
 existing checkpoint has already learned the behavior.
+The standardized developmental harness is now a versioned research object. Legacy evidence remains
+readable, while new comparative claims fail closed if research controls are absent or changed axes
+were not declared.
 No S3 backend is planned for the current GCS deployment. Parameter calls fail as unsupported rather
 than degrading to a no-op.
 The first real-provider pilot attempt is documented in
@@ -106,6 +111,9 @@ Start with the [Round 2 plan](docs/round-2-plan.md), [architecture](docs/archite
 [data model](docs/data-model.md), [experiment semantics](docs/experiment-semantics.md), and
 [operations](docs/operations.md). The compiler and source-rights boundary is documented in
 [internal training products](docs/training-products.md).
+The [research-control contract](docs/research-controls.md) defines the harness measurement model,
+comparability gate, and deferred retention/compaction, trajectory, mechanistic, atlas, and N+1
+seams.
 
 ## Repository boundaries
 

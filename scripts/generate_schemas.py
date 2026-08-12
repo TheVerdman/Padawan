@@ -68,6 +68,9 @@ from padawan.models.research_contracts import (
     EvaluationOutcome,
     EvaluationSchedule,
     EvaluationSuiteManifest,
+    HarnessProfile,
+    ResearchComparabilityAssessment,
+    ResearchExecutionManifest,
     StudyManifest,
 )
 from padawan.temporal.contracts import (
@@ -132,6 +135,7 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("evaluation-suite-manifest", EvaluationSuiteManifest),
     ("exposure", ExposureRecord),
     ("grade", GradeRecord),
+    ("harness-profile", HarnessProfile),
     ("lesson", LessonRecord),
     ("magellan-agent-trace", MagellanAgentTrace),
     ("magellan-environment-assessment", MagellanEnvironmentAssessment),
@@ -148,6 +152,8 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("process-training-row", ProcessTrainingRow),
     ("reward", RewardRecord),
     ("reward-policy", RewardPolicy),
+    ("research-comparability-assessment", ResearchComparabilityAssessment),
+    ("research-execution-manifest", ResearchExecutionManifest),
     ("rlvr-training-row", RLVRTrainingRow),
     ("sealed-evaluation-row", SealedEvaluationRow),
     ("sft-training-row", SFTTrainingRow),

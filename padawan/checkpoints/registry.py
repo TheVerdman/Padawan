@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from padawan.domains.contracts import VerifierResult
+from padawan.experiments.controls import ResearchControlRegistry
 from padawan.models.hashing import sha256_digest
 from padawan.models.research_contracts import (
     CheckpointComparisonRecord,
@@ -195,6 +196,17 @@ class CheckpointRegistry:
             raise ValueError("checkpoint evaluation study is not registered")
         if study.suite_manifest_digest != record.suite_manifest_digest:
             raise ValueError("checkpoint evaluation and study use different suite manifests")
+        controls = await ResearchControlRegistry().assess_study(session, study_id=record.study_id)
+        if not controls.provenance_complete:
+            raise ValueError(
+                "checkpoint evaluation requires complete research controls: "
+                + "; ".join(controls.provenance_gaps)
+            )
+        if not controls.comparable:
+            axes = ", ".join(axis.value for axis in controls.blocking_differences)
+            raise ValueError(
+                "checkpoint evaluation has undeclared research-control differences: " + axes
+            )
         await self._validate_gate_evidence(session, record)
         row = CheckpointEvaluationRow(
             evaluation_id=record.evaluation_id,

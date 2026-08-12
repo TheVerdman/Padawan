@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import func, or_, select
 
 from padawan.checkpoints import CheckpointRegistry
+from padawan.experiments.controls import ResearchControlRegistry
 from padawan.experiments.engine import ExperimentEngine
 from padawan.models.database import Database
 from padawan.models.tables import (
@@ -17,8 +18,11 @@ from padawan.models.tables import (
     EvaluationTrialRow,
     ExperimentBlockRow,
     ExperimentRow,
+    HarnessProfileRow,
+    ResearchExecutionRow,
     RewardRow,
     RunRow,
+    StudentStateRow,
     StudyExperimentRow,
     StudyRow,
     TeacherInterventionRow,
@@ -46,6 +50,7 @@ class ReportingService:
         self.rewards = rewards or RewardEngine()
         self.studies = studies or StudyEngine()
         self.checkpoints = checkpoints or CheckpointRegistry()
+        self.controls = ResearchControlRegistry()
 
     async def experiment(self, experiment_id: str) -> dict[str, Any]:
         async with self.database.transaction() as session:
@@ -53,6 +58,7 @@ class ReportingService:
             experiment = await session.get(ExperimentRow, experiment_id)
             if experiment is None:
                 raise KeyError(experiment_id)
+            parent_state = await session.get(StudentStateRow, experiment.parent_state_id)
             blocks = (
                 await session.scalars(
                     select(ExperimentBlockRow)
@@ -60,10 +66,78 @@ class ReportingService:
                     .order_by(ExperimentBlockRow.block_index)
                 )
             ).all()
+            execution = (
+                await session.get(ResearchExecutionRow, experiment.research_execution_digest)
+                if experiment.research_execution_digest is not None
+                else None
+            )
+            profile = (
+                await session.get(HarnessProfileRow, execution.harness_profile_digest)
+                if execution is not None
+                else None
+            )
+            control_assessment = (
+                (
+                    await self.controls.compare(
+                        session,
+                        left_execution_digest=experiment.research_execution_digest,
+                        right_execution_digest=experiment.research_execution_digest,
+                    )
+                ).model_dump(mode="json")
+                if experiment.research_execution_digest is not None
+                else {
+                    "disposition": "insufficient_provenance",
+                    "comparable": False,
+                    "provenance_complete": False,
+                    "provenance_gaps": ("experiment has no research execution",),
+                }
+            )
+            binding_consistent = (
+                experiment.research_execution_digest is not None
+                and experiment.design.get("research_execution_digest")
+                == experiment.research_execution_digest
+                and execution is not None
+                and parent_state is not None
+                and execution.checkpoint_id == parent_state.checkpoint_id
+                and execution.runtime_id == parent_state.runtime_id
+                and execution.research_role == parent_state.research_role
+                and execution.seed == experiment.seed
+            )
+            if experiment.research_execution_digest is not None and not binding_consistent:
+                recorded_gaps = control_assessment.get("provenance_gaps")
+                gaps = (
+                    tuple(str(item) for item in recorded_gaps)
+                    if isinstance(recorded_gaps, (list, tuple))
+                    else ()
+                ) + ("experiment binding differs from its research execution",)
+                control_assessment = {
+                    **control_assessment,
+                    "disposition": "insufficient_provenance",
+                    "comparable": False,
+                    "provenance_complete": False,
+                    "provenance_gaps": gaps,
+                }
             return {
                 "format": "padawan.experiment_report",
-                "version": 1,
+                "version": 2,
                 "design": experiment.design,
+                "parent_state": (
+                    {
+                        "state_id": parent_state.state_id,
+                        "state_hash": parent_state.state_hash,
+                        "student_id": parent_state.student_id,
+                        "checkpoint_id": parent_state.checkpoint_id,
+                        "runtime_id": parent_state.runtime_id,
+                        "research_role": parent_state.research_role,
+                    }
+                    if parent_state is not None
+                    else None
+                ),
+                "research_execution_digest": experiment.research_execution_digest,
+                "research_execution": execution.record_json if execution is not None else None,
+                "harness_profile": profile.record_json if profile is not None else None,
+                "research_binding_consistent": binding_consistent,
+                "research_control_assessment": control_assessment,
                 "statistics": asdict(report),
                 "blocks": [
                     {
@@ -76,7 +150,9 @@ class ReportingService:
                     for row in blocks
                 ],
                 "causal_claim_permitted": bool(report.analyzed_blocks)
-                and not report.excluded_contaminated,
+                and not report.excluded_contaminated
+                and binding_consistent
+                and bool(control_assessment["comparable"]),
             }
 
     async def study(self, study_id: str) -> dict[str, Any]:
@@ -104,7 +180,7 @@ class ReportingService:
             ).all()
             return {
                 "format": "padawan.study_report",
-                "version": 1,
+                "version": 2,
                 "manifest": row.record_json,
                 "manifest_digest": row.manifest_digest,
                 "status": row.status,
@@ -118,6 +194,8 @@ class ReportingService:
                         "research_role": binding.research_role,
                         "suite_manifest_digest": binding.suite_manifest_digest,
                         "environment_fingerprint": binding.environment_fingerprint,
+                        "research_execution_digest": binding.research_execution_digest,
+                        "factor_values": binding.factor_values,
                         "assignment_propensity": binding.assignment_propensity,
                     }
                     for binding in bindings
@@ -301,14 +379,22 @@ class ReportingService:
                 .all()
             )
             reward_count = await session.scalar(select(func.count()).select_from(RewardRow))
+            harness_profile_count = await session.scalar(
+                select(func.count()).select_from(HarnessProfileRow)
+            )
+            research_execution_count = await session.scalar(
+                select(func.count()).select_from(ResearchExecutionRow)
+            )
             return {
                 "format": "padawan.operations_report",
-                "version": 1,
+                "version": 2,
                 "runs_by_state": run_counts,
                 "episodes_by_status": episode_counts,
                 "studies_by_status": study_counts,
                 "evaluation_trials_by_status": trial_counts,
                 "checkpoints_by_status": checkpoint_counts,
                 "rewards": int(reward_count or 0),
+                "harness_profiles": int(harness_profile_count or 0),
+                "research_executions": int(research_execution_count or 0),
                 "rejected_teacher_interventions": int(rejected_teachers or 0),
             }
