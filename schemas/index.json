@@ -274,6 +274,11 @@
       "sha256": "949f4a06f304d23aacc4a130320aa7e56fbd054d6cdec2423a5ba35ceeb7bb16"
     },
     {
+      "name": "exploratory-interaction-manifest",
+      "schema": "exploratory-interaction-manifest.schema.json",
+      "sha256": "4b30a7b9621eef7204ae1442c13ec1f058a9089c13f12ce52f70abb694fdbb0d"
+    },
+    {
       "name": "grade",
       "schema": "grade.schema.json",
       "sha256": "9c1f66e729cd5d016f1930756da1d305e7ec7819bd0d18700446d42f9514165d"
@@ -282,6 +287,31 @@
       "name": "harness-profile",
       "schema": "harness-profile.schema.json",
       "sha256": "616faacbdf3a856eaca25ee6266d09c04926dde6258530a29e917632c1745dd9"
+    },
+    {
+      "name": "interaction-consent-event",
+      "schema": "interaction-consent-event.schema.json",
+      "sha256": "9a8203f7355aed7ba4024c22f3a867dc99e1e397d0217544c4957b84e62ce938"
+    },
+    {
+      "name": "interaction-feedback",
+      "schema": "interaction-feedback.schema.json",
+      "sha256": "7c516900b90b3ce2a7b939a979c70423790cd0fb13a360feb441ee98d15a3cc5"
+    },
+    {
+      "name": "interaction-message",
+      "schema": "interaction-message.schema.json",
+      "sha256": "9eb656abf744cd8cc4659205bf1c214d9719564c10711c97dcbdd8001f93892f"
+    },
+    {
+      "name": "interaction-session",
+      "schema": "interaction-session.schema.json",
+      "sha256": "48c5d2d36a2be40b348e8f4229362e22d4ab6848544e6af8a4e19054c308b848"
+    },
+    {
+      "name": "interaction-trace",
+      "schema": "interaction-trace.schema.json",
+      "sha256": "a2b194a327ea20d1028a8cba98fbb0592376f437befdae0814ddd90409b6cc96"
     },
     {
       "name": "lesson",
@@ -404,6 +434,11 @@
       "sha256": "4edf300fc87895496e3eac90a114d614b9d70a952bfad2d01ba48e632bef1b77"
     },
     {
+      "name": "student-target-descriptor",
+      "schema": "student-target-descriptor.schema.json",
+      "sha256": "50a5fb514223ba1a23615c8123014fd82de1b1d035b2826ee6d477a8a7ff6620"
+    },
+    {
       "name": "study-manifest",
       "schema": "study-manifest.schema.json",
       "sha256": "b09bc794d40c31a4b1b47633a0460d348585faad99bd03de1a35e77a773c260a"
@@ -417,6 +452,11 @@
       "name": "task-manifest",
       "schema": "task-manifest.schema.json",
       "sha256": "69b955a6fd203ec67f81587becb3e1a9378fa46008b4483a415b1cdae614cd41"
+    },
+    {
+      "name": "target-readiness",
+      "schema": "target-readiness.schema.json",
+      "sha256": "731c9e6bd66ea606f6e8c2b4debbe602770c1f3d5dc7f37e8650b2a3ca21b505"
     },
     {
       "name": "teacher-intervention",

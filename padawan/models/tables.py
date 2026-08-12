@@ -1029,6 +1029,199 @@ class CheckpointDecisionRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class InteractionSessionRow(Base):
+    __tablename__ = "interaction_sessions"
+    __table_args__ = (Index("ix_interaction_session_activity", "last_activity_at"),)
+
+    session_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    title: Mapped[str] = mapped_column(String(256), nullable=False)
+    current_consent_sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_activity_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class InteractionConsentEventRow(Base):
+    __tablename__ = "interaction_consent_events"
+    __table_args__ = (
+        UniqueConstraint("session_id", "sequence", name="uq_interaction_consent_sequence"),
+        CheckConstraint("sequence >= 1", name="ck_interaction_consent_positive_sequence"),
+    )
+
+    consent_event_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    session_id: Mapped[str] = mapped_column(
+        ForeignKey("interaction_sessions.session_id", ondelete="CASCADE"), nullable=False
+    )
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    research_trace_consent: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    retention_classification: Mapped[str] = mapped_column(String(64), nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class InteractionMessageRow(Base):
+    __tablename__ = "interaction_messages"
+    __table_args__ = (
+        CheckConstraint("role IN ('user', 'assistant')", name="ck_interaction_message_role"),
+        Index("ix_interaction_message_session", "session_id", "created_at"),
+        Index("ix_interaction_message_parent", "parent_message_id"),
+    )
+
+    message_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    session_id: Mapped[str] = mapped_column(
+        ForeignKey("interaction_sessions.session_id", ondelete="CASCADE"), nullable=False
+    )
+    parent_message_id: Mapped[str | None] = mapped_column(
+        ForeignKey("interaction_messages.message_id", ondelete="CASCADE")
+    )
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class InteractionTurnRow(Base):
+    __tablename__ = "interaction_turns"
+    __table_args__ = (
+        UniqueConstraint("user_message_id", name="uq_interaction_turn_user_message"),
+        UniqueConstraint("assistant_message_id", name="uq_interaction_turn_assistant_message"),
+        CheckConstraint(
+            "mode IN ('message', 'branch', 'retry', 'replay')",
+            name="ck_interaction_turn_mode",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'streaming', 'completed', 'failed', 'cancelled')",
+            name="ck_interaction_turn_status",
+        ),
+        Index("ix_interaction_turn_session", "session_id", "created_at"),
+        Index("ix_interaction_turn_parent", "parent_turn_id"),
+    )
+
+    turn_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    session_id: Mapped[str] = mapped_column(
+        ForeignKey("interaction_sessions.session_id", ondelete="CASCADE"), nullable=False
+    )
+    parent_turn_id: Mapped[str | None] = mapped_column(
+        ForeignKey("interaction_turns.turn_id", ondelete="CASCADE")
+    )
+    source_turn_id: Mapped[str | None] = mapped_column(
+        ForeignKey("interaction_turns.turn_id", ondelete="SET NULL")
+    )
+    user_message_id: Mapped[str] = mapped_column(
+        ForeignKey("interaction_messages.message_id", ondelete="RESTRICT"), nullable=False
+    )
+    assistant_message_id: Mapped[str | None] = mapped_column(
+        ForeignKey("interaction_messages.message_id", ondelete="RESTRICT")
+    )
+    trace_id: Mapped[str] = mapped_column(String(96), nullable=False, unique=True)
+    mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    error: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class InteractionTraceRow(Base):
+    __tablename__ = "interaction_traces"
+    __table_args__ = (
+        CheckConstraint(
+            "retention_classification IN ('personal_deletable', 'consented_research_evidence')",
+            name="ck_interaction_trace_retention",
+        ),
+        CheckConstraint(
+            "evidence_class = 'exploratory_not_controlled_benchmark'",
+            name="ck_interaction_trace_exploratory",
+        ),
+        CheckConstraint(
+            "controlled_benchmark_eligible = false",
+            name="ck_interaction_trace_not_benchmark",
+        ),
+        CheckConstraint(
+            "memory_synthesis_status = 'not_implemented'",
+            name="ck_interaction_trace_memory_deferred",
+        ),
+        CheckConstraint(
+            "training_candidate_status = 'not_admitted'",
+            name="ck_interaction_trace_training_not_admitted",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'streaming', 'completed', 'failed', 'cancelled')",
+            name="ck_interaction_trace_status",
+        ),
+        Index("ix_interaction_trace_source", "source_session_id", "created_at"),
+        Index("ix_interaction_trace_retention", "retention_classification", "created_at"),
+    )
+
+    trace_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    source_session_id: Mapped[str] = mapped_column(String(96), nullable=False)
+    source_turn_id: Mapped[str] = mapped_column(String(96), nullable=False, unique=True)
+    request_id: Mapped[str] = mapped_column(String(160), nullable=False, unique=True)
+    manifest_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    manifest_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    evidence_class: Mapped[str] = mapped_column(String(64), nullable=False)
+    retention_classification: Mapped[str] = mapped_column(String(64), nullable=False)
+    controlled_benchmark_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    memory_synthesis_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    training_candidate_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    selected_history_artifact_id: Mapped[str] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT"), nullable=False
+    )
+    generation_request_artifact_id: Mapped[str] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT"), nullable=False
+    )
+    wire_request_artifact_id: Mapped[str | None] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT")
+    )
+    raw_events_artifact_id: Mapped[str | None] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT")
+    )
+    public_response_artifact_id: Mapped[str | None] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT")
+    )
+    private_reasoning_artifact_id: Mapped[str | None] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT")
+    )
+    generation_result_artifact_id: Mapped[str | None] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT")
+    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    response_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    usage: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    timing: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    raw_event_summary: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    record_json: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    error: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    sealed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class InteractionFeedbackRow(Base):
+    __tablename__ = "interaction_feedback"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('positive', 'negative', 'correction', 'note')",
+            name="ck_interaction_feedback_kind",
+        ),
+        CheckConstraint(
+            "retention_classification IN ('personal_deletable', 'consented_research_evidence')",
+            name="ck_interaction_feedback_retention",
+        ),
+        Index("ix_interaction_feedback_turn", "turn_id", "created_at"),
+        Index("ix_interaction_feedback_retention", "retention_classification", "created_at"),
+    )
+
+    feedback_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    session_id: Mapped[str] = mapped_column(String(96), nullable=False)
+    turn_id: Mapped[str] = mapped_column(String(96), nullable=False)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    body: Mapped[str | None] = mapped_column(Text)
+    consent_event_id: Mapped[str] = mapped_column(String(96), nullable=False)
+    retention_classification: Mapped[str] = mapped_column(String(64), nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class RunRow(Base):
     __tablename__ = "runs"
     __table_args__ = (
@@ -1081,10 +1274,19 @@ class RunTransitionRow(Base):
 
 class ExternalCallRow(Base):
     __tablename__ = "external_calls"
+    __table_args__ = (
+        CheckConstraint(
+            "(run_id IS NOT NULL AND interaction_trace_id IS NULL) OR "
+            "(run_id IS NULL AND interaction_trace_id IS NOT NULL)",
+            name="ck_external_call_exactly_one_owner",
+        ),
+        Index("ix_external_call_interaction_trace", "interaction_trace_id"),
+    )
 
     request_id: Mapped[str] = mapped_column(String(160), primary_key=True)
-    run_id: Mapped[str] = mapped_column(
-        ForeignKey("runs.run_id", ondelete="RESTRICT"), nullable=False
+    run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.run_id", ondelete="RESTRICT"))
+    interaction_trace_id: Mapped[str | None] = mapped_column(
+        ForeignKey("interaction_traces.trace_id", ondelete="RESTRICT")
     )
     purpose: Mapped[str] = mapped_column(String(64), nullable=False)
     provider: Mapped[str] = mapped_column(String(64), nullable=False)

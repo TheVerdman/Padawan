@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Padawan Interaction Lab</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="/assets/styles.css">
+  </head>
+  <body>
+    <section id="login" class="login-shell">
+      <form id="login-form" class="login-card">
+        <div class="eyebrow">PRIVATE RESEARCH INTERFACE</div>
+        <h1>Padawan<br>Interaction Lab</h1>
+        <p>Authenticate locally. Student-serving credentials remain on the server.</p>
+        <input class="visually-hidden" type="text" autocomplete="username" value="local-operator" tabindex="-1" aria-hidden="true">
+        <label>Lab access token<input id="access-token" type="password" autocomplete="current-password" required></label>
+        <button type="submit" class="primary">Enter the Lab</button>
+        <div id="login-error" class="error" role="alert"></div>
+      </form>
+    </section>
+
+    <div id="workspace" class="workspace hidden">
+      <header>
+        <div>
+          <div class="eyebrow">PADAWAN / EXPLORATORY INTERACTION</div>
+          <h1>Interaction Lab</h1>
+        </div>
+        <div class="header-actions">
+          <span id="lane-badge" class="badge personal">Personal · deletable</span>
+          <button id="logout" class="ghost">Lock</button>
+        </div>
+      </header>
+
+      <aside class="sessions-panel">
+        <button id="new-session" class="primary full">+ Durable conversation</button>
+        <button id="temporary-session" class="ghost full">Temporary chat</button>
+        <div class="section-label">CONVERSATIONS</div>
+        <nav id="session-list" aria-label="Conversations"></nav>
+        <div class="lane-card">
+          <strong>Four separate lanes</strong>
+          <ol>
+            <li>Personal conversation</li>
+            <li>Consented research evidence</li>
+            <li class="muted">Synthesized memory — deferred</li>
+            <li class="muted">Training candidates — not admitted</li>
+          </ol>
+        </div>
+      </aside>
+
+      <main class="chat-panel">
+        <div class="control-strip">
+          <label>Student target<select id="target-select"></select></label>
+          <button id="check-readiness" class="ghost">Check readiness</button>
+          <span id="readiness" class="status-dot">Not probed</span>
+          <label>Temperature<input id="temperature" type="number" min="0" max="2" step="0.1" value="0.2"></label>
+          <label>Max output<input id="max-tokens" type="number" min="1" max="65536" value="2048"></label>
+        </div>
+        <div id="conversation-title" class="conversation-title">Choose or create a conversation</div>
+        <div id="temporary-warning" class="temporary-warning hidden">
+          TEMPORARY — held only in this browser tab; no Padawan rows, traces, artifacts, memory, or training candidates.
+        </div>
+        <section id="transcript" class="transcript" aria-live="polite"></section>
+        <form id="composer" class="composer">
+          <textarea id="prompt" rows="3" placeholder="Send an explicit-history message…" required></textarea>
+          <div class="composer-footer">
+            <label id="consent-control" class="consent-toggle">
+              <input id="research-consent" type="checkbox">
+              Retain future turns as immutable research evidence
+            </label>
+            <button id="send" type="submit" class="primary">Send</button>
+          </div>
+        </form>
+      </main>
+
+      <aside class="trace-panel">
+        <div class="trace-header">
+          <div>
+            <div class="section-label">TRACE INSPECTOR</div>
+            <h2>Attribution</h2>
+          </div>
+          <button id="delete-session" class="danger hidden">Delete chat</button>
+        </div>
+        <div id="trace-empty" class="empty-state">Select “Trace” on a completed turn.</div>
+        <div id="trace-content" class="hidden">
+          <div id="trace-summary" class="trace-summary"></div>
+          <pre id="trace-json"></pre>
+          <details id="restricted-trace" class="trace-disclosure">
+            <summary>Raw restricted artifacts</summary>
+            <p>Explicit research view. Excluded from transcript, memory, and training by default.</p>
+            <pre id="restricted-json" class="restricted"></pre>
+          </details>
+        </div>
+      </aside>
+    </div>
+    <script src="/assets/app.js"></script>
+  </body>
+</html>

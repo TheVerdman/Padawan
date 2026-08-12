@@ -249,6 +249,57 @@ async def test_responses_stream_requires_and_preserves_completed_event() -> None
     assert result.capabilities.streaming.availability == CapabilityAvailability.AVAILABLE
 
 
+async def test_responses_event_iterator_yields_public_and_private_channels_before_terminal() -> (
+    None
+):
+    delta = {"type": "response.output_text.delta", "delta": "hello"}
+    reasoning = {"type": "response.reasoning_text.delta", "delta": "private"}
+    completed = {
+        "type": "response.completed",
+        "response": {
+            "id": "resp-events",
+            "model": "local",
+            "status": "completed",
+            "output": [
+                {
+                    "type": "message",
+                    "content": [{"type": "output_text", "text": "hello"}],
+                }
+            ],
+            "usage": {"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
+        },
+    }
+    sse = "".join(
+        f"data: {json.dumps(event)}\n\n" for event in (reasoning, delta, completed)
+    ).encode()
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=sse, headers={"content-type": "text/event-stream"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as transport:
+        client = OpenAICompatibleClient(
+            base_url="http://local",
+            model="local",
+            client=transport,
+            retry_attempts=1,
+            capture_private_reasoning=True,
+        )
+        events = [event async for event in client.stream(_request())]
+
+    assert [event.event_type for event in events] == [
+        "response.reasoning_text.delta",
+        "response.output_text.delta",
+        "response.completed",
+    ]
+    assert events[0].private_reasoning_delta == "private"
+    assert events[0].public_text_delta is None
+    assert events[1].public_text_delta == "hello"
+    assert events[1].private_reasoning_delta is None
+    assert events[2].result is not None
+    assert events[2].result.output_text == "hello"
+    assert events[2].result.private_reasoning == "private"
+
+
 async def test_anthropic_is_a_real_second_provider_transport() -> None:
     captured: dict[str, object] = {}
 

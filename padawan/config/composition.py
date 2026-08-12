@@ -320,31 +320,7 @@ def _validate_live_configuration(
         raise ValueError("legacy student fallback is available only for compatible providers")
     if student_provider == "inkling":
         selected_model = student_model or settings.inkling_model
-        if not selected_model:
-            raise ValueError("Inkling requires --student-model or PADAWAN_INKLING_MODEL")
-        if selected_model != INKLING_SMALL_AMPERE.served_model_name:
-            raise ValueError(
-                "validated Inkling serving requires model "
-                f"{INKLING_SMALL_AMPERE.served_model_name!r}"
-            )
-        validate_responses_edge_url(settings.inkling_base_url)
-        hostname = urlsplit(settings.inkling_base_url).hostname
-        if hostname not in {"127.0.0.1", "::1", "localhost"} and not _secret(
-            settings.inkling_api_key
-        ):
-            raise ValueError(
-                "authenticated Inkling Responses edge requires INKLING_API_KEY or "
-                "PADAWAN_INKLING_API_KEY"
-            )
-        if settings.inkling_runtime_revision != INKLING_SMALL_AMPERE.runtime_revision:
-            raise ValueError("Inkling runtime revision differs from the validated serving image")
-        if not (settings.inkling_edge_image_digest or settings.inkling_edge_deployment_revision):
-            raise ValueError(
-                "Inkling requires PADAWAN_INKLING_EDGE_IMAGE_DIGEST or "
-                "PADAWAN_INKLING_EDGE_DEPLOYMENT_REVISION"
-            )
-        if settings.inkling_tensor_parallel_size != INKLING_SMALL_AMPERE.tensor_parallel_size:
-            raise ValueError("Inkling tensor parallel size differs from the validated topology")
+        validate_inkling_student_configuration(settings, selected_model=selected_model)
     if student_provider == "openai" and not (
         (student_model or settings.openai_model) and _secret(settings.openai_api_key)
     ):
@@ -362,3 +338,34 @@ def _validate_live_configuration(
         (teacher_model or settings.anthropic_model) and _secret(settings.anthropic_api_key)
     ):
         raise ValueError("Anthropic teacher requires a model and API key")
+
+
+def validate_inkling_student_configuration(
+    settings: Settings,
+    *,
+    selected_model: str | None,
+) -> None:
+    """Apply the validated Inkling admission gate at every composition root."""
+
+    if not selected_model:
+        raise ValueError("Inkling requires --student-model or PADAWAN_INKLING_MODEL")
+    if selected_model != INKLING_SMALL_AMPERE.served_model_name:
+        raise ValueError(
+            f"validated Inkling serving requires model {INKLING_SMALL_AMPERE.served_model_name!r}"
+        )
+    validate_responses_edge_url(settings.inkling_base_url)
+    hostname = urlsplit(settings.inkling_base_url).hostname
+    if hostname not in {"127.0.0.1", "::1", "localhost"} and not _secret(settings.inkling_api_key):
+        raise ValueError(
+            "authenticated Inkling Responses edge requires INKLING_API_KEY or "
+            "PADAWAN_INKLING_API_KEY"
+        )
+    if settings.inkling_runtime_revision != INKLING_SMALL_AMPERE.runtime_revision:
+        raise ValueError("Inkling runtime revision differs from the validated serving image")
+    if not (settings.inkling_edge_image_digest or settings.inkling_edge_deployment_revision):
+        raise ValueError(
+            "Inkling requires PADAWAN_INKLING_EDGE_IMAGE_DIGEST or "
+            "PADAWAN_INKLING_EDGE_DEPLOYMENT_REVISION"
+        )
+    if settings.inkling_tensor_parallel_size != INKLING_SMALL_AMPERE.tensor_parallel_size:
+        raise ValueError("Inkling tensor parallel size differs from the validated topology")

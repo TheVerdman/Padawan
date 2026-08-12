@@ -1,0 +1,272 @@
+{
+  "$defs": {
+    "IdentityEvidenceStatus": {
+      "enum": [
+        "pinned",
+        "verified",
+        "declared",
+        "unknown"
+      ],
+      "title": "IdentityEvidenceStatus",
+      "type": "string"
+    },
+    "ModelServingIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "protocol": {
+          "minLength": 1,
+          "title": "Protocol",
+          "type": "string"
+        },
+        "purpose": {
+          "minLength": 1,
+          "title": "Purpose",
+          "type": "string"
+        },
+        "quantization": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "research_role": {
+          "$ref": "#/$defs/ResearchRole"
+        },
+        "runtime": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "runtime_parameters": {
+          "additionalProperties": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minProperties": 1,
+          "propertyNames": {
+            "minLength": 1
+          },
+          "title": "Runtime Parameters",
+          "type": "object"
+        },
+        "runtime_parameters_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Runtime Parameters Digest",
+          "type": "string"
+        },
+        "serving_artifact": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "transport_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionedComponentIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "purpose",
+        "research_role",
+        "model_id",
+        "checkpoint",
+        "quantization",
+        "runtime",
+        "serving_artifact",
+        "protocol",
+        "runtime_parameters",
+        "runtime_parameters_digest"
+      ],
+      "title": "ModelServingIdentity",
+      "type": "object"
+    },
+    "ResearchRole": {
+      "enum": [
+        "target",
+        "baseline",
+        "teacher",
+        "verifier",
+        "adjudicator"
+      ],
+      "title": "ResearchRole",
+      "type": "string"
+    },
+    "ServingPathIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "components": {
+          "items": {
+            "$ref": "#/$defs/VersionedComponentIdentity"
+          },
+          "minItems": 1,
+          "title": "Components",
+          "type": "array"
+        },
+        "endpoint_origin": {
+          "pattern": "^https?://[^\\s]+$",
+          "title": "Endpoint Origin",
+          "type": "string"
+        },
+        "previous_response_id_enabled": {
+          "const": false,
+          "default": false,
+          "title": "Previous Response Id Enabled",
+          "type": "boolean"
+        },
+        "protocol": {
+          "minLength": 1,
+          "title": "Protocol",
+          "type": "string"
+        },
+        "response_storage_enabled": {
+          "const": false,
+          "default": false,
+          "title": "Response Storage Enabled",
+          "type": "boolean"
+        },
+        "route": {
+          "pattern": "^/[^\\s]*$",
+          "title": "Route",
+          "type": "string"
+        },
+        "server_side_authentication": {
+          "const": true,
+          "default": true,
+          "title": "Server Side Authentication",
+          "type": "boolean"
+        },
+        "target_id": {
+          "minLength": 1,
+          "title": "Target Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_id",
+        "endpoint_origin",
+        "route",
+        "protocol",
+        "components"
+      ],
+      "title": "ServingPathIdentity",
+      "type": "object"
+    },
+    "VersionedComponentIdentity": {
+      "additionalProperties": false,
+      "description": "Content-bound component identity without embedding the component itself.",
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "evidence": {
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "evidence_status": {
+          "$ref": "#/$defs/IdentityEvidenceStatus"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component_id",
+        "version",
+        "digest",
+        "evidence_status",
+        "evidence"
+      ],
+      "title": "VersionedComponentIdentity",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/student-target-descriptor.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "configured_context_window_tokens": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Configured Context Window Tokens"
+    },
+    "display_name": {
+      "minLength": 1,
+      "title": "Display Name",
+      "type": "string"
+    },
+    "effective_input_limit_tokens": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Effective Input Limit Tokens"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelServingIdentity"
+    },
+    "private_reasoning_capture_enabled": {
+      "title": "Private Reasoning Capture Enabled",
+      "type": "boolean"
+    },
+    "provider": {
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "serving_path": {
+      "$ref": "#/$defs/ServingPathIdentity"
+    },
+    "target_id": {
+      "minLength": 1,
+      "title": "Target Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "target_id",
+    "display_name",
+    "provider",
+    "model",
+    "serving_path",
+    "private_reasoning_capture_enabled"
+  ],
+  "title": "StudentTargetDescriptor",
+  "type": "object"
+}

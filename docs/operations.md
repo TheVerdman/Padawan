@@ -34,6 +34,8 @@ Configuration is loaded once at the CLI composition boundary. Important variable
 | `PADAWAN_INKLING_TENSOR_PARALLEL_SIZE` | validated topology; currently exactly four |
 | `PADAWAN_INKLING_TIMEOUT_SECONDS` | per-request Inkling timeout; currently exactly 3,600 seconds |
 | `PADAWAN_COMPATIBLE_BASE_URL`, `PADAWAN_COMPATIBLE_MODEL` | other real endpoint |
+| `PADAWAN_INTERACTION_ACCESS_TOKEN` | separate secret required to log into the local Padawan Interaction Lab |
+| `PADAWAN_INTERACTION_HOST`, `PADAWAN_INTERACTION_PORT` | loopback-only Lab bind address and local port |
 | `PADAWAN_EXPORT_HMAC_KEY` | opaque Heirloom audit identifiers |
 | `PADAWAN_LEAN_PROJECT_ROOT` | pinned Lake project (default `./lean`) |
 | `PADAWAN_LEAN_LAKE_EXECUTABLE`, `PADAWAN_LEAN_ELAN_HOME` | workspace-local Lean runtime |
@@ -54,6 +56,23 @@ PADAWAN_ENV_FILE=/absolute/operator-controlled/path/.env padawan --json corpus i
 Process variables override values from that file. Development emits a warning if the file is
 group/world-readable; production refuses it. Use mode `0600`. The file path is runtime state and
 must not be committed to configuration, examples, provenance, or command arguments.
+
+## Padawan Interaction Lab
+
+Migrate the database, configure a student target and a separate Lab token, then start the local
+server:
+
+```text
+.venv/bin/padawan db migrate
+export PADAWAN_INTERACTION_ACCESS_TOKEN='long-random-local-secret'
+.venv/bin/padawan interaction serve
+```
+
+Open `http://127.0.0.1:8765`. Startup does not preflight a target, deploy an endpoint, or wake GPU
+infrastructure. Use **Check readiness** to request an authenticated capability check only. The Lab
+refuses non-loopback hosts and requires the existing database migration; it does not create schema
+at web startup. See [the Interaction Lab contract](interaction-lab.md) for consent, temporary chat,
+trace access, and deletion semantics.
 
 ## GCS artifacts
 

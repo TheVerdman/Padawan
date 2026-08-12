@@ -5,6 +5,7 @@ import json
 import time
 from collections.abc import AsyncIterator
 from copy import deepcopy
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 import httpx
@@ -12,6 +13,7 @@ import httpx
 from padawan.adapters.base import (
     GenerationRequest,
     GenerationResult,
+    GenerationStreamEvent,
     ModelProviderError,
 )
 from padawan.models.contracts import (
@@ -108,6 +110,13 @@ class OpenAICompatibleClient:
         *,
         stream: bool = False,
     ) -> GenerationResult:
+        if stream:
+            async for event in self.stream(request):
+                if event.result is not None:
+                    return event.result
+            raise ModelProviderError(
+                "provider stream ended without a terminal result", provider=self.provider
+            )
         protocol = "responses" if self.protocol == "auto" else self.protocol
         try:
             return await self._generate_with_protocol(request, protocol=protocol, stream=stream)
@@ -132,6 +141,195 @@ class OpenAICompatibleClient:
                     },
                 }
             )
+
+    async def stream(self, request: GenerationRequest) -> AsyncIterator[GenerationStreamEvent]:
+        """Yield provider events as they arrive and a final event carrying the result.
+
+        Retries are safe only before the first event has been observed. Once a
+        provider has emitted data, Padawan exposes the failure instead of
+        splicing a second response into the same trace.
+        """
+
+        protocol = "responses" if self.protocol == "auto" else self.protocol
+        attempted_fallback = False
+        attempt = 1
+        while True:
+            yielded = False
+            try:
+                async for event in self._stream_with_protocol(request, protocol=protocol):
+                    yielded = True
+                    yield event
+                return
+            except ModelProviderError as exc:
+                fallback_allowed = (
+                    not yielded
+                    and not attempted_fallback
+                    and protocol == "responses"
+                    and self.allow_legacy_fallback
+                    and exc.status_code in {404, 405, 422, 501}
+                )
+                if fallback_allowed:
+                    protocol = "chat_completions"
+                    attempted_fallback = True
+                    attempt = 1
+                    continue
+                if yielded or not exc.retryable or attempt >= self.retry_attempts:
+                    raise
+                await asyncio.sleep(min(8.0, 0.25 * (2 ** (attempt - 1))))
+                attempt += 1
+
+    async def _stream_with_protocol(
+        self,
+        request: GenerationRequest,
+        *,
+        protocol: str,
+    ) -> AsyncIterator[GenerationStreamEvent]:
+        if protocol == "responses":
+            path = "/v1/responses"
+            payload = _responses_payload(request, self.model, stream=True)
+        elif protocol == "chat_completions":
+            path = "/v1/chat/completions"
+            payload = _chat_payload(request, self.model, stream=True)
+        elif protocol == "completions":
+            path = "/v1/completions"
+            payload = _completion_payload(request, self.model, stream=True)
+        else:
+            raise ValueError(f"unsupported protocol: {protocol}")
+        raw_request = json.dumps(
+            payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+        started = time.monotonic()
+        events: list[dict[str, Any]] = []
+        raw_parts: list[bytes] = []
+        completed_event: dict[str, Any] | None = None
+        completed_raw = b""
+        sequence = 0
+        try:
+            async with self.client.stream(
+                "POST",
+                f"{self.base_url}{path}",
+                headers=self._headers(
+                    request_id=request.request_id,
+                    accept="text/event-stream",
+                ),
+                json=payload,
+            ) as response:
+                if response.status_code >= 400:
+                    body = await response.aread()
+                    raise ModelProviderError(
+                        f"provider returned HTTP {response.status_code}",
+                        provider=self.provider,
+                        status_code=response.status_code,
+                        retryable=response.status_code in {408, 409, 429}
+                        or response.status_code >= 500,
+                        response_body=body,
+                    )
+                async for raw, parsed in _iter_sse(response, provider=self.provider):
+                    raw_parts.append(raw)
+                    if parsed is None:
+                        continue
+                    events.append(parsed)
+                    event_type = str(parsed.get("type") or f"{protocol}.event")
+                    if event_type == "response.completed":
+                        completed_event = parsed
+                        completed_raw = raw
+                        break
+                    public_delta, private_delta = _stream_deltas(
+                        parsed,
+                        protocol=protocol,
+                        capture_private_reasoning=self.capture_private_reasoning,
+                    )
+                    yield GenerationStreamEvent(
+                        sequence=sequence,
+                        event_type=event_type,
+                        occurred_at=datetime.now(UTC),
+                        raw_event=raw,
+                        metadata=parsed,
+                        public_text_delta=public_delta,
+                        private_reasoning_delta=private_delta,
+                    )
+                    sequence += 1
+        except asyncio.CancelledError:
+            raise
+        except (httpx.TimeoutException, httpx.NetworkError) as exc:
+            raise ModelProviderError(str(exc), provider=self.provider, retryable=True) from exc
+
+        if protocol == "responses":
+            completed = (
+                completed_event.get("response") if isinstance(completed_event, dict) else None
+            )
+            if not isinstance(completed, dict):
+                raise ModelProviderError(
+                    "Responses stream ended without response.completed", provider=self.provider
+                )
+            reasoning_done = [
+                str(item["text"])
+                for item in events
+                if item.get("type") == "response.reasoning_text.done" and item.get("text")
+            ]
+            reasoning_delta = [
+                str(item["delta"])
+                for item in events
+                if item.get("type") == "response.reasoning_text.delta" and item.get("delta")
+            ]
+            reasoning_text = "\n".join(reasoning_done) or "".join(reasoning_delta)
+            if reasoning_text:
+                completed = {**completed, "padawan_private_reasoning": reasoning_text}
+            response_json = completed
+            parsed_result = _parse_responses(response_json)
+        else:
+            response_json = _collapse_legacy_stream(events, protocol=protocol)
+            parsed_result = (
+                _parse_chat(response_json)
+                if protocol == "chat_completions"
+                else _parse_completion(response_json)
+            )
+        latency_ms = (time.monotonic() - started) * 1000.0
+        capabilities = self.capabilities_override or _default_capabilities(
+            protocol=protocol,
+            streaming=True,
+            response=response_json,
+            private_reasoning_captured=(
+                self.capture_private_reasoning
+                and parsed_result.get("private_reasoning") is not None
+            ),
+        )
+        result = GenerationResult(
+            request_id=request.request_id,
+            response_id=parsed_result["response_id"],
+            provider=self.provider,
+            model_id=str(response_json.get("model") or self.model),
+            protocol=protocol,
+            output_text=parsed_result["output_text"],
+            raw_request=raw_request,
+            raw_response=b"".join(raw_parts),
+            usage=parsed_result["usage"],
+            token_ids=parsed_result["token_ids"],
+            token_logprobs=parsed_result["token_logprobs"],
+            private_reasoning=(
+                parsed_result.get("private_reasoning") if self.capture_private_reasoning else None
+            ),
+            reasoning_summary=parsed_result["reasoning_summary"],
+            finish_reason=parsed_result["finish_reason"],
+            latency_ms=latency_ms,
+            capabilities=capabilities,
+            telemetry=parsed_result["telemetry"],
+            provider_metadata={
+                "streamed": True,
+                "explicit_legacy_fallback": protocol
+                != ("responses" if self.protocol == "auto" else self.protocol),
+            },
+        )
+        yield GenerationStreamEvent(
+            sequence=sequence,
+            event_type=(
+                "response.completed" if protocol == "responses" else f"{protocol}.completed"
+            ),
+            occurred_at=datetime.now(UTC),
+            raw_event=completed_raw,
+            metadata=completed_event if protocol == "responses" else response_json,
+            result=result,
+        )
 
     async def _generate_with_protocol(
         self,
@@ -620,7 +818,49 @@ def _cap(value: bool, reason: str) -> Capability:
     )
 
 
-async def _iter_sse(response: httpx.Response) -> AsyncIterator[tuple[bytes, dict[str, Any] | None]]:
+def _stream_deltas(
+    event: dict[str, Any],
+    *,
+    protocol: str,
+    capture_private_reasoning: bool,
+) -> tuple[str | None, str | None]:
+    event_type = event.get("type")
+    if protocol == "responses":
+        public = (
+            str(event["delta"])
+            if event_type == "response.output_text.delta" and event.get("delta") is not None
+            else None
+        )
+        private = (
+            str(event["delta"])
+            if capture_private_reasoning
+            and event_type == "response.reasoning_text.delta"
+            and event.get("delta") is not None
+            else str(event["text"])
+            if capture_private_reasoning
+            and event_type == "response.reasoning_text.done"
+            and event.get("text") is not None
+            else None
+        )
+        return public, private
+    choices = event.get("choices")
+    choice = choices[0] if isinstance(choices, list) and choices else None
+    if not isinstance(choice, dict):
+        return None, None
+    if protocol == "chat_completions":
+        delta = choice.get("delta")
+        return (
+            str(delta["content"])
+            if isinstance(delta, dict) and delta.get("content") is not None
+            else None,
+            None,
+        )
+    return (str(choice["text"]) if choice.get("text") is not None else None, None)
+
+
+async def _iter_sse(
+    response: httpx.Response, *, provider: str = "openai_compatible"
+) -> AsyncIterator[tuple[bytes, dict[str, Any] | None]]:
     async for line in response.aiter_lines():
         raw = (line + "\n").encode("utf-8")
         if not line.startswith("data:"):
@@ -633,9 +873,7 @@ async def _iter_sse(response: httpx.Response) -> AsyncIterator[tuple[bytes, dict
         try:
             parsed = json.loads(data)
         except json.JSONDecodeError as exc:
-            raise ModelProviderError(
-                f"invalid SSE JSON: {exc}", provider="openai_compatible"
-            ) from exc
+            raise ModelProviderError(f"invalid SSE JSON: {exc}", provider=provider) from exc
         yield raw, parsed if isinstance(parsed, dict) else None
 
 

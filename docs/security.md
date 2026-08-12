@@ -24,11 +24,23 @@ repositories, and the selected path is not written into settings manifests. Proc
 variables win over dotenv values. Broad file permissions warn in development and fail in
 production. Provider values are neither copied into this repository nor hashed as identifiers.
 
+The Padawan Interaction Lab keeps student-serving credentials on the server. It binds only to a
+loopback address, requires a distinct Lab access token, stores the resulting browser session only
+in process memory, marks its cookie HTTP-only and same-site, and requires CSRF evidence on writes.
+It disables schema/documentation routes and sends no-store, CSP, frame-denial, referrer, and
+content-type headers. This is a private single-user boundary, not remote or multi-tenant
+authentication.
+
 ## Artifact classification and access
 
 Raw external requests/responses and private traces are stored as `restricted=true, raw_data=true`.
 Local files are SHA-256 addressed; restricted new blobs receive mode `0600`. Reads deny restricted
 references unless the caller explicitly opts in and always verify URI, digest, and size.
+Persisted Interaction Lab transcript messages never receive private reasoning. A collapsed
+**Reasoning** disclosure is rendered above each durable assistant response, but the browser fetches
+only the separate private-reasoning artifact when the operator explicitly expands it. The trace
+inspector uses another explicit disclosure for the complete raw request/event artifacts. Neither
+restricted view is eligible for memory synthesis or training in this slice.
 
 `ExportPolicy` requires an allowed purpose plus explicit roles for restricted or private-reasoning
 material. The default policy denies both. Paths are normalized as safe relative POSIX paths and
@@ -60,6 +72,13 @@ immutable. Raw-artifact retention may be configured only as an age threshold, an
 permitted only when the artifact has no database reference. Garbage collection defaults to dry-run.
 Backups must preserve the database and blob store together; provenance verification detects chain
 tampering but does not restore missing blobs.
+
+Interaction conversation deletion removes personal rows, traces, invocation/telemetry rows, and
+artifact ownership references while retaining consented research traces and feedback. Unreferenced
+content-addressed blobs remain recoverable to a storage administrator until reference-safe garbage
+collection runs; deletion is therefore logical, not an immediate secure erase. A consented turn
+retains its complete rendered request, including selected earlier context, and the UI discloses
+that boundary before enabling future research retention.
 
 ## Generated content and tools
 
@@ -93,5 +112,6 @@ non-idempotent replay.
 Use TLS for remote PostgreSQL and model endpoints, restrict egress to configured providers, rotate
 provider and export keys, and verify provenance before publishing a report. Review-required and
 terminal failures must not be reclassified as success. The system does not currently implement
-database row-level security, application-managed blob encryption, S3, or a network service
-authentication layer; operators must not infer those controls from the in-process policy hooks.
+database row-level security, application-managed blob encryption, S3, remote/multi-tenant service
+authentication, or immediate artifact secure erasure; operators must not infer those controls from
+the local Interaction Lab or in-process policy hooks.

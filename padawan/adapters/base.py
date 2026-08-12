@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+from collections.abc import AsyncIterator
 from copy import deepcopy
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -48,12 +50,37 @@ class GenerationResult:
     provider_metadata: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class GenerationStreamEvent:
+    """One provider stream event, yielded before terminal response assembly.
+
+    ``public_text_delta`` is safe for the ordinary transcript. Private reasoning
+    remains a separate field so callers cannot accidentally concatenate it into
+    user-visible output.
+    """
+
+    sequence: int
+    event_type: str
+    occurred_at: datetime
+    raw_event: bytes
+    metadata: dict[str, Any] | None
+    public_text_delta: str | None = None
+    private_reasoning_delta: str | None = None
+    result: GenerationResult | None = None
+
+    @property
+    def terminal(self) -> bool:
+        return self.result is not None
+
+
 class StudentRuntime(Protocol):
     runtime_id: str
     runtime_version: str
     checkpoint_id: str
 
     async def generate(self, request: GenerationRequest) -> GenerationResult: ...
+
+    def stream(self, request: GenerationRequest) -> AsyncIterator[GenerationStreamEvent]: ...
 
 
 class ModelProviderError(RuntimeError):

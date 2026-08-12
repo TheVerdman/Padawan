@@ -298,7 +298,7 @@ def build_live_worker_configuration(
 ) -> ResearchWorkerConfiguration:
     """Describe the exact non-secret composition allowed to execute controlled runs."""
 
-    student = _student_serving_identity(
+    student = build_student_serving_identity(
         provider=student_provider,
         model_id=student_model_id,
         runtime_id=student_runtime_id,
@@ -397,7 +397,7 @@ def build_live_worker_configuration(
     )
 
 
-def _student_serving_identity(
+def build_student_serving_identity(
     *,
     provider: str,
     model_id: str,
@@ -413,6 +413,7 @@ def _student_serving_identity(
     edge_deployment_revision: str | None,
     edge_identity_verified: bool,
 ) -> ModelServingIdentity:
+    """Build the foundation's canonical non-secret student serving identity."""
     parameters: dict[str, str]
     transport_artifact: VersionedComponentIdentity | None = None
     if provider == "inkling":

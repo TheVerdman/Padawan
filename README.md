@@ -23,6 +23,8 @@ hard-gated Magellan agentic environment protocol:
   durable operation spans, duration profiles, matched counterfactuals, and calibrated ETA actions;
 - Responses-API-first OpenAI and OpenAI-compatible adapters, a contract-pinned authenticated
   Inkling-Small-Ampere/vLLM adapter, and an Anthropic teacher adapter;
+- a loopback-only, model-neutral Padawan Interaction Lab with explicit-history streaming chat,
+  immutable branches, per-turn serving manifests, temporary mode, and restricted trace inspection;
 - evidence-citing teacher contracts and deterministic comment validation;
 - algebra and domain-general crash-resumable developmental paths, idempotent external calls,
   worker leases, and stale recovery;
@@ -70,6 +72,9 @@ results from a fully observed study condition, and hard gates must verify the sa
 suite, condition, and checkpoint. Suite labels, favorable subsets, and free-form evidence references
 are not accepted as promotion lineage. Mutable Inkling edge identity is admitted only after the
 responding endpoint reports and matches the configured deployment identity.
+The Padawan Interaction Lab is a separate exploratory surface: its conversations are never
+reported as experiment episodes or controlled benchmark evidence, and its first slice performs no
+memory synthesis or training admission.
 No S3 backend is planned for the current GCS deployment. Parameter calls fail as unsupported rather
 than degrading to a no-op.
 The first real-provider pilot attempt is documented in
@@ -117,6 +122,8 @@ Start with the [Round 2 plan](docs/round-2-plan.md), [architecture](docs/archite
 [data model](docs/data-model.md), [experiment semantics](docs/experiment-semantics.md), and
 [operations](docs/operations.md). The compiler and source-rights boundary is documented in
 [internal training products](docs/training-products.md).
+The [Padawan Interaction Lab contract](docs/interaction-lab.md) documents chat, trace, consent,
+temporary-mode, private-reasoning, and deletion boundaries.
 The [research-control contract](docs/research-controls.md) defines the harness measurement model,
 comparability gate, and deferred retention/compaction, trajectory, mechanistic, atlas, and N+1
 seams.

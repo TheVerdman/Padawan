@@ -41,6 +41,15 @@ domain cannot masquerade as a complete autonomous workflow. The authorities rema
 | checkpoint | `CheckpointRegistry` | external lineage, sealed-suite comparison, lifecycle decisions |
 | governance | `governance.*` | access, retention, export, and command-manifest policy |
 | consolidation | `MemoryConsolidationBackend` | evidence-gated lesson consolidation and rollback |
+| exploratory interaction | `InteractionService` and `InteractionStore` | explicit-history chat, immutable branches, consent snapshots, and non-benchmark traces |
+| student target selection | `StudentTargetRegistry` | model-neutral target descriptors, batch-one leases, and explicit readiness preflight |
+
+`padawan.interaction.composition.build_interaction_application` is the separate local Interaction
+Lab composition root. It reuses the artifact catalog, external-call ledger, operation telemetry,
+and canonical model-serving identity from the research-control foundation. It does not construct a
+run, episode, state fork, memory writer, or training compiler. Target-specific adapters live only at
+this composition boundary; interaction schemas, routes, and services use student target IDs and
+descriptors rather than a deployment product name.
 
 The official OpenAI adapter is fixed to `POST /v1/responses` and has no legacy fallback. The
 validated Inkling client is likewise Responses-only: it negotiates the exact
@@ -95,6 +104,11 @@ Thus a crash after a provider response but before a state transition does not ge
 The same boundary records a `model_generation` operation span before I/O and an append-only status
 event on wait, failure, or success. Terminal spans can be compiled into versioned p50/p90/p95 and
 timeout profiles without retaining prompt text in workload metadata.
+Interaction invocations reuse the same intent/artifact/telemetry boundary with an
+`interaction_trace_id` owner instead of inventing a `run_id`. The database requires exactly one of
+those owners. A true event iterator forwards public text deltas while keeping private-reasoning
+deltas out of the transcript; the terminal result still closes the idempotency and telemetry
+records.
 The corpus registry also commits a conservative student exposure before each student transport call;
 a terminal failure releases its leases but the exposed sibling group remains ineligible for that
 student.

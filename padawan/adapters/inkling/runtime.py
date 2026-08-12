@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import re
-from dataclasses import dataclass
+from collections.abc import AsyncIterator
+from dataclasses import dataclass, replace
 from typing import Any, Literal
 
 import httpx
 
-from padawan.adapters.base import GenerationRequest, GenerationResult, ModelProviderError
+from padawan.adapters.base import (
+    GenerationRequest,
+    GenerationResult,
+    GenerationStreamEvent,
+    ModelProviderError,
+)
 from padawan.adapters.inkling.contract import (
     InklingServingContract,
     validate_responses_edge_url,
@@ -139,6 +145,14 @@ class InklingRuntime:
         return self._verified_edge_identity
 
     async def generate(self, request: GenerationRequest) -> GenerationResult:
+        async for event in self.stream(request):
+            if event.result is not None:
+                return event.result
+        raise ModelProviderError(
+            "Inkling stream ended without a terminal result", provider="inkling"
+        )
+
+    async def stream(self, request: GenerationRequest) -> AsyncIterator[GenerationStreamEvent]:
         if self.contract is not None and (
             request.store or request.previous_response_id is not None
         ):
@@ -149,16 +163,23 @@ class InklingRuntime:
         # The mutable edge may be redeployed while a worker remains alive. Recheck
         # its authenticated capability identity immediately before every model call.
         negotiated = await self.negotiate(refresh=True)
-        result = await self.client.generate(request, stream=True)
-        telemetry = {
-            "checkpoint_id": self.checkpoint_id,
-            "quantization_manifest": self.quantization_manifest,
-            "tensor_parallel_size": self.tensor_parallel_size,
-            "runtime_revision": self.runtime_version,
-            "negotiated_server": negotiated,
-            "server_telemetry": result.telemetry,
-        }
-        return GenerationResult(**{**result.__dict__, "telemetry": telemetry})
+        async for event in self.client.stream(request):
+            if event.result is None:
+                yield event
+                continue
+            result = event.result
+            telemetry = {
+                "checkpoint_id": self.checkpoint_id,
+                "quantization_manifest": self.quantization_manifest,
+                "tensor_parallel_size": self.tensor_parallel_size,
+                "runtime_revision": self.runtime_version,
+                "negotiated_server": negotiated,
+                "server_telemetry": result.telemetry,
+            }
+            yield replace(
+                event,
+                result=GenerationResult(**{**result.__dict__, "telemetry": telemetry}),
+            )
 
     async def close(self) -> None:
         await self.client.close()

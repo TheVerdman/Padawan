@@ -1,0 +1,169 @@
+{
+  "$defs": {
+    "IdentityEvidenceStatus": {
+      "enum": [
+        "pinned",
+        "verified",
+        "declared",
+        "unknown"
+      ],
+      "title": "IdentityEvidenceStatus",
+      "type": "string"
+    },
+    "ServingPathIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "components": {
+          "items": {
+            "$ref": "#/$defs/VersionedComponentIdentity"
+          },
+          "minItems": 1,
+          "title": "Components",
+          "type": "array"
+        },
+        "endpoint_origin": {
+          "pattern": "^https?://[^\\s]+$",
+          "title": "Endpoint Origin",
+          "type": "string"
+        },
+        "previous_response_id_enabled": {
+          "const": false,
+          "default": false,
+          "title": "Previous Response Id Enabled",
+          "type": "boolean"
+        },
+        "protocol": {
+          "minLength": 1,
+          "title": "Protocol",
+          "type": "string"
+        },
+        "response_storage_enabled": {
+          "const": false,
+          "default": false,
+          "title": "Response Storage Enabled",
+          "type": "boolean"
+        },
+        "route": {
+          "pattern": "^/[^\\s]*$",
+          "title": "Route",
+          "type": "string"
+        },
+        "server_side_authentication": {
+          "const": true,
+          "default": true,
+          "title": "Server Side Authentication",
+          "type": "boolean"
+        },
+        "target_id": {
+          "minLength": 1,
+          "title": "Target Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_id",
+        "endpoint_origin",
+        "route",
+        "protocol",
+        "components"
+      ],
+      "title": "ServingPathIdentity",
+      "type": "object"
+    },
+    "VersionedComponentIdentity": {
+      "additionalProperties": false,
+      "description": "Content-bound component identity without embedding the component itself.",
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "evidence": {
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "evidence_status": {
+          "$ref": "#/$defs/IdentityEvidenceStatus"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component_id",
+        "version",
+        "digest",
+        "evidence_status",
+        "evidence"
+      ],
+      "title": "VersionedComponentIdentity",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/target-readiness.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "checked_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Checked At"
+    },
+    "detail": {
+      "minLength": 1,
+      "title": "Detail",
+      "type": "string"
+    },
+    "serving_path": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ServingPathIdentity"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "status": {
+      "enum": [
+        "configured",
+        "checking",
+        "ready",
+        "busy",
+        "unavailable"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "target_id": {
+      "minLength": 1,
+      "title": "Target Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "target_id",
+    "status",
+    "detail"
+  ],
+  "title": "TargetReadinessRecord",
+  "type": "object"
+}

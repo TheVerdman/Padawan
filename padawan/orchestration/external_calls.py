@@ -1,13 +1,21 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
+from collections.abc import AsyncIterator
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Protocol
 
 from sqlalchemy import select
 
-from padawan.adapters.base import GenerationRequest, GenerationResult, ModelProviderError
+from padawan.adapters.base import (
+    GenerationRequest,
+    GenerationResult,
+    GenerationStreamEvent,
+    ModelProviderError,
+)
 from padawan.artifacts.store import (
     ArtifactBackend,
     ArtifactCatalog,
@@ -25,6 +33,10 @@ from padawan.temporal.telemetry import OperationTelemetryStore
 
 class GenerationClient(Protocol):
     async def generate(self, request: GenerationRequest) -> GenerationResult: ...
+
+
+class StreamingGenerationClient(GenerationClient, Protocol):
+    def stream(self, request: GenerationRequest) -> AsyncIterator[GenerationStreamEvent]: ...
 
 
 class IdempotentGenerationExecutor:
@@ -68,8 +80,12 @@ class IdempotentGenerationExecutor:
         async with self.database.transaction() as session:
             existing = await session.get(ExternalCallRow, request.request_id)
             if existing is not None:
-                if existing.request_hash != request_hash:
-                    raise ValueError("request ID reused with different content")
+                if (
+                    existing.request_hash != request_hash
+                    or existing.run_id != run_id
+                    or existing.interaction_trace_id is not None
+                ):
+                    raise ValueError("request ID reused with different content or owner")
                 if existing.status == "completed" and existing.response_artifact_id:
                     artifact = await session.get(ArtifactRow, existing.response_artifact_id)
                     if artifact is None:
@@ -122,6 +138,7 @@ class IdempotentGenerationExecutor:
                     ExternalCallRow(
                         request_id=request.request_id,
                         run_id=run_id,
+                        interaction_trace_id=None,
                         purpose=purpose,
                         provider=provider,
                         request_hash=request_hash,
@@ -266,6 +283,290 @@ class IdempotentGenerationExecutor:
                 },
             )
         return result
+
+    async def stream_execute(
+        self,
+        *,
+        interaction_trace_id: str,
+        purpose: str,
+        provider: str,
+        request: GenerationRequest,
+    ) -> AsyncIterator[GenerationStreamEvent]:
+        """Stream one interaction invocation through the durable call ledger.
+
+        Interaction traces own these calls directly; no synthetic research run
+        or episode is created. A completed idempotent replay yields one terminal
+        event carrying the already persisted result.
+        """
+
+        stream_method = getattr(self.client, "stream", None)
+        if stream_method is None:
+            raise TypeError("streaming executor requires a client event iterator")
+        request_hash = sha256_digest(request.model_dump(mode="json"))
+        operation_id = _operation_id(request.request_id)
+        environment_fingerprint = sha256_digest(
+            {"provider": provider, "operation_type": "model_generation"}
+        )
+        async with self.database.transaction() as session:
+            existing = await session.get(ExternalCallRow, request.request_id)
+            if existing is not None:
+                if (
+                    existing.request_hash != request_hash
+                    or existing.run_id is not None
+                    or existing.interaction_trace_id != interaction_trace_id
+                ):
+                    raise ValueError("request ID reused with different content or owner")
+                if existing.status == "completed" and existing.response_artifact_id:
+                    artifact = await session.get(ArtifactRow, existing.response_artifact_id)
+                    if artifact is None:
+                        raise RuntimeError("persisted response artifact is missing")
+                    persisted = _deserialize_result(
+                        await artifact_read_bytes(
+                            self.artifacts,
+                            _artifact_row_to_reference(artifact),
+                            allow_restricted=True,
+                        )
+                    )
+                    yield GenerationStreamEvent(
+                        sequence=0,
+                        event_type="padawan.response.replayed",
+                        occurred_at=datetime.now(UTC),
+                        raw_event=b"",
+                        metadata={"idempotent_replay": True},
+                        result=persisted,
+                    )
+                    return
+                if existing.status != "pending":
+                    raise RuntimeError(
+                        f"cannot resume terminal interaction invocation: {existing.status}"
+                    )
+            else:
+                timestamp = datetime.now(UTC)
+                request_ref = await artifact_put_text(
+                    self.artifacts,
+                    request.model_dump_json(),
+                    media_type="application/json",
+                    restricted=True,
+                    raw_data=True,
+                )
+                await self.catalog.register(session, request_ref)
+                await self.catalog.reference(
+                    session,
+                    request_ref,
+                    owner_type="external_call_request",
+                    owner_id=request.request_id,
+                )
+                session.add(
+                    ExternalCallRow(
+                        request_id=request.request_id,
+                        run_id=None,
+                        interaction_trace_id=interaction_trace_id,
+                        purpose=purpose,
+                        provider=provider,
+                        request_hash=request_hash,
+                        request_artifact_id=request_ref.artifact_id,
+                        response_artifact_id=None,
+                        provider_response_id=None,
+                        status="pending",
+                        error=None,
+                        created_at=timestamp,
+                        completed_at=None,
+                    )
+                )
+                await self.telemetry.create(
+                    session,
+                    operation_id=operation_id,
+                    operation_type="model_generation",
+                    environment_fingerprint=environment_fingerprint,
+                    workload_class=purpose,
+                    workload=_generation_workload(request, provider),
+                    run_id=None,
+                    source_ref=request.request_id,
+                    status=OperationStatus.RUNNING,
+                    occurred_at=timestamp,
+                )
+
+        try:
+            async for event in stream_method(request):
+                if event.result is None:
+                    yield event
+                    continue
+                result = await self._persist_stream_result(
+                    request=request,
+                    result=event.result,
+                    operation_id=operation_id,
+                )
+                yield replace(event, result=result)
+                return
+            raise ModelProviderError(
+                "provider event iterator ended without a terminal result",
+                provider=provider,
+            )
+        except (asyncio.CancelledError, GeneratorExit):
+            await self._persist_stream_interruption(
+                request=request,
+                operation_id=operation_id,
+                status=OperationStatus.CANCELLED,
+                error_type="cancelled",
+                message="stream consumer cancelled the generation",
+            )
+            raise
+        except ModelProviderError as exc:
+            await self._persist_stream_error(
+                request=request,
+                operation_id=operation_id,
+                exc=exc,
+            )
+            raise
+        except Exception as exc:
+            await self._persist_stream_interruption(
+                request=request,
+                operation_id=operation_id,
+                status=OperationStatus.FAILED,
+                error_type=type(exc).__name__,
+                message=str(exc),
+            )
+            raise
+
+    async def _persist_stream_result(
+        self,
+        *,
+        request: GenerationRequest,
+        result: GenerationResult,
+        operation_id: str,
+    ) -> GenerationResult:
+        if result.request_id != request.request_id:
+            raise ValueError("stream result request ID differs from invocation")
+        response_ref = await artifact_put_bytes(
+            self.artifacts,
+            _serialize_result(result),
+            media_type="application/vnd.padawan.generation-result+json",
+            restricted=True,
+            raw_data=True,
+        )
+        async with self.database.transaction() as session:
+            row = await session.scalar(
+                select(ExternalCallRow)
+                .where(ExternalCallRow.request_id == request.request_id)
+                .with_for_update()
+            )
+            if row is None:
+                raise RuntimeError("external call intent disappeared")
+            if row.status == "completed" and row.response_artifact_id:
+                persisted = await session.get(ArtifactRow, row.response_artifact_id)
+                if persisted is None:
+                    raise RuntimeError("completed call lost its response artifact")
+                return _deserialize_result(
+                    await artifact_read_bytes(
+                        self.artifacts,
+                        _artifact_row_to_reference(persisted),
+                        allow_restricted=True,
+                    )
+                )
+            await self.catalog.register(session, response_ref)
+            await self.catalog.reference(
+                session,
+                response_ref,
+                owner_type="external_call_response",
+                owner_id=request.request_id,
+            )
+            row.response_artifact_id = response_ref.artifact_id
+            row.provider_response_id = result.response_id
+            row.status = "completed"
+            row.error = None
+            row.completed_at = datetime.now(UTC)
+            await self.telemetry.transition(
+                session,
+                operation_id=operation_id,
+                status=OperationStatus.SUCCEEDED,
+                occurred_at=row.completed_at,
+                detail={
+                    "provider_latency_ms": result.latency_ms,
+                    "response_id_present": result.response_id is not None,
+                },
+            )
+        return result
+
+    async def _persist_stream_error(
+        self,
+        *,
+        request: GenerationRequest,
+        operation_id: str,
+        exc: ModelProviderError,
+    ) -> None:
+        response_digest = sha256_digest(exc.response_body)
+        error_response_ref = None
+        if exc.response_body:
+            error_response_ref = await artifact_put_bytes(
+                self.artifacts,
+                exc.response_body,
+                media_type="application/vnd.padawan.provider-error-response",
+                restricted=True,
+                raw_data=True,
+            )
+        async with self.database.transaction() as session:
+            row = await session.get(ExternalCallRow, request.request_id)
+            if row is None:
+                return
+            if error_response_ref is not None:
+                await self.catalog.register(session, error_response_ref)
+                await self.catalog.reference(
+                    session,
+                    error_response_ref,
+                    owner_type="external_call_error_response",
+                    owner_id=request.request_id,
+                )
+            row.status = "failed_terminal"
+            row.completed_at = datetime.now(UTC)
+            row.error = {
+                "message": str(exc),
+                "status_code": exc.status_code,
+                "provider_retryable": exc.retryable,
+                "response_digest": response_digest,
+                "response_artifact_id": (
+                    error_response_ref.artifact_id if error_response_ref is not None else None
+                ),
+            }
+            await self.telemetry.transition(
+                session,
+                operation_id=operation_id,
+                status=OperationStatus.FAILED,
+                occurred_at=row.completed_at,
+                detail={
+                    "provider_status_code": exc.status_code,
+                    "provider_retryable": exc.retryable,
+                    "response_digest": response_digest,
+                    "response_artifact_id": (
+                        error_response_ref.artifact_id if error_response_ref is not None else None
+                    ),
+                },
+            )
+
+    async def _persist_stream_interruption(
+        self,
+        *,
+        request: GenerationRequest,
+        operation_id: str,
+        status: OperationStatus,
+        error_type: str,
+        message: str,
+    ) -> None:
+        if status not in {OperationStatus.CANCELLED, OperationStatus.FAILED}:
+            raise ValueError("stream interruption must be cancelled or failed")
+        async with self.database.transaction() as session:
+            row = await session.get(ExternalCallRow, request.request_id)
+            if row is None or row.status == "completed":
+                return
+            row.status = "cancelled" if status == OperationStatus.CANCELLED else "failed_terminal"
+            row.error = {"type": error_type, "message": message}
+            row.completed_at = datetime.now(UTC)
+            await self.telemetry.transition(
+                session,
+                operation_id=operation_id,
+                status=status,
+                occurred_at=row.completed_at,
+                detail={"error_type": error_type, "message": message},
+            )
 
 
 def _serialize_result(result: GenerationResult) -> bytes:

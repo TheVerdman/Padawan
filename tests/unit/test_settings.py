@@ -104,3 +104,19 @@ def test_run_retry_budget_can_disable_durable_action_retries() -> None:
     settings = Settings(run_retry_budget=0)
 
     assert settings.run_retry_budget == 0
+
+
+def test_interaction_lab_is_loopback_only_and_redacts_its_access_token() -> None:
+    with pytest.raises(ValueError, match="loopback"):
+        Settings(interaction_host="0.0.0.0")
+    with pytest.raises(ValueError, match="at least 16"):
+        Settings(interaction_access_token="too-short")
+    settings = Settings(
+        interaction_host=" ::1 ",
+        interaction_access_token="private-lab-token",
+    )
+
+    serialized = json.dumps(settings.redacted_manifest(), sort_keys=True)
+    assert "private-lab-token" not in serialized
+    assert settings.interaction_host == "::1"
+    assert settings.redacted_manifest()["interaction_access_token_configured"] is True

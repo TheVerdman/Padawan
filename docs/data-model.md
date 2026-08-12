@@ -188,6 +188,26 @@ metageneration, ETag, CRC32C/MD5 when supplied, size, and project. `artifact_ref
 to owners and is the source of truth for safe garbage collection. `provenance_heads` serializes
 each stream while `provenance_events` stores the immutable cryptographic chain.
 
+## Exploratory interactions
+
+`interaction_sessions` and append-only `interaction_consent_events` own the deletable personal
+conversation view. `interaction_messages` is immutable and self-parented, so a selected assistant
+message identifies one exact ancestry. `interaction_turns` binds the user message, optional
+assistant message, parent/source turns, mode, and trace without using an experiment episode.
+
+`interaction_traces` is independently retained. It stores an immutable exploratory manifest,
+serving/response metadata, usage, timing, event summary, restricted artifact links, and explicit
+non-benchmark/memory/training classifications. Source session/turn IDs are attributable strings,
+not cascading foreign keys, so a consented trace can remain after its personal conversation is
+deleted. `interaction_feedback` stores positive/negative/note/correction records without mutating
+messages. Like traces, feedback stores its source IDs without cascading foreign keys and carries a
+retention classification, so consented feedback remains attributable after personal-row deletion.
+
+`external_calls` now has two mutually exclusive owner columns: a controlled workflow uses
+`run_id`, while an exploratory invocation uses `interaction_trace_id`. A check constraint requires
+exactly one. Interaction calls reuse the existing request/response artifact ledger and operation
+span telemetry; no synthetic run or episode is created.
+
 The Alembic revision chain is authoritative for a new database. The Round 2 role migration adds
 non-null role columns with a target-compatible default; the R2.3 revision adds verifier, reward,
 study, scheduled-evaluation, suite, checkpoint, comparison, and decision tables. CI compares the
@@ -197,3 +217,5 @@ authored demonstrations.
 The research-control revision adds harness profiles, research executions with learned parent-state
 and transport identity, nullable legacy-safe run/experiment bindings, study factor/control
 bindings, condition-aware checkpoint evaluations, and immutable study results.
+The Interaction Lab revision adds the six interaction tables and generalizes external-call
+ownership without weakening legacy run ownership.

@@ -109,6 +109,7 @@ training_app = typer.Typer(help="Rights-aware internal training-product compilat
 training_source_app = typer.Typer(help="Governed continued-pretraining source admission.")
 atlas_app = typer.Typer(help="Capability Atlas behavioral evaluation and boundary mapping.")
 atlas_campaign_app = typer.Typer(help="Predeclared Capability Atlas campaigns.")
+interaction_app = typer.Typer(help="Private Padawan Interaction Lab.")
 
 app.add_typer(db_app, name="db")
 app.add_typer(corpus_app, name="corpus")
@@ -127,6 +128,7 @@ app.add_typer(training_app, name="training")
 training_app.add_typer(training_source_app, name="source")
 app.add_typer(atlas_app, name="atlas")
 atlas_app.add_typer(atlas_campaign_app, name="campaign")
+app.add_typer(interaction_app, name="interaction")
 
 
 @app.callback()
@@ -284,6 +286,40 @@ def db_migrate(ctx: typer.Context, revision: str = typer.Option("head", "--revis
         return {"database_url": _redact_database_url(settings.database_url), "revision": revision}
 
     _run_command(ctx, "db migrate", operation)
+
+
+@interaction_app.command("serve")
+def interaction_serve(ctx: typer.Context) -> None:
+    """Serve the loopback-only Interaction Lab without starting model infrastructure."""
+
+    settings = _settings(ctx)
+    if settings.interaction_access_token is None:
+        raise typer.BadParameter(
+            "PADAWAN_INTERACTION_ACCESS_TOKEN is required",
+            param_hint="PADAWAN_INTERACTION_ACCESS_TOKEN",
+        )
+    from padawan.interaction.composition import build_interaction_application
+    from padawan.interaction.web import create_interaction_web_app
+
+    try:
+        import uvicorn
+    except ImportError as exc:
+        raise RuntimeError("Interaction Lab requires the installed web dependencies") from exc
+    application = build_interaction_application(settings)
+    web = create_interaction_web_app(
+        application,
+        access_token=settings.interaction_access_token.get_secret_value(),
+    )
+    typer.echo(
+        f"Padawan Interaction Lab: http://{settings.interaction_host}:{settings.interaction_port}"
+    )
+    typer.echo("No endpoint deployment or GPU wake action is performed by this command.")
+    uvicorn.run(
+        web,
+        host=settings.interaction_host,
+        port=settings.interaction_port,
+        access_log=True,
+    )
 
 
 @corpus_generate_app.command("algebra")

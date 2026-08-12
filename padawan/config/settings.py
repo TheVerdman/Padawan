@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import warnings
 from functools import lru_cache
+from ipaddress import ip_address
 from pathlib import Path
 from stat import S_IMODE
 from typing import Literal, Self
@@ -84,6 +85,13 @@ class Settings(BaseSettings):
     compatible_api_key: SecretStr | None = None
     raw_artifact_retention_days: int | None = Field(default=None, ge=1)
     export_private_reasoning: bool = False
+    interaction_access_token: SecretStr | None = Field(default=None, min_length=16)
+    interaction_host: str = "127.0.0.1"
+    interaction_port: int = Field(default=8765, ge=1, le=65_535)
+    interaction_system_prompt: str = (
+        "You are the selected Padawan student model. Respond directly to the user's request. "
+        "The complete public conversation history is supplied explicitly on every turn."
+    )
 
     @classmethod
     def load(cls, *, env_file: Path | str | None = None) -> Self:
@@ -123,6 +131,20 @@ class Settings(BaseSettings):
             raise ValueError("database_url must use postgresql+psycopg or sqlite+aiosqlite")
         return value
 
+    @field_validator("interaction_host")
+    @classmethod
+    def interaction_lab_is_loopback_only(cls, value: str) -> str:
+        normalized = value.strip().casefold()
+        if normalized == "localhost":
+            return normalized
+        try:
+            address = ip_address(normalized)
+        except ValueError as exc:
+            raise ValueError("Interaction Lab host must be a loopback address") from exc
+        if not address.is_loopback:
+            raise ValueError("Interaction Lab host must be loopback-only in this slice")
+        return str(address)
+
     def redacted_manifest(self) -> dict[str, object]:
         values = self.model_dump(
             exclude={
@@ -130,6 +152,7 @@ class Settings(BaseSettings):
                 "anthropic_api_key",
                 "inkling_api_key",
                 "compatible_api_key",
+                "interaction_access_token",
                 "magellan_repository_root",
                 "magellan_handshake_path",
             },
@@ -140,6 +163,7 @@ class Settings(BaseSettings):
         values["anthropic_api_key_configured"] = self.anthropic_api_key is not None
         values["inkling_api_key_configured"] = self.inkling_api_key is not None
         values["compatible_api_key_configured"] = self.compatible_api_key is not None
+        values["interaction_access_token_configured"] = self.interaction_access_token is not None
         values["magellan_repository_configured"] = self.magellan_repository_root is not None
         values["magellan_handshake_configured"] = self.magellan_handshake_path is not None
         return values

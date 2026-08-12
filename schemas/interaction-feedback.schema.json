@@ -1,0 +1,139 @@
+{
+  "$defs": {
+    "InteractionConsentSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "consent_event_id": {
+          "minLength": 1,
+          "title": "Consent Event Id",
+          "type": "string"
+        },
+        "memory_mode": {
+          "const": "disabled",
+          "default": "disabled",
+          "title": "Memory Mode",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "research_trace_consent": {
+          "title": "Research Trace Consent",
+          "type": "boolean"
+        },
+        "retention_classification": {
+          "$ref": "#/$defs/InteractionRetentionClass"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "training_candidate_mode": {
+          "const": "not_admitted",
+          "default": "not_admitted",
+          "title": "Training Candidate Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "consent_event_id",
+        "sequence",
+        "retention_classification",
+        "research_trace_consent",
+        "recorded_at"
+      ],
+      "title": "InteractionConsentSnapshot",
+      "type": "object"
+    },
+    "InteractionFeedbackKind": {
+      "enum": [
+        "positive",
+        "negative",
+        "correction",
+        "note"
+      ],
+      "title": "InteractionFeedbackKind",
+      "type": "string"
+    },
+    "InteractionRetentionClass": {
+      "enum": [
+        "personal_deletable",
+        "consented_research_evidence"
+      ],
+      "title": "InteractionRetentionClass",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/interaction-feedback.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "body": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Body"
+    },
+    "consent": {
+      "$ref": "#/$defs/InteractionConsentSnapshot"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "feedback_id": {
+      "minLength": 1,
+      "title": "Feedback Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/InteractionFeedbackKind"
+    },
+    "retention_classification": {
+      "$ref": "#/$defs/InteractionRetentionClass"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "session_id": {
+      "minLength": 1,
+      "title": "Session Id",
+      "type": "string"
+    },
+    "turn_id": {
+      "minLength": 1,
+      "title": "Turn Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "feedback_id",
+    "session_id",
+    "turn_id",
+    "kind",
+    "consent",
+    "retention_classification",
+    "created_at"
+  ],
+  "title": "InteractionFeedbackRecord",
+  "type": "object"
+}
