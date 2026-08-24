@@ -74,6 +74,66 @@ refuses non-loopback hosts and requires the existing database migration; it does
 at web startup. See [the Interaction Lab contract](interaction-lab.md) for consent, temporary chat,
 trace access, and deletion semantics.
 
+## Persistent-process RL and Amber
+
+The PPRL CLI manages typed control records and audit/replay operations. It does not provide an
+arbitrary process-action executor. Start by migrating, then register a versioned distribution and
+program and move an immutable Amber envelope through reviewer-gated authorization:
+
+```text
+padawan --json pprl distribution register --manifest-file distribution.json
+padawan --json pprl program register --program-file program.json
+padawan --json pprl amber prepare --envelope-file amber.json --actor-id preparer
+padawan --json pprl amber transition AUTHORIZATION_DIGEST \
+  --to-status authorized --actor-id NAMED_REVIEWER \
+  --reason "independent boundary review" --evidence-ref REVIEW_ARTIFACT
+padawan --json pprl amber transition AUTHORIZATION_DIGEST \
+  --to-status active --actor-id operator --reason "activate reviewed boundary"
+padawan --json pprl amber inspect AUTHORIZATION_DIGEST
+```
+
+Project instances are sampled through a registered deterministic `ProjectGenerator`, which must
+match the distribution's pinned component identity. After sampling, register the exact execution
+and create a rollout from a typed initial state:
+
+```text
+padawan --json pprl execution register --execution-file execution.json
+padawan --json pprl rollout create \
+  --execution-digest EXECUTION_DIGEST \
+  --replication-index 0 \
+  --initial-state-file initial-state.json
+```
+
+A concrete scientific or mathematical environment injects a `ProcessWorkHandler` into
+`PPRLApplication.coordinator`. Proposals must be side-effect-free. Amber stores the complete action
+request and admits it before execution; denied or review-required actions never reach the handler.
+Model-backed handlers use `ProcessGenerationExecutor`, which additionally requires the current
+unexpired lease and that exact admitted decision. It checks the bound serving identity, protocol,
+reported token use, and artifact-byte reservation. Provider-hosted state and tool execution are
+disabled; tools cross separately admitted typed actions. Hosted and self-hosted models use the same
+boundary.
+
+Inspect or deterministically replay a rollout without executing new work:
+
+```text
+padawan --json pprl rollout inspect ROLLOUT_ID
+padawan --json pprl rollout replay ROLLOUT_ID
+```
+
+Outcome assessment and training admission remain separate files and commands:
+
+```text
+padawan --json pprl outcome record --assessment-file outcome.json
+padawan --json pprl eligibility record --decision-file eligibility.json
+padawan --json training compile
+```
+
+The compiler will still exclude the rollout unless its split, complete trajectory, source and
+output rights, eligibility lane, outcome authority, and distribution-wide replication minimums all
+pass. Use `pprl` for empirical, adjudicated, hybrid, or verifiable programs; reserve `PPRL-VR` for
+the genuinely verifiable case. See [the PPRL contract](persistent-process-rl.md) and
+[Amber ADR](adr/0014-amber-protocol.md).
+
 ## GCS artifacts
 
 GCS uses Application Default Credentials and never needs a service-account JSON path in this
@@ -336,8 +396,10 @@ are excluded from target-training views by default. Source rights, explicit lane
 checkpoint/tokenizer registration, contamination state, and split all gate admission. Continued
 pretraining accepts only separately admitted source documents. Verifier-backed project-authored
 gold appears in the separate `authored_sft` product and never impersonates a successful student
-attempt. See [internal training products](training-products.md) for rights manifests, source
-admission, reproduction timestamps, and the complete exclusion policy.
+attempt. Complete admitted process rollouts appear separately as `pprl_trajectory`,
+`pprl_fork_preference`, or `pprl_verifiable`; one historical rollout cannot pass the replication
+gate. See [internal training products](training-products.md) for rights manifests, source admission,
+reproduction timestamps, and the complete exclusion policy.
 
 ## Recovery and inspection
 
@@ -358,6 +420,9 @@ padawan report reward REWARD_ID
 padawan report checkpoint CHECKPOINT_ID
 padawan report operations
 padawan provenance verify --stream-id global
+padawan pprl amber inspect AUTHORIZATION_DIGEST
+padawan pprl rollout inspect ROLLOUT_ID
+padawan pprl rollout replay ROLLOUT_ID
 ```
 
 Manual forks use `padawan state fork STATE_ID --experiment-id EXPERIMENT_ID`. Pause or release a

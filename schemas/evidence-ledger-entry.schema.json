@@ -57,6 +57,9 @@
     },
     "EvidenceSourceKind": {
       "enum": [
+        "amber_admission_decision",
+        "amber_authorization",
+        "amber_authorization_event",
         "authored_demonstration",
         "corpus_item",
         "episode",
@@ -70,7 +73,17 @@
         "training_eligibility",
         "training_source_document",
         "training_source_decision",
-        "checkpoint"
+        "checkpoint",
+        "process_distribution",
+        "process_program",
+        "project_instance",
+        "process_execution",
+        "process_rollout",
+        "process_state",
+        "process_event",
+        "process_fork",
+        "process_outcome",
+        "process_training_eligibility"
       ],
       "title": "EvidenceSourceKind",
       "type": "string"

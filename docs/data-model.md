@@ -94,6 +94,35 @@ result/digest, quality evidence, and source/output SFT rights.
 restricted product artifacts. Product rows and exclusions retain compiler version, source evidence
 references, source record digests, and rights digests.
 
+## Persistent-process rollouts and Amber
+
+`process_distributions` and `process_programs` are immutable, content-digested definitions.
+Distributions bind source rights, all four clean partitions, generator and contamination identity,
+difficulty strata, seed namespace, and replication minima. Programs bind a distribution to
+episodic or continual persistence, worker roles and tools, dynamic-capacity bounds, reward
+authority, and an optional local-regret contract. `project_instances` retains every deterministic
+sample and exact task/environment digest.
+
+An immutable `process_executions` record binds one program, instance, process policy, worker-model
+pool, output-rights declaration, environment, seed, and Amber authorization. `process_rollouts` is
+the leased mutable head. Canonical content lives in immutable `process_states` and append-only
+`process_events`; every event binds its parent/result states, rollout status, artifacts, optional
+worker/research invocation, and one admitted Amber decision. `process_forks` and
+`process_fork_children` create paired continuations from an identical persisted state.
+
+Amber separates immutable authority from its transactional status head.
+`amber_authorizations` stores the exact envelope; `amber_authorization_events` is its append-only
+lifecycle; `amber_authorization_heads` supports atomic admission; and
+`amber_admission_decisions` stores both the complete action request and its digest-protected
+decision. `process_worker_invocations` binds model I/O to that decision and to the current rollout
+lease. Pause, quarantine, expiry, revocation, checkpoint retention, and release authority are not
+inferred from a successful outcome.
+
+`process_outcomes` records raw verifiable, empirical, adjudicated, or hybrid assessments.
+`process_training_eligibility` is a separate append-only policy decision that cites outcomes,
+rights, evidence, and allowed learning lanes. This prevents assessment, scalarization, and training
+admission from collapsing into one mutable label.
+
 ## Memory and experiments
 
 `lesson_versions` is append-only by `(lesson_id, version)`. A lesson records competency, error class,
@@ -203,10 +232,11 @@ deleted. `interaction_feedback` stores positive/negative/note/correction records
 messages. Like traces, feedback stores its source IDs without cascading foreign keys and carries a
 retention classification, so consented feedback remains attributable after personal-row deletion.
 
-`external_calls` now has two mutually exclusive owner columns: a controlled workflow uses
-`run_id`, while an exploratory invocation uses `interaction_trace_id`. A check constraint requires
-exactly one. Interaction calls reuse the existing request/response artifact ledger and operation
-span telemetry; no synthetic run or episode is created.
+`external_calls` has three mutually exclusive owner columns: a controlled developmental workflow
+uses `run_id`, an exploratory invocation uses `interaction_trace_id`, and a governed process worker
+uses `process_rollout_id`. A check constraint requires exactly one. All three reuse the same
+request/response artifact ledger and operation-span telemetry; no synthetic run or episode is
+created for the latter two.
 
 The Alembic revision chain is authoritative for a new database. The Round 2 role migration adds
 non-null role columns with a target-compatible default; the R2.3 revision adds verifier, reward,
@@ -219,3 +249,6 @@ and transport identity, nullable legacy-safe run/experiment bindings, study fact
 bindings, condition-aware checkpoint evaluations, and immutable study results.
 The Interaction Lab revision adds the six interaction tables and generalizes external-call
 ownership without weakening legacy run ownership.
+The PPRL/Amber revision adds project distributions, programs, instances, executions, rollouts,
+immutable state/events, forks, outcomes, eligibility, worker invocations, authorization lifecycle,
+per-action decisions, and a third external-call owner without weakening the other two.

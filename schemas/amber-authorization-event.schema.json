@@ -1,0 +1,93 @@
+{
+  "$defs": {
+    "AmberStatus": {
+      "enum": [
+        "prepared",
+        "authorized",
+        "active",
+        "paused",
+        "quarantined",
+        "release_approved",
+        "expired",
+        "revoked"
+      ],
+      "title": "AmberStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/amber-authorization-event.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor_id": {
+      "minLength": 1,
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "authorization_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Digest",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "event_id": {
+      "minLength": 1,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "evidence_refs": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "from_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AmberStatus"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence": {
+      "minimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "to_status": {
+      "$ref": "#/$defs/AmberStatus"
+    }
+  },
+  "required": [
+    "event_id",
+    "authorization_digest",
+    "sequence",
+    "from_status",
+    "to_status",
+    "actor_id",
+    "reason",
+    "created_at"
+  ],
+  "title": "AmberAuthorizationEvent",
+  "type": "object"
+}

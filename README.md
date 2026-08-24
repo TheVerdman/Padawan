@@ -25,6 +25,12 @@ hard-gated Magellan agentic environment protocol:
   Inkling-Small-Ampere/vLLM adapter, and an Anthropic teacher adapter;
 - a loopback-only, model-neutral Padawan Interaction Lab with explicit-history streaming chat,
   immutable branches, per-turn serving manifests, temporary mode, and restricted trace inspection;
+- a distinct persistent-process RL substrate for versioned project distributions, repeated
+  macro-rollouts, immutable project-state/event replay, paired checkpoint forks, dynamic worker
+  roles, and verifiable, empirical, adjudicated, or hybrid outcome authority;
+- the actor-neutral Amber Protocol, which binds exact models, tools, targets, sandbox identity,
+  egress, budgets, persistence, reviewers, stop conditions, and checkpoint policy before admitting
+  each process action;
 - evidence-citing teacher contracts and deterministic comment validation;
 - algebra and domain-general crash-resumable developmental paths, idempotent external calls,
   worker leases, and stale recovery;
@@ -35,8 +41,9 @@ hard-gated Magellan agentic environment protocol:
 - versioned multi-experiment studies plus fresh-item retention and interference scheduling;
 - an external frozen-checkpoint registry with sealed-suite comparison, promotion, and revocation;
 - a deterministic, rights-aware internal compiler for evidence, observed SFT, separately identified
-  authored SFT, preference, RLVR, process, continued-pretraining, and sealed-evaluation products
-  with reason-coded exclusions;
+  authored SFT, preference, RLVR, episode-process, PPRL trajectory, PPRL fork preference,
+  PPRL-verifiable, continued-pretraining, and sealed-evaluation products with reason-coded
+  exclusions;
 - versioned lesson memory with branch isolation, negative retrieval evidence, snapshots, and
   rollback;
 - an evidence-gated memory consolidation backend and an explicit refusal for unsupported parameter
@@ -75,6 +82,12 @@ responding endpoint reports and matches the configured deployment identity.
 The Padawan Interaction Lab is a separate exploratory surface: its conversations are never
 reported as experiment episodes or controlled benchmark evidence, and its first slice performs no
 memory synthesis or training admission.
+Persistent-process RL is a third, separate surface. Its control plane, replay engine, distribution
+and replication contracts, Amber admissions, governed model-call binding, and training compilation
+are implemented; no unrestricted generic project handler, external trainer, or weight-update
+backend is bundled. Programs with non-verifiable objectives are PPRL, while only genuinely
+verifiable outcome authority enters the PPRL-VR product. A single historical run can remain
+evidence, but it cannot satisfy the distribution replication gate.
 No S3 backend is planned for the current GCS deployment. Parameter calls fail as unsupported rather
 than degrading to a no-op.
 The first real-provider pilot attempt is documented in
@@ -127,6 +140,11 @@ temporary-mode, private-reasoning, and deletion boundaries.
 The [research-control contract](docs/research-controls.md) defines the harness measurement model,
 comparability gate, and deferred retention/compaction, trajectory, mechanistic, atlas, and N+1
 seams.
+The [persistent-process RL contract](docs/persistent-process-rl.md) defines macro-agent state,
+distributions, repetition, forks, outcome authority, PPRL/PPRL-VR training, and the Amber boundary.
+Its architectural decisions are recorded in
+[ADR 0013](docs/adr/0013-persistent-process-reinforcement-learning.md) and
+[ADR 0014](docs/adr/0014-amber-protocol.md).
 
 ## Repository boundaries
 

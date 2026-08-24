@@ -76,6 +76,28 @@ teacher mode, treatment/control conditions, and retry budget with the manifest b
 Controlled experiment creation performs the same treatment/control check. Contradictory payloads
 therefore fail before any worker or experiment can execute under the bound digest.
 
+## Process-scale controls
+
+PPRL uses a parallel control object rather than stretching `ResearchExecutionManifest` across a
+different lifecycle. `ProcessExecutionManifest` binds the project program and distribution, exact
+sampled instance, process-policy identity, every worker-model identity, output rights, environment
+component and effective parameters, seed, and immutable Amber envelope. Each event may additionally
+cite a developmental `research_execution_digest` when a worker invocation itself is part of a
+controlled developmental comparison, but that reference is optional and does not replace process
+identity.
+
+Amber admission compares every proposed action with the bound program/distribution, split,
+persistence mode, target class, role, worker model, tool operation, sandbox/environment, projected
+cumulative budget, concurrency, egress destination, expiry, and stop conditions. The full request
+is stored with the decision before the action executes. Hosted and self-hosted workers pass through
+the same policy; provider identity neither grants nor removes authority.
+
+Process evidence has a second hierarchy: events within a rollout, stochastic rollouts within an
+instance, and instances within a distribution. Distribution contracts require declared clean
+partitions and repeated sampling. Comparative analysis must cluster or otherwise account for those
+levels; an event count is not an independent sample count, and a single historical rollout is not
+an RL distribution.
+
 ## Comparability rules
 
 `ResearchControlRegistry.compare` compares two execution manifests along explicit axes:
@@ -173,7 +195,9 @@ Reports should keep these results distinct:
 - harness uplift under a declared harness/context comparison;
 - quantization delta under a declared quantization comparison;
 - teaching delta within matched treatment/control blocks;
-- training delta between frozen checkpoint N and an externally produced N+1; and
+- training delta between frozen checkpoint N and an externally produced N+1;
+- PPRL process-policy delta across declared project-instance and rollout distributions;
+- PPRL-VR only when the outcome authority is genuinely verifiable; and
 - retention or compaction effects only after a factorial design localizes them.
 
 Changing both reasoning retention and compaction permits a joint harness comparison; it does not
@@ -183,8 +207,11 @@ not establish usable long-horizon memory.
 ## Deferred seams, not implemented results
 
 This slice does not ingest a capability atlas, execute interactive Magellan or ARC-AGI-3
-trajectories, capture router/expert or activation telemetry, run a retention × compaction study,
-train weights, or evaluate checkpoint N+1. The profile has typed references for those later
-contracts, and studies have open factor values, but the default references remain absent. Missing
-instrumentation must remain absent rather than being synthesized from private reasoning or serving
-metadata.
+environments, capture router/expert or activation telemetry, run a retention × compaction study,
+train weights, or evaluate checkpoint N+1. The generic PPRL/Amber substrate and offline products are
+implemented, but no unrestricted environment handler or training backend is implied by that
+substrate. Amber records the required sandbox identity and policy but does not substitute for an
+OS/container/VM enforcement and attestation adapter. The profile has typed references for the other
+later contracts, and studies have open factor values, but default references remain absent. Missing
+instrumentation must remain absent
+rather than being synthesized from private reasoning or serving metadata.

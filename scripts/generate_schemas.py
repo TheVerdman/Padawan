@@ -69,6 +69,12 @@ from padawan.domains.temporal_grounding.contracts import (
     TemporalScenarioManifest,
     TemporalScenarioOracle,
 )
+from padawan.governance.amber import (
+    AmberActionRequest,
+    AmberAdmissionDecision,
+    AmberAuthorizationEnvelope,
+    AmberAuthorizationEvent,
+)
 from padawan.interaction.contracts import (
     ExploratoryInteractionManifest,
     InteractionConsentEventRecord,
@@ -110,6 +116,18 @@ from padawan.models.research_contracts import (
     StudyManifest,
     StudyResultRecord,
 )
+from padawan.pprl.contracts import (
+    ProcessDistributionManifest,
+    ProcessEventRecord,
+    ProcessExecutionManifest,
+    ProcessForkRecord,
+    ProcessOutcomeAssessment,
+    ProcessProgram,
+    ProcessRolloutRecord,
+    ProcessTrainingEligibilityDecision,
+    ProjectInstance,
+    ProjectStateVersion,
+)
 from padawan.temporal.contracts import (
     DurationProfile,
     OperationSpanEventRecord,
@@ -124,6 +142,9 @@ from padawan.training.contracts import (
     ContinuedPretrainingRow,
     EvidenceLedgerEntry,
     NormalizedEpisodeEntry,
+    PPRLForkPreferenceTrainingRow,
+    PPRLTrajectoryTrainingRow,
+    PPRLVerifiableTrainingRow,
     PreferenceTrainingRow,
     ProcessTrainingRow,
     RLVRTrainingRow,
@@ -141,6 +162,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_ROOT = ROOT / "schemas"
 SCHEMA_BASE = "https://schemas.padawan.local/v1"
 PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
+    ("amber-action-request", AmberActionRequest),
+    ("amber-admission-decision", AmberAdmissionDecision),
+    ("amber-authorization-envelope", AmberAuthorizationEnvelope),
+    ("amber-authorization-event", AmberAuthorizationEvent),
     ("atlas-adapter-descriptor", AdapterDescriptor),
     ("atlas-campaign-manifest", AtlasCampaignManifest),
     ("atlas-campaign-execution-binding", CampaignExecutionBinding),
@@ -216,7 +241,20 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("operation-span", OperationSpanRecord),
     ("operation-span-event", OperationSpanEventRecord),
     ("preference-training-row", PreferenceTrainingRow),
+    ("pprl-fork-preference-training-row", PPRLForkPreferenceTrainingRow),
+    ("pprl-trajectory-training-row", PPRLTrajectoryTrainingRow),
+    ("pprl-verifiable-training-row", PPRLVerifiableTrainingRow),
+    ("process-distribution-manifest", ProcessDistributionManifest),
+    ("process-event", ProcessEventRecord),
+    ("process-execution-manifest", ProcessExecutionManifest),
+    ("process-fork", ProcessForkRecord),
+    ("process-outcome-assessment", ProcessOutcomeAssessment),
+    ("process-program", ProcessProgram),
+    ("process-rollout", ProcessRolloutRecord),
+    ("process-training-eligibility", ProcessTrainingEligibilityDecision),
     ("process-training-row", ProcessTrainingRow),
+    ("project-instance", ProjectInstance),
+    ("project-state", ProjectStateVersion),
     ("reward", RewardRecord),
     ("reward-policy", RewardPolicy),
     ("research-comparability-assessment", ResearchComparabilityAssessment),

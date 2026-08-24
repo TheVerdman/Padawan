@@ -1276,17 +1276,25 @@ class ExternalCallRow(Base):
     __tablename__ = "external_calls"
     __table_args__ = (
         CheckConstraint(
-            "(run_id IS NOT NULL AND interaction_trace_id IS NULL) OR "
-            "(run_id IS NULL AND interaction_trace_id IS NOT NULL)",
+            "(run_id IS NOT NULL AND interaction_trace_id IS NULL AND "
+            "process_rollout_id IS NULL) OR "
+            "(run_id IS NULL AND interaction_trace_id IS NOT NULL AND "
+            "process_rollout_id IS NULL) OR "
+            "(run_id IS NULL AND interaction_trace_id IS NULL AND "
+            "process_rollout_id IS NOT NULL)",
             name="ck_external_call_exactly_one_owner",
         ),
         Index("ix_external_call_interaction_trace", "interaction_trace_id"),
+        Index("ix_external_call_process_rollout", "process_rollout_id"),
     )
 
     request_id: Mapped[str] = mapped_column(String(160), primary_key=True)
     run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.run_id", ondelete="RESTRICT"))
     interaction_trace_id: Mapped[str | None] = mapped_column(
         ForeignKey("interaction_traces.trace_id", ondelete="RESTRICT")
+    )
+    process_rollout_id: Mapped[str | None] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT")
     )
     purpose: Mapped[str] = mapped_column(String(64), nullable=False)
     provider: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -2250,6 +2258,417 @@ class AtlasMemoryEligibilityRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ProcessDistributionRow(Base):
+    __tablename__ = "process_distributions"
+    __table_args__ = (
+        UniqueConstraint("distribution_id", "version", name="uq_process_distribution_version"),
+    )
+
+    distribution_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    distribution_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    version: Mapped[str] = mapped_column(String(128), nullable=False)
+    generator_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessProgramRow(Base):
+    __tablename__ = "process_programs"
+    __table_args__ = (
+        UniqueConstraint("program_id", "version", name="uq_process_program_version"),
+        CheckConstraint(
+            "persistence_mode IN ('episodic', 'continual')",
+            name="ck_process_program_persistence_mode",
+        ),
+        CheckConstraint(
+            "reward_authority_kind IN ('verifiable', 'empirical', 'adjudicated', 'hybrid')",
+            name="ck_process_program_reward_authority",
+        ),
+    )
+
+    program_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    program_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    version: Mapped[str] = mapped_column(String(128), nullable=False)
+    distribution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_distributions.distribution_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    persistence_mode: Mapped[str] = mapped_column(String(24), nullable=False)
+    reward_authority_kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AmberAuthorizationRow(Base):
+    __tablename__ = "amber_authorizations"
+    __table_args__ = (
+        UniqueConstraint("authorization_id", "version", name="uq_amber_authorization_version"),
+        Index("ix_amber_authorization_expiry", "expires_at"),
+    )
+
+    authorization_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    authorization_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    version: Mapped[str] = mapped_column(String(128), nullable=False)
+    program_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_programs.program_digest", ondelete="RESTRICT"), nullable=False
+    )
+    distribution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_distributions.distribution_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AmberAuthorizationHeadRow(Base):
+    __tablename__ = "amber_authorization_heads"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('prepared', 'authorized', 'active', 'paused', 'quarantined', "
+            "'release_approved', 'expired', 'revoked')",
+            name="ck_amber_authorization_status",
+        ),
+        Index("ix_amber_authorization_status", "status", "updated_at"),
+    )
+
+    authorization_digest: Mapped[str] = mapped_column(
+        ForeignKey("amber_authorizations.authorization_digest", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AmberAuthorizationEventRow(Base):
+    __tablename__ = "amber_authorization_events"
+    __table_args__ = (
+        UniqueConstraint(
+            "authorization_digest", "sequence", name="uq_amber_authorization_event_sequence"
+        ),
+        CheckConstraint(
+            "to_status IN ('prepared', 'authorized', 'active', 'paused', 'quarantined', "
+            "'release_approved', 'expired', 'revoked')",
+            name="ck_amber_event_to_status",
+        ),
+    )
+
+    event_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    authorization_digest: Mapped[str] = mapped_column(
+        ForeignKey("amber_authorizations.authorization_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    from_status: Mapped[str | None] = mapped_column(String(32))
+    to_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    actor_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProjectInstanceRow(Base):
+    __tablename__ = "project_instances"
+    __table_args__ = (
+        UniqueConstraint("distribution_digest", "split", "seed", name="uq_project_instance_sample"),
+        CheckConstraint(
+            "split IN ('train', 'adaptive_development', 'validation', 'sealed')",
+            name="ck_project_instance_split",
+        ),
+        Index("ix_project_instance_distribution", "distribution_digest", "split"),
+    )
+
+    instance_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    instance_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    distribution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_distributions.distribution_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    split: Mapped[str] = mapped_column(String(32), nullable=False)
+    seed: Mapped[int] = mapped_column(Integer, nullable=False)
+    difficulty: Mapped[float] = mapped_column(Float, nullable=False)
+    environment_fingerprint: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessExecutionRow(Base):
+    __tablename__ = "process_executions"
+
+    execution_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    execution_id: Mapped[str] = mapped_column(String(192), nullable=False, unique=True)
+    program_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_programs.program_digest", ondelete="RESTRICT"), nullable=False
+    )
+    distribution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_distributions.distribution_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    instance_digest: Mapped[str] = mapped_column(
+        ForeignKey("project_instances.instance_digest", ondelete="RESTRICT"), nullable=False
+    )
+    authorization_digest: Mapped[str] = mapped_column(
+        ForeignKey("amber_authorizations.authorization_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    environment_fingerprint: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessRolloutRow(Base):
+    __tablename__ = "process_rollouts"
+    __table_args__ = (
+        UniqueConstraint(
+            "execution_digest",
+            "replication_index",
+            name="uq_process_rollout_execution_replication",
+        ),
+        CheckConstraint(
+            "split IN ('train', 'adaptive_development', 'validation', 'sealed')",
+            name="ck_process_rollout_split",
+        ),
+        CheckConstraint(
+            "status IN ('planned', 'active', 'paused', 'review_required', 'complete', "
+            "'failed', 'quarantined', 'cancelled')",
+            name="ck_process_rollout_status",
+        ),
+        Index("ix_process_rollout_claim", "status", "lease_expires_at"),
+        Index("ix_process_rollout_instance", "instance_id", "replication_index"),
+    )
+
+    rollout_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_executions.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    program_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_programs.program_digest", ondelete="RESTRICT"), nullable=False
+    )
+    distribution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_distributions.distribution_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    instance_id: Mapped[str] = mapped_column(
+        ForeignKey("project_instances.instance_id", ondelete="RESTRICT"), nullable=False
+    )
+    authorization_digest: Mapped[str] = mapped_column(
+        ForeignKey("amber_authorizations.authorization_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    split: Mapped[str] = mapped_column(String(32), nullable=False)
+    replication_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    seed: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    initial_state_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    current_state_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    parent_rollout_id: Mapped[str | None] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT")
+    )
+    fork_id: Mapped[str | None] = mapped_column(String(192))
+    paused: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    lease_owner: Mapped[str | None] = mapped_column(String(192))
+    lease_token: Mapped[str | None] = mapped_column(String(192), unique=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessStateRow(Base):
+    __tablename__ = "process_states"
+    __table_args__ = (
+        UniqueConstraint("rollout_id", "sequence", name="uq_process_state_sequence"),
+        Index("ix_process_state_lineage", "rollout_id", "parent_state_id"),
+    )
+
+    state_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False
+    )
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    parent_state_id: Mapped[str | None] = mapped_column(
+        ForeignKey("process_states.state_id", ondelete="RESTRICT")
+    )
+    triggering_event_id: Mapped[str | None] = mapped_column(String(192), unique=True)
+    state_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessEventRow(Base):
+    __tablename__ = "process_events"
+    __table_args__ = (
+        UniqueConstraint("rollout_id", "sequence", name="uq_process_event_sequence"),
+        UniqueConstraint("resulting_state_id", name="uq_process_event_resulting_state"),
+        Index("ix_process_event_kind", "kind", "created_at"),
+    )
+
+    event_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False
+    )
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    kind: Mapped[str] = mapped_column(String(48), nullable=False)
+    actor_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    parent_state_id: Mapped[str] = mapped_column(
+        ForeignKey("process_states.state_id", ondelete="RESTRICT"), nullable=False
+    )
+    resulting_state_id: Mapped[str] = mapped_column(
+        ForeignKey("process_states.state_id", ondelete="RESTRICT"), nullable=False
+    )
+    worker_invocation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("process_worker_invocations.invocation_id", ondelete="RESTRICT")
+    )
+    research_execution_digest: Mapped[str | None] = mapped_column(
+        ForeignKey("research_executions.execution_digest", ondelete="RESTRICT")
+    )
+    authorization_digest: Mapped[str] = mapped_column(
+        ForeignKey("amber_authorizations.authorization_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    amber_decision_id: Mapped[str] = mapped_column(
+        ForeignKey("amber_admission_decisions.decision_id", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+    )
+    event_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessForkRow(Base):
+    __tablename__ = "process_forks"
+
+    fork_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    parent_rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False
+    )
+    parent_state_id: Mapped[str] = mapped_column(
+        ForeignKey("process_states.state_id", ondelete="RESTRICT"), nullable=False
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessForkChildRow(Base):
+    __tablename__ = "process_fork_children"
+    __table_args__ = (
+        UniqueConstraint("fork_id", "condition_id", name="uq_process_fork_condition"),
+        UniqueConstraint("rollout_id", name="uq_process_fork_child_rollout"),
+    )
+
+    fork_id: Mapped[str] = mapped_column(
+        ForeignKey("process_forks.fork_id", ondelete="RESTRICT"), primary_key=True
+    )
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), primary_key=True
+    )
+    condition_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    seed: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class ProcessOutcomeRow(Base):
+    __tablename__ = "process_outcomes"
+    __table_args__ = (Index("ix_process_outcome_rollout", "rollout_id", "created_at"),)
+
+    assessment_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False
+    )
+    authority_kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    eligible_for_learning: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    scalar_return: Mapped[float | None] = mapped_column(Float)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessTrainingEligibilityRow(Base):
+    __tablename__ = "process_training_eligibility"
+    __table_args__ = (
+        Index("ix_process_training_eligibility", "rollout_id", "eligible", "created_at"),
+    )
+
+    decision_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False
+    )
+    policy_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    policy_version: Mapped[str] = mapped_column(String(128), nullable=False)
+    eligible: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessWorkerInvocationRow(Base):
+    __tablename__ = "process_worker_invocations"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('planned', 'running', 'completed', 'failed', 'cancelled')",
+            name="ck_process_worker_invocation_status",
+        ),
+        Index("ix_process_worker_invocation_rollout", "rollout_id", "created_at"),
+        UniqueConstraint("amber_decision_id", name="uq_process_worker_invocation_admission"),
+    )
+
+    invocation_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    request_id: Mapped[str] = mapped_column(String(160), nullable=False, unique=True)
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False
+    )
+    role_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    worker_model_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    amber_decision_id: Mapped[str] = mapped_column(
+        ForeignKey("amber_admission_decisions.decision_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    research_execution_digest: Mapped[str | None] = mapped_column(
+        ForeignKey("research_executions.execution_digest", ondelete="RESTRICT")
+    )
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+    request_artifact_id: Mapped[str | None] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT")
+    )
+    response_artifact_id: Mapped[str | None] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT")
+    )
+    usage: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    error: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AmberAdmissionDecisionRow(Base):
+    __tablename__ = "amber_admission_decisions"
+    __table_args__ = (
+        CheckConstraint(
+            "disposition IN ('admitted', 'denied', 'review_required')",
+            name="ck_amber_admission_disposition",
+        ),
+        Index("ix_amber_admission_rollout", "rollout_id", "decided_at"),
+    )
+
+    decision_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    authorization_digest: Mapped[str] = mapped_column(
+        ForeignKey("amber_authorizations.authorization_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    authorization_sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False
+    )
+    disposition: Mapped[str] = mapped_column(String(24), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    request_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 def _immutable(_mapper: Any, _connection: Any, target: Any) -> None:
     raise ValueError(f"{type(target).__name__} is immutable")
 
@@ -2296,6 +2715,19 @@ for _immutable_type in (
     AtlasChallengeAdmissionRow,
     AtlasTrainingEligibilityRow,
     AtlasMemoryEligibilityRow,
+    ProcessDistributionRow,
+    ProcessProgramRow,
+    AmberAuthorizationRow,
+    AmberAuthorizationEventRow,
+    ProjectInstanceRow,
+    ProcessExecutionRow,
+    ProcessStateRow,
+    ProcessEventRow,
+    ProcessForkRow,
+    ProcessForkChildRow,
+    ProcessOutcomeRow,
+    ProcessTrainingEligibilityRow,
+    AmberAdmissionDecisionRow,
 ):
     event.listen(_immutable_type, "before_update", _immutable)
     event.listen(_immutable_type, "before_delete", _immutable)

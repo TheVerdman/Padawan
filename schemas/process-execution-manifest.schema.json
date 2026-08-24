@@ -1,0 +1,419 @@
+{
+  "$defs": {
+    "DistributionScope": {
+      "enum": [
+        "internal_only",
+        "agreement_restricted",
+        "redistributable"
+      ],
+      "title": "DistributionScope",
+      "type": "string"
+    },
+    "IdentityEvidenceStatus": {
+      "enum": [
+        "pinned",
+        "verified",
+        "declared",
+        "unknown"
+      ],
+      "title": "IdentityEvidenceStatus",
+      "type": "string"
+    },
+    "ModelServingIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "protocol": {
+          "minLength": 1,
+          "title": "Protocol",
+          "type": "string"
+        },
+        "purpose": {
+          "minLength": 1,
+          "title": "Purpose",
+          "type": "string"
+        },
+        "quantization": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "research_role": {
+          "$ref": "#/$defs/ResearchRole"
+        },
+        "runtime": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "runtime_parameters": {
+          "additionalProperties": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minProperties": 1,
+          "propertyNames": {
+            "minLength": 1
+          },
+          "title": "Runtime Parameters",
+          "type": "object"
+        },
+        "runtime_parameters_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Runtime Parameters Digest",
+          "type": "string"
+        },
+        "serving_artifact": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "transport_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionedComponentIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "purpose",
+        "research_role",
+        "model_id",
+        "checkpoint",
+        "quantization",
+        "runtime",
+        "serving_artifact",
+        "protocol",
+        "runtime_parameters",
+        "runtime_parameters_digest"
+      ],
+      "title": "ModelServingIdentity",
+      "type": "object"
+    },
+    "ResearchRole": {
+      "enum": [
+        "target",
+        "baseline",
+        "teacher",
+        "verifier",
+        "adjudicator"
+      ],
+      "title": "ResearchRole",
+      "type": "string"
+    },
+    "RightsBasis": {
+      "enum": [
+        "project_authored",
+        "public_domain",
+        "open_license",
+        "contract_authorized",
+        "fair_use_reviewed",
+        "provider_terms",
+        "unknown"
+      ],
+      "title": "RightsBasis",
+      "type": "string"
+    },
+    "RightsReviewStatus": {
+      "enum": [
+        "confirmed",
+        "review_required",
+        "prohibited"
+      ],
+      "title": "RightsReviewStatus",
+      "type": "string"
+    },
+    "RightsUse": {
+      "enum": [
+        "evidence_retention",
+        "internal_research",
+        "evaluation",
+        "continued_pretraining",
+        "sft",
+        "preference",
+        "rlvr",
+        "process",
+        "redistribution"
+      ],
+      "title": "RightsUse",
+      "type": "string"
+    },
+    "SourceRights": {
+      "additionalProperties": false,
+      "description": "Versioned use authority; this is governance evidence, not a legal conclusion.",
+      "properties": {
+        "attribution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attribution"
+        },
+        "basis": {
+          "$ref": "#/$defs/RightsBasis"
+        },
+        "basis_detail": {
+          "minLength": 1,
+          "title": "Basis Detail",
+          "type": "string"
+        },
+        "distribution_scope": {
+          "$ref": "#/$defs/DistributionScope"
+        },
+        "license_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License Id"
+        },
+        "permitted_uses": {
+          "items": {
+            "$ref": "#/$defs/RightsUse"
+          },
+          "title": "Permitted Uses",
+          "type": "array"
+        },
+        "restrictions": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Restrictions",
+          "type": "array"
+        },
+        "review_status": {
+          "$ref": "#/$defs/RightsReviewStatus"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "reviewed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed By"
+        },
+        "rights_id": {
+          "minLength": 1,
+          "title": "Rights Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "terms_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Terms Digest"
+        },
+        "terms_uri": {
+          "anyOf": [
+            {
+              "pattern": "^https://[^\\s]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Terms Uri"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rights_id",
+        "version",
+        "basis",
+        "basis_detail",
+        "permitted_uses",
+        "distribution_scope",
+        "review_status"
+      ],
+      "title": "SourceRights",
+      "type": "object"
+    },
+    "VersionedComponentIdentity": {
+      "additionalProperties": false,
+      "description": "Content-bound component identity without embedding the component itself.",
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "evidence": {
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "evidence_status": {
+          "$ref": "#/$defs/IdentityEvidenceStatus"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component_id",
+        "version",
+        "digest",
+        "evidence_status",
+        "evidence"
+      ],
+      "title": "VersionedComponentIdentity",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-execution-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "amber_authorization_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Amber Authorization Digest",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "distribution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Distribution Digest",
+      "type": "string"
+    },
+    "environment": {
+      "$ref": "#/$defs/VersionedComponentIdentity"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "environment_parameters": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "propertyNames": {
+        "minLength": 1
+      },
+      "title": "Environment Parameters",
+      "type": "object"
+    },
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "instance_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Instance Digest",
+      "type": "string"
+    },
+    "output_rights": {
+      "$ref": "#/$defs/SourceRights"
+    },
+    "process_policy": {
+      "$ref": "#/$defs/VersionedComponentIdentity"
+    },
+    "program_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Program Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "title": "Seed",
+      "type": "integer"
+    },
+    "worker_models": {
+      "items": {
+        "$ref": "#/$defs/ModelServingIdentity"
+      },
+      "minItems": 1,
+      "title": "Worker Models",
+      "type": "array"
+    }
+  },
+  "required": [
+    "execution_id",
+    "program_digest",
+    "distribution_digest",
+    "instance_digest",
+    "amber_authorization_digest",
+    "process_policy",
+    "worker_models",
+    "output_rights",
+    "environment",
+    "environment_parameters",
+    "environment_fingerprint",
+    "seed",
+    "created_at"
+  ],
+  "title": "ProcessExecutionManifest",
+  "type": "object"
+}

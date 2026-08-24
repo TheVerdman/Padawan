@@ -1,0 +1,113 @@
+{
+  "$defs": {
+    "ProcessLearningLane": {
+      "enum": [
+        "trajectory",
+        "fork_preference",
+        "verifiable_replay"
+      ],
+      "title": "ProcessLearningLane",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-training-eligibility.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowed_lanes": {
+      "items": {
+        "$ref": "#/$defs/ProcessLearningLane"
+      },
+      "title": "Allowed Lanes",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "decided_by": {
+      "minLength": 1,
+      "title": "Decided By",
+      "type": "string"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "eligible": {
+      "title": "Eligible",
+      "type": "boolean"
+    },
+    "evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "outcome_assessment_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Outcome Assessment Ids",
+      "type": "array"
+    },
+    "policy_id": {
+      "minLength": 1,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "policy_version": {
+      "minLength": 1,
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "rights_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Rights Digests",
+      "type": "array"
+    },
+    "rollout_id": {
+      "minLength": 1,
+      "title": "Rollout Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "decision_id",
+    "rollout_id",
+    "outcome_assessment_ids",
+    "policy_id",
+    "policy_version",
+    "eligible",
+    "allowed_lanes",
+    "rights_digests",
+    "evidence_refs",
+    "reason",
+    "decided_by",
+    "created_at"
+  ],
+  "title": "ProcessTrainingEligibilityDecision",
+  "type": "object"
+}

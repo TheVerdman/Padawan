@@ -1,0 +1,146 @@
+{
+  "$defs": {
+    "ProjectSplit": {
+      "enum": [
+        "train",
+        "adaptive_development",
+        "validation",
+        "sealed"
+      ],
+      "title": "ProjectSplit",
+      "type": "string"
+    },
+    "RolloutStatus": {
+      "enum": [
+        "planned",
+        "active",
+        "paused",
+        "review_required",
+        "complete",
+        "failed",
+        "quarantined",
+        "cancelled"
+      ],
+      "title": "RolloutStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-rollout.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "current_state_id": {
+      "minLength": 1,
+      "title": "Current State Id",
+      "type": "string"
+    },
+    "distribution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Distribution Digest",
+      "type": "string"
+    },
+    "execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Execution Digest",
+      "type": "string"
+    },
+    "fork_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Fork Id"
+    },
+    "initial_state_id": {
+      "minLength": 1,
+      "title": "Initial State Id",
+      "type": "string"
+    },
+    "instance_id": {
+      "minLength": 1,
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "parent_rollout_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Rollout Id"
+    },
+    "program_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Program Digest",
+      "type": "string"
+    },
+    "replication_index": {
+      "minimum": 0,
+      "title": "Replication Index",
+      "type": "integer"
+    },
+    "rollout_id": {
+      "minLength": 1,
+      "title": "Rollout Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "title": "Seed",
+      "type": "integer"
+    },
+    "sequence": {
+      "minimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "split": {
+      "$ref": "#/$defs/ProjectSplit"
+    },
+    "status": {
+      "$ref": "#/$defs/RolloutStatus"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "rollout_id",
+    "execution_digest",
+    "program_digest",
+    "distribution_digest",
+    "instance_id",
+    "split",
+    "replication_index",
+    "seed",
+    "status",
+    "initial_state_id",
+    "current_state_id",
+    "sequence",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "ProcessRolloutRecord",
+  "type": "object"
+}

@@ -42,6 +42,9 @@ from padawan.models.contracts import (
 from padawan.models.hashing import canonical_json_bytes, sha256_digest
 from padawan.models.research_contracts import CheckpointManifest
 from padawan.models.tables import (
+    AmberAdmissionDecisionRow,
+    AmberAuthorizationEventRow,
+    AmberAuthorizationRow,
     ArtifactRow,
     AttemptRow,
     AuthoredDemonstrationRow,
@@ -49,6 +52,16 @@ from padawan.models.tables import (
     CorpusItemRow,
     EpisodeRow,
     GradeRow,
+    ProcessDistributionRow,
+    ProcessEventRow,
+    ProcessExecutionRow,
+    ProcessForkRow,
+    ProcessOutcomeRow,
+    ProcessProgramRow,
+    ProcessRolloutRow,
+    ProcessStateRow,
+    ProcessTrainingEligibilityRow,
+    ProjectInstanceRow,
     RevisionRow,
     RewardRow,
     TeacherInterventionRow,
@@ -73,6 +86,9 @@ from padawan.training.contracts import (
     EvidenceSourceKind,
     NormalizedEpisodeEntry,
     PolicyIdentity,
+    PPRLForkPreferenceTrainingRow,
+    PPRLTrajectoryTrainingRow,
+    PPRLVerifiableTrainingRow,
     PreferenceTrainingRow,
     ProcessTrainingRow,
     RLVRTrainingRow,
@@ -88,6 +104,7 @@ from padawan.training.contracts import (
     TrainingSourceDocument,
     TrainingSourceStatus,
 )
+from padawan.training.pprl import compile_pprl_snapshot
 
 
 class TrainingCompilationError(RuntimeError):
@@ -187,6 +204,9 @@ _ROW_MODELS: dict[TrainingProductKind, type[CompiledRow]] = {
     TrainingProductKind.NORMALIZED_EPISODES: NormalizedEpisodeEntry,
     TrainingProductKind.SFT: SFTTrainingRow,
     TrainingProductKind.PREFERENCE: PreferenceTrainingRow,
+    TrainingProductKind.PPRL_FORK_PREFERENCE: PPRLForkPreferenceTrainingRow,
+    TrainingProductKind.PPRL_TRAJECTORY: PPRLTrajectoryTrainingRow,
+    TrainingProductKind.PPRL_VERIFIABLE: PPRLVerifiableTrainingRow,
     TrainingProductKind.RLVR: RLVRTrainingRow,
     TrainingProductKind.NEGATIVE_PROCESS: ProcessTrainingRow,
     TrainingProductKind.CONTINUED_PRETRAINING: ContinuedPretrainingRow,
@@ -200,6 +220,9 @@ _ROW_SCHEMA_NAMES: dict[TrainingProductKind, str] = {
     TrainingProductKind.NORMALIZED_EPISODES: "normalized-episode-entry",
     TrainingProductKind.SFT: "sft-training-row",
     TrainingProductKind.PREFERENCE: "preference-training-row",
+    TrainingProductKind.PPRL_FORK_PREFERENCE: "pprl-fork-preference-training-row",
+    TrainingProductKind.PPRL_TRAJECTORY: "pprl-trajectory-training-row",
+    TrainingProductKind.PPRL_VERIFIABLE: "pprl-verifiable-training-row",
     TrainingProductKind.RLVR: "rlvr-training-row",
     TrainingProductKind.NEGATIVE_PROCESS: "process-training-row",
     TrainingProductKind.CONTINUED_PRETRAINING: "continued-pretraining-row",
@@ -213,6 +236,9 @@ _PRODUCT_LANES: dict[TrainingProductKind, TrainingLane | None] = {
     TrainingProductKind.NORMALIZED_EPISODES: None,
     TrainingProductKind.SFT: TrainingLane.SFT,
     TrainingProductKind.PREFERENCE: TrainingLane.PREFERENCE,
+    TrainingProductKind.PPRL_FORK_PREFERENCE: TrainingLane.PROCESS,
+    TrainingProductKind.PPRL_TRAJECTORY: TrainingLane.PROCESS,
+    TrainingProductKind.PPRL_VERIFIABLE: TrainingLane.RLVR,
     TrainingProductKind.RLVR: TrainingLane.RLVR,
     TrainingProductKind.NEGATIVE_PROCESS: TrainingLane.PROCESS,
     TrainingProductKind.CONTINUED_PRETRAINING: TrainingLane.CONTINUED_PRETRAINING,
@@ -256,7 +282,23 @@ class TrainingCompiler:
             checkpoint_ids=tuple(sorted(checkpoint_ids)),
         )
         snapshot = await _load_snapshot(session, invocation)
+        pprl = await compile_pprl_snapshot(
+            session,
+            as_of=invocation.as_of,
+            eligibility_policy_id=invocation.eligibility_policy_id,
+            eligibility_policy_version=invocation.eligibility_policy_version,
+        )
         products = _compile_rows(snapshot, invocation)
+        products[TrainingProductKind.EVIDENCE_LEDGER].extend(pprl.evidence_rows)
+        products[TrainingProductKind.EXCLUSIONS].extend(pprl.exclusions)
+        for kind, rows in pprl.products.items():
+            products[kind].extend(rows)
+        combined_snapshot_digest = sha256_digest(
+            {
+                "developmental": snapshot.source_snapshot_digest,
+                "pprl": pprl.source_snapshot_digest,
+            }
+        )
         product_manifests: list[TrainingProductManifest] = []
         for kind in sorted(TrainingProductKind, key=lambda candidate: candidate.value):
             rows = tuple(sorted(products[kind], key=lambda row: row.row_id))
@@ -294,6 +336,10 @@ class TrainingCompiler:
                     for source in snapshot.eligibilities.values()
                     if _policy_selected(source.decision, invocation)
                 }
+                | {
+                    (policy.policy_id, policy.policy_version)
+                    for policy in pprl.eligibility_policies
+                }
             )
         )
         rights_digests = tuple(
@@ -314,6 +360,7 @@ class TrainingCompiler:
                     for intervention in snapshot.interventions.values()
                     if intervention.output_rights is not None
                 }
+                | set(pprl.rights_digests)
             )
         )
         source_artifact_digests = tuple(
@@ -323,6 +370,7 @@ class TrainingCompiler:
                     for source in snapshot.evidence_sources
                     for artifact in source.artifact_refs
                 }
+                | set(pprl.artifact_digests)
             )
         )
         verifier_fingerprints = tuple(
@@ -334,13 +382,16 @@ class TrainingCompiler:
             )
         )
         environment_fingerprints = tuple(
-            sorted({_environment_fingerprint(source.record) for source in snapshot.corpus.values()})
+            sorted(
+                {_environment_fingerprint(source.record) for source in snapshot.corpus.values()}
+                | set(pprl.environment_fingerprints)
+            )
         )
         manifest_body: dict[str, Any] = {
             "schema_version": "1.0.0",
             "compiler_version": TRAINING_COMPILER_VERSION,
             "invocation": invocation.model_dump(mode="json"),
-            "source_snapshot_digest": snapshot.source_snapshot_digest,
+            "source_snapshot_digest": combined_snapshot_digest,
             "internal_only": True,
             "checkpoint_identities": [
                 identity.model_dump(mode="json") for identity in checkpoint_identities
@@ -348,6 +399,7 @@ class TrainingCompiler:
             "source_episode_ids": tuple(sorted(snapshot.episodes)),
             "source_document_ids": tuple(sorted(snapshot.documents)),
             "source_demonstration_ids": tuple(sorted(snapshot.demonstrations)),
+            "source_process_rollout_ids": pprl.rollout_ids,
             "source_artifact_digests": source_artifact_digests,
             "verifier_fingerprints": verifier_fingerprints,
             "environment_fingerprints": environment_fingerprints,
@@ -409,7 +461,7 @@ class TrainingCompiler:
                 TrainingBundleRow(
                     bundle_id=bundle_id,
                     compiler_version=TRAINING_COMPILER_VERSION,
-                    source_snapshot_digest=snapshot.source_snapshot_digest,
+                    source_snapshot_digest=combined_snapshot_digest,
                     manifest_digest=manifest_ref.digest,
                     manifest_artifact_id=manifest_ref.artifact_id,
                     internal_only=True,
@@ -507,7 +559,19 @@ class TrainingCompiler:
             errors.append("exclusion reason counts differ from the exclusion ledger")
         try:
             snapshot = await _load_snapshot(session, manifest.invocation)
-            if snapshot.source_snapshot_digest != manifest.source_snapshot_digest:
+            pprl = await compile_pprl_snapshot(
+                session,
+                as_of=manifest.invocation.as_of,
+                eligibility_policy_id=manifest.invocation.eligibility_policy_id,
+                eligibility_policy_version=manifest.invocation.eligibility_policy_version,
+            )
+            combined_snapshot_digest = sha256_digest(
+                {
+                    "developmental": snapshot.source_snapshot_digest,
+                    "pprl": pprl.source_snapshot_digest,
+                }
+            )
+            if combined_snapshot_digest != manifest.source_snapshot_digest:
                 errors.append("source snapshot no longer reproduces the bundle digest")
         except Exception as exc:
             errors.append(f"source snapshot failed verification: {exc}")
@@ -2399,8 +2463,21 @@ async def _snapshot_watermark(session: AsyncSession) -> datetime:
         CheckpointRow,
         TrainingSourceDocumentRow,
         TrainingSourceDecisionRow,
+        ProcessDistributionRow,
+        ProcessProgramRow,
+        ProjectInstanceRow,
+        ProcessExecutionRow,
+        ProcessRolloutRow,
+        ProcessStateRow,
+        ProcessEventRow,
+        ProcessForkRow,
+        ProcessOutcomeRow,
+        ProcessTrainingEligibilityRow,
+        AmberAuthorizationRow,
+        AmberAuthorizationEventRow,
     )
     values = [await session.scalar(select(func.max(table.created_at))) for table in tables]
+    values.append(await session.scalar(select(func.max(AmberAdmissionDecisionRow.decided_at))))
     present = [_utc(value) for value in values if value is not None]
     return max(present, default=datetime(1970, 1, 1, tzinfo=UTC))
 

@@ -63,6 +63,7 @@ from padawan.episodes.store import EpisodeStore
 from padawan.experiments.controls import ResearchControlRegistry, research_corpus_digest
 from padawan.experiments.defaults import build_standardized_developmental_control
 from padawan.experiments.engine import ExperimentEngine
+from padawan.governance.amber import AmberAuthorizationEnvelope, AmberStatus
 from padawan.governance.manifests import CommandManifest, ManifestWriter, now
 from padawan.governance.policy import ExportPolicy
 from padawan.models.contracts import CorpusPool, SourceRights, TeacherMode
@@ -72,10 +73,22 @@ from padawan.models.tables import (
     CorpusItemRow,
     InstanceGroupRow,
     LessonVersionRow,
+    ProcessOutcomeRow,
+    ProcessRolloutRow,
+    ProcessTrainingEligibilityRow,
     StudentRow,
     TemplateFamilyRow,
 )
 from padawan.orchestration.state_machine import RunStore
+from padawan.pprl.composition import build_pprl_application
+from padawan.pprl.contracts import (
+    ProcessDistributionManifest,
+    ProcessExecutionManifest,
+    ProcessOutcomeAssessment,
+    ProcessProgram,
+    ProcessTrainingEligibilityDecision,
+    ProjectStatePayload,
+)
 from padawan.provenance.ledger import ProvenanceLedger
 from padawan.reporting.service import ReportingService
 from padawan.state.store import StateStore
@@ -110,6 +123,14 @@ training_source_app = typer.Typer(help="Governed continued-pretraining source ad
 atlas_app = typer.Typer(help="Capability Atlas behavioral evaluation and boundary mapping.")
 atlas_campaign_app = typer.Typer(help="Predeclared Capability Atlas campaigns.")
 interaction_app = typer.Typer(help="Private Padawan Interaction Lab.")
+pprl_app = typer.Typer(help="Governed persistent-process reinforcement learning.")
+pprl_distribution_app = typer.Typer(help="Versioned project distributions.")
+pprl_program_app = typer.Typer(help="Persistent-process program definitions.")
+pprl_amber_app = typer.Typer(help="Amber authorization lifecycle and audit history.")
+pprl_execution_app = typer.Typer(help="Exact process execution manifests.")
+pprl_rollout_app = typer.Typer(help="Durable project rollout state and replay.")
+pprl_outcome_app = typer.Typer(help="Outcome assessments with declared authority.")
+pprl_eligibility_app = typer.Typer(help="Separate process-training eligibility decisions.")
 
 app.add_typer(db_app, name="db")
 app.add_typer(corpus_app, name="corpus")
@@ -129,6 +150,14 @@ training_app.add_typer(training_source_app, name="source")
 app.add_typer(atlas_app, name="atlas")
 atlas_app.add_typer(atlas_campaign_app, name="campaign")
 app.add_typer(interaction_app, name="interaction")
+app.add_typer(pprl_app, name="pprl")
+pprl_app.add_typer(pprl_distribution_app, name="distribution")
+pprl_app.add_typer(pprl_program_app, name="program")
+pprl_app.add_typer(pprl_amber_app, name="amber")
+pprl_app.add_typer(pprl_execution_app, name="execution")
+pprl_app.add_typer(pprl_rollout_app, name="rollout")
+pprl_app.add_typer(pprl_outcome_app, name="outcome")
+pprl_app.add_typer(pprl_eligibility_app, name="eligibility")
 
 
 @app.callback()
@@ -141,6 +170,321 @@ def root(
     ctx.ensure_object(dict)
     ctx.obj["json"] = json_output
     ctx.obj["settings"] = settings
+
+
+@pprl_distribution_app.command("register")
+def pprl_distribution_register(
+    ctx: typer.Context,
+    manifest_file: Path = typer.Option(
+        ..., "--manifest-file", exists=True, file_okay=True, dir_okay=False
+    ),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            manifest = ProcessDistributionManifest.model_validate_json(
+                manifest_file.read_text(encoding="utf-8"), strict=False
+            )
+            async with process_app.database.transaction() as session:
+                digest = await process_app.distributions.register_distribution(session, manifest)
+            return {
+                "distribution_id": manifest.distribution_id,
+                "version": manifest.version,
+                "distribution_digest": digest,
+            }
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl distribution register", operation)
+
+
+@pprl_program_app.command("register")
+def pprl_program_register(
+    ctx: typer.Context,
+    program_file: Path = typer.Option(
+        ..., "--program-file", exists=True, file_okay=True, dir_okay=False
+    ),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            program = ProcessProgram.model_validate_json(
+                program_file.read_text(encoding="utf-8"), strict=False
+            )
+            async with process_app.database.transaction() as session:
+                digest = await process_app.distributions.register_program(session, program)
+            return {
+                "program_id": program.program_id,
+                "version": program.version,
+                "program_digest": digest,
+            }
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl program register", operation)
+
+
+@pprl_amber_app.command("prepare")
+def pprl_amber_prepare(
+    ctx: typer.Context,
+    envelope_file: Path = typer.Option(
+        ..., "--envelope-file", exists=True, file_okay=True, dir_okay=False
+    ),
+    actor_id: str = typer.Option(..., "--actor-id"),
+    evidence_ref: list[str] | None = typer.Option(None, "--evidence-ref"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            envelope = AmberAuthorizationEnvelope.model_validate_json(
+                envelope_file.read_text(encoding="utf-8"), strict=False
+            )
+            async with process_app.database.transaction() as session:
+                digest = await process_app.amber.prepare(
+                    session,
+                    envelope=envelope,
+                    actor_id=actor_id,
+                    evidence_refs=tuple(sorted(set(evidence_ref or ()))),
+                )
+            return {
+                "authorization_id": envelope.authorization_id,
+                "authorization_digest": digest,
+                "status": AmberStatus.PREPARED,
+            }
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl amber prepare", operation)
+
+
+@pprl_amber_app.command("transition")
+def pprl_amber_transition(
+    ctx: typer.Context,
+    authorization_digest: str,
+    to_status: AmberStatus = typer.Option(..., "--to-status"),
+    actor_id: str = typer.Option(..., "--actor-id"),
+    reason: str = typer.Option(..., "--reason"),
+    evidence_ref: list[str] | None = typer.Option(None, "--evidence-ref"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            async with process_app.database.transaction() as session:
+                event = await process_app.amber.transition(
+                    session,
+                    authorization_digest=authorization_digest,
+                    to_status=to_status,
+                    actor_id=actor_id,
+                    reason=reason,
+                    evidence_refs=tuple(sorted(set(evidence_ref or ()))),
+                )
+            return event.model_dump(mode="json")
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl amber transition", operation)
+
+
+@pprl_amber_app.command("inspect")
+def pprl_amber_inspect(ctx: typer.Context, authorization_digest: str) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            async with process_app.database.transaction() as session:
+                envelope = await process_app.amber.get(
+                    session, authorization_digest=authorization_digest
+                )
+                status = await process_app.amber.status(
+                    session, authorization_digest=authorization_digest
+                )
+                history = await process_app.amber.history(
+                    session, authorization_digest=authorization_digest
+                )
+            return {
+                "authorization_digest": authorization_digest,
+                "status": status,
+                "envelope": envelope.model_dump(mode="json"),
+                "history": [event.model_dump(mode="json") for event in history],
+            }
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl amber inspect", operation)
+
+
+@pprl_execution_app.command("register")
+def pprl_execution_register(
+    ctx: typer.Context,
+    execution_file: Path = typer.Option(
+        ..., "--execution-file", exists=True, file_okay=True, dir_okay=False
+    ),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            execution = ProcessExecutionManifest.model_validate_json(
+                execution_file.read_text(encoding="utf-8"), strict=False
+            )
+            async with process_app.database.transaction() as session:
+                digest = await process_app.processes.register_execution(session, execution)
+            return {"execution_id": execution.execution_id, "execution_digest": digest}
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl execution register", operation)
+
+
+@pprl_rollout_app.command("create")
+def pprl_rollout_create(
+    ctx: typer.Context,
+    execution_digest: str = typer.Option(..., "--execution-digest"),
+    initial_state_file: Path = typer.Option(
+        ..., "--initial-state-file", exists=True, file_okay=True, dir_okay=False
+    ),
+    replication_index: int = typer.Option(..., "--replication-index", min=0),
+    rollout_id: str | None = typer.Option(None, "--rollout-id"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            initial_state = ProjectStatePayload.model_validate_json(
+                initial_state_file.read_text(encoding="utf-8"), strict=False
+            )
+            async with process_app.database.transaction() as session:
+                rollout = await process_app.processes.create_rollout(
+                    session,
+                    execution_digest=execution_digest,
+                    replication_index=replication_index,
+                    initial_state=initial_state,
+                    rollout_id=rollout_id,
+                )
+            return rollout.model_dump(mode="json")
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl rollout create", operation)
+
+
+@pprl_rollout_app.command("inspect")
+def pprl_rollout_inspect(ctx: typer.Context, rollout_id: str) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            async with process_app.database.transaction() as session:
+                rollout = await process_app.processes.get_rollout(session, rollout_id=rollout_id)
+                state = await process_app.processes.get_state(
+                    session, state_id=rollout.current_state_id
+                )
+                row = await session.get(ProcessRolloutRow, rollout_id)
+                if row is None:
+                    raise KeyError(rollout_id)
+                amber_status = await process_app.amber.status(
+                    session, authorization_digest=row.authorization_digest
+                )
+                outcomes = (
+                    await session.scalars(
+                        select(ProcessOutcomeRow)
+                        .where(ProcessOutcomeRow.rollout_id == rollout_id)
+                        .order_by(ProcessOutcomeRow.created_at, ProcessOutcomeRow.assessment_id)
+                    )
+                ).all()
+                eligibility = (
+                    await session.scalars(
+                        select(ProcessTrainingEligibilityRow)
+                        .where(ProcessTrainingEligibilityRow.rollout_id == rollout_id)
+                        .order_by(
+                            ProcessTrainingEligibilityRow.created_at,
+                            ProcessTrainingEligibilityRow.decision_id,
+                        )
+                    )
+                ).all()
+            return {
+                "rollout": rollout.model_dump(mode="json"),
+                "current_state": state.model_dump(mode="json"),
+                "amber_status": amber_status,
+                "outcomes": [item.record_json for item in outcomes],
+                "training_eligibility": [item.record_json for item in eligibility],
+            }
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl rollout inspect", operation)
+
+
+@pprl_rollout_app.command("replay")
+def pprl_rollout_replay(ctx: typer.Context, rollout_id: str) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            async with process_app.database.transaction() as session:
+                initial_state, events = await process_app.processes.replay(
+                    session, rollout_id=rollout_id
+                )
+                steps = []
+                for event in events:
+                    state = await process_app.processes.get_state(
+                        session, state_id=event.resulting_state_id
+                    )
+                    steps.append(
+                        {
+                            "event": event.model_dump(mode="json"),
+                            "resulting_state": state.model_dump(mode="json"),
+                        }
+                    )
+            return {
+                "rollout_id": rollout_id,
+                "initial_state": initial_state.model_dump(mode="json"),
+                "steps": steps,
+                "event_count": len(events),
+            }
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl rollout replay", operation)
+
+
+@pprl_outcome_app.command("record")
+def pprl_outcome_record(
+    ctx: typer.Context,
+    assessment_file: Path = typer.Option(
+        ..., "--assessment-file", exists=True, file_okay=True, dir_okay=False
+    ),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            assessment = ProcessOutcomeAssessment.model_validate_json(
+                assessment_file.read_text(encoding="utf-8"), strict=False
+            )
+            async with process_app.database.transaction() as session:
+                digest = await process_app.processes.record_outcome(session, assessment)
+            return {"assessment_id": assessment.assessment_id, "assessment_digest": digest}
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl outcome record", operation)
+
+
+@pprl_eligibility_app.command("record")
+def pprl_eligibility_record(
+    ctx: typer.Context,
+    decision_file: Path = typer.Option(
+        ..., "--decision-file", exists=True, file_okay=True, dir_okay=False
+    ),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            decision = ProcessTrainingEligibilityDecision.model_validate_json(
+                decision_file.read_text(encoding="utf-8"), strict=False
+            )
+            async with process_app.database.transaction() as session:
+                digest = await process_app.processes.record_training_eligibility(session, decision)
+            return {"decision_id": decision.decision_id, "decision_digest": digest}
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl eligibility record", operation)
 
 
 @atlas_app.command("plan")
@@ -1499,9 +1843,9 @@ def _known_secrets(settings: Settings) -> tuple[str, ...]:
 
 def _manifest_configuration(ctx: typer.Context, settings: Settings) -> dict[str, object]:
     invocation = cast(dict[str, object], _jsonable(dict(ctx.params)))
-    for sensitive_path in ("content_file", "rights_manifest"):
-        if sensitive_path in invocation:
-            invocation[sensitive_path] = {"selected": invocation[sensitive_path] is not None}
+    for parameter in tuple(invocation):
+        if parameter.endswith("_file") or parameter == "rights_manifest":
+            invocation[parameter] = {"selected": invocation[parameter] is not None}
     return {
         **settings.redacted_manifest(),
         "invocation": invocation,

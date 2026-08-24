@@ -1,0 +1,256 @@
+{
+  "$defs": {
+    "IdentityEvidenceStatus": {
+      "enum": [
+        "pinned",
+        "verified",
+        "declared",
+        "unknown"
+      ],
+      "title": "IdentityEvidenceStatus",
+      "type": "string"
+    },
+    "OutcomeDisposition": {
+      "enum": [
+        "success",
+        "failure",
+        "unknown",
+        "infrastructure_failure"
+      ],
+      "title": "OutcomeDisposition",
+      "type": "string"
+    },
+    "ProcessOutcomeComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "deterministic": {
+          "title": "Deterministic",
+          "type": "boolean"
+        },
+        "disposition": {
+          "$ref": "#/$defs/OutcomeDisposition"
+        },
+        "evidence_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uncertainty"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "component_id",
+        "disposition",
+        "deterministic",
+        "evidence_refs"
+      ],
+      "title": "ProcessOutcomeComponent",
+      "type": "object"
+    },
+    "RewardAuthorityKind": {
+      "enum": [
+        "verifiable",
+        "empirical",
+        "adjudicated",
+        "hybrid"
+      ],
+      "title": "RewardAuthorityKind",
+      "type": "string"
+    },
+    "RewardAuthoritySpec": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_id": {
+          "minLength": 1,
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "blinded": {
+          "default": false,
+          "title": "Blinded",
+          "type": "boolean"
+        },
+        "component_authorities": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/VersionedComponentIdentity"
+          },
+          "title": "Component Authorities",
+          "type": "array"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/RewardAuthorityKind"
+        },
+        "replication_required": {
+          "default": false,
+          "title": "Replication Required",
+          "type": "boolean"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authority_id",
+        "version",
+        "kind",
+        "description"
+      ],
+      "title": "RewardAuthoritySpec",
+      "type": "object"
+    },
+    "VersionedComponentIdentity": {
+      "additionalProperties": false,
+      "description": "Content-bound component identity without embedding the component itself.",
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "evidence": {
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "evidence_status": {
+          "$ref": "#/$defs/IdentityEvidenceStatus"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component_id",
+        "version",
+        "digest",
+        "evidence_status",
+        "evidence"
+      ],
+      "title": "VersionedComponentIdentity",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-outcome-assessment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assessment_id": {
+      "minLength": 1,
+      "title": "Assessment Id",
+      "type": "string"
+    },
+    "authority": {
+      "$ref": "#/$defs/RewardAuthoritySpec"
+    },
+    "components": {
+      "items": {
+        "$ref": "#/$defs/ProcessOutcomeComponent"
+      },
+      "minItems": 1,
+      "title": "Components",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "eligible_for_learning": {
+      "title": "Eligible For Learning",
+      "type": "boolean"
+    },
+    "preference_rank": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Preference Rank"
+    },
+    "rollout_id": {
+      "minLength": 1,
+      "title": "Rollout Id",
+      "type": "string"
+    },
+    "scalar_return": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scalar Return"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "rollout_id",
+    "authority",
+    "components",
+    "eligible_for_learning",
+    "created_at"
+  ],
+  "title": "ProcessOutcomeAssessment",
+  "type": "object"
+}

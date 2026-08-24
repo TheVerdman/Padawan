@@ -1,0 +1,92 @@
+{
+  "$defs": {
+    "ProjectSplit": {
+      "enum": [
+        "train",
+        "adaptive_development",
+        "validation",
+        "sealed"
+      ],
+      "title": "ProjectSplit",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/project-instance.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "difficulty": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Difficulty",
+      "type": "number"
+    },
+    "difficulty_stratum": {
+      "minLength": 1,
+      "title": "Difficulty Stratum",
+      "type": "string"
+    },
+    "distribution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Distribution Digest",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "instance_id": {
+      "minLength": 1,
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "title": "Seed",
+      "type": "integer"
+    },
+    "split": {
+      "$ref": "#/$defs/ProjectSplit"
+    },
+    "task": {
+      "additionalProperties": true,
+      "title": "Task",
+      "type": "object"
+    },
+    "task_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Task Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "instance_id",
+    "distribution_digest",
+    "split",
+    "seed",
+    "difficulty",
+    "difficulty_stratum",
+    "task_digest",
+    "environment_fingerprint",
+    "task",
+    "created_at"
+  ],
+  "title": "ProjectInstance",
+  "type": "object"
+}

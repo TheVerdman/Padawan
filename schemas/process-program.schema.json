@@ -1,0 +1,333 @@
+{
+  "$defs": {
+    "IdentityEvidenceStatus": {
+      "enum": [
+        "pinned",
+        "verified",
+        "declared",
+        "unknown"
+      ],
+      "title": "IdentityEvidenceStatus",
+      "type": "string"
+    },
+    "PersistenceMode": {
+      "enum": [
+        "episodic",
+        "continual"
+      ],
+      "title": "PersistenceMode",
+      "type": "string"
+    },
+    "RegretBudgetContract": {
+      "additionalProperties": false,
+      "description": "Bounded local slack used to select among collectively useful actions.",
+      "properties": {
+        "confidence_level": {
+          "exclusiveMaximum": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Confidence Level",
+          "type": "number"
+        },
+        "contract_id": {
+          "minLength": 1,
+          "title": "Contract Id",
+          "type": "string"
+        },
+        "epsilon": {
+          "minimum": 0.0,
+          "title": "Epsilon",
+          "type": "number"
+        },
+        "local_utility_estimator": {
+          "$ref": "#/$defs/VersionedComponentIdentity"
+        },
+        "minimum_baseline_samples": {
+          "minimum": 1,
+          "title": "Minimum Baseline Samples",
+          "type": "integer"
+        },
+        "selection_rule": {
+          "const": "lexicographic_feasible_set",
+          "default": "lexicographic_feasible_set",
+          "title": "Selection Rule",
+          "type": "string"
+        },
+        "uncertainty_action": {
+          "$ref": "#/$defs/UncertaintyAction"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "contract_id",
+        "version",
+        "epsilon",
+        "local_utility_estimator",
+        "confidence_level",
+        "uncertainty_action",
+        "minimum_baseline_samples"
+      ],
+      "title": "RegretBudgetContract",
+      "type": "object"
+    },
+    "RewardAuthorityKind": {
+      "enum": [
+        "verifiable",
+        "empirical",
+        "adjudicated",
+        "hybrid"
+      ],
+      "title": "RewardAuthorityKind",
+      "type": "string"
+    },
+    "RewardAuthoritySpec": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_id": {
+          "minLength": 1,
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "blinded": {
+          "default": false,
+          "title": "Blinded",
+          "type": "boolean"
+        },
+        "component_authorities": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/VersionedComponentIdentity"
+          },
+          "title": "Component Authorities",
+          "type": "array"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/RewardAuthorityKind"
+        },
+        "replication_required": {
+          "default": false,
+          "title": "Replication Required",
+          "type": "boolean"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authority_id",
+        "version",
+        "kind",
+        "description"
+      ],
+      "title": "RewardAuthoritySpec",
+      "type": "object"
+    },
+    "UncertaintyAction": {
+      "enum": [
+        "reject_candidate",
+        "require_review",
+        "use_upper_confidence_bound"
+      ],
+      "title": "UncertaintyAction",
+      "type": "string"
+    },
+    "VersionedComponentIdentity": {
+      "additionalProperties": false,
+      "description": "Content-bound component identity without embedding the component itself.",
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "evidence": {
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "evidence_status": {
+          "$ref": "#/$defs/IdentityEvidenceStatus"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component_id",
+        "version",
+        "digest",
+        "evidence_status",
+        "evidence"
+      ],
+      "title": "VersionedComponentIdentity",
+      "type": "object"
+    },
+    "WorkerRoleSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_tool_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Allowed Tool Ids",
+          "type": "array"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "maximum_instances": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Maximum Instances",
+          "type": "integer"
+        },
+        "minimum_instances": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Minimum Instances",
+          "type": "integer"
+        },
+        "replaceable": {
+          "default": true,
+          "title": "Replaceable",
+          "type": "boolean"
+        },
+        "required_capabilities": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Required Capabilities",
+          "type": "array"
+        },
+        "role_id": {
+          "minLength": 1,
+          "title": "Role Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role_id",
+        "description",
+        "required_capabilities"
+      ],
+      "title": "WorkerRoleSpec",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-program.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "distribution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Distribution Digest",
+      "type": "string"
+    },
+    "maximum_concurrent_workers": {
+      "minimum": 1,
+      "title": "Maximum Concurrent Workers",
+      "type": "integer"
+    },
+    "objective_family": {
+      "minLength": 1,
+      "title": "Objective Family",
+      "type": "string"
+    },
+    "persistence_mode": {
+      "$ref": "#/$defs/PersistenceMode"
+    },
+    "program_id": {
+      "minLength": 1,
+      "title": "Program Id",
+      "type": "string"
+    },
+    "regret_budget": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RegretBudgetContract"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "reward_authority": {
+      "$ref": "#/$defs/RewardAuthoritySpec"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "tools": {
+      "items": {
+        "$ref": "#/$defs/VersionedComponentIdentity"
+      },
+      "title": "Tools",
+      "type": "array"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    },
+    "worker_roles": {
+      "items": {
+        "$ref": "#/$defs/WorkerRoleSpec"
+      },
+      "minItems": 1,
+      "title": "Worker Roles",
+      "type": "array"
+    }
+  },
+  "required": [
+    "program_id",
+    "version",
+    "title",
+    "objective_family",
+    "persistence_mode",
+    "distribution_digest",
+    "reward_authority",
+    "worker_roles",
+    "tools",
+    "maximum_concurrent_workers",
+    "created_at"
+  ],
+  "title": "ProcessProgram",
+  "type": "object"
+}

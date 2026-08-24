@@ -141,6 +141,7 @@ async def test_responses_payload_transmits_declared_effort_and_tool_surface() ->
         sampling=SamplingConfiguration(
             max_output_tokens=64,
             reasoning_effort="max",
+            seed=20260730,
         ),
         tools=(
             {
@@ -166,6 +167,7 @@ async def test_responses_payload_transmits_declared_effort_and_tool_surface() ->
         await client.generate(request)
     sent = json.loads(cast_bytes(captured["body"]))
     assert sent["reasoning"] == {"effort": "max"}
+    assert sent["seed"] == 20260730
     assert sent["tool_choice"] == "auto"
     assert sent["tools"] == list(request.tools)
 

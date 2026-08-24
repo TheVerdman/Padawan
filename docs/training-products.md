@@ -17,7 +17,10 @@ One bundle always manifests all of these views, including zero-row views:
 | SFT | successful, deterministically graded target output with explicit SFT eligibility |
 | preference | same-prompt target outputs with a strict verified score ordering and explicit eligibility |
 | RLVR | governed task/verifier environment plus observed target output and reward evidence |
-| negative/process | public derivation and outcome evidence; never private reasoning content |
+| negative/episode-process | public developmental derivation and outcome evidence; never private reasoning content |
+| PPRL trajectory | complete immutable project state/event trajectory with an explicit process-learning decision |
+| PPRL fork preference | paired continuations from one fork with a strict outcome ordering and declared preference lane |
+| PPRL verifiable | complete project trajectory with genuinely verifiable outcome authority and explicit RLVR rights |
 | continued pretraining | separately admitted, rights-confirmed, quality-gated source documents |
 | sealed evaluation | clean sealed-anchor tasks for checkpoint comparison only |
 | exclusions | candidate, product, lane, reason codes, details, and evidence lineage |
@@ -33,6 +36,16 @@ curriculum item, canonical multi-turn transcript, target event, final answer, de
 result, quality evidence, and rights digests. Downstream training may intentionally mix
 `authored_sft` with `sft`, but provenance always preserves which examples were authored gold and
 which were observed target successes.
+
+Persistent-process products use their own source identities and never masquerade as developmental
+episodes. The compiler requires a complete non-sealed rollout, verifies every state/event digest,
+reconstructs the Amber lifecycle and each admitted request/decision, checks the cited outcome and
+separate eligibility decision, enforces both distribution-source and execution-output rights, and
+rechecks the distribution's unique-instance and per-instance rollout minimums. Quarantined,
+revoked, and explicitly expired Amber lineages cannot contribute to a new product. Fork preference
+requires a strict scalar ordering between comparable child outcomes. PPRL-verifiable additionally
+requires `verifiable` authority; an empirical, adjudicated, or hybrid score remains ordinary PPRL
+even when it is scalar.
 
 Sealed, rotating-shadow, quarantined, contaminated, unreviewed, ineligible, and unregistered-
 checkpoint material is structurally excluded from target-training views. A registered checkpoint
@@ -93,9 +106,9 @@ padawan training compile --as-of 2026-08-01T20:15:00Z \
 
 The optional policy selector prevents evidence from another eligibility policy from admitting a
 row. The manifest records the invocation, source snapshot, checkpoint identities, episode,
-source-document, and authored-demonstration IDs, source artifact digests, verifier/environment
-fingerprints, rights digests, eligibility policies, product counts, exclusion counts, and
-content-addressed product artifacts.
+source-document, authored-demonstration, and process-rollout IDs, source artifact digests,
+verifier/environment fingerprints, rights digests, eligibility policies, product counts, exclusion
+counts, and content-addressed product artifacts.
 
 Verification re-reads every restricted artifact, validates its SHA-256 identity, parses every row
 against the versioned contract, checks canonical JSONL ordering and counts, recomputes the bundle
@@ -131,3 +144,6 @@ external trainer. Lean and appellate student/adjudicator workflows now exist as 
 RLVR-eligible evidence still requires a real external target run and, for appellate work,
 digest-bound semantic adjudication. A checkpoint produced elsewhere can cite the bundle manifest
 digest when it is registered, after which the existing sealed-suite promotion lifecycle governs it.
+PPRL trajectory, fork-preference, and verifiable products are compiled by this same offline
+boundary. Compilation does not claim that a process policy has been optimized or that one retained
+historical rollout constitutes a training distribution.

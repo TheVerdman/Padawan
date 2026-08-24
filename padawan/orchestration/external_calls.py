@@ -59,11 +59,14 @@ class IdempotentGenerationExecutor:
     async def execute(
         self,
         *,
-        run_id: str,
+        run_id: str | None = None,
+        process_rollout_id: str | None = None,
         purpose: str,
         provider: str,
         request: GenerationRequest,
     ) -> GenerationResult:
+        if (run_id is None) == (process_rollout_id is None):
+            raise ValueError("generation call requires exactly one run or process rollout owner")
         if purpose == "capability_atlas":
             raise PermissionError(
                 "Capability Atlas execution requires the governed activation gateway; "
@@ -84,6 +87,7 @@ class IdempotentGenerationExecutor:
                     existing.request_hash != request_hash
                     or existing.run_id != run_id
                     or existing.interaction_trace_id is not None
+                    or existing.process_rollout_id != process_rollout_id
                 ):
                     raise ValueError("request ID reused with different content or owner")
                 if existing.status == "completed" and existing.response_artifact_id:
@@ -95,6 +99,8 @@ class IdempotentGenerationExecutor:
                         self.artifacts, reference, allow_restricted=True
                     )
                     return _deserialize_result(payload)
+                if existing.status not in {"pending", "failed_retryable"}:
+                    raise RuntimeError(f"cannot resume terminal external call: {existing.status}")
                 try:
                     operation = await self.telemetry.get(session, operation_id=operation_id)
                 except KeyError:
@@ -139,6 +145,7 @@ class IdempotentGenerationExecutor:
                         request_id=request.request_id,
                         run_id=run_id,
                         interaction_trace_id=None,
+                        process_rollout_id=process_rollout_id,
                         purpose=purpose,
                         provider=provider,
                         request_hash=request_hash,
@@ -166,6 +173,24 @@ class IdempotentGenerationExecutor:
 
         try:
             result = await self.client.generate(request)
+        except asyncio.CancelledError:
+            async with self.database.transaction() as session:
+                row = await session.get(ExternalCallRow, request.request_id)
+                if row is not None and row.status != "completed":
+                    row.status = "cancelled"
+                    row.error = {
+                        "classification": "cancelled",
+                        "message": "generation consumer cancelled the call",
+                    }
+                    row.completed_at = datetime.now(UTC)
+                    await self.telemetry.transition(
+                        session,
+                        operation_id=operation_id,
+                        status=OperationStatus.CANCELLED,
+                        occurred_at=row.completed_at,
+                        detail={"reason": "generation consumer cancelled the call"},
+                    )
+            raise
         except ModelProviderError as exc:
             response_digest = sha256_digest(exc.response_body)
             error_response_ref = None
@@ -314,6 +339,7 @@ class IdempotentGenerationExecutor:
                     existing.request_hash != request_hash
                     or existing.run_id is not None
                     or existing.interaction_trace_id != interaction_trace_id
+                    or existing.process_rollout_id is not None
                 ):
                     raise ValueError("request ID reused with different content or owner")
                 if existing.status == "completed" and existing.response_artifact_id:
@@ -361,6 +387,7 @@ class IdempotentGenerationExecutor:
                         request_id=request.request_id,
                         run_id=None,
                         interaction_trace_id=interaction_trace_id,
+                        process_rollout_id=None,
                         purpose=purpose,
                         provider=provider,
                         request_hash=request_hash,

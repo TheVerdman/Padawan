@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "ProcessForkChild": {
+      "additionalProperties": false,
+      "properties": {
+        "condition_id": {
+          "minLength": 1,
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "rollout_id": {
+          "minLength": 1,
+          "title": "Rollout Id",
+          "type": "string"
+        },
+        "seed": {
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "rollout_id",
+        "condition_id",
+        "seed"
+      ],
+      "title": "ProcessForkChild",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-fork.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "children": {
+      "items": {
+        "$ref": "#/$defs/ProcessForkChild"
+      },
+      "minItems": 2,
+      "title": "Children",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "fork_id": {
+      "minLength": 1,
+      "title": "Fork Id",
+      "type": "string"
+    },
+    "intervention": {
+      "additionalProperties": true,
+      "propertyNames": {
+        "minLength": 1
+      },
+      "title": "Intervention",
+      "type": "object"
+    },
+    "parent_rollout_id": {
+      "minLength": 1,
+      "title": "Parent Rollout Id",
+      "type": "string"
+    },
+    "parent_state_id": {
+      "minLength": 1,
+      "title": "Parent State Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "fork_id",
+    "parent_rollout_id",
+    "parent_state_id",
+    "intervention",
+    "children",
+    "created_at"
+  ],
+  "title": "ProcessForkRecord",
+  "type": "object"
+}

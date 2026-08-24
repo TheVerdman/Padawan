@@ -546,6 +546,8 @@ def _responses_payload(request: GenerationRequest, model: str, *, stream: bool) 
         payload["temperature"] = request.sampling.temperature
     if request.sampling.top_p is not None:
         payload["top_p"] = request.sampling.top_p
+    if request.sampling.seed is not None:
+        payload["seed"] = request.sampling.seed
     if request.sampling.top_logprobs is not None:
         payload["top_logprobs"] = request.sampling.top_logprobs
         payload["include"] = ["message.output_text.logprobs"]

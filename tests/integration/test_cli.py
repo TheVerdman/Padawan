@@ -16,7 +16,9 @@ from padawan.domains.legal.appellate import (
     AppellateScenarioFamily,
 )
 from padawan.models.contracts import ArtifactRef
+from padawan.models.hashing import sha256_digest
 from tests.appellate_helpers import NOW, build_submission
+from tests.pprl_helpers import distribution, envelope, program
 
 
 def test_cli_atlas_offline_plan_verification_and_report(tmp_path, monkeypatch) -> None:
@@ -266,6 +268,112 @@ def test_cli_compiles_and_verifies_internal_training_bundle(tmp_path, monkeypatc
     assert inspected.exit_code == 0, inspected.output
     assert json.loads(verified.stdout)["valid"] is True
     assert json.loads(inspected.stdout)["bundle_id"] == bundle_id
+
+
+def test_cli_registers_and_audits_pprl_amber_control_plane(tmp_path, monkeypatch) -> None:
+    database_path = tmp_path / "pprl.sqlite3"
+    artifact_root = tmp_path / "artifacts"
+    monkeypatch.setenv("PADAWAN_DATABASE_URL", f"sqlite+aiosqlite:///{database_path}")
+    monkeypatch.setenv("PADAWAN_ARTIFACT_ROOT", str(artifact_root))
+    process_distribution = distribution()
+    distribution_digest = sha256_digest(process_distribution)
+    process_program = program(distribution_digest)
+    program_digest = sha256_digest(process_program)
+    authorization = envelope(
+        program_digest=program_digest,
+        distribution_digest=distribution_digest,
+    )
+    manifest_file = tmp_path / "distribution.json"
+    program_file = tmp_path / "program.json"
+    envelope_file = tmp_path / "envelope.json"
+    manifest_file.write_text(process_distribution.model_dump_json(), encoding="utf-8")
+    program_file.write_text(process_program.model_dump_json(), encoding="utf-8")
+    envelope_file.write_text(authorization.model_dump_json(), encoding="utf-8")
+    runner = CliRunner()
+
+    assert runner.invoke(app, ["--json", "db", "migrate"]).exit_code == 0
+    registered_distribution = runner.invoke(
+        app,
+        [
+            "--json",
+            "pprl",
+            "distribution",
+            "register",
+            "--manifest-file",
+            str(manifest_file),
+        ],
+    )
+    registered_program = runner.invoke(
+        app,
+        ["--json", "pprl", "program", "register", "--program-file", str(program_file)],
+    )
+    prepared = runner.invoke(
+        app,
+        [
+            "--json",
+            "pprl",
+            "amber",
+            "prepare",
+            "--envelope-file",
+            str(envelope_file),
+            "--actor-id",
+            "preparer",
+        ],
+    )
+    assert registered_distribution.exit_code == 0, registered_distribution.output
+    assert registered_program.exit_code == 0, registered_program.output
+    assert prepared.exit_code == 0, prepared.output
+    authorization_digest = json.loads(prepared.stdout)["authorization_digest"]
+    assert authorization_digest == authorization.digest
+
+    authorized = runner.invoke(
+        app,
+        [
+            "--json",
+            "pprl",
+            "amber",
+            "transition",
+            authorization_digest,
+            "--to-status",
+            "authorized",
+            "--actor-id",
+            "reviewer-a",
+            "--reason",
+            "independent test review",
+            "--evidence-ref",
+            "review:test",
+        ],
+    )
+    active = runner.invoke(
+        app,
+        [
+            "--json",
+            "pprl",
+            "amber",
+            "transition",
+            authorization_digest,
+            "--to-status",
+            "active",
+            "--actor-id",
+            "operator",
+            "--reason",
+            "activate reviewed boundary",
+        ],
+    )
+    inspected = runner.invoke(
+        app,
+        ["--json", "pprl", "amber", "inspect", authorization_digest],
+    )
+    assert authorized.exit_code == 0, authorized.output
+    assert active.exit_code == 0, active.output
+    assert inspected.exit_code == 0, inspected.output
+    payload = json.loads(inspected.stdout)
+    assert payload["status"] == "active"
+    assert [event["to_status"] for event in payload["history"]] == [
+        "prepared",
+        "authorized",
+        "active",
+    ]
 
 
 def test_cli_lean_verification_emits_hard_gate(tmp_path, monkeypatch) -> None:

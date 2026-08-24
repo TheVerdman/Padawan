@@ -9,10 +9,12 @@ orchestration, and adapter boundaries remain model-neutral.
 
 ## Runtime composition
 
-`padawan.config.composition.build_live_application` is the only live composition root. It creates
-one async database engine, the configured artifact backend, registered domain authorities,
-external-call executors, a domain-selected workflow handler, and a supervisor. A verifier-only
-domain cannot masquerade as a complete autonomous workflow. The authorities remain separate:
+Padawan has separate composition roots for developmental research, exploratory interaction, and
+persistent-process research. `padawan.config.composition.build_live_application` creates the
+developmental engine: one async database engine, the configured artifact backend, registered
+domain authorities, external-call executors, a domain-selected workflow handler, and a supervisor.
+A verifier-only domain cannot masquerade as a complete autonomous workflow. The authorities remain
+separate:
 
 | Authority | Implemented owner | Role |
 | --- | --- | --- |
@@ -40,6 +42,10 @@ domain cannot masquerade as a complete autonomous workflow. The authorities rema
 | reward | `RewardEngine` | immutable verifier evidence, policies, utility recomputation |
 | checkpoint | `CheckpointRegistry` | external lineage, sealed-suite comparison, lifecycle decisions |
 | governance | `governance.*` | access, retention, export, and command-manifest policy |
+| process distribution | `ProcessDistributionRegistry` | immutable partitions, generator identity, sampling, and replication plans |
+| persistent process | `ProcessStore` and `ProcessCoordinator` | leased macro-actions, immutable project state/events, forks, outcomes, and replay |
+| process authorization | `AmberStore` and `AmberPolicy` | actor-neutral envelope lifecycle and fail-closed per-action admission |
+| process model I/O | `ProcessGenerationExecutor` | admission- and lease-bound use of the shared idempotent call ledger |
 | consolidation | `MemoryConsolidationBackend` | evidence-gated lesson consolidation and rollback |
 | exploratory interaction | `InteractionService` and `InteractionStore` | explicit-history chat, immutable branches, consent snapshots, and non-benchmark traces |
 | student target selection | `StudentTargetRegistry` | model-neutral target descriptors, batch-one leases, and explicit readiness preflight |
@@ -50,6 +56,14 @@ and canonical model-serving identity from the research-control foundation. It do
 run, episode, state fork, memory writer, or training compiler. Target-specific adapters live only at
 this composition boundary; interaction schemas, routes, and services use student target IDs and
 descriptors rather than a deployment product name.
+
+`padawan.pprl.composition.build_pprl_application` is the separate process-scale control-plane
+root. It reuses the database, artifact catalog, external-call ledger, training compiler, and
+checkpoint boundary, but it does not construct a developmental run, episode, student-state fork,
+or Interaction Lab trace. A concrete process environment injects a typed handler; the root itself
+does not expose an arbitrary command executor. Provider clients may be wrapped by
+`ProcessGenerationExecutor`, which requires the current rollout lease and the exact admitted Amber
+decision before it can cross the model-I/O boundary.
 
 The official OpenAI adapter is fixed to `POST /v1/responses` and has no legacy fallback. The
 validated Inkling client is likewise Responses-only: it negotiates the exact
@@ -104,11 +118,11 @@ Thus a crash after a provider response but before a state transition does not ge
 The same boundary records a `model_generation` operation span before I/O and an append-only status
 event on wait, failure, or success. Terminal spans can be compiled into versioned p50/p90/p95 and
 timeout profiles without retaining prompt text in workload metadata.
-Interaction invocations reuse the same intent/artifact/telemetry boundary with an
-`interaction_trace_id` owner instead of inventing a `run_id`. The database requires exactly one of
-those owners. A true event iterator forwards public text deltas while keeping private-reasoning
-deltas out of the transcript; the terminal result still closes the idempotency and telemetry
-records.
+Interaction and persistent-process invocations reuse the same intent/artifact/telemetry boundary
+without inventing a developmental run. The database requires exactly one owner among `run_id`,
+`interaction_trace_id`, and `process_rollout_id`. A true Interaction Lab event iterator forwards
+public text deltas while keeping private-reasoning deltas out of the transcript; the terminal
+result still closes the idempotency and telemetry records.
 The corpus registry also commits a conservative student exposure before each student transport call;
 a terminal failure releases its leases but the exposed sibling group remains ineligible for that
 student.
@@ -131,6 +145,28 @@ branches and all failed work remain stored. Lean student output is a narrow proo
 pinned kernel decides correctness. Appellate student output is a content-only draft: Padawan binds
 brief identity, scenario, research role, and time; deterministic integrity gates run before any
 semantic adjudicator call, and the adjudicator can cite only evidence attached to each claim.
+
+## Persistent-process action loop
+
+A `ProcessRolloutRow` is a separate macro-agent state machine. One lease protects one proposed
+action. The handler first produces a side-effect-free `ProcessActionProposal`; Amber persists the
+complete request and decision against the immutable active envelope; only an `admitted` decision is
+passed to the handler's execution method. The resulting immutable event cites that one decision,
+its parent and resulting states, artifacts, optional worker invocation, and rollout status.
+
+Project distributions contain train, adaptive-development, validation, and sealed partitions plus
+generator, contamination, difficulty, and replication identity. The default contract requires at
+least two unique instances and two stochastic rollouts per instance, and the compiler rechecks the
+declared minima rather than inferring a learning distribution from one trajectory. Forks create
+paired continuations from the same state. Episodic and continual persistence are both represented;
+cross-project memory requires explicit Amber authority and remains separate from student lesson
+memory.
+
+Outcome assessment and training eligibility are independent append-only decisions. Verifiable,
+empirical, adjudicated, and hybrid authorities may support ordinary PPRL trajectory or preference
+products when their policy and rights permit. The PPRL-verifiable product additionally requires
+genuinely verifiable authority and RLVR rights; a scalar score alone cannot upgrade another
+authority kind.
 
 ## Research evidence and offline checkpoint lifecycle
 
@@ -226,3 +262,7 @@ scheduled, leased, completed, and recovered, but no instrumented Inkling extensi
 supplies router/expert or activation telemetry. The research-control contracts expose typed seams
 for that later instrumentation, capability-atlas ingestion, interactive trajectories, the
 retention × compaction factorial, and checkpoint N+1 evaluation; absent seams are not results.
+The PPRL control plane and offline products are implemented, but Padawan intentionally ships no
+default unrestricted project environment or generic execution command. A concrete scientific or
+mathematical handler must supply its own typed environment semantics under an active Amber
+envelope, and trained weights still arrive through the external checkpoint registry.

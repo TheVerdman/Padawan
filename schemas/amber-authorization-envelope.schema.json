@@ -1,0 +1,368 @@
+{
+  "$defs": {
+    "AmberBudgetCaps": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "minimum": 1,
+          "title": "Actions",
+          "type": "integer"
+        },
+        "artifact_bytes": {
+          "minimum": 1,
+          "title": "Artifact Bytes",
+          "type": "integer"
+        },
+        "concurrent_workers": {
+          "minimum": 1,
+          "title": "Concurrent Workers",
+          "type": "integer"
+        },
+        "cost": {
+          "minimum": 0.0,
+          "title": "Cost",
+          "type": "number"
+        },
+        "input_tokens": {
+          "minimum": 1,
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "output_tokens": {
+          "minimum": 1,
+          "title": "Output Tokens",
+          "type": "integer"
+        },
+        "wall_time_seconds": {
+          "exclusiveMinimum": 0.0,
+          "title": "Wall Time Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "actions",
+        "input_tokens",
+        "output_tokens",
+        "wall_time_seconds",
+        "cost",
+        "artifact_bytes",
+        "concurrent_workers"
+      ],
+      "title": "AmberBudgetCaps",
+      "type": "object"
+    },
+    "AmberCheckpointPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint_export_permitted": {
+          "title": "Checkpoint Export Permitted",
+          "type": "boolean"
+        },
+        "checkpoint_retention_permitted": {
+          "title": "Checkpoint Retention Permitted",
+          "type": "boolean"
+        },
+        "independent_review_required": {
+          "title": "Independent Review Required",
+          "type": "boolean"
+        },
+        "release_class": {
+          "$ref": "#/$defs/AmberReleaseClass"
+        },
+        "training_permitted": {
+          "title": "Training Permitted",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "training_permitted",
+        "checkpoint_retention_permitted",
+        "checkpoint_export_permitted",
+        "independent_review_required",
+        "release_class"
+      ],
+      "title": "AmberCheckpointPolicy",
+      "type": "object"
+    },
+    "AmberEgressMode": {
+      "enum": [
+        "disabled",
+        "allowlist"
+      ],
+      "title": "AmberEgressMode",
+      "type": "string"
+    },
+    "AmberEnvironmentBoundary": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_destinations": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Allowed Destinations",
+          "type": "array"
+        },
+        "egress_mode": {
+          "$ref": "#/$defs/AmberEgressMode"
+        },
+        "environment_fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Environment Fingerprint",
+          "type": "string"
+        },
+        "filesystem_scopes": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Filesystem Scopes",
+          "type": "array"
+        },
+        "network_enabled": {
+          "title": "Network Enabled",
+          "type": "boolean"
+        },
+        "reset_between_rollouts": {
+          "title": "Reset Between Rollouts",
+          "type": "boolean"
+        },
+        "sandbox_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Sandbox Digest",
+          "type": "string"
+        },
+        "sandbox_id": {
+          "minLength": 1,
+          "title": "Sandbox Id",
+          "type": "string"
+        },
+        "sandbox_version": {
+          "minLength": 1,
+          "title": "Sandbox Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "environment_fingerprint",
+        "sandbox_id",
+        "sandbox_version",
+        "sandbox_digest",
+        "reset_between_rollouts",
+        "network_enabled",
+        "egress_mode"
+      ],
+      "title": "AmberEnvironmentBoundary",
+      "type": "object"
+    },
+    "AmberReleaseClass": {
+      "enum": [
+        "restricted_internal",
+        "review_ready",
+        "release_approved"
+      ],
+      "title": "AmberReleaseClass",
+      "type": "string"
+    },
+    "AmberToolGrant": {
+      "additionalProperties": false,
+      "properties": {
+        "operations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Operations",
+          "type": "array"
+        },
+        "role_id": {
+          "minLength": 1,
+          "title": "Role Id",
+          "type": "string"
+        },
+        "target_classes": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Target Classes",
+          "type": "array"
+        },
+        "tool_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Tool Digest",
+          "type": "string"
+        },
+        "tool_id": {
+          "minLength": 1,
+          "title": "Tool Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role_id",
+        "tool_id",
+        "tool_digest",
+        "operations"
+      ],
+      "title": "AmberToolGrant",
+      "type": "object"
+    },
+    "PersistenceMode": {
+      "enum": [
+        "episodic",
+        "continual"
+      ],
+      "title": "PersistenceMode",
+      "type": "string"
+    },
+    "ProjectSplit": {
+      "enum": [
+        "train",
+        "adaptive_development",
+        "validation",
+        "sealed"
+      ],
+      "title": "ProjectSplit",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/amber-authorization-envelope.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowed_splits": {
+      "items": {
+        "$ref": "#/$defs/ProjectSplit"
+      },
+      "minItems": 1,
+      "title": "Allowed Splits",
+      "type": "array"
+    },
+    "allowed_target_classes": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Allowed Target Classes",
+      "type": "array"
+    },
+    "allowed_worker_model_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Allowed Worker Model Digests",
+      "type": "array"
+    },
+    "authorization_id": {
+      "minLength": 1,
+      "title": "Authorization Id",
+      "type": "string"
+    },
+    "budgets": {
+      "$ref": "#/$defs/AmberBudgetCaps"
+    },
+    "checkpoint_policy": {
+      "$ref": "#/$defs/AmberCheckpointPolicy"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "cross_project_memory_permitted": {
+      "title": "Cross Project Memory Permitted",
+      "type": "boolean"
+    },
+    "distribution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Distribution Digest",
+      "type": "string"
+    },
+    "environment": {
+      "$ref": "#/$defs/AmberEnvironmentBoundary"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "persistence_modes": {
+      "items": {
+        "$ref": "#/$defs/PersistenceMode"
+      },
+      "minItems": 1,
+      "title": "Persistence Modes",
+      "type": "array"
+    },
+    "program_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Program Digest",
+      "type": "string"
+    },
+    "required_reviewers": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Required Reviewers",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stop_conditions": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Stop Conditions",
+      "type": "array"
+    },
+    "tool_grants": {
+      "items": {
+        "$ref": "#/$defs/AmberToolGrant"
+      },
+      "title": "Tool Grants",
+      "type": "array"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "authorization_id",
+    "version",
+    "program_digest",
+    "distribution_digest",
+    "allowed_splits",
+    "allowed_target_classes",
+    "allowed_worker_model_digests",
+    "tool_grants",
+    "environment",
+    "budgets",
+    "persistence_modes",
+    "cross_project_memory_permitted",
+    "checkpoint_policy",
+    "required_reviewers",
+    "stop_conditions",
+    "created_at",
+    "expires_at"
+  ],
+  "title": "AmberAuthorizationEnvelope",
+  "type": "object"
+}

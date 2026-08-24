@@ -1,0 +1,132 @@
+{
+  "$id": "https://schemas.padawan.local/v1/pprl-verifiable-training-row.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "compiler_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "distribution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Distribution Digest",
+      "type": "string"
+    },
+    "eligibility_decision_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Eligibility Decision Ids",
+      "type": "array"
+    },
+    "environment_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Execution Digest",
+      "type": "string"
+    },
+    "instance_id": {
+      "minLength": 1,
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "outcome": {
+      "additionalProperties": true,
+      "title": "Outcome",
+      "type": "object"
+    },
+    "process_policy": {
+      "additionalProperties": true,
+      "title": "Process Policy",
+      "type": "object"
+    },
+    "program_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Program Digest",
+      "type": "string"
+    },
+    "rights_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Rights Digests",
+      "type": "array"
+    },
+    "rollout_id": {
+      "minLength": 1,
+      "title": "Rollout Id",
+      "type": "string"
+    },
+    "row_id": {
+      "minLength": 1,
+      "title": "Row Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_evidence_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Evidence Refs",
+      "type": "array"
+    },
+    "source_record_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Record Digests",
+      "type": "array"
+    },
+    "task": {
+      "additionalProperties": true,
+      "title": "Task",
+      "type": "object"
+    },
+    "trajectory": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "minItems": 1,
+      "title": "Trajectory",
+      "type": "array"
+    }
+  },
+  "required": [
+    "row_id",
+    "source_evidence_refs",
+    "source_record_digests",
+    "rollout_id",
+    "execution_digest",
+    "program_digest",
+    "distribution_digest",
+    "instance_id",
+    "task",
+    "environment_fingerprint",
+    "process_policy",
+    "trajectory",
+    "outcome",
+    "eligibility_decision_ids"
+  ],
+  "title": "PPRLVerifiableTrainingRow",
+  "type": "object"
+}

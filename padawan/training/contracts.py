@@ -150,6 +150,9 @@ class TrainingProductKind(StrEnum):
     NORMALIZED_EPISODES = "normalized_episodes"
     SFT = "sft"
     PREFERENCE = "preference"
+    PPRL_FORK_PREFERENCE = "pprl_fork_preference"
+    PPRL_TRAJECTORY = "pprl_trajectory"
+    PPRL_VERIFIABLE = "pprl_verifiable"
     RLVR = "rlvr"
     NEGATIVE_PROCESS = "negative_process"
     CONTINUED_PRETRAINING = "continued_pretraining"
@@ -158,6 +161,9 @@ class TrainingProductKind(StrEnum):
 
 
 class EvidenceSourceKind(StrEnum):
+    AMBER_ADMISSION_DECISION = "amber_admission_decision"
+    AMBER_AUTHORIZATION = "amber_authorization"
+    AMBER_AUTHORIZATION_EVENT = "amber_authorization_event"
     AUTHORED_DEMONSTRATION = "authored_demonstration"
     CORPUS_ITEM = "corpus_item"
     EPISODE = "episode"
@@ -172,6 +178,16 @@ class EvidenceSourceKind(StrEnum):
     TRAINING_SOURCE_DOCUMENT = "training_source_document"
     TRAINING_SOURCE_DECISION = "training_source_decision"
     CHECKPOINT = "checkpoint"
+    PROCESS_DISTRIBUTION = "process_distribution"
+    PROCESS_PROGRAM = "process_program"
+    PROJECT_INSTANCE = "project_instance"
+    PROCESS_EXECUTION = "process_execution"
+    PROCESS_ROLLOUT = "process_rollout"
+    PROCESS_STATE = "process_state"
+    PROCESS_EVENT = "process_event"
+    PROCESS_FORK = "process_fork"
+    PROCESS_OUTCOME = "process_outcome"
+    PROCESS_TRAINING_ELIGIBILITY = "process_training_eligibility"
 
 
 class TrainingExclusionReason(StrEnum):
@@ -203,6 +219,12 @@ class TrainingExclusionReason(StrEnum):
     SOURCE_DOCUMENT_NOT_ACTIVE = "source_document_not_active"
     SOURCE_DOCUMENT_CONTAMINATED = "source_document_contaminated"
     DUPLICATE_SOURCE_CONTENT = "duplicate_source_content"
+    PROCESS_ROLLOUT_NOT_COMPLETE = "process_rollout_not_complete"
+    PROCESS_OUTCOME_UNRESOLVED = "process_outcome_unresolved"
+    PROCESS_ELIGIBILITY_MISSING = "process_eligibility_missing"
+    PROCESS_REPLICATION_INSUFFICIENT = "process_replication_insufficient"
+    PROCESS_TRAINING_NOT_AUTHORIZED = "process_training_not_authorized"
+    PROCESS_FORK_PAIR_MISSING = "process_fork_pair_missing"
 
 
 class CompilerInvocation(StrictRecord):
@@ -351,6 +373,55 @@ class ProcessTrainingRow(CompiledRow):
     eligibility_decision_ids: Annotated[tuple[NonEmpty, ...], Field(min_length=1)]
 
 
+class PPRLTrajectoryTrainingRow(CompiledRow):
+    rollout_id: NonEmpty
+    execution_digest: Sha256
+    program_digest: Sha256
+    distribution_digest: Sha256
+    instance_id: NonEmpty
+    split: NonEmpty
+    replication_index: Annotated[int, Field(ge=0)]
+    process_policy: dict[str, Any]
+    worker_models: Annotated[tuple[dict[str, Any], ...], Field(min_length=1)]
+    initial_state: dict[str, Any]
+    events: Annotated[tuple[dict[str, Any], ...], Field(min_length=1)]
+    terminal_state: dict[str, Any]
+    outcomes: Annotated[tuple[dict[str, Any], ...], Field(min_length=1)]
+    eligibility_decision_ids: Annotated[tuple[NonEmpty, ...], Field(min_length=1)]
+
+
+class PPRLForkPreferenceTrainingRow(CompiledRow):
+    fork_id: NonEmpty
+    parent_state_id: NonEmpty
+    chosen_rollout_id: NonEmpty
+    rejected_rollout_id: NonEmpty
+    chosen_trajectory_digest: Sha256
+    rejected_trajectory_digest: Sha256
+    chosen_outcome: dict[str, Any]
+    rejected_outcome: dict[str, Any]
+    eligibility_decision_ids: Annotated[tuple[NonEmpty, ...], Field(min_length=2)]
+
+    @model_validator(mode="after")
+    def preference_is_distinct(self) -> PPRLForkPreferenceTrainingRow:
+        if self.chosen_rollout_id == self.rejected_rollout_id:
+            raise ValueError("PPRL preference needs distinct rollout continuations")
+        return self
+
+
+class PPRLVerifiableTrainingRow(CompiledRow):
+    rollout_id: NonEmpty
+    execution_digest: Sha256
+    program_digest: Sha256
+    distribution_digest: Sha256
+    instance_id: NonEmpty
+    task: dict[str, Any]
+    environment_fingerprint: Sha256
+    process_policy: dict[str, Any]
+    trajectory: Annotated[tuple[dict[str, Any], ...], Field(min_length=1)]
+    outcome: dict[str, Any]
+    eligibility_decision_ids: Annotated[tuple[NonEmpty, ...], Field(min_length=1)]
+
+
 class ContinuedPretrainingRow(CompiledRow):
     document_id: NonEmpty
     source_id: NonEmpty
@@ -432,6 +503,7 @@ class TrainingBundleManifest(StrictRecord):
     source_episode_ids: tuple[NonEmpty, ...]
     source_document_ids: tuple[NonEmpty, ...]
     source_demonstration_ids: tuple[NonEmpty, ...]
+    source_process_rollout_ids: tuple[NonEmpty, ...] = ()
     source_artifact_digests: tuple[Sha256, ...]
     verifier_fingerprints: tuple[Sha256, ...]
     environment_fingerprints: tuple[Sha256, ...]
@@ -458,6 +530,7 @@ class TrainingBundleManifest(StrictRecord):
             ("source episodes", self.source_episode_ids),
             ("source documents", self.source_document_ids),
             ("source demonstrations", self.source_demonstration_ids),
+            ("source process rollouts", self.source_process_rollout_ids),
             ("source artifacts", self.source_artifact_digests),
             ("verifier fingerprints", self.verifier_fingerprints),
             ("environment fingerprints", self.environment_fingerprints),

@@ -248,7 +248,13 @@
         "episode_not_source_corpus",
         "source_document_not_active",
         "source_document_contaminated",
-        "duplicate_source_content"
+        "duplicate_source_content",
+        "process_rollout_not_complete",
+        "process_outcome_unresolved",
+        "process_eligibility_missing",
+        "process_replication_insufficient",
+        "process_training_not_authorized",
+        "process_fork_pair_missing"
       ],
       "title": "TrainingExclusionReason",
       "type": "string"
@@ -272,6 +278,9 @@
         "normalized_episodes",
         "sft",
         "preference",
+        "pprl_fork_preference",
+        "pprl_trajectory",
+        "pprl_verifiable",
         "rlvr",
         "negative_process",
         "continued_pretraining",
@@ -459,6 +468,15 @@
         "type": "string"
       },
       "title": "Source Episode Ids",
+      "type": "array"
+    },
+    "source_process_rollout_ids": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Source Process Rollout Ids",
       "type": "array"
     },
     "source_snapshot_digest": {
