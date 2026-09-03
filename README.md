@@ -145,6 +145,12 @@ distributions, repetition, forks, outcome authority, PPRL/PPRL-VR training, and 
 Its architectural decisions are recorded in
 [ADR 0013](docs/adr/0013-persistent-process-reinforcement-learning.md) and
 [ADR 0014](docs/adr/0014-amber-protocol.md).
+The full [PPRL and epsilon-charity research program](docs/pprl-epsilon-charity-program.md) preserves
+the scientific thesis beyond the first implementation slices. The
+[four-fabric architecture and audit](docs/pprl-four-fabric-architecture.md) maps what is implemented,
+partial, and absent across persistent process, communication, forensic, and recovery substrates.
+Future repository agents receive the required reading order and safety invariants from
+[`AGENTS.md`](AGENTS.md).
 
 ## Repository boundaries
 

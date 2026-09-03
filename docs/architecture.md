@@ -7,6 +7,12 @@ developmental path with domain-owned execution and verification authorities. Mag
 remains a corpus/verifier package behind explicit external execution gates. State, evidence,
 orchestration, and adapter boundaries remain model-neutral.
 
+The long-horizon research thesis, including epsilon-charity and distribution-level evaluation, is
+preserved in [Persistent-process RL and epsilon-charity](pprl-epsilon-charity-program.md). The
+[PPRL four-fabric architecture](pprl-four-fabric-architecture.md) is the current source of truth for
+the boundary among institutional process memory, live coordination, privileged forensic and
+mechanistic records, and worker recovery/scheduling, including what remains unimplemented.
+
 ## Runtime composition
 
 Padawan has separate composition roots for developmental research, exploratory interaction, and
