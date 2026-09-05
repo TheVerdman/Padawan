@@ -37,6 +37,8 @@ from padawan.pprl.contracts import (
     project_state_digest,
 )
 from padawan.pprl.resources import ProcessResourceStore, atomic_resource_write
+from padawan.pprl.worker_contracts import ProcessWorkerAccess
+from padawan.pprl.worker_identities import ProcessWorkerIdentityStore
 
 
 class AmberStore:
@@ -230,7 +232,25 @@ class AmberStore:
         request: AmberActionRequest,
         active_workers: int,
         decision_id: str | None = None,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> AmberAdmissionDecision:
+        workers = ProcessWorkerIdentityStore()
+        rollout = await session.scalar(
+            select(ProcessRolloutRow)
+            .where(ProcessRolloutRow.rollout_id == request.rollout_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        if rollout is None:
+            raise KeyError(request.rollout_id)
+        assignment = await workers.require(
+            session,
+            rollout=rollout,
+            access=worker_access,
+            now=datetime.now(UTC),
+            role_id=request.role_id,
+            worker_model_digest=request.worker_model_digest,
+        )
         if decision_id is not None:
             prior = await session.get(AmberAdmissionDecisionRow, decision_id)
             if prior is not None:
@@ -242,6 +262,9 @@ class AmberStore:
                 ):
                     raise ValueError("Amber decision ID reused with different content")
                 # Historical receipt reuse neither re-admits an effect nor reserves again.
+                await workers.require_decision(
+                    session, assignment=assignment, decision_id=decision_id
+                )
                 return stored
         envelope = await self.get(session, authorization_digest=request.authorization_digest)
         rollout = await session.get(ProcessRolloutRow, request.rollout_id)
@@ -332,6 +355,7 @@ class AmberStore:
                 or sha256_digest(existing.request_json) != stored.request_digest
             ):
                 raise ValueError("Amber decision ID reused with different content")
+            await workers.require_decision(session, assignment=assignment, decision_id=assigned_id)
             return stored
         session.add(
             AmberAdmissionDecisionRow(
@@ -348,6 +372,10 @@ class AmberStore:
             )
         )
         await session.flush()
+        if assignment is not None:
+            await workers.bind_decision(
+                session, assignment=assignment, request=request, decision=decision
+            )
         if decision.disposition.value == "admitted":
             await self.resources.reserve(
                 session, decision=decision, request=request, previous=state.payload.budget_usage

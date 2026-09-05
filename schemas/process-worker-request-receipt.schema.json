@@ -1,0 +1,117 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-worker-request-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Private authenticated lineage. The credential is intentionally unreconstructible.",
+  "properties": {
+    "assignment_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Assignment Digest",
+      "type": "string"
+    },
+    "assignment_id": {
+      "minLength": 1,
+      "title": "Assignment Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "decision_binding_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Decision Binding Digest"
+    },
+    "decision_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Decision Id"
+    },
+    "observation_id": {
+      "minLength": 1,
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "observation_receipt_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Observation Receipt Digest",
+      "type": "string"
+    },
+    "receipt_id": {
+      "pattern": "^worker-request-[0-9a-f]{32}$",
+      "title": "Receipt Id",
+      "type": "string"
+    },
+    "registration_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Registration Digest",
+      "type": "string"
+    },
+    "reply_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Reply Digest",
+      "type": "string"
+    },
+    "request_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Request Digest",
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "request_json": {
+      "maxLength": 65536,
+      "minLength": 1,
+      "title": "Request Json",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "worker_id": {
+      "minLength": 1,
+      "title": "Worker Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "receipt_id",
+    "worker_id",
+    "registration_digest",
+    "request_id",
+    "request_json",
+    "request_digest",
+    "assignment_id",
+    "assignment_digest",
+    "observation_id",
+    "observation_receipt_digest",
+    "reply_digest",
+    "created_at"
+  ],
+  "title": "ProcessWorkerRequestReceipt",
+  "type": "object"
+}

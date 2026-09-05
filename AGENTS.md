@@ -48,6 +48,14 @@ profile, resource hold and privileged execution evidence. It is inert by default
 execution boundary inside the trusted Docker/host/kernel perimeter, not a model-serving sandbox,
 authenticated worker lifecycle or independent attestation. See `docs/pprl-container-execution-boundary.md`.
 
+Explicitly enrolled executions also require broker-issued, expiring worker capabilities and a private
+one-action lease assignment at protected APIs. A bounded request adapter accepts already connected
+streams; it launches no listener or worker. Authored `worker_assignments` remain declarative.
+Credential possession is not attestation of a model, process, host or reviewer. Full assignment
+lifecycle, credential delivery/isolation and replacement scheduling remain unfinished. See
+`docs/pprl-worker-identity-boundary.md`; enrolled executions cannot fall back to legacy unauthenticated
+APIs or fork into unenrolled child executions.
+
 Use **PPRL** for the general program and **PPRL-VR** only when the declared outcome is genuinely
 verifiable. RL evidence requires sampled task distributions and repeated stochastic rollouts; a
 single historical run may be evidence but is not a training or comparative distribution.

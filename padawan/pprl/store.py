@@ -44,6 +44,7 @@ from padawan.models.tables import (
     ProcessStateRow,
     ProcessTrainingEligibilityRow,
     ProcessWorkerInvocationRow,
+    ProcessWorkerScopeRow,
     ProjectInstanceRow,
 )
 from padawan.pprl.content import ProcessContentBoundary
@@ -74,6 +75,8 @@ from padawan.pprl.contracts import (
 from padawan.pprl.evidence import ProcessEvidenceStore
 from padawan.pprl.evidence_contracts import ProcessEvidenceUse
 from padawan.pprl.generation_contracts import generation_workload_from_row
+from padawan.pprl.worker_contracts import ProcessWorkerAccess
+from padawan.pprl.worker_identities import ProcessWorkerIdentityStore
 
 if TYPE_CHECKING:
     from padawan.pprl.containers import ProcessContainerStore
@@ -88,6 +91,7 @@ class ClaimedProcessRollout:
     rollout: ProcessRolloutRecord
     state: ProjectStateVersion
     lease_token: str
+    worker_assignment_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -136,6 +140,7 @@ class ProcessStore:
         self.evidence = evidence
         self.content = content or ProcessContentBoundary()
         self.container_evidence = container_evidence
+        self.workers = ProcessWorkerIdentityStore()
         if (
             container_evidence is not None
             and container_evidence.resources is not self.amber.resources
@@ -227,7 +232,11 @@ class ProcessStore:
             raise ValueError("replication index cannot be negative")
         if (parent_rollout_id is None) != (fork_id is None):
             raise ValueError("forked rollout requires parent rollout and fork identities")
-        execution_row = await session.get(ProcessExecutionRow, execution_digest)
+        execution_row = await session.scalar(
+            select(ProcessExecutionRow)
+            .where(ProcessExecutionRow.execution_digest == execution_digest)
+            .with_for_update()
+        )
         if execution_row is None:
             raise ProcessInvariantError("rollout cites an unregistered process execution")
         execution = ProcessExecutionManifest.model_validate(execution_row.record_json, strict=False)
@@ -410,10 +419,17 @@ class ProcessStore:
         worker_id: str,
         lease_for: timedelta,
         now: datetime | None = None,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> ClaimedProcessRollout | None:
         if lease_for <= timedelta(0):
             raise ValueError("process lease duration must be positive")
         timestamp = _as_utc(now or datetime.now(UTC))
+        registered = None
+        if worker_access is not None:
+            timestamp = max(timestamp, datetime.now(UTC))
+            registered = await self.workers.identify(session, worker_access, now=timestamp)
+            if worker_id != registered.worker_id or worker_access.assignment_id is not None:
+                raise PermissionError("worker claim differs from its unassigned credential")
         query = (
             select(ProcessRolloutRow)
             .join(
@@ -439,6 +455,14 @@ class ProcessStore:
             .order_by(ProcessRolloutRow.updated_at, ProcessRolloutRow.rollout_id)
         )
         dialect = session.bind.dialect.name if session.bind is not None else "unknown"
+        if registered is None:
+            query = query.where(
+                ProcessRolloutRow.execution_digest.not_in(
+                    select(ProcessWorkerScopeRow.execution_digest)
+                )
+            )
+        else:
+            query = query.where(ProcessRolloutRow.execution_digest == registered.execution_digest)
         token = f"process-lease-{uuid4()}"
         expires = timestamp + lease_for
         if dialect == "postgresql":
@@ -471,11 +495,21 @@ class ProcessStore:
             )
             if row is None:
                 return None
+        assignment = None
+        if worker_access is not None:
+            assignment = await self.workers.bind_claim(
+                session, rollout=row, access=worker_access, now=timestamp
+            )
         state = await self.get_state(session, state_id=row.current_state_id)
         await self._validate_state_references(
             session, state, execution_digest=row.execution_digest, now=timestamp
         )
-        return ClaimedProcessRollout(rollout=_rollout_from_row(row), state=state, lease_token=token)
+        return ClaimedProcessRollout(
+            rollout=_rollout_from_row(row),
+            state=state,
+            lease_token=token,
+            worker_assignment_id=assignment.assignment_id if assignment else None,
+        )
 
     @_atomic_process_write
     async def append_event(
@@ -496,6 +530,7 @@ class ProcessStore:
         event_id: str | None = None,
         resulting_state_id: str | None = None,
         occurred_at: datetime | None = None,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> tuple[ProcessEventRecord, ProjectStateVersion]:
         artifact_refs = _new_process_references(artifact_refs)
         state_references = _new_process_references(resulting_state.artifact_refs)
@@ -524,6 +559,10 @@ class ProcessStore:
             ):
                 raise ProcessInvariantError("process event ID reused with different content")
             rollout = await self.get_rollout(session, rollout_id=rollout_id)
+            if await self.workers.scope(session, rollout.execution_digest) is not None:
+                # Immutable historical inspection remains available through replay. A worker
+                # cannot recover a committed event by bypassing its now-ended assignment.
+                raise PermissionError("managed event reuse requires privileged historical replay")
             await self._validate_state_references(
                 session, state, execution_digest=rollout.execution_digest, now=timestamp
             )
@@ -574,6 +613,20 @@ class ProcessStore:
             raise ProcessInvariantError("process rollout lease is missing or stale")
         if row.lease_expires_at is None or timestamp >= _as_utc(row.lease_expires_at):
             raise ProcessInvariantError("process rollout lease expired before event commit")
+        if actor_id != row.lease_owner:
+            raise PermissionError("process event actor differs from its lease owner")
+        assignment = await self.workers.require(
+            session,
+            rollout=row,
+            access=worker_access,
+            now=timestamp,
+            worker_id=actor_id,
+            role_id=request_record.role_id,
+            worker_model_digest=request_record.worker_model_digest,
+        )
+        await self.workers.require_decision(
+            session, assignment=assignment, decision_id=amber_decision_id
+        )
         if request_record.lease_token_digest != sha256_digest(lease_token):
             raise PermissionError("Amber request belongs to a different rollout lease")
         current_status = RolloutStatus(row.status)
@@ -810,7 +863,7 @@ class ProcessStore:
         references: tuple[ProcessArtifactRef, ...],
         *,
         execution_digest: str,
-        owner_type: Literal["process_state", "process_event"],
+        owner_type: Literal["process_state", "process_event", "process_worker_request"],
         owner_id: str,
         now: datetime,
     ) -> None:
@@ -985,6 +1038,7 @@ class ProcessStore:
         to_status: RolloutStatus,
         error: dict[str, Any] | None = None,
         occurred_at: datetime | None = None,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> ProcessRolloutRecord:
         if to_status not in {
             RolloutStatus.ACTIVE,
@@ -1005,6 +1059,12 @@ class ProcessStore:
         )
         if row is None:
             raise ProcessInvariantError("process rollout lease is missing or stale")
+        await self.workers.require(
+            session,
+            rollout=row,
+            access=worker_access,
+            now=_as_utc(occurred_at or datetime.now(UTC)),
+        )
         row.status = to_status.value
         row.paused = to_status == RolloutStatus.PAUSED
         row.last_error = error
@@ -1030,6 +1090,9 @@ class ProcessStore:
         event_id: str | None = None,
         occurred_at: datetime | None = None,
     ) -> ProcessForkRecord:
+        parent = await self.get_rollout(session, rollout_id=parent_rollout_id)
+        if await self.workers.scope(session, parent.execution_digest) is not None:
+            raise PermissionError("enrolled forks require explicit child worker-scope support")
         await self.content.check_intervention(session, intervention)
         if len(children) < 2:
             raise ValueError("process fork requires at least two continuations")

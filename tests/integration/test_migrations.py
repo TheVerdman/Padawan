@@ -3,6 +3,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+import pytest
 from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
@@ -84,3 +85,19 @@ def test_upgrade_from_every_revision(tmp_path, monkeypatch) -> None:
         command.upgrade(configuration, revision.revision)
     command.upgrade(configuration, "head")
     assert set(Base.metadata.tables) <= _tables(database_path)
+
+
+def test_worker_ledger_cannot_be_erased_by_downgrade(tmp_path, monkeypatch) -> None:
+    database_path = tmp_path / "worker-ledger.sqlite3"
+    configuration = _config(database_path, monkeypatch)
+    command.upgrade(configuration, "head")
+    # Only the presence guard is under test; this separate connection deliberately
+    # supplies a minimal row without enabling FK validation or inventing a live scope.
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            "INSERT INTO process_worker_scopes VALUES (?, ?, ?, ?)",
+            ("sha256:" + "a" * 64, "sha256:" + "b" * 64, "sha256:" + "c" * 64, "{}"),
+        )
+    with pytest.raises(RuntimeError, match="populated worker authority"):
+        command.downgrade(configuration, "c4a93d8e127b")
+    assert "process_worker_scopes" in _tables(database_path)

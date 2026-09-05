@@ -53,6 +53,7 @@ from padawan.pprl.resource_contracts import (
     ProcessResources,
 )
 from padawan.pprl.resources import ProcessResourceStore, atomic_resource_write
+from padawan.pprl.worker_contracts import ProcessWorkerAccess
 
 
 class ProcessContainerUnavailableError(RuntimeError):
@@ -383,6 +384,7 @@ class ProcessContainerExecutor:
         lease_token: str,
         worker_id: str,
         now: datetime,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> tuple[
         ProcessObservationReceipt,
         ProcessObservationDecisionBinding,
@@ -403,6 +405,7 @@ class ProcessContainerExecutor:
             lease_token=lease_token,
             worker_id=worker_id,
             now=now,
+            worker_access=worker_access,
         )
         observed = await self.observations.inspect_receipt(
             session, observation_id=binding.observation_id
@@ -469,7 +472,13 @@ class ProcessContainerExecutor:
         return observed, binding, data, reservation, deadline
 
     async def execute(
-        self, *, decision_id: str, rollout_id: str, lease_token: str, worker_id: str
+        self,
+        *,
+        decision_id: str,
+        rollout_id: str,
+        lease_token: str,
+        worker_id: str,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> ProcessContainerReceipt:
         try:
             return await self._execute(
@@ -477,6 +486,7 @@ class ProcessContainerExecutor:
                 rollout_id=rollout_id,
                 lease_token=lease_token,
                 worker_id=worker_id,
+                worker_access=worker_access,
             )
         except asyncio.CancelledError:
             raise
@@ -486,7 +496,13 @@ class ProcessContainerExecutor:
             ) from None
 
     async def _execute(
-        self, *, decision_id: str, rollout_id: str, lease_token: str, worker_id: str
+        self,
+        *,
+        decision_id: str,
+        rollout_id: str,
+        lease_token: str,
+        worker_id: str,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> ProcessContainerReceipt:
         scope = dict(
             decision_id=decision_id,
@@ -497,7 +513,10 @@ class ProcessContainerExecutor:
         now = datetime.now(UTC)
         async with self.database.transaction() as session:
             observed, binding, data, reservation, deadline = await self._expected(
-                session, **scope, now=now
+                session,
+                **scope,
+                now=now,
+                worker_access=worker_access,
             )
             if (
                 await session.scalar(
@@ -556,7 +575,10 @@ class ProcessContainerExecutor:
         async def authorize() -> None:
             async with self.database.transaction() as session:
                 current, bound, actual, _, original_deadline = await self._expected(
-                    session, **scope, now=datetime.now(UTC)
+                    session,
+                    **scope,
+                    now=datetime.now(UTC),
+                    worker_access=worker_access,
                 )
                 stored = await self.store.workload(session, invocation_id)
                 if current.digest != workload.observation_receipt_digest or (
@@ -571,9 +593,15 @@ class ProcessContainerExecutor:
 
         async def before_start() -> None:
             async with self.database.transaction() as session:
-                await self._expected(session, **scope, now=datetime.now(UTC))
+                await self._expected(
+                    session, **scope, now=datetime.now(UTC), worker_access=worker_access
+                )
                 await self.store.resources.start(
-                    session, decision_id=decision_id, now=datetime.now(UTC), allow_started=True
+                    session,
+                    decision_id=decision_id,
+                    now=datetime.now(UTC),
+                    allow_started=True,
+                    worker_access=worker_access,
                 )
                 head = await session.get(ProcessContainerHeadRow, invocation_id)
                 if head is None or head.status != "prepared":

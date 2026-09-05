@@ -146,6 +146,7 @@ print(json.dumps(result, sort_keys=True))
         lambda: datetime.now(UTC),
         profile=profile,
         driver=DockerContainerDriver(profile),
+        enrolled=True,
     )
     receipt = await ctx.service.execute(**ctx.kwargs)
     _, _, data, balance = await retain_process(ctx, retained_directory, receipt.invocation_id)

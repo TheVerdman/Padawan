@@ -76,8 +76,14 @@ replay preserves its original time and ownership. The explicit local CPU tool pa
 `pprl-container-execution-boundary.md` additionally binds a reviewed Docker profile, exact workload,
 resource reservation and independent broker capture, with an unprivileged command and a separate
 container-local watchdog. Local fixture tests establish bounded enforcement inside the trusted
-Docker/host/kernel perimeter. Authenticated model workers, loaded-model attestation, action masks,
-model-serving containment and executable replacement hydration remain absent.
+Docker/host/kernel perimeter. `pprl-worker-identity-boundary.md` adds explicit execution enrollment,
+reviewed capability issuance/revocation, private ownership of one leased action, and bounded
+authenticated claim/observe/propose requests. Protected APIs reject a copied lease without the
+assigned credential. The stream adapter opens no listener and returns only a control envelope plus
+an allowlisted observation or disposition. This proves capability possession inside the trusted
+broker; model/host attestation, credential delivery/isolation, action masks, model-serving
+containment and executable replacement hydration remain absent. Enrolled forks are denied pending
+explicit child-scope support; legacy scopes receive no implicit enrollment or backfill.
 
 ## Distributions and evidence
 

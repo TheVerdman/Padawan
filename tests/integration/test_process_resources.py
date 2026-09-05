@@ -186,7 +186,9 @@ async def test_forks_inherit_history_and_compete_for_remaining_funding(
     database, tmp_path, pprl_now
 ):
     ctx = await resource_context(database, tmp_path, pprl_now, caps={"input_tokens": 90})
-    parent, action = await resource_action(ctx, tokens=40, kind=ProcessEventKind.ROLLOUT_FORKED)
+    parent, action = await resource_action(
+        ctx, tokens=40, kind=ProcessEventKind.ROLLOUT_FORKED, worker="operator"
+    )
     decision = await _admit(ctx, action)
     children = tuple(
         ProcessForkChildPlan(

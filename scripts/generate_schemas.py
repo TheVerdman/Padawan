@@ -173,6 +173,20 @@ from padawan.pprl.resource_contracts import (
     ProcessResourceReservation,
     ProcessResources,
 )
+from padawan.pprl.worker_contracts import (
+    ProcessWorkerDecisionBinding,
+    ProcessWorkerLeaseAssignment,
+    ProcessWorkerRegistration,
+    ProcessWorkerRevocation,
+    ProcessWorkerScope,
+)
+from padawan.pprl.worker_protocol_contracts import (
+    ProcessWorkerProposal,
+    ProcessWorkerReply,
+    ProcessWorkerRequest,
+    ProcessWorkerRequestPayload,
+    ProcessWorkerRequestReceipt,
+)
 from padawan.temporal.contracts import (
     DurationProfile,
     OperationSpanEventRecord,
@@ -253,6 +267,16 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("process-container-profile", ProcessContainerProfile),
     ("process-container-workload", ProcessContainerWorkload),
     ("process-container-receipt", ProcessContainerReceipt),
+    ("process-worker-scope", ProcessWorkerScope),
+    ("process-worker-registration", ProcessWorkerRegistration),
+    ("process-worker-revocation", ProcessWorkerRevocation),
+    ("process-worker-lease-assignment", ProcessWorkerLeaseAssignment),
+    ("process-worker-decision-binding", ProcessWorkerDecisionBinding),
+    ("process-worker-proposal", ProcessWorkerProposal),
+    ("process-worker-request-payload", ProcessWorkerRequestPayload),
+    ("process-worker-request", ProcessWorkerRequest),
+    ("process-worker-reply", ProcessWorkerReply),
+    ("process-worker-request-receipt", ProcessWorkerRequestReceipt),
     ("process-resources", ProcessResources),
     ("process-model-rate", ProcessModelRate),
     ("process-resource-grant", ProcessResourceGrant),

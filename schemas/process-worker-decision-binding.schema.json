@@ -1,0 +1,65 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-worker-decision-binding.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assignment_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Assignment Digest",
+      "type": "string"
+    },
+    "assignment_id": {
+      "minLength": 1,
+      "title": "Assignment Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "decision_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Decision Digest",
+      "type": "string"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "registration_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Registration Digest",
+      "type": "string"
+    },
+    "request_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Request Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "worker_id": {
+      "minLength": 1,
+      "title": "Worker Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "decision_id",
+    "decision_digest",
+    "request_digest",
+    "assignment_id",
+    "assignment_digest",
+    "registration_digest",
+    "worker_id",
+    "created_at"
+  ],
+  "title": "ProcessWorkerDecisionBinding",
+  "type": "object"
+}

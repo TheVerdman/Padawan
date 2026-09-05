@@ -14,7 +14,15 @@ def pprl_now(monkeypatch: pytest.MonkeyPatch) -> Callable[[], datetime]:
     """Run clock-dependent fixtures inside their fixed, one-day Amber authority."""
     from padawan.governance import amber_store
     from padawan.orchestration import external_calls
-    from padawan.pprl import containers, coordinator, generation, resources, store
+    from padawan.pprl import (
+        containers,
+        coordinator,
+        generation,
+        resources,
+        store,
+        worker_broker,
+        worker_identities,
+    )
     from tests.pprl_helpers import NOW
 
     instant = NOW + timedelta(minutes=10)
@@ -38,6 +46,8 @@ def pprl_now(monkeypatch: pytest.MonkeyPatch) -> Callable[[], datetime]:
         generation,
         resources,
         store,
+        worker_broker,
+        worker_identities,
     ):
         monkeypatch.setattr(module, "datetime", FixtureDatetime)
     return clock

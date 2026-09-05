@@ -159,6 +159,56 @@
       "sha256": "a8ae5be9ee43584be1b282a98d833fd97901076b0822dc3d9533633b755b38a9"
     },
     {
+      "name": "process-worker-scope",
+      "schema": "process-worker-scope.schema.json",
+      "sha256": "49fae25d187b5786d4ac1ebbf20f0c069cd4983747fc13aa3678dc5753904445"
+    },
+    {
+      "name": "process-worker-registration",
+      "schema": "process-worker-registration.schema.json",
+      "sha256": "cd6cc1ccafdbcfa3a1c5f75a82a0f0a33b1a7cabde5dc06d58375534797057a7"
+    },
+    {
+      "name": "process-worker-revocation",
+      "schema": "process-worker-revocation.schema.json",
+      "sha256": "721e50b44eab7a6454fc3969064a34d5f0f31033e1b5196ac6692ed7979516ad"
+    },
+    {
+      "name": "process-worker-lease-assignment",
+      "schema": "process-worker-lease-assignment.schema.json",
+      "sha256": "b654fb104a94c207f659b01cf89cf941a16f641889b9a743ff32a1099eda0a07"
+    },
+    {
+      "name": "process-worker-decision-binding",
+      "schema": "process-worker-decision-binding.schema.json",
+      "sha256": "8b0e2a04cca6c321ebe18a84c20f269cd4d0f7477d8499813924650698d38bbb"
+    },
+    {
+      "name": "process-worker-proposal",
+      "schema": "process-worker-proposal.schema.json",
+      "sha256": "dbbf8eadba92c7a2aaae0256fb00d5fd42545a3752921c360afdbb9cc4df51dd"
+    },
+    {
+      "name": "process-worker-request-payload",
+      "schema": "process-worker-request-payload.schema.json",
+      "sha256": "f0c0e743e2cae223a0d88249102c7d8d76b82ccd34477b5f08f89bd2405a9008"
+    },
+    {
+      "name": "process-worker-request",
+      "schema": "process-worker-request.schema.json",
+      "sha256": "1c3c3e2afac7f43f0380d1f50ff94388de0761f3700eb6f1e3efd3dc491a9b2a"
+    },
+    {
+      "name": "process-worker-reply",
+      "schema": "process-worker-reply.schema.json",
+      "sha256": "685c3bb9fa70a67ce5512a904aefc1a7f437f0a57ce79d08fbff208b5df234f2"
+    },
+    {
+      "name": "process-worker-request-receipt",
+      "schema": "process-worker-request-receipt.schema.json",
+      "sha256": "aa0498df273d44ff803ef48b8ccae0a1552cd05af5423a549d0eb30ae50f6a4d"
+    },
+    {
       "name": "process-resources",
       "schema": "process-resources.schema.json",
       "sha256": "f2c680ee2503b24cbea44272553507830d770526231d0a540d2608b5528e23d0"

@@ -33,6 +33,7 @@ from padawan.pprl.observation_contracts import (
     ProcessWorkerObservation,
 )
 from padawan.pprl.observations import ProcessObservationStore
+from padawan.pprl.worker_contracts import ProcessWorkerAccess
 
 
 class ProcessGenerationBoundary:
@@ -80,6 +81,7 @@ class ProcessGenerationBoundary:
         decision_id: str,
         request: GenerationRequest,
         now: datetime,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> tuple[ProcessObservationReceipt, ProcessObservationDecisionBinding, PreparedGeneration]:
         if now.tzinfo is None:
             raise ValueError("generation admission requires timezone-aware time")
@@ -96,6 +98,7 @@ class ProcessGenerationBoundary:
             lease_token=lease_token,
             worker_id=worker_id,
             now=now,
+            worker_access=worker_access,
         )
         receipt = await self.observations.inspect_receipt(
             session, observation_id=binding.observation_id
@@ -162,6 +165,7 @@ class ProcessGenerationBoundary:
         is_new: bool,
         maximum_artifact_bytes: int,
         now: datetime,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> ProcessGenerationWorkload:
         """Broker-only receipt, atomically retained with the new invocation intent."""
         async with session.begin_nested():
@@ -173,11 +177,14 @@ class ProcessGenerationBoundary:
                 decision_id=decision_id,
                 request=request,
                 now=now,
+                worker_access=worker_access,
             )
             row = await session.get(ProcessGenerationWorkloadRow, invocation_id)
             if row is not None:
                 receipt = _receipt(row)
-                await self.validate_current(session, receipt, lease_token=lease_token, now=now)
+                await self.validate_current(
+                    session, receipt, lease_token=lease_token, now=now, worker_access=worker_access
+                )
                 if (
                     is_new
                     or receipt.request_json != canonical_json_bytes(request).decode("utf-8")
@@ -260,6 +267,7 @@ class ProcessGenerationBoundary:
         *,
         lease_token: str,
         now: datetime,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> None:
         row = await session.get(ProcessGenerationWorkloadRow, receipt.invocation_id)
         if row is None or _receipt(row) != receipt or receipt.policy_digest != self._policy.digest:
@@ -279,6 +287,7 @@ class ProcessGenerationBoundary:
             decision_id=receipt.decision_id,
             request=GenerationRequest.model_validate_json(receipt.request_json),
             now=now,
+            worker_access=worker_access,
         )
         if (
             observation.digest != receipt.observation_receipt_digest

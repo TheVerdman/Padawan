@@ -1,0 +1,48 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-worker-revocation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "evidence": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Evidence",
+      "type": "string"
+    },
+    "registration_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Registration Digest",
+      "type": "string"
+    },
+    "revoked_by": {
+      "minLength": 1,
+      "title": "Revoked By",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "worker_id": {
+      "minLength": 1,
+      "title": "Worker Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "worker_id",
+    "registration_digest",
+    "revoked_by",
+    "evidence",
+    "created_at"
+  ],
+  "title": "ProcessWorkerRevocation",
+  "type": "object"
+}

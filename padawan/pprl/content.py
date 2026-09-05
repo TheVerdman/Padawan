@@ -34,6 +34,12 @@ from padawan.models.tables import (
     ProcessResourceReservationRow,
     ProcessRolloutRow,
     ProcessStateRow,
+    ProcessWorkerDecisionBindingRow,
+    ProcessWorkerLeaseAssignmentRow,
+    ProcessWorkerRegistrationRow,
+    ProcessWorkerRequestRow,
+    ProcessWorkerRevocationRow,
+    ProcessWorkerScopeRow,
 )
 from padawan.pprl.content_contracts import (
     ProcessContentAdmission,
@@ -486,8 +492,12 @@ class ProcessContentBoundary:
     ) -> None:
         digests: set[str] = set()
         for value in strings:
-            if re.search(r"(?:process-container-|padawan-cpu-)[0-9a-f]{32}", value):
-                raise ValueError("process content references private container execution")
+            if re.search(
+                r"(?:process-container-|padawan-cpu-|process-worker-|worker-assignment-|"
+                r"worker-request-)[0-9a-f]{32}",
+                value,
+            ):
+                raise ValueError("process content references private runtime identity")
             links = set(re.findall(r"process-artifact-[0-9a-f]{32}", value))
             if not links.issubset(allowed):
                 raise ValueError("undeclared process link in content")
@@ -527,12 +537,30 @@ class ProcessContentBoundary:
             )
             if raw is not None or classification is not None:
                 raise ValueError("process content references forensic or unclassified storage")
+            # A presented credential is not its stored verifier. Check indexed hashes
+            # of candidate bytes without scanning or exposing the credential registry.
+            verifiers = [sha256_digest(bytes.fromhex(digest[7:])) for digest in batch]
+            if (
+                await session.scalar(
+                    select(ProcessWorkerRegistrationRow.worker_id)
+                    .where(ProcessWorkerRegistrationRow.credential_digest.in_((*batch, *verifiers)))
+                    .limit(1)
+                )
+                is not None
+            ):
+                raise ValueError("process content references worker credential material")
             for table in (
                 ProcessContainerWorkloadRow,
                 ProcessContainerReceiptRow,
                 ProcessResourceGrantRow,
                 ProcessResourceReservationRow,
                 ProcessResourceEventRow,
+                ProcessWorkerScopeRow,
+                ProcessWorkerRegistrationRow,
+                ProcessWorkerRevocationRow,
+                ProcessWorkerLeaseAssignmentRow,
+                ProcessWorkerDecisionBindingRow,
+                ProcessWorkerRequestRow,
             ):
                 if (
                     await session.scalar(

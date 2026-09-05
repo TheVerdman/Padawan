@@ -389,6 +389,107 @@ class ProcessContainerReceiptRow(Base):
     record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
 
 
+class ProcessWorkerScopeRow(Base):
+    __tablename__ = "process_worker_scopes"
+
+    execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_executions.execution_digest", ondelete="RESTRICT"), primary_key=True
+    )
+    authorization_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
+class ProcessWorkerRegistrationRow(Base):
+    __tablename__ = "process_worker_registrations"
+
+    worker_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_worker_scopes.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    role_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    credential_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
+class ProcessWorkerRevocationRow(Base):
+    __tablename__ = "process_worker_revocations"
+
+    worker_id: Mapped[str] = mapped_column(
+        ForeignKey("process_worker_registrations.worker_id", ondelete="RESTRICT"), primary_key=True
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
+class ProcessWorkerHeadRow(Base):
+    __tablename__ = "process_worker_heads"
+    __table_args__ = (
+        CheckConstraint("status IN ('active', 'revoked')", name="ck_process_worker_status"),
+    )
+
+    worker_id: Mapped[str] = mapped_column(
+        ForeignKey("process_worker_registrations.worker_id", ondelete="RESTRICT"), primary_key=True
+    )
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+
+
+class ProcessWorkerLeaseAssignmentRow(Base):
+    __tablename__ = "process_worker_lease_assignments"
+    __table_args__ = (UniqueConstraint("rollout_id", "lease_token_digest"),)
+
+    assignment_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    worker_id: Mapped[str] = mapped_column(
+        ForeignKey("process_worker_registrations.worker_id", ondelete="RESTRICT"), nullable=False
+    )
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False
+    )
+    lease_token_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
+class ProcessWorkerDecisionBindingRow(Base):
+    __tablename__ = "process_worker_decision_bindings"
+
+    decision_id: Mapped[str] = mapped_column(
+        ForeignKey("amber_admission_decisions.decision_id", ondelete="RESTRICT"), primary_key=True
+    )
+    assignment_id: Mapped[str] = mapped_column(
+        ForeignKey("process_worker_lease_assignments.assignment_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
+class ProcessWorkerRequestRow(Base):
+    __tablename__ = "process_worker_requests"
+    __table_args__ = (UniqueConstraint("worker_id", "request_id"),)
+
+    receipt_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    worker_id: Mapped[str] = mapped_column(
+        ForeignKey("process_worker_registrations.worker_id", ondelete="RESTRICT"), nullable=False
+    )
+    request_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    assignment_id: Mapped[str] = mapped_column(
+        ForeignKey("process_worker_lease_assignments.assignment_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    observation_id: Mapped[str] = mapped_column(
+        ForeignKey("process_observations.observation_id", ondelete="RESTRICT"), nullable=False
+    )
+    decision_id: Mapped[str | None] = mapped_column(
+        ForeignKey("amber_admission_decisions.decision_id", ondelete="RESTRICT"), unique=True
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
 class ProcessResourceGrantRow(Base):
     __tablename__ = "process_resource_grants"
 
@@ -2980,6 +3081,12 @@ for _immutable_type in (
     ProcessGenerationWorkloadRow,
     ProcessContainerWorkloadRow,
     ProcessContainerReceiptRow,
+    ProcessWorkerScopeRow,
+    ProcessWorkerRegistrationRow,
+    ProcessWorkerRevocationRow,
+    ProcessWorkerLeaseAssignmentRow,
+    ProcessWorkerDecisionBindingRow,
+    ProcessWorkerRequestRow,
     ProcessResourceGrantRow,
     ProcessResourceReservationRow,
     ProcessResourceEventRow,

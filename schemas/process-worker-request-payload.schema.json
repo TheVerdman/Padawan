@@ -1,0 +1,235 @@
+{
+  "$defs": {
+    "ProcessEventKind": {
+      "enum": [
+        "project_started",
+        "work_planned",
+        "worker_invoked",
+        "tool_invoked",
+        "artifact_admitted",
+        "hypothesis_updated",
+        "claim_updated",
+        "evidence_updated",
+        "state_checkpointed",
+        "rollout_forked",
+        "outcome_assessed",
+        "stop_requested",
+        "project_completed",
+        "project_failed"
+      ],
+      "title": "ProcessEventKind",
+      "type": "string"
+    },
+    "ProcessWorkerProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "event_kind": {
+          "$ref": "#/$defs/ProcessEventKind"
+        },
+        "incremental_usage": {
+          "$ref": "#/$defs/ProjectBudgetUsage"
+        },
+        "requested_destination": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Requested Destination"
+        },
+        "target_class": {
+          "minLength": 1,
+          "title": "Target Class",
+          "type": "string"
+        },
+        "tool_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Digest"
+        },
+        "tool_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Id"
+        },
+        "tool_operation": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Operation"
+        },
+        "triggered_stop_conditions": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Triggered Stop Conditions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "event_kind",
+        "target_class",
+        "incremental_usage"
+      ],
+      "title": "ProcessWorkerProposal",
+      "type": "object"
+    },
+    "ProjectBudgetUsage": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Actions",
+          "type": "integer"
+        },
+        "artifact_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Artifact Bytes",
+          "type": "integer"
+        },
+        "cost": {
+          "default": 0.0,
+          "minimum": 0.0,
+          "title": "Cost",
+          "type": "number"
+        },
+        "input_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "output_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Output Tokens",
+          "type": "integer"
+        },
+        "wall_time_seconds": {
+          "default": 0.0,
+          "minimum": 0.0,
+          "title": "Wall Time Seconds",
+          "type": "number"
+        }
+      },
+      "title": "ProjectBudgetUsage",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-worker-request-payload.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assignment_id": {
+      "anyOf": [
+        {
+          "pattern": "^worker-assignment-[0-9a-f]{32}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Assignment Id"
+    },
+    "broker_audience": {
+      "maxLength": 192,
+      "minLength": 1,
+      "title": "Broker Audience",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "claim",
+        "observe",
+        "propose"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "observation_request_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observation Request Id"
+    },
+    "proposal": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProcessWorkerProposal"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "request_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9_.:-]+$",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "worker_id": {
+      "pattern": "^process-worker-[0-9a-f]{32}$",
+      "title": "Worker Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "request_id",
+    "kind",
+    "worker_id",
+    "broker_audience"
+  ],
+  "title": "ProcessWorkerRequestPayload",
+  "type": "object"
+}

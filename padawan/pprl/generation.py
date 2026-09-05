@@ -42,6 +42,7 @@ from padawan.pprl.contracts import (
 from padawan.pprl.generation_boundary import ProcessGenerationBoundary
 from padawan.pprl.resource_generation import ProcessGenerationResources
 from padawan.pprl.store import _invocation_forensic_bytes
+from padawan.pprl.worker_contracts import ProcessWorkerAccess
 
 
 @dataclass(frozen=True)
@@ -100,6 +101,7 @@ class ProcessGenerationExecutor:
         provider: str,
         request: GenerationRequest,
         research_execution_digest: str | None = None,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> ProcessGenerationResult:
         cancelled = False
         try:
@@ -119,6 +121,7 @@ class ProcessGenerationExecutor:
                 provider=provider,
                 request=request,
                 research_execution_digest=research_execution_digest,
+                worker_access=worker_access,
             )
         except asyncio.CancelledError:
             cancelled = True
@@ -143,6 +146,7 @@ class ProcessGenerationExecutor:
         provider: str,
         request: GenerationRequest,
         research_execution_digest: str | None = None,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> ProcessGenerationResult:
         assert self.boundary is not None
         assert self.resources is not None
@@ -162,6 +166,17 @@ class ProcessGenerationExecutor:
                 or timestamp >= _as_utc(rollout.lease_expires_at)
             ):
                 raise PermissionError("process generation requires the current rollout lease")
+            assignment = await self.boundary.observations.store.workers.require(
+                session,
+                rollout=rollout,
+                access=worker_access,
+                now=timestamp,
+                role_id=role_id,
+                worker_model_digest=worker_model_digest,
+            )
+            await self.boundary.observations.store.workers.require_decision(
+                session, assignment=assignment, decision_id=amber_decision_id
+            )
             execution_row = await session.get(ProcessExecutionRow, rollout.execution_digest)
             if execution_row is None:
                 raise RuntimeError("process generation lost its process execution")
@@ -385,6 +400,7 @@ class ProcessGenerationExecutor:
                 is_new=existing is None,
                 maximum_artifact_bytes=reserved_artifact_bytes,
                 now=timestamp,
+                worker_access=worker_access,
             )
             invocation = await session.get(ProcessWorkerInvocationRow, invocation_id)
             assert invocation is not None
@@ -406,7 +422,11 @@ class ProcessGenerationExecutor:
                 raise PermissionError("process generation adapter was replaced before dispatch")
             async with self.database.transaction() as session:
                 await self.boundary.validate_current(
-                    session, workload, lease_token=lease_token, now=datetime.now(UTC)
+                    session,
+                    workload,
+                    lease_token=lease_token,
+                    now=datetime.now(UTC),
+                    worker_access=worker_access,
                 )
                 if datetime.now(UTC) >= action_deadline:
                     raise PermissionError("process action deadline expired before dispatch")
@@ -417,6 +437,7 @@ class ProcessGenerationExecutor:
                     decision_id=amber_decision_id,
                     now=datetime.now(UTC),
                     allow_started=True,
+                    worker_access=worker_access,
                 )
 
         try:
@@ -476,7 +497,11 @@ class ProcessGenerationExecutor:
         try:
             async with self.database.transaction() as session:
                 await self.boundary.validate_current(
-                    session, workload, lease_token=lease_token, now=datetime.now(UTC)
+                    session,
+                    workload,
+                    lease_token=lease_token,
+                    now=datetime.now(UTC),
+                    worker_access=worker_access,
                 )
                 if datetime.now(UTC) >= action_deadline:
                     raise PermissionError("process action deadline expired before output admission")

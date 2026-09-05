@@ -223,7 +223,11 @@ class ProcessEvidenceStore:
         reference: ProcessArtifactRef,
         execution_digest: str,
         owner_type: Literal[
-            "process_state", "process_event", "process_observation", "process_training_projection"
+            "process_state",
+            "process_event",
+            "process_observation",
+            "process_training_projection",
+            "process_worker_request",
         ],
         owner_id: str,
         now: datetime,
@@ -237,6 +241,7 @@ class ProcessEvidenceStore:
                 "process_event",
                 "process_observation",
                 "process_training_projection",
+                "process_worker_request",
             }
             or not owner_id.strip()
         ):
@@ -271,7 +276,11 @@ class ProcessEvidenceStore:
         references: tuple[ProcessArtifactRef, ...],
         execution_digest: str,
         owner_type: Literal[
-            "process_state", "process_event", "process_observation", "process_training_projection"
+            "process_state",
+            "process_event",
+            "process_observation",
+            "process_training_projection",
+            "process_worker_request",
         ],
         owner_id: str,
         now: datetime,
@@ -285,6 +294,7 @@ class ProcessEvidenceStore:
                 "process_event",
                 "process_observation",
                 "process_training_projection",
+                "process_worker_request",
             }
             or not owner_id.strip()
             or not isinstance(use, ProcessEvidenceUse)

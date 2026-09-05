@@ -57,8 +57,8 @@ authorization; no new external authority was granted.
 | Requirement | Current state | Evidence needed for completion |
 | --- | --- | --- |
 | Information boundaries and retention | In progress, stage 1 below | Adversarial ingress/read/export/projection tests, authoritative classification, reviewed admission, transactional retention |
-| Containment, identity, causal tracing, budgets | Exact generation binding and shared accounting; explicit CPU tool containment with local Docker fixture evidence | Authenticated model workers/loaded-model identity, model-serving containment, complete capture/metering and external-effect recovery |
-| Recovery and replacement | Committed state/leases exist; executable lifecycle absent | Crash/retry/fencing/reconciliation and exact hydration, including 100% roster replacement |
+| Containment, identity, causal tracing, budgets | Exact generation binding, shared accounting, local CPU tool containment, scoped worker credentials and one-action ownership | Credential delivery/isolation, loaded-model attestation, model-serving containment, complete capture/metering and external-effect recovery |
+| Recovery and replacement | Committed state/leases and private one-action ownership; full lifecycle absent | Crash/retry/fencing/reconciliation and exact hydration, including 100% roster replacement |
 | Communication, tracking, escalation | Declarative state and roles | Explicit delivery/read authority, causal replay, durable live views, bounded dispatch and escalation |
 | Atlas and mechanistic integration | Worker Atlas and separate runtime laboratories | Institutional subjects; versioned interchange; matched identities; protected forensic evidence and causal controls |
 | Long-horizon institutional science | Declared distributions and outcomes | Preregistered independent replicates, bounded-regret estimators, matched baselines, resumable 10M+ token validation |
@@ -868,15 +868,80 @@ container was removed; both its label-filtered inventory and the runner-containe
 empty. Docker Desktop and preexisting images remain available. This is local fixture validation,
 not a claim about Metal, CUDA, loaded model identity or an institution's scientific competence.
 
+## Stage 2 checkpoint: scoped worker capability and one-action ownership, 2026-09-05
+
+The checkout began clean at `2f884ab`. `pprl-worker-identity-boundary.md` specified this boundary,
+threat assumptions, invariants, tests, retained evidence, rollback and non-goals before code changes.
+The preceding goal turn and this continuation are progress; the full learning objective is unfinished.
+
+Implemented seven private SQL tables, ten schema exports, explicit pre-rollout enrollment, reviewed
+256-bit capability issuance with digest-only retention, expiry/revocation, capacity limits and
+one-action lease ownership. Protected observations, Amber admission/binding, dispatch, model/tool
+execution, commit and release recheck exact worker/role/model/state/lease authority. New event actors
+must equal their lease owners. The legacy coordinator cannot claim enrolled executions; enrolled
+forks are denied pending explicit child-scope support. A populated identity ledger cannot be
+downgraded to recover unauthenticated access.
+
+The inert `ProcessWorkerBroker` accepts bounded claim/observe/propose requests, authenticates the
+caller capability, retains sanitized request/observation/decision/reply lineage and independently
+owns admitted observation evidence. It accepts already connected streams and launches no listener.
+Assignment IDs are runtime control fields; model observations and learning content exclude credential
+material and private identity references. Trusted direct APIs accept explicit proof and retain
+assignment-to-admission lineage; the RPC wrapper adds its own source and retention records.
+
+Adversarial review covered forged/missing credentials, audiences and assignments; role/model/actor
+substitution; old-API bypass; concurrent current leases; replay after revocation or commit; backdated
+expiry; missing decision bindings and evidence owners; malformed/oversize/timed-out/disconnected
+streams; conservative history quotas; rollback after receipt failure; and enrolled-fork refusal.
+A manually released and reviewed replacement incarnation receives identical observation bytes while
+the old credential and assignment lose access. This is a primitive continuity fixture, not a
+scheduled worker replacement or long-horizon institutional result.
+
+Validation:
+
+- Full offline suite: `PYTHONPATH=. .venv/bin/pytest -q -m 'not postgres and not live and not lean
+  and not docker'` — **755 passed, 22 deselected in 116.85 seconds**. Includes native disposable
+  client processes, SQLite migrations, guarded populated downgrade and synthetic model callbacks.
+- Dedicated PostgreSQL fixture: `PYTHONPATH=. .venv/bin/pytest -q -m postgres` — **14 passed,
+  760 deselected in 16.58 seconds** at that checkpoint. Four new cases cover competing claims across
+  rollouts, duplicate proposals, revocation before dispatch and registration replacement capacity.
+  Existing concurrency and PostgreSQL migration drift checks passed too.
+- Enrolled local CPU integration:
+  `tests/integration/test_process_containers_docker.py::test_real_container_execution_controls_and_private_evidence`
+  — **1 passed in 2.24 seconds**. The six broader containment probes remain the preceding checkpoint's
+  evidence; the Docker driver/supervisor enforcement was unchanged in this slice.
+- Ruff checked 359 formatted files and passed lint. All 177 schema exports match. Mypy with
+  `--no-incremental` passed for 182 source files. `git diff --check` passed.
+- An intermediate full sweep found one old fork fixture attributing an event to `operator` while
+  `worker` held the lease. The fixture now has its named actor actually claim that lease; the actor
+  check remains strict. Intermediate fixture errors and failed probes are retained, not relabelled
+  as successful evidence.
+
+Ignored evidence is in `runs/pprl-worker-validation-20260905/`: fixture manifest, intermediate/final
+logs, private Docker profile/captures/receipts, SQL backup with credential verifier digests only,
+cleanup inventory, source manifest and secret-scan reports. PostgreSQL used cached 17-alpine
+`sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193`, one CPU, 512 MiB
+memory/equal swap limit, 128 PIDs, read-only root, bounded tmpfs, no host mounts and no network.
+The owned localhost-only relay stopped; the exact PostgreSQL container and generated CPU test
+container were removed. The CPU fixture reused the preceding checkpoint's reviewed cached image
+and profile. No model inference/training, GPU/cloud resource, live experimental worker, external
+publication, sibling edit or delegation was used.
+
 ## Next executable step
 
-Continue stage 2 with authenticated worker and broker-issued assignment ownership. First audit
-caller-declared worker IDs, lease possession, planner/executor APIs and privileged inspection paths;
-specify a minimal local identity and request boundary that supports later executable assignments.
-Separate actual caller authentication from declared model identity and from remote/loaded-model
-attestation. Define credential issuance/revocation, intended recipients, per-request scope, fencing,
-durable causal evidence, failure behavior and rollback before implementation. Use disposable local
-fixtures; do not start a live scheduler or broaden authority merely to exercise the interface.
+Audit and specify the executable recovery slice before coding it: durable assignment/lifecycle
+operations, fencing and clean handoff versus crashes, pause/resume, broker restart and interruption
+between intent, dispatch, retained result, accounting and event commit. Establish what evidence
+allows an explicit recovery action and what leaves an external effect unknown. Do not erase a
+resource hold or issue a second effect merely because a lease or credential expired.
+
+Use the new registered incarnation and assignment boundary as the authority input. Keep runtime
+credential delivery separate from allowlisted model hydration; preserve independent source owners
+and full request-to-effect lineage. Exercise disposable simulated workers and fresh broker processes
+first. Define future child enrollment, task ownership and replacement tests explicitly rather than
+silently using legacy APIs. A full scheduler, role-specific action masks and live model workers are
+not implied by these primitives. No new authorization is required for this next local audit/design
+and bounded engineering work.
 
 The CPU runner is complete for its stated local scope. Model-serving containment, independent
 forensic service credentials and full capture, actual model identity, physical metering, domain

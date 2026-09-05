@@ -46,6 +46,7 @@ from padawan.pprl.observation_contracts import (
     ProcessWorkerObservation,
     ProcessWorkerState,
 )
+from padawan.pprl.worker_contracts import ProcessWorkerAccess
 
 if TYPE_CHECKING:
     from padawan.pprl.store import ProcessStore
@@ -136,6 +137,7 @@ class ProcessObservationStore:
         lease_token: str,
         worker_id: str,
         now: datetime | None = None,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> ProcessObservationResult:
         timestamp = _timestamp(now)
         async with session.begin_nested():
@@ -145,6 +147,7 @@ class ProcessObservationStore:
                 lease_token=lease_token,
                 worker_id=worker_id,
                 now=timestamp,
+                worker_access=worker_access,
             )
             receipt = self._project(context, worker_id, lease_token, timestamp)
             existing = await session.get(ProcessObservationRow, receipt.observation_id)
@@ -195,6 +198,7 @@ class ProcessObservationStore:
         lease_token: str,
         worker_id: str,
         now: datetime | None = None,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> ProcessWorkerObservation:
         receipt, _context = await self._current_receipt(
             session,
@@ -203,6 +207,7 @@ class ProcessObservationStore:
             lease_token=lease_token,
             worker_id=worker_id,
             now=_timestamp(now),
+            worker_access=worker_access,
         )
         return _result(receipt).observation
 
@@ -226,6 +231,7 @@ class ProcessObservationStore:
         lease_token: str,
         worker_id: str,
         now: datetime | None = None,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> ProcessObservationDecisionBinding:
         """Retain declared proposal lineage, including denied proposals; grants no effect."""
         timestamp = _timestamp(now)
@@ -237,11 +243,24 @@ class ProcessObservationStore:
                 lease_token=lease_token,
                 worker_id=worker_id,
                 now=timestamp,
+                worker_access=worker_access,
             )
             row = await session.get(AmberAdmissionDecisionRow, decision_id)
             if row is None:
                 raise ValueError("observation decision is missing")
             request, decision = _decision(row)
+            assignment = await self.store.workers.require(
+                session,
+                rollout=context.rollout,
+                access=worker_access,
+                now=timestamp,
+                worker_id=worker_id,
+                role_id=request.role_id,
+                worker_model_digest=request.worker_model_digest,
+            )
+            await self.store.workers.require_decision(
+                session, assignment=assignment, decision_id=decision_id
+            )
             if (
                 request.authorization_digest != receipt.authorization_digest
                 or decision.authorization_sequence != receipt.authorization_sequence
@@ -303,6 +322,15 @@ class ProcessObservationStore:
         binding = _binding(row)
         receipt = await self.inspect_receipt(session, observation_id=binding.observation_id)
         request, decision = _decision(decision_row)
+        identity = await self.store.workers.inspect_decision(session, decision_id=decision_id)
+        if identity is not None:
+            assignment = await self.store.workers.assignment(session, identity.assignment_id)
+            if (
+                identity.worker_id != receipt.worker_id
+                or assignment.lease_token_digest != receipt.lease_token_digest
+                or assignment.state_digest != receipt.state_digest
+            ):
+                raise ValueError("observation binding lost its authenticated source")
         if (
             binding.observation_receipt_digest != receipt.digest
             or binding.observation_digest != receipt.observation_digest
@@ -328,9 +356,15 @@ class ProcessObservationStore:
         lease_token: str,
         worker_id: str,
         now: datetime,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> tuple[ProcessObservationReceipt, _ObservationContext]:
         context = await self._context(
-            session, rollout_id=rollout_id, lease_token=lease_token, worker_id=worker_id, now=now
+            session,
+            rollout_id=rollout_id,
+            lease_token=lease_token,
+            worker_id=worker_id,
+            now=now,
+            worker_access=worker_access,
         )
         receipt = await self.inspect_receipt(session, observation_id=observation_id)
         _same_observation(receipt, self._project(context, worker_id, lease_token, now))
@@ -345,6 +379,7 @@ class ProcessObservationStore:
         lease_token: str,
         worker_id: str,
         now: datetime,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> _ObservationContext:
         if self.store.content.policy.digest != self._policy.content_policy_digest:
             raise ValueError("configured content policy changed")
@@ -366,6 +401,9 @@ class ProcessObservationStore:
             or not _utc(rollout.updated_at) <= now < _utc(rollout.lease_expires_at)
         ):
             raise ValueError("observation requires a current owned lease")
+        await self.store.workers.require(
+            session, rollout=rollout, access=worker_access, now=now, worker_id=worker_id
+        )
         execution_row = await session.get(ProcessExecutionRow, rollout.execution_digest)
         instance_row = await session.get(ProjectInstanceRow, rollout.instance_id)
         if execution_row is None or instance_row is None:

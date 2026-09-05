@@ -26,6 +26,7 @@ from padawan.pprl.contracts import (
 from padawan.pprl.distributions import ProcessDistributionRegistry
 from padawan.pprl.observations import ProcessObservationStore
 from padawan.pprl.store import ProcessStore
+from padawan.pprl.worker_contracts import ProcessWorkerScope
 from tests.pprl_helpers import (
     DeterministicProjectGenerator,
     component,
@@ -191,7 +192,17 @@ class SyntheticContainerDriver(DockerContainerDriver):
         )
 
 
-async def container_context(database, tmp_path, clock, *, profile=None, driver=None):
+async def container_context(
+    database,
+    tmp_path,
+    clock,
+    *,
+    profile=None,
+    driver=None,
+    enrolled=False,
+    prepare_action=True,
+    scope_updates=None,
+):
     now = clock()
     profile = profile or container_profile(now)
     registry, amber = ProcessDistributionRegistry(), AmberStore()
@@ -199,6 +210,7 @@ async def container_context(database, tmp_path, clock, *, profile=None, driver=N
     records = ProcessContainerStore(catalog, amber.resources)
     process = ProcessStore(amber, container_evidence=records)
     observations = ProcessObservationStore(process)
+    worker_access, worker_id = None, "worker"
     async with database.transaction() as session:
         dd = await registry.register_distribution(session, distribution())
         pp = program(dd)
@@ -245,22 +257,77 @@ async def container_context(database, tmp_path, clock, *, profile=None, driver=N
             seed=instance.seed,
         )
         await process.register_execution(session, manifest)
-        await process.create_rollout(
+        if enrolled:
+            await process.workers.enroll(
+                session,
+                ProcessWorkerScope(
+                    execution_digest=sha256_digest(manifest),
+                    authorization_digest=authorization.digest,
+                    broker_audience="fixture-broker",
+                    maximum_credential_seconds=3600,
+                    maximum_registered_workers=1,
+                    reviewed_by="reviewer-a",
+                    review_evidence="explicit disposable identity fixture",
+                    created_at=now,
+                    **(scope_updates or {}),
+                ),
+            )
+            registration, worker_access = await process.workers.issue(
+                session,
+                execution_digest=sha256_digest(manifest),
+                role_id=profile.role_id,
+                worker_model_digest=profile.worker_model_digest,
+                declared_capabilities=pp.worker_roles[0].required_capabilities,
+                issued_by="reviewer-a",
+                evidence="disposable fixture credential",
+                expires_at=now + timedelta(minutes=30),
+                now=now,
+            )
+            worker_id = registration.worker_id
+        rollout = await process.create_rollout(
             session,
             execution_digest=sha256_digest(manifest),
             replication_index=0,
             initial_state=ProjectStatePayload(objective="execute a bounded scientific tool"),
-            created_at=now - timedelta(minutes=5),
+            created_at=now if enrolled else now - timedelta(minutes=5),
         )
+        driver = driver or SyntheticContainerDriver(profile, clock)
+        service = ProcessContainerExecutor(
+            database=database, observations=observations, store=records, driver=driver
+        )
+        base = dict(
+            database=database,
+            amber=amber,
+            process=process,
+            records=records,
+            observations=observations,
+            profile=profile,
+            authorization=authorization,
+            clock=clock,
+            driver=driver,
+            service=service,
+            execution=manifest,
+            program=pp,
+            rollout=rollout,
+        )
+        if not prepare_action:
+            return SimpleNamespace(**base, worker_access=worker_access, worker_id=worker_id)
         claim = await process.claim_next(
-            session, worker_id="worker", lease_for=timedelta(minutes=5), now=clock()
+            session,
+            worker_id=worker_id,
+            lease_for=timedelta(minutes=5),
+            now=clock(),
+            worker_access=worker_access,
         )
+        if worker_access is not None:
+            worker_access = worker_access.assigned(claim.worker_assignment_id)
         observed = await observations.observe_claim(
             session,
             rollout_id=claim.rollout.rollout_id,
             lease_token=claim.lease_token,
-            worker_id="worker",
+            worker_id=worker_id,
             now=clock(),
+            worker_access=worker_access,
         )
         action = AmberActionRequest(
             authorization_digest=authorization.digest,
@@ -286,40 +353,33 @@ async def container_context(database, tmp_path, clock, *, profile=None, driver=N
             projected_artifact_bytes=profile.maximum_retention_bytes,
             requested_at=clock(),
         )
-        decision = await amber.admit(session, request=action, active_workers=0)
+        decision = await amber.admit(
+            session, request=action, active_workers=0, worker_access=worker_access
+        )
         await observations.bind_decision(
             session,
             observation_id=observed.observation_id,
             decision_id=decision.decision_id,
             rollout_id=claim.rollout.rollout_id,
             lease_token=claim.lease_token,
-            worker_id="worker",
+            worker_id=worker_id,
             now=clock(),
+            worker_access=worker_access,
         )
-    driver = driver or SyntheticContainerDriver(profile, clock)
-    service = ProcessContainerExecutor(
-        database=database, observations=observations, store=records, driver=driver
-    )
     return SimpleNamespace(
-        database=database,
-        amber=amber,
-        process=process,
-        records=records,
-        observations=observations,
-        profile=profile,
-        authorization=authorization,
-        clock=clock,
+        **base,
         claim=claim,
         action=action,
         decision=decision,
         observed=observed,
-        driver=driver,
-        service=service,
+        worker_access=worker_access,
+        worker_id=worker_id,
         kwargs=dict(
             decision_id=decision.decision_id,
             rollout_id=claim.rollout.rollout_id,
             lease_token=claim.lease_token,
-            worker_id="worker",
+            worker_id=worker_id,
+            **({"worker_access": worker_access} if enrolled else {}),
         ),
     )
 
@@ -332,10 +392,11 @@ async def commit_container_action(ctx):
             lease_token=ctx.claim.lease_token,
             amber_decision_id=ctx.decision.decision_id,
             kind=ProcessEventKind.TOOL_INVOKED,
-            actor_id="worker",
+            actor_id=ctx.worker_id,
             payload={"summary": "bounded tool execution ended"},
             resulting_state=ctx.claim.state.payload.model_copy(
                 update={"budget_usage": ctx.action.projected_usage}
             ),
             occurred_at=ctx.clock(),
+            worker_access=ctx.worker_access,
         )

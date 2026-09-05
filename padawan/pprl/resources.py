@@ -40,6 +40,7 @@ from padawan.pprl.resource_contracts import (
     ProcessResources,
     resources_from_usage,
 )
+from padawan.pprl.worker_contracts import ProcessWorkerAccess
 
 
 def atomic_resource_write[S, **P, R](
@@ -321,6 +322,9 @@ class ProcessResourceStore:
             or sha256_digest(decision.request_json) != record.request_digest
         ):
             raise ValueError("resource reservation has lost its admission lineage")
+        from padawan.pprl.worker_identities import ProcessWorkerIdentityStore
+
+        await ProcessWorkerIdentityStore().inspect_decision(session, decision_id=decision_id)
         grant = await self.grant(session, record.authorization_digest)
         if record.grant_digest != grant.digest:
             raise ValueError("resource reservation differs from its original funding")
@@ -354,6 +358,7 @@ class ProcessResourceStore:
         decision_id: str,
         now: datetime,
         allow_started: bool = False,
+        worker_access: ProcessWorkerAccess | None = None,
     ) -> None:
         reservation, _, _ = await self.reservation(session, decision_id)
         rollout = await session.scalar(
@@ -362,6 +367,19 @@ class ProcessResourceStore:
             .with_for_update()
             .execution_options(populate_existing=True)
         )
+        if rollout is not None:
+            # Lazy import avoids the shared transaction-helper import cycle.
+            from padawan.pprl.worker_identities import ProcessWorkerIdentityStore
+
+            workers = ProcessWorkerIdentityStore()
+            assignment = await workers.require(
+                session,
+                rollout=rollout,
+                access=worker_access,
+                now=now,
+                worker_model_digest=reservation.worker_model_digest,
+            )
+            await workers.require_decision(session, assignment=assignment, decision_id=decision_id)
         authority = await session.scalar(
             select(AmberAuthorizationHeadRow)
             .where(

@@ -1,0 +1,83 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-worker-scope.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authorization_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Digest",
+      "type": "string"
+    },
+    "broker_audience": {
+      "maxLength": 192,
+      "minLength": 1,
+      "title": "Broker Audience",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Execution Digest",
+      "type": "string"
+    },
+    "maximum_credential_seconds": {
+      "maximum": 86400,
+      "minimum": 1,
+      "title": "Maximum Credential Seconds",
+      "type": "integer"
+    },
+    "maximum_registered_workers": {
+      "maximum": 4096,
+      "minimum": 1,
+      "title": "Maximum Registered Workers",
+      "type": "integer"
+    },
+    "maximum_request_history_bytes": {
+      "default": 2097152,
+      "maximum": 1073741824,
+      "minimum": 4096,
+      "title": "Maximum Request History Bytes",
+      "type": "integer"
+    },
+    "maximum_request_records": {
+      "default": 64,
+      "maximum": 1000000,
+      "minimum": 1,
+      "title": "Maximum Request Records",
+      "type": "integer"
+    },
+    "review_evidence": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Review Evidence",
+      "type": "string"
+    },
+    "reviewed_by": {
+      "minLength": 1,
+      "title": "Reviewed By",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "execution_digest",
+    "authorization_digest",
+    "broker_audience",
+    "maximum_credential_seconds",
+    "maximum_registered_workers",
+    "reviewed_by",
+    "review_evidence",
+    "created_at"
+  ],
+  "title": "ProcessWorkerScope",
+  "type": "object"
+}

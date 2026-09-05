@@ -52,7 +52,7 @@ prompt policy, canonical normalized request and prepared HTTP body/destination. 
 workload receipts are retained before I/O. Completed-response reuse rechecks original lineage;
 unresolved process effects cannot automatically resend. Mock HTTP tests cover substituted inputs,
 ambient client state, configuration drift, pause and interruption. See
-[generation workload boundary](pprl-generation-workload-boundary.md). Authenticated runtime and
+[generation workload boundary](pprl-generation-workload-boundary.md). Attested runtime and
 loaded-model identity, model-serving containment/capture, independent resource metering,
 executable hydration/recovery, Atlas learning projections, semantic provenance, coordinated GC, and
 parameter-training readiness remain unresolved. These offline properties do not attest a live runtime.
@@ -72,6 +72,18 @@ container-local watchdog survives broker loss in disposable fixture tests. See
 [container execution boundary](pprl-container-execution-boundary.md). This is observed local
 enforcement within a trusted Docker/host/kernel perimeter. It neither authenticates model workers
 nor attests model weights or a general execution sandbox, and it admits no raw tool trace to memory.
+
+The fourth stage-2 checkpoint adds explicit enrollment before an execution's first rollout,
+reviewed issuance of expiring broker-scoped capabilities, immutable revocation and checked heads,
+and private ownership of one leased action. Protected observation/admission/dispatch/commit/release
+paths require that capability and its exact worker/role/model/state/lease binding. New event actors
+must match their lease owners. A bounded claim/observe/propose adapter operates over already
+connected streams without opening a listener. Exact retries reconstruct retained observations and
+proposal lineage under current authority. See [worker identity boundary](pprl-worker-identity-boundary.md)
+for SQL stores, native disposable-client tests, PostgreSQL races and a local CPU container test.
+This authenticates capability possession, not the loaded model, OS process, host or reviewer.
+Credentials and private record references stay outside model observations and training content;
+assignment IDs appear only in explicitly addressed runtime control envelopes.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
@@ -149,6 +161,10 @@ The PPRL data model has a real durable substrate:
 - `process_container_workloads`, `process_container_heads` and `process_container_receipts` retain
   exact CPU tool intent, dispatch phase and private terminal/capture lineage. Artifact owners for
   workload, phase capture, result, receipt and accounting independently preserve those sources;
+- `process_worker_scopes`, `process_worker_registrations`, `process_worker_revocations`,
+  `process_worker_heads`, `process_worker_lease_assignments`, `process_worker_decision_bindings`
+  and `process_worker_requests` retain private enrollment, verifier/lifecycle, one-action ownership
+  and exact authenticated request lineage; these are not project-state assignments or model memory;
 - Amber authorization, lifecycle, head, and action-decision tables bind each admitted transition to
   exact authority and cumulative budget; and
 - `process_worker_invocations`, `process_generation_workloads`, `external_calls`, and the artifact
@@ -250,14 +266,22 @@ and is embedded in `ProjectStatePayload`. In the audited tree its only runtime r
 contract declaration and canonical-order validator; the other occurrence is the generated JSON
 Schema.
 
-There is no:
+The authored project-state contract still has no:
 
-- assignment table or append-only lifecycle;
+- executable multi-action assignment lifecycle;
 - scheduler that matches workers to role capabilities;
 - binding from the coordinator's `worker_id` to `worker_identity`;
-- binding from an invocation or Amber decision to `assignment_id`;
-- offer, accept, reject, cancel, expire, complete, or transfer operation; or
-- enforcement preventing a handler with a lease from proposing another allowed role.
+- binding from its authored `assignment_id` to executable runtime ownership; or
+- offer, accept, reject, cancel, expire, complete, or transfer operation.
+
+The new `ProcessWorkerIdentityStore` is a separate, explicitly enrolled runtime boundary. Its private
+`ProcessWorkerLeaseAssignment` binds one action's registered worker, role/model, original state,
+lease digest and expiry. `ProcessWorkerDecisionBinding` links that assignment to an exact Amber
+request/decision. A credential cannot hold two current leases or change its assigned role/model.
+The bounded `ProcessWorkerBroker` has addressed request receipts and conservative per-incarnation
+history quotas. This is not peer messaging, a multi-action assignment lifecycle, or a scheduler.
+Unenrolled APIs retain their trusted legacy meaning; the older `ProcessCoordinator` cannot claim
+enrolled executions. Enrolled forks are refused until child-scope inheritance is explicit.
 
 `WorkerRoleSpec` and Amber validate the role, worker-model digest, and allowed tool identity declared
 by a proposal. They do not attest which live process made the declaration.
@@ -272,7 +296,7 @@ Redis, Kafka, NATS, RabbitMQ, or equivalent communication-plane dependency.
 mechanism. `ProcessEventKind` has planning, worker, tool, artifact, evidence, checkpoint, outcome,
 and stop events, but no message, delegation, acknowledgement, assignment, or handoff event.
 
-Artifacts can be exchanged asynchronously by admitting an `ArtifactRef` into process state. There
+Artifacts can be exchanged asynchronously by admitting a reviewed `ProcessArtifactRef` into state. There
 is no sender/recipient ACL, delivery state, acknowledgement, TTL, or per-worker read audit. A
 concrete handler may be constructed with artifact access, but the PPRL substrate does not govern
 that access as multi-agent communication.
@@ -417,8 +441,11 @@ The CPU tool runner additionally retains immutable intent before container creat
 second launch for that decision and records inspected exit/removal separately from permission to
 commit a process event. Missing capture or ambiguous cleanup preserves the hold. A fully retained
 receipt can be reconciled after an accounting failure without rerunning the command. Broker-loss
-fixtures establish the container watchdog's stop behavior; this is not a restart reconciler,
-authenticated worker registration, executable assignment or whole-institution replacement.
+fixtures establish the container watchdog's stop behavior. The separate capability boundary adds
+registration, revocation and one-action ownership; neither checkpoint establishes a restart
+reconciler or whole-institution replacement. A reviewed new incarnation can recover identical
+observation bytes in a manually driven fixture after clean lease release; that test does not recover
+an unfinished computation or an unknown effect.
 
 The separate developmental runtime has:
 
@@ -433,10 +460,10 @@ These mechanisms demonstrate useful patterns but do not operate on PPRL rollouts
 
 ### What PPRL lacks
 
-- a process-worker registry and heartbeat;
+- a live process-worker health/placement registry and heartbeat (private credential registrations exist);
 - worker launch, shutdown, placement, or accelerator scheduling;
 - capability-to-role matching;
-- executable assignment ownership;
+- a full executable task-assignment lifecycle beyond one-action lease ownership;
 - reconciliation of planned or running process invocations after worker death;
 - partial-action checkpoints;
 - executable replacement hydration and attested context delivery; offline observation and exact
@@ -444,7 +471,8 @@ These mechanisms demonstrate useful patterns but do not operate on PPRL rollouts
 - retry classification and safe action resumption;
 - intentional handoff and acknowledgement;
 - dependency-aware task scheduling;
-- fleet-wide pause, credential revocation, and emergency snapshot; and
+- coordinated fleet-wide pause, credential revocation and emergency snapshot (individual credential
+  revocation is implemented); and
 - automated replacement tests proving continuity under total worker churn.
 
 An invocation can remain `running` without a PPRL-specific stale-invocation reconciler. A
