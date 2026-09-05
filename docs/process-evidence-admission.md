@@ -4,6 +4,9 @@ Status: offline information-boundary checkpoint. The trusted local composition n
 service for new state/event references, worker observations, and the explicit PPRL training
 projection. Legacy archives and Atlas paths do not gain implicit admission. Remaining paths are
 tracked in `pprl-execution-ledger.md`.
+An explicitly configured Atlas source boundary now supports separately reviewed institutional
+findings. See [Atlas process evidence](atlas-process-evidence-boundary.md); raw records and
+eligibility flags still have no implicit admission.
 
 ## Contracts and storage
 
@@ -27,6 +30,11 @@ and allowed uses. It retains the complete pinned `EvidenceAdmissionPolicy`. A
 `ProcessEvidenceAdmissionRecord` additionally binds actual admission time and Amber lifecycle
 sequence. `process_evidence_admissions` stores the immutable receipt and digest. Its timestamps and
 queryable identity columns are checked against the receipt when read.
+Version-2 `AtlasProcessEvidenceAdmissionRecord` adds a private, explicitly reviewed Atlas origin to
+the unchanged candidate review. It retains exact source/context identities and a pinned disclosure
+policy in the same table. Version-1 contracts/bytes are unchanged, and version-2 data cannot fall
+back to a legacy interpretation when the origin is missing. Only the existing process reference and
+candidate bytes reach worker consumers.
 
 ## Admission and read path
 
@@ -38,10 +46,13 @@ queryable identity columns are checked against the receipt when read.
 3. `ProcessEvidenceStore.admit` verifies current active Amber authority, the reviewer's membership in
    both the pinned policy and envelope, exact execution/distribution/instance identity, partition,
    chronology, candidate bytes, immutable classification, and finite candidate/provenance bounds.
-4. Each forensic source must match its classified reference and a completed PPRL model invocation
+4. In version 1, each forensic source must match its classified reference and a completed PPRL model invocation
    in the exact target execution, completed before review. An unbound source or cross-execution
    disclosure is denied. MI, security, tool, and environment origins need their own later explicit
-   origin-binding adapters; this checkpoint does not manufacture that evidence.
+   origin-binding adapters; this checkpoint does not manufacture that evidence. Explicit version-2
+   Atlas reviews instead require a configured source/target disclosure policy, exact retained
+   native/context identities, complete forensic dependencies, source/output rights, and partition
+   isolation. These Atlas derivatives are process-use-only pending separate training materialization.
 5. Literal source identifiers in candidate bytes are rejected. Review remains responsible for
    semantic redaction, transformations, and completeness of the declared source set.
 6. The broker pins the candidate and all forensic sources to the admission and persists the receipt

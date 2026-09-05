@@ -45,12 +45,16 @@ from tests.integration.test_atlas_registry import (
 
 @pytest_asyncio.fixture
 async def atlas_evidence(database):
+    return await _atlas_evidence(database)
+
+
+async def _atlas_evidence(database, *, store=None, governance=None):
     async with database.transaction() as session:
+        store = store or _artifact_store(session)
         registry, execution, campaign, suite, item, request, run = await _register_executable_chain(
-            session
+            session, artifacts=store, governance=governance
         )
         await registry.record_trial_request(session, request)
-        store = _artifact_store(session)
         catalog = ArtifactCatalog(store)
         response = store.put_text("4", media_type="text/plain", restricted=True, raw_data=True)
         assert response == _response_artifact()

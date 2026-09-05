@@ -825,12 +825,11 @@ def _snapshot(
     )
 
 
-async def _register_executable_chain(session):
-    registry = AtlasRegistry(
-        artifacts=AtlasArtifactBoundary(ArtifactCatalog(_artifact_store(session)))
-    )
+async def _register_executable_chain(session, *, artifacts=None, governance=None):
+    artifacts = artifacts or _artifact_store(session)
+    registry = AtlasRegistry(artifacts=AtlasArtifactBoundary(ArtifactCatalog(artifacts)))
     profile, execution = await _seed_controls(session)
-    governance = _governance()
+    governance = governance or _governance()
     item = _item()
     suite = _suite(governance, item)
     ontology = _ontology()
@@ -848,7 +847,9 @@ async def _register_executable_chain(session):
     allocation = _allocation(campaign, suite)
     await registry.record_allocation(session, allocation)
     request = _request(campaign, suite, item, execution)
-    await _seed_preflight_artifacts(session, execution=execution, request=request)
+    await _seed_preflight_artifacts(
+        session, execution=execution, request=request, artifacts=artifacts
+    )
     session.add(_run_row(request.run_id, execution))
     await session.flush()
     run_manifest = _run_manifest(campaign, suite, binding, profile, execution, request)
@@ -861,8 +862,9 @@ def _artifact_store(session) -> LocalArtifactStore:
 
 
 async def _seed_preflight_artifacts(
-    session, *, execution: ResearchExecutionManifest, request: AtlasTrialRequest
+    session, *, execution: ResearchExecutionManifest, request: AtlasTrialRequest, artifacts=None
 ) -> None:
+    artifacts = artifacts or _artifact_store(session)
     common = {
         "passed": True,
         "research_execution_digest": request.research_execution_digest,
@@ -883,14 +885,14 @@ async def _seed_preflight_artifacts(
     ):
         if digest is None:
             continue
-        artifact = _artifact_store(session).put_text(
+        artifact = artifacts.put_text(
             "registry edge preflight" if kind == "edge" else "registry effort mapping",
             media_type="application/vnd.padawan.atlas-preflight+json",
             restricted=True,
             raw_data=True,
         )
         assert artifact.digest == digest
-        await ArtifactCatalog(_artifact_store(session)).register(
+        await ArtifactCatalog(artifacts).register(
             session, artifact, metadata={"kind": kind, **common, **extras}
         )
 

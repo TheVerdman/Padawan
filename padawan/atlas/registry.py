@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from padawan.artifacts.information import ForensicArtifactRef
 from padawan.atlas.adapters import builtin_adapter_descriptors
 from padawan.atlas.artifacts import AtlasArtifactBoundary
 from padawan.atlas.boundary import (
@@ -154,7 +155,9 @@ class CapabilityAtlasRegistry:
             )
         return self.artifacts
 
-    async def validate_trial_artifacts(self, session: AsyncSession, *, result_id: str) -> None:
+    async def validate_trial_artifacts(
+        self, session: AsyncSession, *, result_id: str
+    ) -> tuple[ForensicArtifactRef, ...]:
         """Privileged evidence validation for downstream research; grants no model admission."""
         row = await _require(session, AtlasTrialResultRow, result_id, "trial evidence")
         result = _validated(AtlasTrialResult, row.record_json, "trial evidence")
@@ -181,7 +184,7 @@ class CapabilityAtlasRegistry:
         ):
             raise AtlasRegistryError("trial evidence substitutes its request source")
         refs = await _result_artifacts(session, result, request)
-        await self._artifact_boundary().validate(
+        return await self._artifact_boundary().validate(
             session,
             owner_type="atlas_trial_result",
             owner_id=result.result_id,

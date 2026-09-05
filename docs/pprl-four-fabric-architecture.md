@@ -41,8 +41,12 @@ exploratory-proposal writes now require physical source verification, forensic c
 and transactional independent ownership, including failed-call artifacts. New Atlas Study block
 admission and result sealing revalidate that retention. See
 [Atlas retention](atlas-forensic-retention-boundary.md); legacy records are not implicitly repaired,
-and other Atlas reporting/analysis paths still require use-boundary review. Actual provider-prompt binding,
-executable hydration/recovery, Atlas projections, semantic provenance, coordinated GC, and
+and other Atlas reporting/analysis paths still require use-boundary review. Explicit reviewed
+Atlas-to-process admission now binds native source/context identities, source/output rights,
+target scope, and a pinned disclosure policy in a version-2 private receipt. Only the separate
+reviewed derivative reaches process consumers; Atlas training use remains denied. See
+[Atlas process evidence](atlas-process-evidence-boundary.md). Actual provider-prompt binding,
+executable hydration/recovery, Atlas learning projections, semantic provenance, coordinated GC, and
 parameter-training readiness remain unresolved; these offline properties do not attest a live runtime.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
@@ -314,7 +318,9 @@ Atlas's new source-retention boundary uses `artifact_information` and `artifact_
 explicit request/result/proposal dependencies. It checks real source bytes and exact owner sets
 before new records and Atlas Study admission/sealing. Preflight metadata, captured-call summaries,
 and verifier rows remain trusted declarations; this does not attest their producer or actual
-execution, provide full forensic capture, or admit an Atlas finding to worker memory or training.
+execution or provide full forensic capture. The separate Atlas process-evidence broker can admit a
+reviewed derivative through an explicit policy boundary; retention itself grants no process or
+training use. Native source context and private origins remain researcher-only.
 
 ### Coverage and losses
 

@@ -212,6 +212,10 @@ raw evidence in model inputs. Reports, upstream extraction artifacts, and other 
 paths still require their own use-boundary review. See
 [Atlas forensic retention](atlas-forensic-retention-boundary.md) for exact source fields, limits,
 trust assumptions, acceptance evidence, and rollback.
+An additional [reviewed Atlas-to-process boundary](atlas-process-evidence-boundary.md) now admits
+separate institutional evidence artifacts under an explicitly composed source/target policy. It
+retains a version-2 private origin receipt and exposes only the reviewed derivative. It does not
+consume eligibility flags, write developmental memory, or grant training use.
 
 ## Mechanistic-interpretability interchange
 
@@ -235,7 +239,7 @@ to the model after harness effects are ruled out; supported by authoritative ver
 for the target training lane; cleared of contamination; and excluded from adaptive, challenge, and
 promotion suites. Even eligible evidence cannot enter the compiler directly. It first requires
 governed corpus materialization under Padawan's existing training-product contracts.
-That Atlas materialization/learning-admission adapter is not implemented. The separate PPRL public
+That Atlas training-materialization/learning-admission adapter is not implemented. The separate PPRL public
 learning projector does not admit Atlas records, and eligibility records have no direct compiler
 or memory consumer. Retention and eligibility cannot substitute for reviewed use authorization.
 

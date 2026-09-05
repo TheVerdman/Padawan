@@ -41,6 +41,13 @@ from padawan.atlas.contracts import (
     TrainingFailureEligibility,
     TrialAllocation,
 )
+from padawan.atlas.evidence_contracts import (
+    AtlasEvidenceDisclosurePolicy,
+    AtlasEvidenceOriginReview,
+    AtlasEvidenceSourceScope,
+    AtlasProcessEvidenceAdmissionRecord,
+    AtlasTrialEvidenceSource,
+)
 from padawan.domains.contracts import (
     EnvironmentSnapshot,
     RewardPolicy,
@@ -213,6 +220,11 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("process-content-policy", ProcessContentPolicy),
     ("process-content-schema", ProcessContentSchema),
     ("process-evidence-admission-record", ProcessEvidenceAdmissionRecord),
+    ("atlas-evidence-disclosure-policy", AtlasEvidenceDisclosurePolicy),
+    ("atlas-evidence-origin-review", AtlasEvidenceOriginReview),
+    ("atlas-evidence-source-scope", AtlasEvidenceSourceScope),
+    ("atlas-process-evidence-admission-record", AtlasProcessEvidenceAdmissionRecord),
+    ("atlas-trial-evidence-source", AtlasTrialEvidenceSource),
     ("process-worker-output", ProcessWorkerOutput),
     ("process-worker-state", ProcessWorkerState),
     ("process-worker-observation", ProcessWorkerObservation),

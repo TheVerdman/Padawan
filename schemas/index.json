@@ -69,6 +69,31 @@
       "sha256": "83be70b779171d2100961e33d5f18add47eca6fca14974c80599c4ae1ffef5ac"
     },
     {
+      "name": "atlas-evidence-disclosure-policy",
+      "schema": "atlas-evidence-disclosure-policy.schema.json",
+      "sha256": "05a4ae62a3280cd976f9ffc50d4222494da521d00dd413cb2fb33e211324e4d4"
+    },
+    {
+      "name": "atlas-evidence-origin-review",
+      "schema": "atlas-evidence-origin-review.schema.json",
+      "sha256": "4eba83fccba8f7a5df306fa3cc2c4a458426b24e922a94a026a6df877b4f1db3"
+    },
+    {
+      "name": "atlas-evidence-source-scope",
+      "schema": "atlas-evidence-source-scope.schema.json",
+      "sha256": "aaa002104a730d5f94f670f0ba2939a2142849b002984d24ce9940872231bd3a"
+    },
+    {
+      "name": "atlas-process-evidence-admission-record",
+      "schema": "atlas-process-evidence-admission-record.schema.json",
+      "sha256": "abcff576e07b713ef882db75bd4617b4c6ddd8f67516834104ea8bf4c3f11ab6"
+    },
+    {
+      "name": "atlas-trial-evidence-source",
+      "schema": "atlas-trial-evidence-source.schema.json",
+      "sha256": "0d4df041d35b4088ff879a73909b10f86c541d137059f0081cdca76192bebb9b"
+    },
+    {
       "name": "process-worker-output",
       "schema": "process-worker-output.schema.json",
       "sha256": "a8c1c85f2bbd712180168dcd250639274269a63f74a82ac6a431e2ce117856c8"

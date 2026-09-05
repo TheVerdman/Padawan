@@ -34,7 +34,8 @@ result pin prevents collection but does not authorize ignoring missing original 
 
 `CapabilityAtlasRegistry.validate_trial_artifacts` checks the source record digest, request/result
 column identity and timestamps, request lineage, required captured-call/verifier metadata, physical
-sources, forensic class, and exact owner sets. It returns no worker payload. Exact retries perform
+sources, forensic class, and exact owner sets. It returns validated forensic references only to the
+privileged broker, never as a worker payload. Exact retries perform
 these checks again. `AtlasFixedTrialStudyBridge.record_result` checks before copying a trial into a
 Study block; `AtlasFixedTrialsStudyPolicy.seal_results` checks before constructing new Study results.
 Existing Study authority, suite, outcome, and fixed-denominator checks continue to apply. A read or
@@ -83,6 +84,9 @@ governed corpus materialization. `MemoryInterventionEligibility.direct_memory_wr
 remains false and requires a developmental episode. No compiler/memory consumer of those eligibility
 records is added. Eligibility, retention, and the separate PPRL learning projector do not establish
 Atlas training permission or a completed Atlas admission adapter.
+The separate [reviewed Atlas process-evidence boundary](atlas-process-evidence-boundary.md) now
+provides an explicit origin adapter for process-use-only derivatives. Its additional reviewed
+policy, scope, rights, and source checks are required; this retention API alone grants no admission.
 
 Principal authentication, per-purpose reader authorization, append-only forensic services, actual
 workload/prompt binding, coordinated database/GC fencing, causal mechanistic interchange, and

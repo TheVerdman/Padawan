@@ -1,0 +1,48 @@
+{
+  "$id": "https://schemas.padawan.local/v1/atlas-trial-evidence-source.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Native IDs/digests for privileged reconstruction, never a worker reference.",
+  "properties": {
+    "context_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Context Digest",
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "request_record_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Request Record Digest",
+      "type": "string"
+    },
+    "result_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Result Digest",
+      "type": "string"
+    },
+    "result_id": {
+      "minLength": 1,
+      "title": "Result Id",
+      "type": "string"
+    },
+    "result_record_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Result Record Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "result_id",
+    "result_digest",
+    "result_record_digest",
+    "request_id",
+    "request_record_digest",
+    "context_digest"
+  ],
+  "title": "AtlasTrialEvidenceSource",
+  "type": "object"
+}

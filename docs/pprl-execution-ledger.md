@@ -33,6 +33,11 @@ campaign is needed, stop before activation, present its concrete manifest and co
 question box, and wait for the user's decision. If clearing swap requires a reboot, commit the work
 and retain a resume point before asking the user to reboot; never reboot automatically.
 
+Direct user confirmation, 2026-09-05: the user answered "Approved" to continuing local
+implementation, offline tests, and local commits, including the tested Atlas evidence checkpoint.
+This resolves the staging-authorization block below. The separate resource and authority gates
+above still apply.
+
 ## Requirements and status
 
 | Requirement | Current state | Evidence needed for completion |
@@ -516,31 +521,117 @@ Validation and review, 2026-09-05:
   ignored. Exact staged-blob scanning and working/staged byte comparison are required before commit.
   This is a change-scope check, not a new whole-history audit.
 
+### Checkpoint 4 continued: reviewed Atlas-to-process origins
+
+Continuation audit: previous turn was verified progress. `ea41ba7` is committed and the checkout
+was clean at this continuation; its exact 11-file staged scan had no credential matches or byte
+mismatches. The full goal remains incomplete and active.
+
+Implementation decision before editing: add an explicit reviewed Atlas-source origin to the
+existing process-evidence broker. Preserve version-1 reviews and receipt bytes. A version-2 private
+receipt will retain the unchanged candidate review plus exact Atlas source identities and a pinned
+disclosure policy naming the target process execution, contamination scope, source scopes, source
+rights, reviewers, validity period, and declared intervention. No default Atlas disclosure policy
+will be installed. Validate this origin again on every admission, retry, read, and downstream
+ownership operation. Never let a missing origin fall back to a version-1 PPRL source interpretation.
+
+This slice admits only separately reviewed institutional evidence from development/adaptive Atlas
+trials into train/adaptive-development process executions; adaptive sources require an adaptive
+destination. Challenge/sealed sources and indexed item/prompt overlaps are excluded. Bind exact
+request/result/context digests, all explicit retained source artifacts, source governance and
+reviewed output rights, current target Amber authority, and separate candidate bytes. Reject literal
+source identifiers in candidate content. Keep all raw references and review details private.
+Atlas eligibility records remain unconsumed. This does not write developmental memory or satisfy
+its episode requirement. Parameter-training use and Atlas corpus materialization remain gated;
+these first Atlas derivatives are process-use-only, including when encountered by PPRL projection.
+
+Threat assumptions remain a trusted broker/configuration, database, backend, clock, and declared
+reviewers; malformed/stale/forged inputs and retained-state damage are in scope. Tests must cover
+exact source/policy/target joins, missing and excess sources, raw/discoverable-reference leakage,
+rights and partition isolation, original ownership loss, duplicate/downgraded receipts, read errors,
+policy expiry/change, atomic rollback and downstream process ownership, with version-1 compatibility.
+Retain native Atlas records/digests, candidate bytes/classifications, private origin and review,
+source/target policy and rights, independent pins, fixtures, and validation output. Failure withholds
+candidate bytes and publishes no partial receipt. Rollback disables new consumers while preserving
+evidence. No actual inference, trainer, authenticated sandbox, semantic-redaction proof, causal
+claim, source independence claim, or live/institutional Atlas campaign is part of this slice.
+
+Validation and review, 2026-09-05:
+
+- `AtlasEvidenceSourceBoundary` and `ProcessEvidenceStore.admit_atlas` implement the decision above.
+  Five new contracts/schemas retain the exact source selection, disclosure policy and reviewed
+  candidate join. Version-2 receipts occupy the existing immutable admission table; version-1
+  schemas, review/receipt formats, and native Atlas source formats are unchanged. No migration,
+  default disclosure policy, data backfill, or eligibility consumer was introduced.
+- Source inspection revealed Atlas results have no native provider-output-rights receipt. The
+  explicit disclosure policy therefore requires reviewed output rights per exact source scope,
+  separately from dataset governance and candidate rights. Evaluation permission alone cannot
+  establish retention/disclosure authority. These are declared reviews, not legal or identity
+  attestation. Challenge/sealed item/prompt overlap blocks disclosure; any indexed adaptive overlap
+  requires an adaptive destination.
+- Exact context digests cover source manifests, indexed memberships, captured-call columns, and
+  explicit artifact metadata. A regression test changes a captured provider-response ID while the
+  prior retention validator still passes; the new origin reader rejects reuse of the old review.
+  Two separately registered trial origins with identical artifact bytes retain distinct private
+  source identities and a deduplicated artifact dependency set. That is no independence claim.
+- The first new selection had **18 passed, 1 failed in 4.12 seconds**: the positive process-state
+  fixture omitted its required artifact-byte budget. The fixture was corrected and uses the actual
+  returned state ID. A subsequent expanded run had a collection error from a misplaced fixture
+  import; it was moved to the import block. The combined selection then had **97 passed, 1 failed
+  in 14.23 seconds** because an extra-source fixture classified its source after the original review;
+  its review time was advanced to exercise the intended exact-source-set rejection. Production
+  chronology checks were preserved. The expanded new selection passed **37 tests in 7.85 seconds**.
+- Final added regressions cover source-context drift, version-1 canonical receipt compatibility,
+  and trial-selection bounds. Full offline command: `PYTHONPATH=. .venv/bin/pytest -q
+  -m 'not postgres and not live and not lean and not gcs' --tb=short`.
+  Result: **534 passed, 6 deselected in 58.07 seconds**. Ruff passed; formatting checked 318 files;
+  all 155 schemas match; mypy passed for 168 source files; `git diff --check` passed. Disposable
+  migration schema matching and all-revision upgrade/downgrade are included. PostgreSQL, live,
+  Lean, and real GCS validation remain excluded. No actual inference, training, cloud/GPU activation,
+  sibling edit, production migration, or publication occurred.
+- [Atlas process evidence](atlas-process-evidence-boundary.md) records exact paths, source joins,
+  bounds, rights and contamination assumptions, failures, rollback, and retained evidence. Atomic
+  checks cover caught pin/publication errors, cancellation, and outer rollback. New broker instances
+  can read through persisted origin receipts; this is not a full worker-replacement experiment.
+  Candidate semantics/source completeness still rely on review. Process-use-only references do not
+  automatically decontaminate future outputs influenced by them. Authenticated identity, actual
+  prompt/effect/credit attribution, independent forensic capture, coordinated GC, controlled
+  evaluation-memory conditions, and Atlas training materialization remain later gates.
+- The 20-file changed/new credential-pattern scan found no provider tokens, private keys, or
+  credential literals. No tracked `.env`, key-file, or model-weight candidate was found; `.env`
+  remains ignored. Exact staged-blob scanning and working/staged byte comparison are required
+  before commit. This is a change-scope check, not a new whole-history audit.
+
+Staging was rejected twice by automatic approval review because it did not accept the attached
+goal's authorization over the original read-only instruction. No staging bypass was attempted.
+Two read-only continuations preserved the checkpoint and inspected remaining consumer and dispatch
+paths; after the same blocker persisted across three goal turns, the goal was marked blocked.
+The direct user approval recorded above now permits the local implementation and commit work.
+The exact 20-file staged-blob credential scan then passed with no findings or working/staged byte
+mismatches; sensitive-filename checks and `.env` exclusion passed, as did `git diff --cached --check`.
+Only this ledger changed since the recorded full test suite; no additional model or resource test
+was needed to commit the checkpoint.
+
 ## Next executable step
 
-Current goal turn: verified engineering progress on Atlas source retention within checkpoint 4.
-The full goal remains incomplete and active. Preserve this checkpoint in a reviewable local commit
-after changed/new and exact staged-blob credential scans. Read current Git state and this ledger on
-every continuation rather than assuming a prior checkpoint is still pending.
+Current turn was verified engineering progress on explicit Atlas institutional-evidence admission.
+Commit this checkpoint after changed/new and exact staged-blob credential scans, then re-read Git
+state and this ledger on continuation. The goal remains active and incomplete.
 
-Continue stage 1 with the remaining Atlas import/export and reviewed-use paths. The source-retention
-prerequisite above is complete within its stated scope. Trace `registry.py`, `orchestration.py`,
-`studies.py`, `reporting.py`, and existing evidence-admission APIs for the smallest explicit reviewed
-Atlas-source adapter. Keep exploratory reproduction, challenge/promotion separation, training
-eligibility, and governed corpus materialization distinct. There is no current eligibility consumer
-to harden; do not invent one merely to turn a registry flag into learning authority. Determine which
-payloads remain privileged archives versus separately reviewed worker/training candidates;
-do not infer admission from raw/restricted flags, reports, benchmark rights, eligibility booleans,
-or the new PPRL projector. Retain historical IDs, native schemas, and digests.
+Audit the remaining stage-1 consumer call graph before declaring its gate complete: default PPRL
+composition, compiler/export/reporting entry points, legacy record reads, and caller access to
+privileged source/receipt objects. Identify actual worker/training paths that bypass the validated
+interfaces, and distinguish privileged historical inspection from model input. Fix concrete bypasses
+within the information boundary; do not build an automatic Atlas eligibility consumer. Keep Atlas
+training materialization explicitly gated for its later attributable-learning path.
 
-Before editing that next portion, define the smallest dependency-correct offline boundary and its
-exact source adapters, authority, exclusions, ownership, and public/private DTOs. Threat assumptions
-remain a trusted broker/store/configuration with malformed, stale, unclassified, and forged inputs
-in scope. Acceptance must cover nested and discoverable forensic references, sealed/challenge/
-adaptive/training separation, exact source/rights/projection-policy joins, independent retention,
-caught-error rollback, and unchanged historical reconstruction. Retain exact fixtures, policies,
-source/bytes/digests, exclusions, and check output. Failure withholds output; rollback disables new
-consumers and preserves source history rather than restoring unreviewed exports.
+Then take the dependency-correct step into workload/identity/resource integrity: bind the actual
+generation request and intended effect to admitted authority, preserve independent invocation
+evidence, and define conserved reservations across attempts, forks, and replacement. Revalidate
+those gaps in current code before choosing the implementation boundary. Define threat assumptions,
+invariants, acceptance tests, retained evidence, failure and rollback before editing. Offline fake
+providers/disposable workers remain available for validation; control-plane checks must never be
+reported as runtime authentication or an attested sandbox.
 
 Non-goals: live Atlas campaigns, sibling telemetry integration, a trainer, parameter updates,
 permission to train, live workers, model stress tests, or cloud activation. Atlas institutional

@@ -1,0 +1,225 @@
+{
+  "$defs": {
+    "DistributionScope": {
+      "enum": [
+        "internal_only",
+        "agreement_restricted",
+        "redistributable"
+      ],
+      "title": "DistributionScope",
+      "type": "string"
+    },
+    "RightsBasis": {
+      "enum": [
+        "project_authored",
+        "public_domain",
+        "open_license",
+        "contract_authorized",
+        "fair_use_reviewed",
+        "provider_terms",
+        "unknown"
+      ],
+      "title": "RightsBasis",
+      "type": "string"
+    },
+    "RightsReviewStatus": {
+      "enum": [
+        "confirmed",
+        "review_required",
+        "prohibited"
+      ],
+      "title": "RightsReviewStatus",
+      "type": "string"
+    },
+    "RightsUse": {
+      "enum": [
+        "evidence_retention",
+        "internal_research",
+        "evaluation",
+        "continued_pretraining",
+        "sft",
+        "preference",
+        "rlvr",
+        "process",
+        "redistribution"
+      ],
+      "title": "RightsUse",
+      "type": "string"
+    },
+    "SourceRights": {
+      "additionalProperties": false,
+      "description": "Versioned use authority; this is governance evidence, not a legal conclusion.",
+      "properties": {
+        "attribution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attribution"
+        },
+        "basis": {
+          "$ref": "#/$defs/RightsBasis"
+        },
+        "basis_detail": {
+          "minLength": 1,
+          "title": "Basis Detail",
+          "type": "string"
+        },
+        "distribution_scope": {
+          "$ref": "#/$defs/DistributionScope"
+        },
+        "license_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License Id"
+        },
+        "permitted_uses": {
+          "items": {
+            "$ref": "#/$defs/RightsUse"
+          },
+          "title": "Permitted Uses",
+          "type": "array"
+        },
+        "restrictions": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Restrictions",
+          "type": "array"
+        },
+        "review_status": {
+          "$ref": "#/$defs/RightsReviewStatus"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "reviewed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed By"
+        },
+        "rights_id": {
+          "minLength": 1,
+          "title": "Rights Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "terms_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Terms Digest"
+        },
+        "terms_uri": {
+          "anyOf": [
+            {
+              "pattern": "^https://[^\\s]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Terms Uri"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rights_id",
+        "version",
+        "basis",
+        "basis_detail",
+        "permitted_uses",
+        "distribution_scope",
+        "review_status"
+      ],
+      "title": "SourceRights",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/atlas-evidence-source-scope.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "campaign_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Campaign Digest",
+      "type": "string"
+    },
+    "condition_id": {
+      "minLength": 1,
+      "title": "Condition Id",
+      "type": "string"
+    },
+    "output_rights": {
+      "$ref": "#/$defs/SourceRights"
+    },
+    "research_execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Research Execution Digest",
+      "type": "string"
+    },
+    "suite_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Suite Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "campaign_digest",
+    "condition_id",
+    "suite_digest",
+    "research_execution_digest",
+    "output_rights"
+  ],
+  "title": "AtlasEvidenceSourceScope",
+  "type": "object"
+}

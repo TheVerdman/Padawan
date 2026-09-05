@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
+from pydantic import Field, TypeAdapter
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +20,11 @@ from padawan.artifacts.information import (
     ProcessArtifactRef,
 )
 from padawan.artifacts.store import ArtifactCatalog, ArtifactIntegrityError, artifact_read_bytes
+from padawan.atlas.evidence import AtlasEvidenceSourceBoundary
+from padawan.atlas.evidence_contracts import (
+    AtlasEvidenceOriginReview,
+    AtlasProcessEvidenceAdmissionRecord,
+)
 from padawan.governance.amber import AmberStatus
 from padawan.governance.amber_store import AmberStore
 from padawan.models.contracts import ArtifactRef, RightsUse
@@ -51,6 +57,13 @@ class ProcessEvidenceReadDeniedError(PermissionError):
     """Uniform worker-facing failure with no privileged exception payload."""
 
 
+type EvidenceAdmissionReceipt = Annotated[
+    ProcessEvidenceAdmissionRecord | AtlasProcessEvidenceAdmissionRecord,
+    Field(discriminator="schema_version"),
+]
+_RECEIPT_ADAPTER: TypeAdapter[EvidenceAdmissionReceipt] = TypeAdapter(EvidenceAdmissionReceipt)
+
+
 class ProcessEvidenceStore:
     def __init__(
         self,
@@ -58,12 +71,16 @@ class ProcessEvidenceStore:
         catalog: ArtifactCatalog,
         amber: AmberStore,
         policy: EvidenceAdmissionPolicy,
+        atlas: AtlasEvidenceSourceBoundary | None = None,
     ) -> None:
         self.catalog = catalog
         self.information = ArtifactInformationStore(catalog)
         self.amber = amber
         # Revalidate frozen configuration rather than trusting model_copy updates.
         self.policy = EvidenceAdmissionPolicy.model_validate_json(policy.model_dump_json())
+        if atlas is not None and atlas.catalog.backend is not catalog.backend:
+            raise ValueError("Atlas and process evidence must share their artifact backend")
+        self.atlas = atlas
 
     async def admit(
         self,
@@ -72,19 +89,41 @@ class ProcessEvidenceStore:
         review: ProcessEvidenceAdmission,
         now: datetime | None = None,
     ) -> ProcessArtifactRef:
+        return await self._admit(session, review=review, atlas_origin=None, now=now)
+
+    async def admit_atlas(
+        self,
+        session: AsyncSession,
+        *,
+        review: ProcessEvidenceAdmission,
+        origin: AtlasEvidenceOriginReview,
+        now: datetime | None = None,
+    ) -> ProcessArtifactRef:
+        """Explicit privileged review; neither an Atlas flag nor raw trace is an admission."""
+        origin = AtlasEvidenceOriginReview.model_validate_json(origin.model_dump_json())
+        return await self._admit(session, review=review, atlas_origin=origin, now=now)
+
+    async def _admit(
+        self,
+        session: AsyncSession,
+        *,
+        review: ProcessEvidenceAdmission,
+        atlas_origin: AtlasEvidenceOriginReview | None,
+        now: datetime | None,
+    ) -> ProcessArtifactRef:
         review = ProcessEvidenceAdmission.model_validate_json(review.model_dump_json())
         timestamp = _timestamp(now)
         # An exception caught by the outer transaction must not commit partial pins.
         async with session.begin_nested():
             candidate, authorization_sequence = await self._validate(
-                session, review=review, now=timestamp
+                session, review=review, now=timestamp, atlas_origin=atlas_origin
             )
             existing = await session.get(
                 ProcessEvidenceAdmissionRow, review.process_reference.process_artifact_id
             )
             if existing is not None:
                 receipt = _admission_record(existing)
-                if receipt.review != review:
+                if receipt.review != review or _atlas_origin(receipt) != atlas_origin:
                     raise ArtifactIntegrityError(
                         "process evidence ID was reused for another review"
                     )
@@ -100,8 +139,19 @@ class ProcessEvidenceStore:
                     owner_type="process_evidence_admission",
                     owner_id=review.process_reference.process_artifact_id,
                 )
-            receipt = ProcessEvidenceAdmissionRecord(
-                review=review, authorization_sequence=authorization_sequence, admitted_at=timestamp
+            receipt = (
+                AtlasProcessEvidenceAdmissionRecord(
+                    review=review,
+                    atlas_origin=atlas_origin,
+                    authorization_sequence=authorization_sequence,
+                    admitted_at=timestamp,
+                )
+                if atlas_origin is not None
+                else ProcessEvidenceAdmissionRecord(
+                    review=review,
+                    authorization_sequence=authorization_sequence,
+                    admitted_at=timestamp,
+                )
             )
             session.add(
                 ProcessEvidenceAdmissionRow(
@@ -119,7 +169,7 @@ class ProcessEvidenceStore:
 
     async def inspect_admission(
         self, session: AsyncSession, *, process_artifact_id: str
-    ) -> ProcessEvidenceAdmissionRecord:
+    ) -> EvidenceAdmissionReceipt:
         """Privileged reconstruction only; never use as a worker projection."""
         row = await session.get(ProcessEvidenceAdmissionRow, process_artifact_id)
         if row is None:
@@ -276,7 +326,7 @@ class ProcessEvidenceStore:
         execution_digest: str,
         use: ProcessEvidenceUse,
         now: datetime | None,
-    ) -> tuple[ProcessEvidenceAdmissionRecord, ArtifactRef]:
+    ) -> tuple[EvidenceAdmissionReceipt, ArtifactRef]:
         if not isinstance(reference, ProcessArtifactRef) or not isinstance(use, ProcessEvidenceUse):
             raise PermissionError("process reads require a process reference and explicit use")
         if reference.execution_digest != execution_digest:
@@ -290,7 +340,9 @@ class ProcessEvidenceStore:
         review = receipt.review
         if review.process_reference != reference or use not in review.allowed_uses:
             raise PermissionError("process reference or requested use differs from admission")
-        candidate, _ = await self._validate(session, review=review, now=timestamp, read_use=use)
+        candidate, _ = await self._validate(
+            session, review=review, now=timestamp, read_use=use, atlas_origin=_atlas_origin(receipt)
+        )
         await _validate_pins(session, review)
         return receipt, candidate
 
@@ -301,6 +353,7 @@ class ProcessEvidenceStore:
         review: ProcessEvidenceAdmission,
         now: datetime,
         read_use: ProcessEvidenceUse | None = None,
+        atlas_origin: AtlasEvidenceOriginReview | None = None,
     ) -> tuple[ArtifactRef, int]:
         if review.policy_digest != self.policy.digest:
             raise PermissionError("evidence review differs from the pinned admission policy")
@@ -417,29 +470,43 @@ class ProcessEvidenceStore:
             )
             if source_classification.classified_at > review.reviewed_at:
                 raise PermissionError("evidence review predates its forensic classification")
-            source_invocation = await session.scalar(
-                select(ProcessWorkerInvocationRow.invocation_id)
-                .join(
-                    ProcessRolloutRow,
-                    ProcessRolloutRow.rollout_id == ProcessWorkerInvocationRow.rollout_id,
+            if atlas_origin is None:
+                source_invocation = await session.scalar(
+                    select(ProcessWorkerInvocationRow.invocation_id)
+                    .join(
+                        ProcessRolloutRow,
+                        ProcessRolloutRow.rollout_id == ProcessWorkerInvocationRow.rollout_id,
+                    )
+                    .where(
+                        ProcessRolloutRow.execution_digest == execution_row.execution_digest,
+                        ProcessWorkerInvocationRow.status == "completed",
+                        ProcessWorkerInvocationRow.completed_at <= review.reviewed_at,
+                        or_(
+                            ProcessWorkerInvocationRow.request_artifact_id
+                            == source.artifact.artifact_id,
+                            ProcessWorkerInvocationRow.response_artifact_id
+                            == source.artifact.artifact_id,
+                        ),
+                    )
+                    .limit(1)
                 )
-                .where(
-                    ProcessRolloutRow.execution_digest == execution_row.execution_digest,
-                    ProcessWorkerInvocationRow.status == "completed",
-                    ProcessWorkerInvocationRow.completed_at <= review.reviewed_at,
-                    or_(
-                        ProcessWorkerInvocationRow.request_artifact_id
-                        == source.artifact.artifact_id,
-                        ProcessWorkerInvocationRow.response_artifact_id
-                        == source.artifact.artifact_id,
-                    ),
-                )
-                .limit(1)
+                if source_invocation is None:
+                    raise PermissionError(
+                        "forensic evidence lacks a completed source in this execution"
+                    )
+        if atlas_origin is not None:
+            if self.atlas is None:
+                raise PermissionError("Atlas disclosure requires an explicitly configured boundary")
+            await self.atlas.validate_review(
+                session,
+                review=review,
+                origin=atlas_origin,
+                target_split=instance.split,
+                candidate_bytes=await artifact_read_bytes(
+                    self.catalog.backend, candidate, allow_restricted=True
+                ),
+                now=now,
             )
-            if source_invocation is None:
-                raise PermissionError(
-                    "forensic evidence lacks a completed source in this execution"
-                )
         if review.forensic_sources:
             content = await artifact_read_bytes(
                 self.catalog.backend, candidate, allow_restricted=True
@@ -457,8 +524,12 @@ class ProcessEvidenceStore:
         return candidate, head.sequence
 
 
-def _admission_record(row: ProcessEvidenceAdmissionRow) -> ProcessEvidenceAdmissionRecord:
-    record = ProcessEvidenceAdmissionRecord.model_validate(row.record_json, strict=False)
+def _atlas_origin(record: EvidenceAdmissionReceipt) -> AtlasEvidenceOriginReview | None:
+    return record.atlas_origin if isinstance(record, AtlasProcessEvidenceAdmissionRecord) else None
+
+
+def _admission_record(row: ProcessEvidenceAdmissionRow) -> EvidenceAdmissionReceipt:
+    record = _RECEIPT_ADAPTER.validate_python(row.record_json, strict=False)
     review = record.review
     if (
         sha256_digest(row.record_json) != row.record_digest
