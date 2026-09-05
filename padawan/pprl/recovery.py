@@ -18,6 +18,7 @@ from padawan.models.hashing import sha256_digest
 from padawan.models.tables import (
     AmberAdmissionDecisionRow,
     AmberAuthorizationHeadRow,
+    ArtifactReferenceRow,
     ProcessRecoveryRow,
     ProcessRolloutRow,
     ProcessWorkerLeaseAssignmentRow,
@@ -334,7 +335,12 @@ class ProcessRecoveryStore:
             )
         )
         await session.flush()
-        return receipt
+        # Publish only a receipt that its checked historical reader can reconstruct.
+        # A failed join rolls back fencing, accounting and pins with this savepoint.
+        checked = await self.read(session, recovery_id=request.recovery_id)
+        if checked.disposition == "ready" and datetime.now(UTC) >= envelope.expires_at:
+            raise PermissionError("recovery authority expired during final source validation")
+        return checked
 
     async def read(self, session: AsyncSession, *, recovery_id: str) -> ProcessRecoveryReceipt:
         row = await session.get(ProcessRecoveryRow, recovery_id)
@@ -400,6 +406,23 @@ class ProcessRecoveryStore:
         reader = RecoveryEvidenceReader(
             self.containers, self.observations, maximum_bytes=receipt.request.maximum_source_bytes
         )
+        expected_sources = {
+            source.reference.artifact.artifact_id
+            for effect in receipt.effects
+            for source in effect.sources
+        }
+        retained_sources = set(
+            await session.scalars(
+                select(ArtifactReferenceRow.artifact_id)
+                .where(
+                    ArtifactReferenceRow.owner_type == "process_recovery_receipt",
+                    ArtifactReferenceRow.owner_id == recovery_id,
+                )
+                .limit(len(expected_sources) + 1)
+            )
+        )
+        if retained_sources != expected_sources:
+            raise ValueError("recovery receipt has inconsistent source retention ownership")
         for effect in receipt.effects:
             reservation, _, _ = await self.resources.reservation(session, effect.decision_id)
             if (
@@ -408,11 +431,23 @@ class ProcessRecoveryStore:
                 or reservation.decision_digest != effect.decision_digest
             ):
                 raise ValueError("recovery lost its exact reservation")
-            for digest in (effect.before_resource_event_digest, effect.after_resource_event_digest):
+            for digest, phase in (
+                (effect.before_resource_event_digest, effect.before_phase),
+                (effect.after_resource_event_digest, effect.after_phase),
+            ):
                 event = await self.resources._event(session, digest)
                 if (
                     event.reservation_digest != reservation.digest
                     or event.subject_id != effect.decision_id
+                    or event.authorization_digest != receipt.authorization_digest
+                    or event.created_at > receipt.created_at
+                    or {
+                        "reserve": "reserved",
+                        "start": "started",
+                        "settle": "settled",
+                        "release": "released",
+                    }.get(event.kind)
+                    != phase
                 ):
                     raise ValueError("recovery phase snapshot differs from its reservation")
             identity = await self.workers.inspect_decision(session, decision_id=effect.decision_id)
@@ -425,4 +460,6 @@ class ProcessRecoveryStore:
                 if observed.digest != effect.observation_binding_digest:
                     raise ValueError("recovery lost its original observation binding")
             await reader.verify_retained(session, effect, recovery_id=recovery_id)
+            if effect.disposition == "completed_unadmitted":
+                await reader.verify_settlement(session, effect, event)
         return receipt

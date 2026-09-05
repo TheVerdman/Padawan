@@ -139,3 +139,12 @@ performance claim is made. Indexed frontier tracking, bounded archival/replay po
 measurement remain prerequisites for long-horizon operation. No model or real container workload
 was launched for this recovery checkpoint; PostgreSQL was an explicitly owned local CPU fixture.
 Exact test outcomes, prior failures, cleanup and the next dependency are in `pprl-execution-ledger.md`.
+
+The subsequent source-integrity checkpoint requires exact receipt-wide source ownership, native
+model request/prepared/result joins, complete container source/capture sets, recorded resource
+phases and original settlement sources/pins. Reads reconstruct historical bytes; mutable call status
+or a later capture cannot rewrite an earlier snapshot. Fresh recovery publication uses this checked
+reader before its transaction commits and rechecks expiry before publishing readiness. A malformed
+snapshot or expiry during final validation rolls back the new receipt, fencing,
+accounting and pins. This adds no worker fields, source admission, retry authority or schema changes.
+The dependency-ordered successor/abandonment design is in `pprl-effect-resolution-boundary.md`.

@@ -95,6 +95,10 @@ does not reconstruct a lost state update or admit raw output. Immutable private 
 and independent source owners support later inspection, including after a late result. Separate
 native broker/client fixtures recover identical public observation bytes from persistent stores;
 this is simulated replacement evidence, not an automatic scheduler or scientific continuity result.
+Checked reads also reconstruct native source joins and original settlement evidence; fresh recovery
+publication must pass that same check. The proposed source admission, reviewed successor/abandonment,
+task disposition and training-exclusion dependencies are in `pprl-effect-resolution-boundary.md`.
+Those resolution paths remain unimplemented.
 
 ## Distributions and evidence
 

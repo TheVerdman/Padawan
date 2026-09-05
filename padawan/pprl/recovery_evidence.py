@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,6 +11,7 @@ from typing import Literal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from padawan.adapters.base import GenerationRequest
 from padawan.artifacts.information import ForensicArtifactRef, InformationClass
 from padawan.models.contracts import ArtifactRef
 from padawan.models.hashing import sha256_digest
@@ -27,7 +29,7 @@ from padawan.pprl.containers import ProcessContainerStore
 from padawan.pprl.generation_contracts import generation_workload_from_row
 from padawan.pprl.observations import ProcessObservationStore
 from padawan.pprl.recovery_contracts import ProcessRecoveryEffect, ProcessRecoverySource
-from padawan.pprl.resource_contracts import ProcessResourceReservation
+from padawan.pprl.resource_contracts import ProcessResourceEvent, ProcessResourceReservation
 
 
 @dataclass(frozen=True)
@@ -295,8 +297,9 @@ class RecoveryEvidenceReader:
         self, session: AsyncSession, effect: ProcessRecoveryEffect, *, recovery_id: str
     ) -> None:
         """Validate the immutable snapshot's sources, without demanding frozen live status."""
+        payloads = {}
         for source in effect.sources:
-            await self.read_source(session, source)
+            payloads[source.owner_type, source.owner_id] = await self.read_source(session, source)
             await self.containers._read(
                 session,
                 source.reference,
@@ -304,15 +307,147 @@ class RecoveryEvidenceReader:
                 owner_id=recovery_id,
             )
         if effect.kind == "container":
-            assert effect.invocation_id is not None
-            workload = await self.containers.workload(session, effect.invocation_id)
-            if workload.digest != effect.workload_digest:
-                raise ValueError("recovery lost its original container workload")
-            if effect.result_digest is not None:
-                _, receipt, _ = await self.containers.inspect(session, effect.invocation_id)
-                if receipt.digest != effect.result_digest:
-                    raise ValueError("recovery lost its original container result")
+            await self._verify_container_snapshot(session, effect, payloads)
         elif effect.kind == "model":
-            row = await session.get(ProcessGenerationWorkloadRow, effect.invocation_id)
-            if row is None or generation_workload_from_row(row).digest != effect.workload_digest:
-                raise ValueError("recovery lost its original model workload")
+            await self._verify_model_snapshot(session, effect, payloads)
+
+    async def _verify_container_snapshot(
+        self,
+        session: AsyncSession,
+        effect: ProcessRecoveryEffect,
+        payloads: dict[tuple[str, str], bytes],
+    ) -> None:
+        assert effect.invocation_id is not None
+        workload = await self.containers.workload(session, effect.invocation_id)
+        if (
+            workload.digest != effect.workload_digest
+            or workload.decision_id != effect.decision_id
+            or workload.decision_digest != effect.decision_digest
+        ):
+            raise ValueError("recovery lost its original container workload")
+        expected = {("process_container_workload", workload.invocation_id): workload.input_artifact}
+        if effect.result_digest is not None:
+            _, receipt, _ = await self.containers.inspect(session, effect.invocation_id)
+            if (
+                receipt.digest != effect.result_digest
+                or receipt.effect_status != effect.observed_status
+                or (
+                    effect.disposition == "completed_unadmitted"
+                    and (receipt.effect_status != "terminated" or not receipt.complete_capture)
+                )
+            ):
+                raise ValueError("recovery lost its original container result")
+            expected["process_container_result", workload.invocation_id] = receipt.evidence_artifact
+            # Inspect validates capture bytes, kinds and their original native owners.
+            for reference in receipt.capture_artifacts:
+                matches = [s for s in effect.sources if s.reference == reference]
+                if len(matches) != 1 or matches[0].owner_type != "process_container_capture":
+                    raise ValueError("recovery omits a container result's exact capture")
+                source = matches[0]
+                expected[source.owner_type, source.owner_id] = reference
+        elif effect.observed_status != "intent_without_final_receipt":
+            raise ValueError("recovery container status lacks its retained result")
+        for source in effect.sources:
+            if source.owner_type == "process_container_capture":
+                data = json.loads(payloads[source.owner_type, source.owner_id])
+                if (
+                    data["kind"] not in {"runtime", "created", "terminal", "cleanup"}
+                    or data["invocation_id"] != workload.invocation_id
+                    or data["workload_digest"] != workload.digest
+                    or source.owner_id != f"{workload.invocation_id}:{data['kind']}"
+                ):
+                    raise ValueError("recovery container capture has substituted lineage")
+                if effect.result_digest is None:
+                    # A partial snapshot is historical: later captures do not enlarge it.
+                    expected[source.owner_type, source.owner_id] = source.reference
+        if {(s.owner_type, s.owner_id): s.reference for s in effect.sources} != expected:
+            raise ValueError("recovery container snapshot has inconsistent native sources")
+
+    async def _verify_model_snapshot(
+        self,
+        session: AsyncSession,
+        effect: ProcessRecoveryEffect,
+        payloads: dict[tuple[str, str], bytes],
+    ) -> None:
+        row = await session.get(ProcessGenerationWorkloadRow, effect.invocation_id)
+        if row is None:
+            raise ValueError("recovery lost its original model workload")
+        workload = generation_workload_from_row(row)
+        if (
+            workload.digest != effect.workload_digest
+            or workload.decision_id != effect.decision_id
+            or workload.decision_digest != effect.decision_digest
+            or workload.observation_decision_digest != effect.observation_binding_digest
+        ):
+            raise ValueError("recovery model snapshot crossed its admitted workload")
+        sources = {(s.owner_type, s.owner_id): s.reference for s in effect.sources}
+        prepared_key = ("process_generation_workload", workload.invocation_id)
+        request_key = ("external_call_request", workload.request_id)
+        response_key = ("external_call_response", workload.request_id)
+        if (
+            sources.get(prepared_key) != workload.prepared_artifact
+            or set(sources) - {prepared_key, request_key, response_key}
+            or ((response_key in sources) != (effect.result_digest is not None))
+            or (response_key in sources and request_key not in sources)
+            or (
+                effect.observed_status == "intent_without_external_call"
+                and set(sources) != {prepared_key}
+            )
+            or (effect.observed_status == "completed" and response_key not in sources)
+            or (
+                effect.disposition == "completed_unadmitted"
+                and effect.observed_status != "completed"
+            )
+        ):
+            raise ValueError("recovery model snapshot has inconsistent native sources")
+        if sha256_digest(json.loads(payloads[prepared_key])) != sha256_digest(workload.prepared):
+            raise ValueError("recovery model prepared bytes differ from admitted intent")
+        if request_key in sources:
+            request = GenerationRequest.model_validate_json(payloads[request_key])
+            if sha256_digest(request) != workload.request_digest:
+                raise ValueError("recovery model request differs from admitted intent")
+        if response_key in sources:
+            result = json.loads(payloads[response_key])
+            if (
+                sources[response_key].artifact.digest != effect.result_digest
+                or result.get("request_id") != workload.request_id
+                or result.get("provider") != workload.prepared.provider
+                or result.get("model_id") != workload.prepared.model_id
+                or result.get("protocol") != workload.prepared.protocol
+                or sha256_digest(base64.b64decode(result["raw_request_base64"], validate=True))
+                != workload.prepared.body_digest
+            ):
+                raise ValueError("recovery model result differs from its exact admitted request")
+
+    async def verify_settlement(
+        self, session: AsyncSession, effect: ProcessRecoveryEffect, event: ProcessResourceEvent
+    ) -> None:
+        """The completed snapshot cites the original debit, never a new reconciliation."""
+        reservation, _, _ = await self.containers.resources.reservation(session, effect.decision_id)
+        sources = {effect.workload_digest, *(s.reference.artifact.digest for s in effect.sources)}
+        if effect.kind == "model":
+            grant = await self.containers.resources.grant(session, reservation.authorization_digest)
+            rates = [
+                rate
+                for rate in grant.model_rates
+                if rate.worker_model_digest == reservation.worker_model_digest
+            ]
+            if len(rates) != 1:
+                raise ValueError("recovery settlement lost its model rate")
+            sources.add(sha256_digest(rates[0]))
+        else:
+            sources.add(effect.result_digest)
+        if (
+            event.kind != "settle"
+            or event.basis
+            != ("provider_reported" if effect.kind == "model" else "container_evidence")
+            or set(event.source_digests) != sources
+        ):
+            raise ValueError("recovery result differs from its original settlement sources")
+        for source in effect.sources:
+            await self.containers._read(
+                session,
+                source.reference,
+                owner_type="process_resource_event",
+                owner_id=event.digest,
+            )

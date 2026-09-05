@@ -1000,14 +1000,80 @@ Final validation:
   secrets across 31 files. The final ledger update is rescanned before commit; source/scan manifests
   and commit-byte verification are retained with evidence.
 
+## Stage 3 follow-up: historical recovery-source integrity and resolution design
+
+Starting HEAD: `ebe1000` on `codex/pprl-information-boundary`. Re-read the goal and canonical entry
+documents and audited recovery, ordinary event commit, evidence admission, outcomes/eligibility and
+the PPRL compiler before selecting the next slice. No additional user authority was needed.
+
+The audit found a prerequisite to recovered-effect admission: checked historical recovery reads did
+not reconstruct all native source relationships. Nine initial probes with self-consistent outer
+receipt digests were accepted despite omitted model/container sources, substituted result identity
+or inconsistent observed status. These are malformed/imported-record probes inside the trusted
+store perimeter, not claims that workers can write SQL or that a live incident occurred.
+
+`RecoveryEvidenceReader` now verifies exact immutable workload/request/result identities, prepared
+wire bytes, container source/capture sets and dispositions. `ProcessRecoveryStore.read` requires the
+exact receipt-wide ownership set and original phase events. Completed assessments additionally
+require the original settlement's evidence basis, rate/result/source digests and independent pins.
+It never invokes reconciliation or dispatch. Historical partial snapshots survive a later result;
+mutable external-call status cannot rewrite the original snapshot. New receipt publication passes
+the same checked read atomically, then rechecks expiry before reporting readiness. Failure rolls
+back the new receipt, fencing, accounting and pins. There are no schema, worker DTO or authority
+expansions.
+
+The separate `pprl-effect-resolution-boundary.md` records the next dependency sequence: explicitly
+reviewed recovered-source admission, then a distinct reviewed successor or terminal abandonment,
+task/effect ownership that prevents silent repeats, and compiler/replay treatment of intervention
+and infrastructure exclusions. These are designs, not implemented transitions. A recovered result
+does not establish domain truth or authorize training. The canonical four-fabric overview now
+acknowledges PPRL's private recovery primitives while preserving the absent automatic runtime.
+
+Retained evidence is in ignored `runs/pprl-recovery-source-validation-20260905/`: original failing
+probes, subsequent source/phase/result probes, final retained SQLite/artifact fixtures, full/static
+check logs, exact source manifests and redacted secret scans. One expanded probe initially used a
+nonexistent denormalized SQL column; the setup failure remains separate from corrected runs. An
+initial tracked-path check matched the checked-in `.env.example` template; that template stays in
+the full history scan, while actual credential/runtime paths remain forbidden. No secret finding
+was suppressed.
+
+Final validation:
+
+- Full offline suite: `PYTHONPATH=. .venv/bin/pytest -q -m 'not postgres and not live and not lean
+  and not docker'` — **828 passed, 27 deselected in 144.11 seconds**. An earlier full run before
+  the final expiry guard was **827 passed, 27 deselected in 141.82 seconds**; it is separate evidence.
+- Focused recovery suite: **72 passed in 24.87 seconds**, with retained SQLite/artifact fixtures.
+  This includes 29 new source/disposition/phase/settlement/publication probes. Re-running those
+  exact 29 probes against retained `ebe1000` recovery modules gave **29 expected assertion failures,
+  zero setup errors in 11.76 seconds**. The baseline source modules, probe copy, runner and hashes
+  are retained. An earlier baseline-runner attempt collected outside the test fixture directory;
+  its 29 setup errors are retained separately and are not counted as defect reproductions.
+- Ruff lint/format passed; 181 schemas match; mypy `--no-incremental` passed on 185 source files;
+  `git diff --check` passed. No contracts or migration files changed. PostgreSQL and physical Docker
+  execution tests were not rerun for this source-reader change; no new SQL schema or lock order was
+  introduced, and no current PostgreSQL/runtime-validation claim is made.
+- All-ref secret scanning covered **32 commits and 7,460,682 exported patch bytes**, with zero
+  findings. The tracked `.env.example` is included; actual credential/runtime paths are untracked.
+  The exact staged files receive a separate redacted scan before commit; its manifest, result and
+  committed-byte verification are retained with the ignored evidence.
+- No model inference/training, application container, live research worker, PostgreSQL fixture,
+  cloud/GPU, sibling edit, delegation or publication was used. Docker use was limited to the cached,
+  network-disabled CPU secret scanner with read-only input and bounded disposable resources.
+
 ## Next executable step
 
-Audit and specify governed resolution of completed-but-uncommitted actions and the associated retry
-and task lifecycle before implementing an automatic replacement scheduler. Decide what independent
-domain evidence can support an explicit reviewed successor or a recorded abandonment, preserve
-the original effect/accounting lineage and keep unknown effects stopped. A new lease must not turn
-either outcome into a repeated external action or hide an infrastructure exclusion in scientific
-credit. Do not infer domain result admission from forensic retention or from a recovery receipt.
+Implement the explicit recovered-source admission adapter specified in
+`pprl-effect-resolution-boundary.md`, using the hardened historical reader. Bind one exact completed
+effect and its full private source set to a separately reviewed, rights/scoped process derivative;
+keep training use disabled. Revalidate the pinned evidence broker's current authority, native
+provenance, retention and public-content boundaries. This admission must not clear the unresolved
+effect barrier, dispatch/reconcile work, forge an old worker event or change canonical state.
+
+Then define executable task disposition and a distinct reviewed successor/terminal-abandonment
+transition together with replay/compiler treatment of interventions and infrastructure exclusions.
+Select independent domain evidence for successor review; preserve original effects and costs and
+keep unknown effects stopped. A new lease or task ID cannot silently repeat an abandoned effect or
+hide an exclusion in scientific credit. Automatic replacement scheduling depends on these contracts.
 
 Then connect heartbeat, stale-worker detection, durable task ownership, role-specific action masks
 and deterministic scheduling to the existing scoped credential and recovery boundary. Credential

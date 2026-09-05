@@ -94,6 +94,13 @@ retain source evidence. Native broker/client restart and PostgreSQL race fixture
 boundary; it neither launches replacements automatically nor proves scientific process continuity.
 See [assignment recovery boundary](pprl-assignment-recovery-boundary.md).
 
+A follow-up source audit hardens checked historical recovery reads: native workload/request/result
+joins, exact source ownership, recorded phases and original settlement sources are reconstructed.
+Initial recovery publication uses the same reader. Older partial snapshots remain valid after later
+results without becoming new execution authority. The next dependency is explicit recovered-source
+admission, followed by reviewed transition/task disposition and compiler treatment; these remain
+designs in [effect resolution boundary](pprl-effect-resolution-boundary.md).
+
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
 who may use the record and for what purpose, not merely by whether it is stored.
@@ -108,8 +115,9 @@ who may use the record and for what purpose, not merely by whether it is stored.
 | recovery and scheduling runtime | How are workers placed, started, replaced, rehydrated, reassigned, and recovered? | Receives only the minimum control and hydration data needed to operate. |
 
 The first layer is substantively implemented as a control plane. The second is mostly absent. The
-third is rich in places but fragmented. The fourth exists for the older developmental `runs`
-lifecycle, not for PPRL.
+third is rich in places but fragmented. The fourth has an older developmental `runs` lifecycle and
+now separate PPRL enrollment, one-action ownership and reviewed recovery primitives. A PPRL
+heartbeat/task/placement scheduler and automatic replacement runtime remain absent.
 
 ## Non-negotiable information-flow invariant
 
