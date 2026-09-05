@@ -58,7 +58,7 @@ authorization; no new external authority was granted.
 | --- | --- | --- |
 | Information boundaries and retention | In progress, stage 1 below | Adversarial ingress/read/export/projection tests, authoritative classification, reviewed admission, transactional retention |
 | Containment, identity, causal tracing, budgets | Exact generation binding, shared accounting, local CPU tool containment, scoped worker credentials and one-action ownership | Credential delivery/isolation, loaded-model attestation, model-serving containment, complete capture/metering and external-effect recovery |
-| Recovery and replacement | Committed state/leases and private one-action ownership; full lifecycle absent | Crash/retry/fencing/reconciliation and exact hydration, including 100% roster replacement |
+| Recovery and replacement | Reviewed lease fencing, unresolved-effect barriers and retained-result accounting; native simulated replacement preserves admitted observations | Domain resolution of uncommitted results, heartbeat/task/retry scheduling and scientific continuity through 100% roster replacement |
 | Communication, tracking, escalation | Declarative state and roles | Explicit delivery/read authority, causal replay, durable live views, bounded dispatch and escalation |
 | Atlas and mechanistic integration | Worker Atlas and separate runtime laboratories | Institutional subjects; versioned interchange; matched identities; protected forensic evidence and causal controls |
 | Long-horizon institutional science | Declared distributions and outcomes | Preregistered independent replicates, bounded-regret estimators, matched baselines, resumable 10M+ token validation |
@@ -927,21 +927,95 @@ container were removed. The CPU fixture reused the preceding checkpoint's review
 and profile. No model inference/training, GPU/cloud resource, live experimental worker, external
 publication, sibling edit or delegation was used.
 
+## Stage 3 checkpoint: reviewed recovery and unresolved-effect barrier, 2026-09-05
+
+The checkout began at `ffe3195` with no unrelated edits. Root instructions and all required documents
+were read in order. `pprl-assignment-recovery-boundary.md` defined this slice before implementation.
+The preceding goal turn and this continuation are progress, not blocked or complete.
+
+The audit reproduced six unsafe replacement claims at the previous HEAD: reserved, started and
+settled-but-uncommitted actions, each under legacy and enrolled authority, still allowed an expired
+lease to be reclaimed. Shared resource holds stopped additional effects only when aggregate capacity
+happened to bind. The baseline was **6 failed, 1 passed**; the final barrier stops earlier, so an older
+test expecting a claim followed by budget denial was corrected to require no replacement claim.
+
+Claims and new admissions now independently anchor the barrier in admitted decisions and validate
+their reservations, original releases and committed events. A missing reservation or phase cannot
+erase an admission. A mutable `released` label alone cannot clear it. Spare funding and a relabelled
+lease/request do not permit a second uncommitted effect. Amber's internal atomic reservation writer
+exempts only its just-inserted decision from its own historical-gap check.
+
+The private `ProcessRecoveryStore` checks reviewed state/lease expectations and original authority,
+serializes rollout/scope/worker/Amber/account access, fences the prior lease and can retire its
+credential. It refunds only an unstarted reservation without retained effect intent. The existing
+reviewer refund API now enforces that same condition; a reserved container may already have been
+created. Complete independently retained model/container results can reconcile once after broker
+loss. Unknown effects retain holds. Completed effects without a successor remain review-required;
+there is no synthetic state update, raw-result admission or successful scientific outcome.
+
+One immutable SQL table and four schema exports retain review, phase assessment, original state,
+assignment/retirement, Amber lifecycle and account identities. Each cited source gets independent
+`process_recovery_receipt` ownership. Replay requires original and recovery owners and permits late
+external-call status changes without rewriting the earlier assessment. Source count/byte limits,
+stale review, authority expiry during inspection, idempotency mismatch and failed receipt retention
+all fail conservatively. A populated recovery ledger cannot be downgraded to erase its history.
+
+A separate native recovering broker and a separate native replacement broker/client operate from
+durable SQLite/artifacts alone, mint a new scoped incarnation, and recover identical admitted
+observation bytes after an untouched action. This replaces every simulated worker in that fixture;
+it does not prove autonomous fleet operation, preservation of worker-local execution or useful
+scientific competence under 100% churn. Delayed synthetic model results remain private, are billed
+once and cannot commit after fencing. PostgreSQL tests exercise duplicate recovery, dispatch commit
+versus rollback, claim contention and a commit waiting behind recovery.
+
+Retained evidence is under ignored `runs/pprl-recovery-validation-20260905/`: original failing probes,
+intermediate/final logs and XML, native broker/client fixtures, private SQL receipts/source joins,
+artifacts and ownership, exact source/schema/migration manifests, cleanup and redacted secret scans.
+Early implementation tests found a lifecycle timestamp-field mismatch and two fixture helper-field
+mistakes; corrected runs are distinct from those retained failures. Final review added missing
+reservation/head probes and a completion-time authority recheck before readiness publication.
+
+Final validation:
+
+- Full offline suite: `PYTHONPATH=. .venv/bin/pytest -q -m 'not postgres and not live and not lean
+  and not docker'` — **799 passed, 27 deselected in 132.49 seconds**. This includes 43 recovery
+  scenarios and the added populated-ledger downgrade guard. The retained focused recovery run was
+  **43 passed in 13.17 seconds**; its SQLite/artifact fixtures remain available for inspection.
+- Fresh bounded PostgreSQL fixture: `PYTHONPATH=. .venv/bin/pytest -q -m postgres` — **19 passed,
+  807 deselected in 22.66 seconds**, including five recovery race cases and migration checks.
+- Ruff passed lint and formatting on 370 Python files; all 181 schemas match; mypy with
+  `--no-incremental` passed on 185 source files. `git diff --check` passed.
+- The final PostgreSQL rerun is separate from a failed fixture run: repeated schema rebuilds filled
+  the first fixture's 256 MiB tmpfs WAL, yielding **13 passed, 6 setup errors**, with no OOM kill.
+  The failure logs and container state are retained. A fresh fixture used the same pinned cached
+  image, one CPU, 512 MiB memory/equal swap limit, 128 PIDs, 256 MiB data tmpfs, read-only root,
+  no host mounts and no container network. WAL targets were 64/32 MiB with 30-second checkpoints,
+  64 MiB shared buffers and 40 connections. Acceptance assertions were unchanged.
+- Both exact owned PostgreSQL containers were removed and both localhost-only relays reported
+  `POSTGRES_TEST_RELAY_STOPPED`. The owned label inventory is empty. The preexisting
+  `padawan-postgres-1` and `common-ground-postgres-test` containers remain. No application container,
+  model inference/training, cloud/GPU, publication, sibling edit or delegation was used.
+- The all-ref secret scan covered **31 commits and 7,282,191 exported patch bytes**, with zero
+  findings and no tracked credential/runtime paths. The separate exact-staged scan also found zero
+  secrets across 31 files. The final ledger update is rescanned before commit; source/scan manifests
+  and commit-byte verification are retained with evidence.
+
 ## Next executable step
 
-Audit and specify the executable recovery slice before coding it: durable assignment/lifecycle
-operations, fencing and clean handoff versus crashes, pause/resume, broker restart and interruption
-between intent, dispatch, retained result, accounting and event commit. Establish what evidence
-allows an explicit recovery action and what leaves an external effect unknown. Do not erase a
-resource hold or issue a second effect merely because a lease or credential expired.
+Audit and specify governed resolution of completed-but-uncommitted actions and the associated retry
+and task lifecycle before implementing an automatic replacement scheduler. Decide what independent
+domain evidence can support an explicit reviewed successor or a recorded abandonment, preserve
+the original effect/accounting lineage and keep unknown effects stopped. A new lease must not turn
+either outcome into a repeated external action or hide an infrastructure exclusion in scientific
+credit. Do not infer domain result admission from forensic retention or from a recovery receipt.
 
-Use the new registered incarnation and assignment boundary as the authority input. Keep runtime
-credential delivery separate from allowlisted model hydration; preserve independent source owners
-and full request-to-effect lineage. Exercise disposable simulated workers and fresh broker processes
-first. Define future child enrollment, task ownership and replacement tests explicitly rather than
-silently using legacy APIs. A full scheduler, role-specific action masks and live model workers are
-not implied by these primitives. No new authorization is required for this next local audit/design
-and bounded engineering work.
+Then connect heartbeat, stale-worker detection, durable task ownership, role-specific action masks
+and deterministic scheduling to the existing scoped credential and recovery boundary. Credential
+delivery/isolation and child enrollment need explicit contracts. Retain byte-exact hydration and
+test complete roster churn, interrupted handoffs and lifecycle races with simulated workers first.
+The current clear-claim integrity check traverses rollout history; benchmark and bound its growth,
+and design checked incremental frontiers before long-horizon execution. No new authorization is
+required for these next local audit/design and bounded engineering steps.
 
 The CPU runner is complete for its stated local scope. Model-serving containment, independent
 forensic service credentials and full capture, actual model identity, physical metering, domain
@@ -949,7 +1023,7 @@ result admission and recovery of unknown effects remain gaps. SQL revocation and
 not atomic; bounded polling/watchdog evidence is not an instantaneous revocation guarantee.
 Institutional continuity through 100% worker replacement is still unproven.
 
-Model/GPU validation, Atlas institutional subjects and causal MI interchange, executable recovery,
+Model/GPU validation, Atlas institutional subjects and causal MI interchange, automatic recovery,
 explicit communication/economics, the 10M+ token milestone, preregistered learning, an actual trainer/
 parameter candidate and independent evaluation remain in the full roadmap. Keep Atlas training
 materialization gated. Prepare the required concrete campaign before requesting any additional

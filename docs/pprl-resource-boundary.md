@@ -79,6 +79,14 @@ permission to deliver output: a retained complete model result can be accounted 
 revocation or caller failure. Unknown effects cannot be retried or refunded through this interface.
 The generic settlement primitive is internal and cannot refund unmetered action allowances.
 
+The recovery checkpoint tightens `release_unstarted`: it locks the rollout before the account and
+rejects any retained model or container intent, even when the resource head is still `reserved`.
+Container creation may precede start, so that phase alone is not proof of no external effect. Claims
+and new admissions also require every prior action to have a valid reviewed no-intent release or an
+exact committed event. Spare global capacity cannot bypass this per-rollout barrier. The separate
+`ProcessRecoveryStore` records reviewed fencing and source-backed assessments without admitting a
+lost process update. See `pprl-assignment-recovery-boundary.md`.
+
 The subsequent CPU container checkpoint adds `container_evidence` settlement through
 `ProcessContainerStore.reconcile`. It reconstructs owned intent, exact input, runtime/create/terminal/
 cleanup captures and the final receipt before charging the full reservation plus any retained-byte
@@ -91,7 +99,8 @@ explicit broker APIs, not a new automatic CLI execution path. See `pprl-containe
 
 ## Transactions, evidence, tests and rollback
 
-Lock order is rollout, Amber authorization head, resource account, reservation head. Funding and
+Lock order is rollout, enrolled scope/worker when needed, Amber authorization head, resource account,
+reservation head. Funding and
 reconciliation that need no rollout lock must never acquire one after the account. PostgreSQL row
 locks serialize contenders; SQLite lock conflicts fail before effects and never justify retrying a
 possibly dispatched operation. Caught exceptions and outer rollback must not leave partial funding,

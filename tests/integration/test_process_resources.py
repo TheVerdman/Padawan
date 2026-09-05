@@ -513,11 +513,13 @@ async def test_all_brokers_replaced_after_lease_expiry_keep_unknown_spend(
     ctx.amber = AmberStore()
     ctx.process = ProcessStore(ctx.amber)
     ctx.clock = lambda: NOW + timedelta(minutes=16)
-    replacement, attempt = await resource_action(ctx, worker="fresh-broker")
-    assert replacement.lease_token != original.lease_token
-    assert replacement.state.state_digest == original.state.state_digest
-    denied = await _admit(ctx, attempt)
-    assert "shared_resource_capacity_exhausted" in denied.reason_codes
+    async with database.transaction() as session:
+        replacement = await ctx.process.claim_next(
+            session, worker_id="fresh-broker", lease_for=timedelta(minutes=15), now=ctx.clock()
+        )
+        assert replacement is None
+        retained = await ctx.process.get_state(session, state_id=original.state.state_id)
+        assert retained == original.state
     assert (await _balance(ctx)).held.input_tokens == 40
 
 

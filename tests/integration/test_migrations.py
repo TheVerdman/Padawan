@@ -101,3 +101,25 @@ def test_worker_ledger_cannot_be_erased_by_downgrade(tmp_path, monkeypatch) -> N
     with pytest.raises(RuntimeError, match="populated worker authority"):
         command.downgrade(configuration, "c4a93d8e127b")
     assert "process_worker_scopes" in _tables(database_path)
+
+
+def test_recovery_ledger_cannot_be_erased_by_downgrade(tmp_path, monkeypatch) -> None:
+    database_path = tmp_path / "recovery-ledger.sqlite3"
+    configuration = _config(database_path, monkeypatch)
+    command.upgrade(configuration, "head")
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            "INSERT INTO process_recoveries VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                "process-recovery-" + "a" * 32,
+                "rollout-fixture",
+                "sha256:" + "b" * 64,
+                "sha256:" + "c" * 64,
+                "sha256:" + "d" * 64,
+                "{}",
+                "2026-09-05 12:00:00",
+            ),
+        )
+    with pytest.raises(RuntimeError, match="populated recovery"):
+        command.downgrade(configuration, "e1c87a63d942")
+    assert "process_recoveries" in _tables(database_path)

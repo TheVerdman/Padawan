@@ -164,6 +164,26 @@
       "sha256": "49fae25d187b5786d4ac1ebbf20f0c069cd4983747fc13aa3678dc5753904445"
     },
     {
+      "name": "process-recovery-request",
+      "schema": "process-recovery-request.schema.json",
+      "sha256": "55d8692ed0bdc3b5a62e69f7ed34ec964fdf6815fab9eb8dfa9a626d7f89a237"
+    },
+    {
+      "name": "process-recovery-source",
+      "schema": "process-recovery-source.schema.json",
+      "sha256": "08a1f50210b33f2bf8befbd95b6fe9f5e269e4df20952473ae77d9ad94be6399"
+    },
+    {
+      "name": "process-recovery-effect",
+      "schema": "process-recovery-effect.schema.json",
+      "sha256": "f4f1af16a391e9aa030a91c2b7dd95853788a729e0d41467ac58984ea6ffb180"
+    },
+    {
+      "name": "process-recovery-receipt",
+      "schema": "process-recovery-receipt.schema.json",
+      "sha256": "3a13b60f39ceec9d28d2e24a56908906e4a6eb7c5947c616b0b239f629e0bb75"
+    },
+    {
       "name": "process-worker-registration",
       "schema": "process-worker-registration.schema.json",
       "sha256": "cd6cc1ccafdbcfa3a1c5f75a82a0f0a33b1a7cabde5dc06d58375534797057a7"

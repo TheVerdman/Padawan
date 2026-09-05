@@ -82,8 +82,19 @@ authenticated claim/observe/propose requests. Protected APIs reject a copied lea
 assigned credential. The stream adapter opens no listener and returns only a control envelope plus
 an allowlisted observation or disposition. This proves capability possession inside the trusted
 broker; model/host attestation, credential delivery/isolation, action masks, model-serving
-containment and executable replacement hydration remain absent. Enrolled forks are denied pending
+containment and automatic replacement hydration remain absent. Enrolled forks are denied pending
 explicit child-scope support; legacy scopes receive no implicit enrollment or backfill.
+
+`pprl-assignment-recovery-boundary.md` adds an explicit reviewed recovery operation. Claim and
+admission barriers reject earlier uncommitted effects independently of spare shared capacity.
+Recovery checks the expected state and lease, original reviewer and current authority, fences the
+old lease and optionally retires its credential. It releases only an untouched reservation with no
+effect intent; retained complete model/container sources may reconcile usage once. Unknown effects
+retain holds. Completed effects with no committed state transition stay review-required. Recovery
+does not reconstruct a lost state update or admit raw output. Immutable private recovery receipts
+and independent source owners support later inspection, including after a late result. Separate
+native broker/client fixtures recover identical public observation bytes from persistent stores;
+this is simulated replacement evidence, not an automatic scheduler or scientific continuity result.
 
 ## Distributions and evidence
 

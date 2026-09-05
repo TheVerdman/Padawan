@@ -7,8 +7,9 @@ from datetime import UTC, datetime, timedelta
 from functools import wraps
 from typing import Concatenate, Literal
 
-from sqlalchemy import select
+from sqlalchemy import Select, and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.selectable import Exists
 
 from padawan.governance.amber import (
     AmberActionRequest,
@@ -41,6 +42,52 @@ from padawan.pprl.resource_contracts import (
     resources_from_usage,
 )
 from padawan.pprl.worker_contracts import ProcessWorkerAccess
+
+
+def unresolved_action_query() -> Select[tuple[str]]:
+    """Admissions are the root: deleting a reservation cannot erase a pending effect."""
+    return (
+        select(AmberAdmissionDecisionRow.decision_id)
+        .outerjoin(
+            ProcessResourceReservationRow,
+            ProcessResourceReservationRow.decision_id == AmberAdmissionDecisionRow.decision_id,
+        )
+        .outerjoin(
+            ProcessResourceReservationHeadRow,
+            ProcessResourceReservationHeadRow.decision_id
+            == ProcessResourceReservationRow.decision_id,
+        )
+        .outerjoin(
+            ProcessEventRow,
+            ProcessEventRow.amber_decision_id == AmberAdmissionDecisionRow.decision_id,
+        )
+        .where(
+            or_(
+                AmberAdmissionDecisionRow.disposition == "admitted",
+                ProcessResourceReservationRow.decision_id.is_not(None),
+            ),
+            or_(
+                ProcessResourceReservationRow.decision_id.is_(None),
+                and_(
+                    ProcessEventRow.event_id.is_(None),
+                    or_(
+                        ProcessResourceReservationHeadRow.status.is_(None),
+                        ProcessResourceReservationHeadRow.status != "released",
+                    ),
+                ),
+            ),
+        )
+    )
+
+
+def unresolved_process_actions() -> Exists:
+    """Cheap claim filter; selected candidates still require full source validation."""
+    return (
+        unresolved_action_query()
+        .where(AmberAdmissionDecisionRow.rollout_id == ProcessRolloutRow.rollout_id)
+        .correlate(ProcessRolloutRow)
+        .exists()
+    )
 
 
 def atomic_resource_write[S, **P, R](
@@ -191,6 +238,7 @@ class ProcessResourceStore:
         *,
         request: AmberActionRequest,
         previous: ProjectBudgetUsage,
+        _pending_decision_id: str | None = None,
     ) -> tuple[str, ...]:
         if await session.get(ProcessResourceAccountRow, request.authorization_digest) is None:
             return ("resource_funding_missing",)
@@ -213,7 +261,67 @@ class ProcessResourceStore:
         )
         if prior is not None:
             reasons.append("resource_action_already_reserved")
+        pending = unresolved_action_query().where(
+            AmberAdmissionDecisionRow.rollout_id == request.rollout_id
+        )
+        if _pending_decision_id is not None:
+            pending = pending.where(AmberAdmissionDecisionRow.decision_id != _pending_decision_id)
+        if await session.scalar(pending.limit(1)) is not None:
+            reasons.append("rollout_recovery_required")
+        else:
+            await self.assert_rollout_recoverable(
+                session, rollout_id=request.rollout_id, _pending_decision_id=_pending_decision_id
+            )
         return tuple(sorted(reasons))
+
+    async def assert_rollout_recoverable(
+        self, session: AsyncSession, *, rollout_id: str, _pending_decision_id: str | None = None
+    ) -> None:
+        """Closed head fields alone cannot erase missing or corrupt recovery evidence."""
+        from padawan.pprl.store import _event_from_row
+
+        decisions = set(
+            await session.scalars(
+                select(ProcessResourceReservationRow.decision_id).where(
+                    ProcessResourceReservationRow.rollout_id == rollout_id
+                )
+            )
+        )
+        decisions.update(
+            await session.scalars(
+                select(AmberAdmissionDecisionRow.decision_id).where(
+                    AmberAdmissionDecisionRow.rollout_id == rollout_id,
+                    AmberAdmissionDecisionRow.disposition == "admitted",
+                )
+            )
+        )
+        for decision_id in decisions:
+            if decision_id == _pending_decision_id:
+                continue
+            reservation, phase, source = await self.reservation(session, decision_id)
+            if phase.status == "released":
+                authority = await self._authorization(session, reservation.authorization_digest)
+                if (
+                    source.actor_id not in authority.required_reviewers
+                    or source.basis != "reviewed"
+                    or source.amount != reservation.amount
+                    or not source.reason.strip()
+                ):
+                    raise ValueError("resource release lost its reviewed source")
+                await self.assert_no_effect_intent(session, decision_id=decision_id)
+                continue
+            row = await session.scalar(
+                select(ProcessEventRow).where(ProcessEventRow.amber_decision_id == decision_id)
+            )
+            if row is None or phase.status != "settled":
+                raise PermissionError("rollout has an uncommitted effect requiring recovery")
+            event = _event_from_row(row)
+            if (
+                event.rollout_id != rollout_id
+                or event.lease_token_digest != reservation.lease_token_digest
+                or event.amber_authorization_digest != reservation.authorization_digest
+            ):
+                raise ValueError("closed effect lost its exact committed transition")
 
     @atomic_resource_write
     async def reserve(
@@ -224,7 +332,12 @@ class ProcessResourceStore:
         request: AmberActionRequest,
         previous: ProjectBudgetUsage,
     ) -> ProcessResourceReservation:
-        reasons = await self.admission_reasons(session, request=request, previous=previous)
+        # Amber has just inserted this admitted decision in the same transaction.
+        # Only this not-yet-published reservation is exempt from the historical gap
+        # check; the public admission path and all claims have no exemption.
+        reasons = await self.admission_reasons(
+            session, request=request, previous=previous, _pending_decision_id=decision.decision_id
+        )
         if reasons or decision.disposition.value != "admitted":
             raise PermissionError(f"resource reservation is not admitted: {reasons}")
         grant = await self.grant(session, request.authorization_digest)
@@ -320,6 +433,11 @@ class ProcessResourceStore:
         if decision is None or (
             sha256_digest(decision.record_json) != record.decision_digest
             or sha256_digest(decision.request_json) != record.request_digest
+            or decision.disposition != "admitted"
+            or AmberAdmissionDecision.model_validate(
+                decision.record_json, strict=False
+            ).disposition.value
+            != "admitted"
         ):
             raise ValueError("resource reservation has lost its admission lineage")
         from padawan.pprl.worker_identities import ProcessWorkerIdentityStore
@@ -615,6 +733,13 @@ class ProcessResourceStore:
     ) -> ProcessResourceEvent:
         reservation, _, _ = await self.reservation(session, decision_id)
         envelope = await self._authorization(session, reservation.authorization_digest)
+        # Serialize the no-intent proof with admission, durable intent and start.
+        # A prepared container can already exist outside SQL even while reserved.
+        await session.scalar(
+            select(ProcessRolloutRow)
+            .where(ProcessRolloutRow.rollout_id == reservation.rollout_id)
+            .with_for_update()
+        )
         current = await self.inspect(session, reservation.authorization_digest, lock=True)
         reservation, head, prior = await self.reservation(session, decision_id)
         if reviewer_id not in envelope.required_reviewers or not evidence.strip():
@@ -627,6 +752,7 @@ class ProcessResourceStore:
             return prior
         if head.status != "reserved":
             raise PermissionError("started or uncertain effects cannot receive an automatic refund")
+        await self.assert_no_effect_intent(session, decision_id=decision_id)
         event = self._next(
             current,
             kind="release",
@@ -644,6 +770,23 @@ class ProcessResourceStore:
         head.status, head.record_digest = "released", event.digest
         await session.flush()
         return event
+
+    async def assert_no_effect_intent(self, session: AsyncSession, *, decision_id: str) -> None:
+        if (
+            await session.scalar(
+                select(ProcessContainerWorkloadRow.invocation_id).where(
+                    ProcessContainerWorkloadRow.decision_id == decision_id
+                )
+            )
+            is not None
+            or await session.scalar(
+                select(ProcessWorkerInvocationRow.invocation_id).where(
+                    ProcessWorkerInvocationRow.amber_decision_id == decision_id
+                )
+            )
+            is not None
+        ):
+            raise PermissionError("retained effect intent requires explicit recovery evidence")
 
     async def replay(
         self, session: AsyncSession, authorization_digest: str

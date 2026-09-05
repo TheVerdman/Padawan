@@ -54,7 +54,7 @@ unresolved process effects cannot automatically resend. Mock HTTP tests cover su
 ambient client state, configuration drift, pause and interruption. See
 [generation workload boundary](pprl-generation-workload-boundary.md). Attested runtime and
 loaded-model identity, model-serving containment/capture, independent resource metering,
-executable hydration/recovery, Atlas learning projections, semantic provenance, coordinated GC, and
+automatic hydration/recovery, Atlas learning projections, semantic provenance, coordinated GC, and
 parameter-training readiness remain unresolved. These offline properties do not attest a live runtime.
 
 The second stage-2 checkpoint implements explicitly reviewed authorization-wide funding, atomic per-action
@@ -84,6 +84,15 @@ for SQL stores, native disposable-client tests, PostgreSQL races and a local CPU
 This authenticates capability possession, not the loaded model, OS process, host or reviewer.
 Credentials and private record references stay outside model observations and training content;
 assignment IDs appear only in explicitly addressed runtime control envelopes.
+
+The first stage-3 checkpoint adds an explicit reviewed recovery API and per-rollout claim/admission
+barriers. Uncommitted effects block progress independently of spare global capacity. Recovery fences
+the expected lease, optionally retires its credential, releases only reservations with no effect
+intent and reconciles complete retained results. Unknown effects retain holds; completed results
+without an admitted successor remain review-required. Private immutable assessments independently
+retain source evidence. Native broker/client restart and PostgreSQL race fixtures cover this
+boundary; it neither launches replacements automatically nor proves scientific process continuity.
+See [assignment recovery boundary](pprl-assignment-recovery-boundary.md).
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
@@ -165,6 +174,9 @@ The PPRL data model has a real durable substrate:
   `process_worker_heads`, `process_worker_lease_assignments`, `process_worker_decision_bindings`
   and `process_worker_requests` retain private enrollment, verifier/lifecycle, one-action ownership
   and exact authenticated request lineage; these are not project-state assignments or model memory;
+- `process_recoveries` retains private reviewed state/lease expectations, fencing, effect assessments
+  and accounting snapshots. Its `process_recovery_receipt` artifact owners preserve original sources
+  independently; neither the record nor its identifiers enter process state or observations;
 - Amber authorization, lifecycle, head, and action-decision tables bind each admitted transition to
   exact authority and cumulative budget; and
 - `process_worker_invocations`, `process_generation_workloads`, `external_calls`, and the artifact
@@ -198,7 +210,10 @@ in [`padawan/artifacts`](../padawan/artifacts).
    HTTP sends once with no automatic retry, redirect or protocol fallback.
 8. `append_event` atomically verifies the admission, records the event and artifact references,
    writes the successor immutable state, advances the rollout head, and releases the lease.
-9. A later worker can claim the rollout and read the new canonical state.
+9. A later worker can claim the rollout and read the new canonical state. Claim and admission each
+   reject a prior reservation lacking an exact committed event or valid reviewed unstarted release.
+   `ProcessRecoveryStore.recover` is a separate privileged transaction for fencing and assessment;
+   it does not synthesize a missing successor state.
 
 Separately, `TrainingCompiler` retains version-1 privileged research archives. The trusted
 `ProcessTrainingProjectionStore.compile` reconstructs their PPRL rows and retains a new projection
@@ -233,11 +248,13 @@ them; they are not a cross-node fabric.
 ### Replacement verdict
 
 The current system can preserve **committed macro-state** through 100 percent worker replacement if
-the replacement process shares the database and artifact backend. It cannot itself detect, launch,
-hydrate, or assign the replacements, preserve uncommitted internal work, or guarantee that a new
-worker received an exact and contamination-safe model prompt. Offline fixtures establish identical
-public observation bytes under fresh worker/lease receipts and exact mock-HTTP generation input;
-they do not establish live replacement or recovery of interrupted external work.
+the replacement process shares the database and artifact backend. Separate native broker/client
+fixtures now establish reviewed fencing, new credential issuance and identical public observation
+bytes after an unstarted action. Unknown and completed-but-uncommitted effects remain stopped.
+The system still cannot automatically detect, place, launch or schedule replacements, preserve
+uncommitted internal work, or establish useful research competence after replacement. Exact mock-HTTP
+generation inputs and simulated replacement are engineering evidence, not live scientific continuity
+or proof that every interrupted external effect can be resolved.
 
 ## 2. Communication and coordination fabric
 
@@ -301,9 +318,9 @@ is no sender/recipient ACL, delivery state, acknowledgement, TTL, or per-worker 
 concrete handler may be constructed with artifact access, but the PPRL substrate does not govern
 that access as multi-agent communication.
 
-Lease expiry allows another coordinator to claim a rollout from the last state. This is work
-stealing after failure, not an intentional transfer that preserves ownership, partial progress,
-dependencies, or acknowledgement.
+Lease expiry allows another coordinator to claim from the last state only when the unresolved-effect
+barrier is clear. Explicit reviewed recovery can fence the old owner; it does not transfer partial
+progress, dependencies or an acknowledgement between workers.
 
 ### Requirements for governed live collaboration
 
@@ -430,22 +447,24 @@ credential boundary. The eventual forensic plane needs:
 
 ### What exists
 
-PPRL rollouts have exclusive leases. An expired lease can be reclaimed, so the current committed
-state is not permanently owned by a dead coordinator. Model calls use a durable idempotency ledger,
-so a completed persisted provider response can be reused after a caller crash instead of blindly
-duplicating external work. New PPRL generation forbids automatic redispatch of pending, cancelled or
-failed effects and preserves uncertainty. It still lacks an external-effect reconciler; conservative
-denial alone does not establish automatic recovery.
+PPRL rollouts have exclusive leases. Expired leases are claimable only when every prior reservation
+has an exact committed event or valid reviewed unstarted release. Model calls retain durable intent
+and original response bytes; pending, cancelled and failed effects cannot automatically redispatch.
+The reviewed `ProcessRecoveryStore` locks the rollout, scope/worker, Amber head and resource account,
+checks the expected state/lease and reviewer, and assesses retained effects. It releases no-intent
+reservations and can account complete model/container results through their independent readers.
+It fences the old lease and optionally revokes its credential atomically with a private receipt and
+independent artifact ownership. Unknown effects keep their holds and completed effects lacking a
+state transition remain review-required; no lost process update is inferred from raw output.
 
 The CPU tool runner additionally retains immutable intent before container creation, refuses any
 second launch for that decision and records inspected exit/removal separately from permission to
 commit a process event. Missing capture or ambiguous cleanup preserves the hold. A fully retained
 receipt can be reconciled after an accounting failure without rerunning the command. Broker-loss
 fixtures establish the container watchdog's stop behavior. The separate capability boundary adds
-registration, revocation and one-action ownership; neither checkpoint establishes a restart
-reconciler or whole-institution replacement. A reviewed new incarnation can recover identical
-observation bytes in a manually driven fixture after clean lease release; that test does not recover
-an unfinished computation or an unknown effect.
+registration, revocation and one-action ownership. The recovery checkpoint adds fresh-process
+assessment and simulated replacement with identical observations. It does not reconstruct an
+unfinished computation, resolve an unknown physical effect or establish whole-institution competence.
 
 The separate developmental runtime has:
 
@@ -464,16 +483,18 @@ These mechanisms demonstrate useful patterns but do not operate on PPRL rollouts
 - worker launch, shutdown, placement, or accelerator scheduling;
 - capability-to-role matching;
 - a full executable task-assignment lifecycle beyond one-action lease ownership;
-- reconciliation of planned or running process invocations after worker death;
+- autonomous classification/resolution of every interrupted invocation; reviewed assessment and
+  complete retained-result accounting now exist, while unknown effects remain stopped;
 - partial-action checkpoints;
 - executable replacement hydration and attested context delivery; offline observation and exact
   configured generation receipts now exist;
-- retry classification and safe action resumption;
+- automatic retry scheduling and domain admission for completed-but-uncommitted actions; only
+  reviewed no-intent release permits a new action through the current recovery API;
 - intentional handoff and acknowledgement;
 - dependency-aware task scheduling;
 - coordinated fleet-wide pause, credential revocation and emergency snapshot (individual credential
   revocation is implemented); and
-- automated replacement tests proving continuity under total worker churn.
+- scientific replacement trials proving useful institutional continuity under total worker churn.
 
 An invocation can remain `running` without a PPRL-specific stale-invocation reconciler. A
 coordinator exception records class and message and marks the rollout failed; it does not preserve

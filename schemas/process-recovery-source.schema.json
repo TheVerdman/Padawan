@@ -1,0 +1,116 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "ForensicArtifactRef": {
+      "additionalProperties": false,
+      "description": "Researcher-only reference; never part of a worker projection.",
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "classification_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Classification Digest",
+          "type": "string"
+        },
+        "domain": {
+          "const": "forensic",
+          "default": "forensic",
+          "title": "Domain",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact",
+        "classification_digest"
+      ],
+      "title": "ForensicArtifactRef",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-recovery-source.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "owner_id": {
+      "minLength": 1,
+      "title": "Owner Id",
+      "type": "string"
+    },
+    "owner_type": {
+      "minLength": 1,
+      "title": "Owner Type",
+      "type": "string"
+    },
+    "reference": {
+      "$ref": "#/$defs/ForensicArtifactRef"
+    }
+  },
+  "required": [
+    "reference",
+    "owner_type",
+    "owner_id"
+  ],
+  "title": "ProcessRecoverySource",
+  "type": "object"
+}

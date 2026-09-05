@@ -56,6 +56,14 @@ lifecycle, credential delivery/isolation and replacement scheduling remain unfin
 `docs/pprl-worker-identity-boundary.md`; enrolled executions cannot fall back to legacy unauthenticated
 APIs or fork into unenrolled child executions.
 
+An explicit reviewed recovery API now fences stale leases, releases reservations only when no
+effect intent exists, and reconciles independently retained complete results. Per-rollout claim and
+admission barriers stop uncommitted effects even when global budget remains. Unknown effects retain
+holds; known results without a process transition remain review-required. These private receipts
+are not hydration or permission to rerun work. See `docs/pprl-assignment-recovery-boundary.md`.
+Automatic detection, placement, multi-action lifecycle and scientific replacement validation remain
+unfinished.
+
 Use **PPRL** for the general program and **PPRL-VR** only when the declared outcome is genuinely
 verifiable. RL evidence requires sampled task distributions and repeated stochastic rollouts; a
 single historical run may be evidence but is not a training or comparative distribution.

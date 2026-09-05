@@ -75,6 +75,7 @@ from padawan.pprl.contracts import (
 from padawan.pprl.evidence import ProcessEvidenceStore
 from padawan.pprl.evidence_contracts import ProcessEvidenceUse
 from padawan.pprl.generation_contracts import generation_workload_from_row
+from padawan.pprl.resources import unresolved_process_actions
 from padawan.pprl.worker_contracts import ProcessWorkerAccess
 from padawan.pprl.worker_identities import ProcessWorkerIdentityStore
 
@@ -447,6 +448,7 @@ class ProcessStore:
                 ProcessRolloutRow.paused.is_(False),
                 AmberAuthorizationHeadRow.status == AmberStatus.ACTIVE.value,
                 AmberAuthorizationRow.expires_at > timestamp,
+                ~unresolved_process_actions(),
                 or_(
                     ProcessRolloutRow.lease_expires_at.is_(None),
                     ProcessRolloutRow.lease_expires_at <= timestamp,
@@ -496,6 +498,7 @@ class ProcessStore:
             if row is None:
                 return None
         assignment = None
+        await self.amber.resources.assert_rollout_recoverable(session, rollout_id=row.rollout_id)
         if worker_access is not None:
             assignment = await self.workers.bind_claim(
                 session, rollout=row, access=worker_access, now=timestamp

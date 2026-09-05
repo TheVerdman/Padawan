@@ -166,6 +166,12 @@ from padawan.pprl.observation_contracts import (
     ProcessWorkerObservation,
     ProcessWorkerState,
 )
+from padawan.pprl.recovery_contracts import (
+    ProcessRecoveryEffect,
+    ProcessRecoveryReceipt,
+    ProcessRecoveryRequest,
+    ProcessRecoverySource,
+)
 from padawan.pprl.resource_contracts import (
     ProcessModelRate,
     ProcessResourceEvent,
@@ -268,6 +274,10 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("process-container-workload", ProcessContainerWorkload),
     ("process-container-receipt", ProcessContainerReceipt),
     ("process-worker-scope", ProcessWorkerScope),
+    ("process-recovery-request", ProcessRecoveryRequest),
+    ("process-recovery-source", ProcessRecoverySource),
+    ("process-recovery-effect", ProcessRecoveryEffect),
+    ("process-recovery-receipt", ProcessRecoveryReceipt),
     ("process-worker-registration", ProcessWorkerRegistration),
     ("process-worker-revocation", ProcessWorkerRevocation),
     ("process-worker-lease-assignment", ProcessWorkerLeaseAssignment),

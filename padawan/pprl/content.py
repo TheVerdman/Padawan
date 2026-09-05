@@ -29,6 +29,7 @@ from padawan.models.tables import (
     ProcessContainerWorkloadRow,
     ProcessContentAdmissionRow,
     ProcessEventRow,
+    ProcessRecoveryRow,
     ProcessResourceEventRow,
     ProcessResourceGrantRow,
     ProcessResourceReservationRow,
@@ -494,7 +495,7 @@ class ProcessContentBoundary:
         for value in strings:
             if re.search(
                 r"(?:process-container-|padawan-cpu-|process-worker-|worker-assignment-|"
-                r"worker-request-)[0-9a-f]{32}",
+                r"worker-request-|process-recovery-)[0-9a-f]{32}",
                 value,
             ):
                 raise ValueError("process content references private runtime identity")
@@ -561,6 +562,7 @@ class ProcessContentBoundary:
                 ProcessWorkerLeaseAssignmentRow,
                 ProcessWorkerDecisionBindingRow,
                 ProcessWorkerRequestRow,
+                ProcessRecoveryRow,
             ):
                 if (
                     await session.scalar(
@@ -569,6 +571,15 @@ class ProcessContentBoundary:
                     is not None
                 ):
                     raise ValueError("process content references private resource accounting")
+            if (
+                await session.scalar(
+                    select(ProcessRecoveryRow.recovery_id)
+                    .where(ProcessRecoveryRow.request_digest.in_(batch))
+                    .limit(1)
+                )
+                is not None
+            ):
+                raise ValueError("process content references private recovery review")
 
 
 async def _verify_source(

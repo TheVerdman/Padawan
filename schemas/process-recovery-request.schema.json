@@ -1,0 +1,91 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-recovery-request.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "expected_lease_token_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Expected Lease Token Digest"
+    },
+    "expected_state_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Expected State Digest",
+      "type": "string"
+    },
+    "maximum_effects": {
+      "default": 64,
+      "maximum": 1024,
+      "minimum": 1,
+      "title": "Maximum Effects",
+      "type": "integer"
+    },
+    "maximum_source_bytes": {
+      "default": 16777216,
+      "maximum": 134217728,
+      "minimum": 1,
+      "title": "Maximum Source Bytes",
+      "type": "integer"
+    },
+    "reason": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "recovery_id": {
+      "pattern": "^process-recovery-[0-9a-f]{32}$",
+      "title": "Recovery Id",
+      "type": "string"
+    },
+    "resume": {
+      "default": false,
+      "title": "Resume",
+      "type": "boolean"
+    },
+    "retire_worker": {
+      "default": true,
+      "title": "Retire Worker",
+      "type": "boolean"
+    },
+    "reviewed_at": {
+      "format": "date-time",
+      "title": "Reviewed At",
+      "type": "string"
+    },
+    "reviewer_id": {
+      "minLength": 1,
+      "title": "Reviewer Id",
+      "type": "string"
+    },
+    "rollout_id": {
+      "minLength": 1,
+      "title": "Rollout Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "recovery_id",
+    "rollout_id",
+    "expected_state_digest",
+    "expected_lease_token_digest",
+    "reviewer_id",
+    "reason",
+    "reviewed_at"
+  ],
+  "title": "ProcessRecoveryRequest",
+  "type": "object"
+}

@@ -15,6 +15,7 @@ from padawan.pprl.containers import ProcessContainerExecutor, ProcessContainerSt
 from padawan.pprl.coordinator import ProcessActionExecutor, ProcessCoordinator, ProcessPlanner
 from padawan.pprl.distributions import ProcessDistributionRegistry
 from padawan.pprl.observations import ProcessObservationStore
+from padawan.pprl.recovery import ProcessRecoveryStore
 from padawan.pprl.store import ProcessStore
 from padawan.training.compiler import TrainingCompiler
 
@@ -37,6 +38,10 @@ class PPRLApplication:
     training: TrainingCompiler
     default_worker_id: str
     default_lease_for: timedelta
+
+    def recovery(self) -> ProcessRecoveryStore:
+        """Explicit privileged recovery API. No listener, worker or retry is started."""
+        return ProcessRecoveryStore(self.processes, self.catalog)
 
     def container_executor(self, profile: ProcessContainerProfile) -> ProcessContainerExecutor:
         """Explicit broker composition only; constructing this object launches nothing."""

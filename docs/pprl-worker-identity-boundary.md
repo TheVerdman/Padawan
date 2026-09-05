@@ -144,5 +144,8 @@ inspection checks assignment lineage through the observation boundary.
 Migration `e1c87a63d942` adds seven tables with no backfill. It refuses to downgrade a populated scope.
 Enrolled forks are explicitly denied until reviewed child enrollment and ownership can be preserved;
 the old fork API cannot create an unauthenticated child as a fallback. A clean-release/new-credential
-fixture reproduces identical public observation bytes, but heartbeat, crash recovery, ongoing task
-ownership, effect reconciliation and complete institutional replacement remain later gates.
+fixture reproduces identical public observation bytes. The subsequent
+`pprl-assignment-recovery-boundary.md` adds explicit reviewed lease fencing, unknown-effect barriers,
+retained-result accounting and native broker/client replacement fixtures. Heartbeat, ongoing task
+ownership, automatic scheduling, unknown physical-effect resolution and scientific institutional
+replacement remain later gates.

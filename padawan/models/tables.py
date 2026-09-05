@@ -389,6 +389,22 @@ class ProcessContainerReceiptRow(Base):
     record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
 
 
+class ProcessRecoveryRow(Base):
+    __tablename__ = "process_recoveries"
+
+    recovery_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False
+    )
+    execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_executions.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    request_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class ProcessWorkerScopeRow(Base):
     __tablename__ = "process_worker_scopes"
 
@@ -3082,6 +3098,7 @@ for _immutable_type in (
     ProcessContainerWorkloadRow,
     ProcessContainerReceiptRow,
     ProcessWorkerScopeRow,
+    ProcessRecoveryRow,
     ProcessWorkerRegistrationRow,
     ProcessWorkerRevocationRow,
     ProcessWorkerLeaseAssignmentRow,
