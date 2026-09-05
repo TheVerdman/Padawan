@@ -166,6 +166,12 @@ from padawan.pprl.observation_contracts import (
     ProcessWorkerObservation,
     ProcessWorkerState,
 )
+from padawan.pprl.recovered_evidence_contracts import (
+    RecoveredEffectSource,
+    RecoveredEvidenceOriginReview,
+    RecoveredProcessEvidenceAdmissionRecord,
+    RecoveryEvidenceDisclosurePolicy,
+)
 from padawan.pprl.recovery_contracts import (
     ProcessRecoveryEffect,
     ProcessRecoveryReceipt,
@@ -278,6 +284,10 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("process-recovery-source", ProcessRecoverySource),
     ("process-recovery-effect", ProcessRecoveryEffect),
     ("process-recovery-receipt", ProcessRecoveryReceipt),
+    ("recovery-evidence-disclosure-policy", RecoveryEvidenceDisclosurePolicy),
+    ("recovered-effect-source", RecoveredEffectSource),
+    ("recovered-evidence-origin-review", RecoveredEvidenceOriginReview),
+    ("recovered-process-evidence-admission-record", RecoveredProcessEvidenceAdmissionRecord),
     ("process-worker-registration", ProcessWorkerRegistration),
     ("process-worker-revocation", ProcessWorkerRevocation),
     ("process-worker-lease-assignment", ProcessWorkerLeaseAssignment),

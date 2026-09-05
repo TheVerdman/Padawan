@@ -182,8 +182,9 @@ async def _review(
     content: str = "The checked calculation gives 42.",
     sources: tuple[ForensicArtifactRef, ...] = (),
     training: bool = False,
+    media_type: str = "text/plain; charset=utf-8",
 ) -> ProcessEvidenceAdmission:
-    artifact = ctx.artifacts.put_text(content, restricted=True)
+    artifact = ctx.artifacts.put_text(content, restricted=True, media_type=media_type)
     async with ctx.database.transaction() as session:
         classified = await ctx.information.classify(
             session,

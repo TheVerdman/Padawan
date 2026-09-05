@@ -1,0 +1,154 @@
+{
+  "$defs": {
+    "RecoveredEffectSource": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_id": {
+          "minLength": 1,
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "effect_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Effect Digest",
+          "type": "string"
+        },
+        "recovery_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Recovery Digest",
+          "type": "string"
+        },
+        "recovery_id": {
+          "pattern": "^process-recovery-[0-9a-f]{32}$",
+          "title": "Recovery Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recovery_id",
+        "recovery_digest",
+        "decision_id",
+        "effect_digest"
+      ],
+      "title": "RecoveredEffectSource",
+      "type": "object"
+    },
+    "RecoveryEvidenceDisclosurePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "content_policy_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Policy Digest",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "maximum_recovery_effects": {
+          "default": 64,
+          "maximum": 1024,
+          "minimum": 1,
+          "title": "Maximum Recovery Effects",
+          "type": "integer"
+        },
+        "maximum_recovery_source_bytes": {
+          "default": 16777216,
+          "maximum": 134217728,
+          "minimum": 1,
+          "title": "Maximum Recovery Source Bytes",
+          "type": "integer"
+        },
+        "policy_id": {
+          "minLength": 1,
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "reviewer_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Reviewer Ids",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_contamination_scope": {
+          "minLength": 1,
+          "title": "Target Contamination Scope",
+          "type": "string"
+        },
+        "target_execution_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Target Execution Digest",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "version",
+        "target_execution_digest",
+        "target_contamination_scope",
+        "content_policy_digest",
+        "reviewer_ids",
+        "created_at",
+        "expires_at"
+      ],
+      "title": "RecoveryEvidenceDisclosurePolicy",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/recovered-evidence-origin-review.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_review_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Candidate Review Digest",
+      "type": "string"
+    },
+    "disclosure_policy": {
+      "$ref": "#/$defs/RecoveryEvidenceDisclosurePolicy"
+    },
+    "policy_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Policy Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/RecoveredEffectSource"
+    }
+  },
+  "required": [
+    "candidate_review_digest",
+    "disclosure_policy",
+    "policy_digest",
+    "source"
+  ],
+  "title": "RecoveredEvidenceOriginReview",
+  "type": "object"
+}

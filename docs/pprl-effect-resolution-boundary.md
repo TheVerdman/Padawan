@@ -1,19 +1,21 @@
 # Reviewed resolution of completed effects
 
-Status: resolution design specified at `ebe1000`; recovered-source admission and resolution are
-not implemented. Exact historical recovery-source validation is now implemented as a prerequisite.
-This is a
-stage toward executable task/retry scheduling, not a reduction of PPRL or its long-horizon program.
+Status: resolution design specified at `ebe1000`; exact historical recovery-source validation and
+explicit reviewed recovered-source admission are now implemented prerequisites. Successor,
+abandonment and task disposition remain unimplemented. This is a stage toward executable task/retry
+scheduling, not a reduction of PPRL or its long-horizon program. Further implementation is held for
+the user-requested complexity and roadmap review.
 
 ## Revalidated dependencies
 
 - `ProcessStore.append_event` requires the original current lease, worker capability, assignment,
   admission and authority sequence. Recovery fences that lease. Bypassing these checks would
   impersonate the lost worker; its intended successor was not durably recorded.
-- `ProcessEvidenceStore._validate` admits ordinary forensic derivatives only from completed model
-  invocations in the target execution. Container results and late model results whose invocation
-  remains failed/running have no explicit source adapter. The separate Atlas adapter does not grant
-  this authority. Recovery retention alone cannot replace an evidence admission.
+- `ProcessEvidenceStore.admit_recovered` now supplies the explicit adapter for completed container
+  effects and late model results whose old invocation remains fenced. It binds one exact effect's
+  complete source set in a private version-3 origin; process use requires separate review and
+  training is denied. Ordinary source admission/read now rejects recovery-owned source artifacts.
+  See `pprl-recovered-evidence-boundary.md`. Recovery retention alone grants no admission.
 - `ProcessRecoveryStore.read` must establish the exact retained request/result relationships before
   a future consumer may rely on a completed-effect assessment. At the design HEAD, the model reader
   checks source bytes/pins and workload digest but not their complete native ownership/result joins;
@@ -44,6 +46,9 @@ continue to stop unresolved effects. No resolution bypass exists in the bounded 
    new lease/action ID. Define and test that ownership before enabling continuation.
 4. Connect the resolution timeline to historical replay, outcomes, compiler exclusions and later
    attribution. Then add retry/task lifecycle and automatic replacement scheduling.
+
+Items 1 and 2 have offline implementation evidence. Items 3 and 4 are the remaining dependencies;
+they are proposals for the review, not authorization to continue past the current hold.
 
 ## Proposed resolution boundary and invariants
 
@@ -101,11 +106,12 @@ never undo a real external effect or erase its charge. Keep unknown effects stop
 disable new admission/resolution while preserving populated history, pins and claim barriers;
 do not downgrade to permissive legacy retry.
 
-Non-goals of this design/prerequisite: admitting derivatives, implementing successor or abandonment,
+Non-goals of the implemented prerequisites: successor or abandonment,
 clearing a barrier, physical cleanup of unknown effects, background scheduling, provider retries,
 authenticated reviewers, model/host attestation, semantic redaction proofs, scientific competence,
 training or actual model execution. The later steps above remain required and unfinished.
 
-Decision: go for local source-validation hardening and the specified offline admission design;
+Decision: source validation and the offline admission checkpoint can be retained for review;
 no-go for automatic continuation until task disposition, reviewed-transition lineage and compiler
-handling are implemented and validated. No additional user authority is needed for that local work.
+handling are implemented and validated. The user explicitly requested a hold after this checkpoint;
+resume local implementation only after that review and a new resume instruction.

@@ -184,6 +184,26 @@
       "sha256": "3a13b60f39ceec9d28d2e24a56908906e4a6eb7c5947c616b0b239f629e0bb75"
     },
     {
+      "name": "recovery-evidence-disclosure-policy",
+      "schema": "recovery-evidence-disclosure-policy.schema.json",
+      "sha256": "8c281e7564d14a20a4c3d74ebb95845e7ddeaba22a938cdb6fc3cba494b535b4"
+    },
+    {
+      "name": "recovered-effect-source",
+      "schema": "recovered-effect-source.schema.json",
+      "sha256": "8c4cc64499b6bf1531eb21e880b4aea6f60c794f175be46920e782629bd1e9ad"
+    },
+    {
+      "name": "recovered-evidence-origin-review",
+      "schema": "recovered-evidence-origin-review.schema.json",
+      "sha256": "89f314758ac6abc11d70dc3ea719c0f7609e588d89bd181391a52c6de1eaa878"
+    },
+    {
+      "name": "recovered-process-evidence-admission-record",
+      "schema": "recovered-process-evidence-admission-record.schema.json",
+      "sha256": "400d10e152b7a62c433a68d887b396ab4112eba23ed2e239fc2ee8429b4efd64"
+    },
+    {
       "name": "process-worker-registration",
       "schema": "process-worker-registration.schema.json",
       "sha256": "cd6cc1ccafdbcfa3a1c5f75a82a0f0a33b1a7cabde5dc06d58375534797057a7"

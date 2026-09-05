@@ -96,9 +96,13 @@ and independent source owners support later inspection, including after a late r
 native broker/client fixtures recover identical public observation bytes from persistent stores;
 this is simulated replacement evidence, not an automatic scheduler or scientific continuity result.
 Checked reads also reconstruct native source joins and original settlement evidence; fresh recovery
-publication must pass that same check. The proposed source admission, reviewed successor/abandonment,
-task disposition and training-exclusion dependencies are in `pprl-effect-resolution-boundary.md`.
-Those resolution paths remain unimplemented.
+publication must pass that same check. `pprl-recovered-evidence-boundary.md` now implements explicit
+reviewed source admission for complete model/container effects, including late retained results.
+The private version-3 origin binds the full checked source set; only a separate process derivative
+is admitted. Ordinary sources with recovery ownership cannot bypass that origin, and training use
+is denied. Admission neither changes canonical state nor clears the effect barrier. Reviewed
+successor/abandonment, task disposition and training-exclusion dependencies remain unimplemented
+designs in `pprl-effect-resolution-boundary.md`.
 
 ## Distributions and evidence
 

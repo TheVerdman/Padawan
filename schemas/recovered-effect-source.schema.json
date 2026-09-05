@@ -1,0 +1,35 @@
+{
+  "$id": "https://schemas.padawan.local/v1/recovered-effect-source.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "effect_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Effect Digest",
+      "type": "string"
+    },
+    "recovery_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Recovery Digest",
+      "type": "string"
+    },
+    "recovery_id": {
+      "pattern": "^process-recovery-[0-9a-f]{32}$",
+      "title": "Recovery Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "recovery_id",
+    "recovery_digest",
+    "decision_id",
+    "effect_digest"
+  ],
+  "title": "RecoveredEffectSource",
+  "type": "object"
+}

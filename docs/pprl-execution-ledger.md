@@ -45,12 +45,20 @@ Computer Use explicitly refused access to the Codex app. An app-level pause ther
 user-operated progress-row control. This ledger records the requested work hold, not a false claim
 that the scheduler was paused, the goal was blocked, or its objective was completed.
 
-Latest user decision, 2026-09-05: "No I un-paused manually, you may continue." This explicitly
+Resumption decision, 2026-09-05: "No I un-paused manually, you may continue." This explicitly
 resumes local implementation. The preceding repeated holds were an incorrect interpretation of the
 manual unpause, not a withdrawal of the goal's engineering authority. The generation checkpoint is
 committed as `0452cba`; the checkout was clean on resumption. Docker Desktop is available for local
 validation if needed. Cloud/GPU campaigns still require the separately specified question-box
 authorization; no new external authority was granted.
+
+Latest user decision, 2026-09-05: after asking about the goal's +43,496/-313 live diff, the user
+answered **"Finish checkpoint, then hold for review"** to the recovered-evidence checkpoint and
+complexity/roadmap review question. Finish validation and a local commit, then hold further
+implementation. The earlier resumption does not override this newer hold. See
+`pprl-complexity-review.md` for measured growth and proposed finite foundation exit criteria.
+This is a work hold; the goal tool still has no pause operation. Do not simulate pausing by marking
+the unfinished research objective complete or blocked. The app Pause control remains user-operated.
 
 ## Requirements and status
 
@@ -1060,16 +1068,63 @@ Final validation:
   cloud/GPU, sibling edit, delegation or publication was used. Docker use was limited to the cached,
   network-disabled CPU secret scanner with read-only input and bounded disposable resources.
 
-## Next executable step
+## Reviewed recovered-source admission checkpoint
 
-Implement the explicit recovered-source admission adapter specified in
-`pprl-effect-resolution-boundary.md`, using the hardened historical reader. Bind one exact completed
-effect and its full private source set to a separately reviewed, rights/scoped process derivative;
-keep training use disabled. Revalidate the pinned evidence broker's current authority, native
-provenance, retention and public-content boundaries. This admission must not clear the unresolved
-effect barrier, dispatch/reconcile work, forge an old worker event or change canonical state.
+Starting HEAD: `9cb0501fffbd3aa057e179f8fb0847810b00d457`. The preceding checked recovery source
+reader is reused rather than adding another reconstruction store. Scope and acceptance were
+specified in `pprl-recovered-evidence-boundary.md` before implementation.
 
-Then define executable task disposition and a distinct reviewed successor/terminal-abandonment
+`RecoveryEvidenceSourceBoundary` requires an explicitly pinned same-execution disclosure policy,
+content policy, reviewer/scope/window and source read bounds. It selects one exact completed effect
+from a checked recovery receipt and verifies its full native source set. `admit_recovered` retains
+a version-3 private origin through the existing process-evidence SQL table and independent artifact
+owners. Its separate candidate is process-only; public reads and process retention recheck current
+authority, exact provenance and all owners. No SQL migration, effect reconciliation, successor
+transition, barrier clear, worker event or automatic consumer reconfiguration was added.
+
+Two concrete admission bypass probes were retained before their fixes: the legacy request/response
+subset accepted recovery-owned sources without recovery origin (including training use), and JSON
+duplicate keys could hide an escaped private identifier behind a later benign value. The corrected
+adapter rejects duplicate JSON keys; ordinary admission/read now rejects sources with a recovery
+owner, including deduplicated ambiguity. Existing version-1 records remain byte-identical, but a
+source that later acquires recovery ownership loses ordinary new-use authority. This restriction
+does not prove a reviewer's undeclared semantic provenance is complete.
+
+Validation evidence is retained in ignored `runs/pprl-recovered-evidence-validation-20260905/`:
+
+- **866 passed, 27 deselected in 157.63 seconds**: full offline suite using `PYTHONPATH=.
+  .venv/bin/pytest -q -m 'not postgres and not live and not lean and not docker'` with JUnit/logs.
+- **38 passed in 16.21 seconds**: new recovered-source tests with retained SQLite/artifact fixtures.
+  Tests cover complete model/container/late results, reopened brokers, exact private/public joins,
+  source/scope/rights/time substitutions, unknown/released effects, missing independent owners,
+  corrupt bytes, rollback, deadline expiry, current authority/configuration, training denial and
+  the ordinary-source bypass. Explicit process consumption independently retains all dependencies;
+  a separate replica still charges its initial-state bytes while the original effect stays stopped.
+- Earlier compatibility runs retained the 72 ordinary/Atlas cases. The final full suite includes
+  them. The two pre-hardening regressions are **2 expected failures, 3 passes in 3.49 seconds**;
+  the exact five-file source/test snapshot and hashes are retained under `pre-hardening/`.
+- Failed fixture iterations are retained honestly: one Amber identity collision from reusing a
+  configured database; one test expecting the wrong integrity exception; one assertion incorrectly
+  expecting shared funding not to change after explicitly creating a new replica. These were test
+  setup/expectation defects, not weakened authority or accounting checks. The earlier failed
+  consumer-fixture tree is retained separately from final successful fixtures.
+- Ruff lint/format and schema checks pass; **185 schemas** match. Mypy `--no-incremental` passes
+  on **187 source files**. `git diff --check` passes. No new SQL schema/locking protocol was added;
+  no PostgreSQL race or physical runtime validation is claimed for this source adapter.
+- Exact source and staged manifests, command/results, goal-diff measurement and redacted all-ref /
+  staged secret-scan results are retained with the validation record. Restricted fixtures stay
+  ignored. No source ownership is backfilled or repaired by admission/read.
+
+No model inference/training, application container, live research worker, PostgreSQL fixture,
+cloud/GPU activation, sibling edit, delegation or publication was used. Final secret scans use the
+cached network-disabled, resource-bounded CPU scanner. The current checkpoint ends the authorized
+work segment; further implementation is held for the user's complexity and roadmap review.
+
+## Next proposed step — on hold
+
+Discuss `pprl-complexity-review.md` and agree a finite foundation exit gate before implementation
+resumes. Recovered-source admission is implemented; it does not complete recovery or institutional
+continuity. The remaining dependency is executable task disposition and a distinct reviewed successor/terminal-abandonment
 transition together with replay/compiler treatment of interventions and infrastructure exclusions.
 Select independent domain evidence for successor review; preserve original effects and costs and
 keep unknown effects stopped. A new lease or task ID cannot silently repeat an abandoned effect or
@@ -1080,8 +1135,8 @@ and deterministic scheduling to the existing scoped credential and recovery boun
 delivery/isolation and child enrollment need explicit contracts. Retain byte-exact hydration and
 test complete roster churn, interrupted handoffs and lifecycle races with simulated workers first.
 The current clear-claim integrity check traverses rollout history; benchmark and bound its growth,
-and design checked incremental frontiers before long-horizon execution. No new authorization is
-required for these next local audit/design and bounded engineering steps.
+and design checked incremental frontiers before long-horizon execution. These are review proposals;
+wait for the user to resume before implementing them.
 
 The CPU runner is complete for its stated local scope. Model-serving containment, independent
 forensic service credentials and full capture, actual model identity, physical metering, domain
@@ -1093,11 +1148,11 @@ Model/GPU validation, Atlas institutional subjects and causal MI interchange, au
 explicit communication/economics, the 10M+ token milestone, preregistered learning, an actual trainer/
 parameter candidate and independent evaluation remain in the full roadmap. Keep Atlas training
 materialization gated. Prepare the required concrete campaign before requesting any additional
-execution authority; no new user authorization is required for the next local engineering audit.
+execution authority. The current hold does not change the full research scope or its resource gates.
 
 ## Completion audit
 
-The goal remains active until foundational gates and an authorized preregistered institutional
+The goal remains unfinished until foundational gates and an authorized preregistered institutional
 learning cycle are supported by retained evidence, including a real candidate update and independent
 evaluation. Keep incomplete long-horizon and external-execution requirements explicit. A credible
 null or regression is a valid research result; compilation or simulated workers alone are not.

@@ -14,7 +14,11 @@ from padawan.pprl.container_driver import DockerContainerDriver
 from padawan.pprl.containers import ProcessContainerExecutor, ProcessContainerStore
 from padawan.pprl.coordinator import ProcessActionExecutor, ProcessCoordinator, ProcessPlanner
 from padawan.pprl.distributions import ProcessDistributionRegistry
+from padawan.pprl.evidence import ProcessEvidenceStore
+from padawan.pprl.evidence_contracts import EvidenceAdmissionPolicy
 from padawan.pprl.observations import ProcessObservationStore
+from padawan.pprl.recovered_evidence import RecoveryEvidenceSourceBoundary
+from padawan.pprl.recovered_evidence_contracts import RecoveryEvidenceDisclosurePolicy
 from padawan.pprl.recovery import ProcessRecoveryStore
 from padawan.pprl.store import ProcessStore
 from padawan.training.compiler import TrainingCompiler
@@ -42,6 +46,22 @@ class PPRLApplication:
     def recovery(self) -> ProcessRecoveryStore:
         """Explicit privileged recovery API. No listener, worker or retry is started."""
         return ProcessRecoveryStore(self.processes, self.catalog)
+
+    def recovered_evidence(
+        self,
+        *,
+        admission_policy: EvidenceAdmissionPolicy,
+        disclosure_policy: RecoveryEvidenceDisclosurePolicy,
+    ) -> ProcessEvidenceStore:
+        """Explicit inert broker composition; does not change the process store's consumers."""
+        return ProcessEvidenceStore(
+            catalog=self.catalog,
+            amber=self.amber,
+            policy=admission_policy,
+            recovered=RecoveryEvidenceSourceBoundary(
+                recovery=self.recovery(), policy=disclosure_policy
+            ),
+        )
 
     def container_executor(self, profile: ProcessContainerProfile) -> ProcessContainerExecutor:
         """Explicit broker composition only; constructing this object launches nothing."""

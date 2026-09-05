@@ -97,9 +97,15 @@ See [assignment recovery boundary](pprl-assignment-recovery-boundary.md).
 A follow-up source audit hardens checked historical recovery reads: native workload/request/result
 joins, exact source ownership, recorded phases and original settlement sources are reconstructed.
 Initial recovery publication uses the same reader. Older partial snapshots remain valid after later
-results without becoming new execution authority. The next dependency is explicit recovered-source
-admission, followed by reviewed transition/task disposition and compiler treatment; these remain
-designs in [effect resolution boundary](pprl-effect-resolution-boundary.md).
+results without becoming new execution authority. Explicit recovered-source admission now binds
+one completed effect's full private source set to a separately reviewed process derivative in a
+version-3 private receipt. Public reads recheck current scope/authority, native provenance and all
+independent owners; training use stays denied. The ordinary admission path cannot omit the recovery
+origin of recovery-owned sources. See [recovered evidence](pprl-recovered-evidence-boundary.md).
+Admission leaves canonical state and the unresolved-effect barrier unchanged. Reviewed transition/
+task disposition and compiler treatment remain designs in
+[effect resolution boundary](pprl-effect-resolution-boundary.md). Further implementation is on the
+user's requested hold after this checkpoint; see [complexity review](pprl-complexity-review.md).
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
