@@ -230,6 +230,25 @@ class ProcessEvidenceAdmissionRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ProcessContentAdmissionRow(Base):
+    __tablename__ = "process_content_admissions"
+    __table_args__ = (
+        CheckConstraint("record_kind IN ('state', 'event')", name="ck_process_content_kind"),
+        Index("ix_process_content_execution", "execution_digest", "created_at"),
+    )
+
+    record_kind: Mapped[str] = mapped_column(String(16), primary_key=True)
+    record_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    source_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_executions.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    policy_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class ArtifactReferenceRow(Base):
     __tablename__ = "artifact_references"
     __table_args__ = (
@@ -2712,6 +2731,7 @@ for _immutable_type in (
     ArtifactRow,
     ArtifactInformationRow,
     ProcessEvidenceAdmissionRow,
+    ProcessContentAdmissionRow,
     ProvenanceEventRow,
     TrainingSourceDocumentRow,
     TrainingSourceDecisionRow,

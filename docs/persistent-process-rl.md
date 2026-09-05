@@ -54,7 +54,9 @@ New initial-state and event artifact fields require reviewed process references.
 ownership pins the admitted candidate and private source dependencies transactionally; fork child
 admission failure rolls back the whole fork. Claims refuse legacy or unretained references, while
 privileged replay preserves their historical representation. See `pprl-reference-ingress-boundary.md`
-for scope, SQLite rollback validation, and the still-unfinished nested and projection boundary.
+for scope and SQLite rollback validation. `pprl-content-admission.md` describes the subsequent closed
+content shapes, extension registry, admitted memory/evidence links, and policy receipts. Narrow
+worker/training projections and semantic provenance remain unfinished.
 
 ## Distributions and evidence
 

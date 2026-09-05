@@ -1,8 +1,8 @@
 # PPRL normalized worker output and privileged invocation evidence
 
 Status: the model-result portion of information-boundary checkpoint 3. The reference/ownership
-portion is described in `pprl-reference-ingress-boundary.md`; nested payloads, exact hydration,
-and training projections remain unfinished.
+portion is described in `pprl-reference-ingress-boundary.md`, and structural content admission in
+`pprl-content-admission.md`. Exact hydration and training projections remain unfinished.
 
 `ProcessGenerationExecutor.execute` returns a broker `ProcessGenerationResult` containing an
 invocation ID and `ProcessWorkerOutput`. The latter contains only public `output_text` and validated
@@ -30,8 +30,9 @@ bytes count together with new process artifacts against the action's declared re
 
 New initial/event/state top-level references require reviewed admission, including duplicate
 attempts. Generic references, even when non-raw, grant no new process use. This is not the complete
-ingress validator: nested dictionaries, memory/evidence strings, and legacy worker/training
-projections remain unfinished. Privileged replay is distinct from new worker use.
+ingress proof: nested dictionaries and memory/evidence strings now have structural admission, but
+semantic provenance and worker/training projections remain unfinished. Privileged replay is distinct
+from new worker use.
 
 Ordinary generation failures expose one `ProcessGenerationUnavailableError` with a fixed message
 and no private exception cause/context. Cancellation remains cancellation but uses a fresh generic

@@ -49,6 +49,21 @@
       "sha256": "808ab69f024b05d94aafc9a306f1ce51493b01e6b4205b104dac59c2925cd7fe"
     },
     {
+      "name": "process-content-admission",
+      "schema": "process-content-admission.schema.json",
+      "sha256": "065006325f4441bd97fc9d6c0240dc114dcbf9960443bc40bd05c06d7b7c8407"
+    },
+    {
+      "name": "process-content-policy",
+      "schema": "process-content-policy.schema.json",
+      "sha256": "e798f621782da84da5a57c86844b8ce6767b3243748f71495b4e272aead9861a"
+    },
+    {
+      "name": "process-content-schema",
+      "schema": "process-content-schema.schema.json",
+      "sha256": "95b229238a912dc09f5b6ec438b8c9440dccd3204199e267be2ad97415082db6"
+    },
+    {
       "name": "process-evidence-admission-record",
       "schema": "process-evidence-admission-record.schema.json",
       "sha256": "83be70b779171d2100961e33d5f18add47eca6fca14974c80599c4ae1ffef5ac"

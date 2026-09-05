@@ -253,7 +253,7 @@ async def test_process_generation_is_admission_bound_and_idempotent(
                 amber_decision_id=admission.decision_id,
                 kind=ProcessEventKind.CLAIM_UPDATED,
                 actor_id="process-worker",
-                payload={"result": first.output.output_text},
+                payload={"summary": first.output.output_text},
                 resulting_state=ProjectStatePayload(
                     objective="perform one admitted model action",
                     budget_usage=action.projected_usage,
@@ -277,7 +277,7 @@ async def test_process_generation_is_admission_bound_and_idempotent(
                 amber_decision_id=admission.decision_id,
                 kind=ProcessEventKind.CLAIM_UPDATED,
                 actor_id="process-worker",
-                payload={"result": first.output.output_text},
+                payload={"summary": first.output.output_text},
                 resulting_state=ProjectStatePayload(
                     objective="perform one admitted model action",
                     budget_usage=action.projected_usage,
@@ -344,7 +344,7 @@ async def test_process_generation_is_admission_bound_and_idempotent(
                 amber_decision_id=admission.decision_id,
                 kind=ProcessEventKind.CLAIM_UPDATED,
                 actor_id="process-worker",
-                payload={"result": first.output.output_text},
+                payload={"summary": first.output.output_text},
                 resulting_state=ProjectStatePayload(
                     objective="perform one admitted model action",
                     budget_usage=action.projected_usage,
@@ -361,7 +361,7 @@ async def test_process_generation_is_admission_bound_and_idempotent(
                 amber_decision_id=admission.decision_id,
                 kind=ProcessEventKind.CLAIM_UPDATED,
                 actor_id="process-worker",
-                payload={"result": first.output.output_text},
+                payload={"summary": first.output.output_text},
                 resulting_state=ProjectStatePayload(
                     objective="perform one admitted model action",
                     budget_usage=action.projected_usage,
@@ -377,10 +377,10 @@ async def test_process_generation_is_admission_bound_and_idempotent(
             amber_decision_id=admission.decision_id,
             kind=ProcessEventKind.CLAIM_UPDATED,
             actor_id="process-worker",
-            payload={"result": first.output.output_text},
+            payload={"summary": first.output.output_text},
             resulting_state=ProjectStatePayload(
                 objective="perform one admitted model action",
-                extension_state={"candidate": first.output.output_text},
+                plan=(first.output.output_text,),
                 budget_usage=action.projected_usage,
             ),
             worker_invocation_id=first.invocation_id,

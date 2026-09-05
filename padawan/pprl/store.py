@@ -44,6 +44,7 @@ from padawan.models.tables import (
     ProcessWorkerInvocationRow,
     ProjectInstanceRow,
 )
+from padawan.pprl.content import ProcessContentBoundary
 from padawan.pprl.contracts import (
     ProcessDistributionManifest,
     ProcessEventKind,
@@ -118,10 +119,15 @@ class ProcessStore:
     """Durable macro-rollouts with immutable state/event lineage and leased actions."""
 
     def __init__(
-        self, amber: AmberStore | None = None, *, evidence: ProcessEvidenceStore | None = None
+        self,
+        amber: AmberStore | None = None,
+        *,
+        evidence: ProcessEvidenceStore | None = None,
+        content: ProcessContentBoundary | None = None,
     ) -> None:
         self.amber = amber or AmberStore()
         self.evidence = evidence
+        self.content = content or ProcessContentBoundary()
 
     async def register_execution(
         self,
@@ -201,8 +207,9 @@ class ProcessStore:
         fork_id: str | None = None,
         created_at: datetime | None = None,
     ) -> ProcessRolloutRecord:
-        initial_state = ProjectStatePayload.model_validate_json(initial_state.model_dump_json())
         initial_references = _new_process_references(initial_state.artifact_refs)
+        await self.content.check_state(session, initial_state)
+        initial_state = ProjectStatePayload.model_validate_json(initial_state.model_dump_json())
         if replication_index < 0:
             raise ValueError("replication index cannot be negative")
         if (parent_rollout_id is None) != (fork_id is None):
@@ -330,6 +337,9 @@ class ProcessStore:
             owner_id=state.state_id,
             now=timestamp,
         )
+        await self.content.admit_state(
+            session, state, execution_digest=execution_digest, now=timestamp
+        )
         return _rollout_from_row(row)
 
     async def get_rollout(self, session: AsyncSession, *, rollout_id: str) -> ProcessRolloutRecord:
@@ -439,9 +449,10 @@ class ProcessStore:
         resulting_state_id: str | None = None,
         occurred_at: datetime | None = None,
     ) -> tuple[ProcessEventRecord, ProjectStateVersion]:
-        resulting_state = ProjectStatePayload.model_validate_json(resulting_state.model_dump_json())
         artifact_refs = _new_process_references(artifact_refs)
         state_references = _new_process_references(resulting_state.artifact_refs)
+        await self.content.check_state(session, resulting_state)
+        resulting_state = ProjectStatePayload.model_validate_json(resulting_state.model_dump_json())
         cited_artifacts = _new_process_references((*artifact_refs, *state_references))
         timestamp = _as_utc(occurred_at or datetime.now(UTC))
         assigned_event_id = event_id or f"process-event-{uuid4()}"
@@ -475,6 +486,9 @@ class ProcessStore:
                 owner_type="process_event",
                 owner_id=event.event_id,
                 now=timestamp,
+            )
+            await self.content.verify_event(
+                session, event, execution_digest=rollout.execution_digest, now=timestamp
             )
             return event, state
         decision = await session.get(AmberAdmissionDecisionRow, amber_decision_id)
@@ -646,6 +660,7 @@ class ProcessStore:
             artifact_refs=artifact_refs,
             created_at=timestamp,
         )
+        await self.content.check_event(session, event)
         session.add(_state_row(state))
         await session.flush()
         session.add(_event_row(event))
@@ -673,6 +688,12 @@ class ProcessStore:
             owner_type="process_event",
             owner_id=event.event_id,
             now=timestamp,
+        )
+        await self.content.admit_state(
+            session, state, execution_digest=row.execution_digest, now=timestamp
+        )
+        await self.content.admit_event(
+            session, event, execution_digest=row.execution_digest, now=timestamp
         )
         return event, state
 
@@ -750,9 +771,11 @@ class ProcessStore:
         execution_digest: str,
         now: datetime,
     ) -> None:
+        references = _new_process_references(state.payload.artifact_refs)
+        await self.content.verify_state(session, state, execution_digest=execution_digest, now=now)
         await self._validate_owned_references(
             session,
-            _new_process_references(state.payload.artifact_refs),
+            references,
             execution_digest=execution_digest,
             owner_type="process_state",
             owner_id=state.state_id,
@@ -943,6 +966,7 @@ class ProcessStore:
         event_id: str | None = None,
         occurred_at: datetime | None = None,
     ) -> ProcessForkRecord:
+        await self.content.check_intervention(session, intervention)
         if len(children) < 2:
             raise ValueError("process fork requires at least two continuations")
         ordered = tuple(sorted(children, key=lambda child: child.condition_id))

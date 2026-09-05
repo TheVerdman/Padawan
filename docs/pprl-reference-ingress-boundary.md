@@ -1,7 +1,8 @@
 # PPRL reviewed references and transactional ownership
 
 Status: the reference/ownership portion of information-boundary checkpoint 3, validated offline.
-This does not complete nested-content validation, worker hydration, or training projection.
+The subsequent structural content layer is described in `pprl-content-admission.md`. Worker
+hydration and training projection remain unfinished.
 
 ## New use and historical reconstruction
 
@@ -51,10 +52,10 @@ evidence transfer across executions remains a separate policy requirement.
 
 The broker, review configuration, database, and owned backend remain trusted. These are control-plane
 interfaces, not authenticated worker endpoints or an attested sandbox. Privileged inspection and
-ownership methods must not be handed to workers. Free text, event payloads, `extension_state`,
-`memory_refs`, and claim/hypothesis evidence strings still need allowlisted ingress and projections.
-Reference validation does not make coordinator inputs, exports, or training products worker-safe,
-prove semantic redaction, or exclude encoded communication channels.
+ownership methods must not be handed to workers. State/event shapes, extensions, and memory/evidence
+strings now have structural admission and receipts, but still require narrow worker/training
+projections. Neither boundary makes full coordinator inputs, exports, or training products worker-safe,
+proves semantic redaction, or excludes encoded communication channels.
 
 Concurrent GC using a stale externally collected reference set remains unresolved. A savepoint and
 backend file lock are not a joint database/GC transaction. No production data migration, live worker,

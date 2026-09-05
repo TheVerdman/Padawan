@@ -4,18 +4,15 @@ from datetime import timedelta
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, select, update
 
 from padawan.artifacts.store import ArtifactIntegrityError
-from padawan.governance.amber import AmberActionRequest, AmberAdmissionDisposition
 from padawan.models.hashing import canonical_json_bytes, sha256_digest
 from padawan.models.tables import (
     ArtifactReferenceRow,
     ArtifactRow,
-    ProcessEventRow,
     ProcessEvidenceAdmissionRow,
     ProcessExecutionRow,
-    ProcessForkRow,
     ProcessRolloutRow,
     ProcessStateRow,
 )
@@ -28,70 +25,8 @@ from padawan.pprl.contracts import (
 )
 from padawan.pprl.evidence import ProcessEvidenceReadDeniedError
 from padawan.pprl.store import ProcessForkChildPlan, ProcessInvariantError, ProcessStore
-from tests.pprl_evidence_helpers import _model_sources, _review
+from tests.pprl_evidence_helpers import _admit, _counts, _model_sources, _prepare_action, _review
 from tests.pprl_evidence_helpers import evidence_context as evidence_context
-
-
-async def _counts(session):
-    return tuple(
-        [
-            await session.scalar(select(func.count()).select_from(table))
-            for table in (
-                ProcessRolloutRow,
-                ProcessStateRow,
-                ProcessEventRow,
-                ProcessForkRow,
-                ProcessExecutionRow,
-                ArtifactReferenceRow,
-            )
-        ]
-    )
-
-
-async def _prepare_action(ctx, *, kind=ProcessEventKind.ARTIFACT_ADMITTED, artifact_bytes=0):
-    now = ctx.clock()
-    async with ctx.database.transaction() as session:
-        claimed = await ctx.process.claim_next(
-            session, worker_id="test.worker", lease_for=timedelta(minutes=5), now=now
-        )
-        assert claimed is not None
-        previous = claimed.state.payload.budget_usage
-        usage = previous.model_copy(
-            update={
-                "actions": previous.actions + 1,
-                "artifact_bytes": previous.artifact_bytes + artifact_bytes,
-                "wall_time_seconds": float(previous.wall_time_seconds) + 1.0,
-            }
-        )
-        request = AmberActionRequest(
-            authorization_digest=ctx.execution.amber_authorization_digest,
-            rollout_id=claimed.rollout.rollout_id,
-            rollout_sequence=claimed.rollout.sequence,
-            state_digest=claimed.state.state_digest,
-            lease_token_digest=sha256_digest(claimed.lease_token),
-            program_digest=ctx.execution.program_digest,
-            distribution_digest=ctx.execution.distribution_digest,
-            split=ctx.split,
-            persistence_mode=ctx.program.persistence_mode,
-            event_kind=kind,
-            role_id="researcher",
-            worker_model_digest=sha256_digest(ctx.execution.worker_models[0]),
-            target_class="scientific_math",
-            environment_fingerprint=ctx.execution.environment_fingerprint,
-            projected_usage=usage,
-            projected_artifact_bytes=usage.artifact_bytes,
-            requested_at=now,
-        )
-        decision = await ctx.amber.admit(session, request=request, active_workers=0)
-        assert decision.disposition == AmberAdmissionDisposition.ADMITTED
-    return claimed, decision, usage
-
-
-async def _admit(ctx, *, sources=()):
-    review = await _review(ctx, sources=sources)
-    async with ctx.database.transaction() as session:
-        await ctx.evidence.admit(session, review=review, now=ctx.clock())
-    return review
 
 
 @pytest.mark.parametrize("reference_kind", ["raw", "unclassified", "unreviewed", "forged"])
@@ -417,7 +352,7 @@ async def test_fork_second_child_failure_reverts_first_child_and_parent(evidence
                 amber_decision_id=decision.decision_id,
                 actor_id="test.worker",
                 children=children,
-                intervention={"policy": "synthetic comparison"},
+                intervention={"description": "synthetic comparison"},
                 fork_id="failed-fork",
                 occurred_at=ctx.clock(),
             )

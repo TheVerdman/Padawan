@@ -74,6 +74,10 @@ row is automatically safe because these new contracts exist. The PPRL model-resu
 now normalized separately; the remaining state and training interfaces still need validated
 projections. See `pprl-worker-output-boundary.md`.
 
+New state/event content now also requires structural admission and exact policy receipts, described
+in `pprl-content-admission.md`. This does not change the explicit review requirement for evidence
+or turn literal-reference checks into a semantic-redaction guarantee.
+
 Admission ownership is atomic in the database and is included in the catalog's retention set.
 New process state/event ownership also pins the candidate and declared source set. SQLite now
 explicitly begins outer transactions so a successful savepoint cannot escape a later rollback;

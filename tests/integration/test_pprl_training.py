@@ -153,7 +153,7 @@ async def test_compiler_emits_macro_trajectories_only_after_distribution_replica
                 amber_decision_id=decision.decision_id,
                 kind=ProcessEventKind.PROJECT_COMPLETED,
                 actor_id=f"training-worker-{action_index}",
-                payload={"result": "verified"},
+                payload={"summary": "verified"},
                 resulting_state=claimed.state.payload.model_copy(
                     update={"budget_usage": ProjectBudgetUsage(actions=1)}
                 ),

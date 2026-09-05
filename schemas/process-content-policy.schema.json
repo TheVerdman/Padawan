@@ -1,0 +1,129 @@
+{
+  "$defs": {
+    "ProcessContentSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "json_schema": {
+          "additionalProperties": true,
+          "title": "Json Schema",
+          "type": "object"
+        },
+        "namespace": {
+          "minLength": 1,
+          "title": "Namespace",
+          "type": "string"
+        },
+        "schema_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Schema Digest",
+          "type": "string"
+        },
+        "surface": {
+          "$ref": "#/$defs/ProcessContentSurface"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "namespace",
+        "version",
+        "surface",
+        "json_schema",
+        "schema_digest"
+      ],
+      "title": "ProcessContentSchema",
+      "type": "object"
+    },
+    "ProcessContentSurface": {
+      "enum": [
+        "state_extension",
+        "event",
+        "fork_intervention"
+      ],
+      "title": "ProcessContentSurface",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-content-policy.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Broker-owned structural policy; this is not a semantic safety attestation.",
+  "properties": {
+    "core_schema_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Core Schema Digest",
+      "type": "string"
+    },
+    "maximum_depth": {
+      "default": 16,
+      "maximum": 64,
+      "minimum": 1,
+      "title": "Maximum Depth",
+      "type": "integer"
+    },
+    "maximum_digest_candidates": {
+      "default": 4096,
+      "exclusiveMinimum": 0,
+      "title": "Maximum Digest Candidates",
+      "type": "integer"
+    },
+    "maximum_event_bytes": {
+      "default": 262144,
+      "exclusiveMinimum": 0,
+      "title": "Maximum Event Bytes",
+      "type": "integer"
+    },
+    "maximum_nodes": {
+      "default": 16384,
+      "exclusiveMinimum": 0,
+      "title": "Maximum Nodes",
+      "type": "integer"
+    },
+    "maximum_state_bytes": {
+      "default": 1048576,
+      "exclusiveMinimum": 0,
+      "title": "Maximum State Bytes",
+      "type": "integer"
+    },
+    "maximum_string_bytes": {
+      "default": 65536,
+      "exclusiveMinimum": 0,
+      "title": "Maximum String Bytes",
+      "type": "integer"
+    },
+    "policy_id": {
+      "minLength": 1,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "schemas": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProcessContentSchema"
+      },
+      "title": "Schemas",
+      "type": "array"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy_id",
+    "version",
+    "core_schema_digest"
+  ],
+  "title": "ProcessContentPolicy",
+  "type": "object"
+}

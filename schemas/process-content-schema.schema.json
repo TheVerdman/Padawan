@@ -1,0 +1,50 @@
+{
+  "$defs": {
+    "ProcessContentSurface": {
+      "enum": [
+        "state_extension",
+        "event",
+        "fork_intervention"
+      ],
+      "title": "ProcessContentSurface",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-content-schema.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "json_schema": {
+      "additionalProperties": true,
+      "title": "Json Schema",
+      "type": "object"
+    },
+    "namespace": {
+      "minLength": 1,
+      "title": "Namespace",
+      "type": "string"
+    },
+    "schema_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Schema Digest",
+      "type": "string"
+    },
+    "surface": {
+      "$ref": "#/$defs/ProcessContentSurface"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "namespace",
+    "version",
+    "surface",
+    "json_schema",
+    "schema_digest"
+  ],
+  "title": "ProcessContentSchema",
+  "type": "object"
+}

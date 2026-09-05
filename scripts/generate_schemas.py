@@ -121,6 +121,11 @@ from padawan.models.research_contracts import (
     StudyManifest,
     StudyResultRecord,
 )
+from padawan.pprl.content_contracts import (
+    ProcessContentAdmission,
+    ProcessContentPolicy,
+    ProcessContentSchema,
+)
 from padawan.pprl.contracts import (
     ProcessDistributionManifest,
     ProcessEventRecord,
@@ -182,6 +187,9 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("process-artifact-reference", ProcessArtifactRef),
     ("evidence-admission-policy", EvidenceAdmissionPolicy),
     ("process-evidence-admission", ProcessEvidenceAdmission),
+    ("process-content-admission", ProcessContentAdmission),
+    ("process-content-policy", ProcessContentPolicy),
+    ("process-content-schema", ProcessContentSchema),
     ("process-evidence-admission-record", ProcessEvidenceAdmissionRecord),
     ("process-worker-output", ProcessWorkerOutput),
     ("atlas-adapter-descriptor", AdapterDescriptor),

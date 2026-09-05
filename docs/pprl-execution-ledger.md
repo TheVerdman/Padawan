@@ -262,15 +262,50 @@ does not authenticate principals or validate nested/free-text content, hydration
   ownership at claim, second-child scope failure, historical JSON/digest replay, forged event
   references, and outer rollback. No real inference, cloud use, sibling edit, or production migration.
 
+Checkpoint 3, structural content portion, 2026-09-04–05:
+
+Reference/ownership was committed locally as `b806b2f`; its exact 18-file staged credential scan
+had no findings. The content portion now implements closed core shapes, explicit versioned extension
+schemas, admitted process IDs for memory/evidence links, and immutable policy receipts bound to exact
+stored state/event digests and execution. Missing receipts deny new use without rewriting historical
+envelopes. Schema configuration is broker-owned; workers cannot register schemas or change policy.
+No runtime identity or semantic-redaction attestation follows from this structural validation.
+
+- New core event payloads use public `summary`/`plan` fields or a registered envelope. Fork metadata
+  keeps explicit control/treatment identities and supports registered intervention schemas. Existing
+  offline fixtures were adapted to the new public shapes without admitting old historical records.
+- `process_content_admissions`, migration `a84e61c39d20`, three generated contracts, and trusted
+  registry/validation/receipt APIs retain exact declared policy and source identity. The migration
+  has no automatic legacy backfill. Source/execution mismatches, missing/corrupt receipts, policy
+  drift, and rollback after a partial receipt write are checked.
+- State/event validation bounds structural traversal and serialized content, checks keys and values,
+  rejects known private/unclassified storage and undeclared candidate references through bounded
+  indexed digest lookups, and preserves legitimate unrelated scientific hashes. Extension schemas
+  must be closed, locally defined, and tied to their state/event/intervention surface. A serializer
+  may not silently add different content. Returning a policy copy cannot mutate the active registry.
+- Initial integrated PPRL selection: **53 passed in 6.53 seconds**. The new content-specific selection
+  then passed **25 tests in 2.34 seconds**. After surface-binding/serializer cases and stronger source
+  checks, the expanded content/reference/admission/generation/store/coordinator/training selection
+  passed **80 tests in 8.65 seconds**.
+- Full offline command: `PYTHONPATH=. .venv/bin/pytest -q
+  -m 'not postgres and not live and not lean and not gcs' --tb=short`.
+  Result: **390 passed, 6 deselected in 27.84 seconds**. Ruff passed; formatting checked 300 files;
+  all 132 schemas match; mypy passed for 161 source files; `git diff --check` passed. Migration schema
+  matching and disposable all-revision upgrade/downgrade are included; PostgreSQL/live/Lean/real GCS
+  remain excluded. No actual model inference, cloud use, sibling edit, or production migration.
+- Threat assumptions, exact payload shapes, limits, retained fixtures, and rollback are in
+  `pprl-content-admission.md`. Structural checks do not prove prose provenance or remove encoded
+  channels. Runtime/code identity attestation and matched-policy experimental interpretation remain
+  later gates. Rollback disables consumers and preserves history/receipts instead of adding approval.
+
 ## Next executable step
 
-Checkpoints 1 and 2 and the model-result portion of checkpoint 3 are verified offline. Continue
-the remaining checkpoint 3 after its now-verified reference/ownership portion: define allowlisted
-state/event content and versioned extension admission, followed by narrow worker observations and
-training projections. Preserve historical parsing/digests for privileged replay; legacy records
-gain no automatic worker/training approval. The compiler still serializes complete events into
-trajectory rows. Nested fields, memory/evidence strings, validated projections, and coordinated GC
-remain unfinished. These local foundation changes require no model testing or cloud activation.
+Continue checkpoint 3 with narrow worker observations and then checkpoint 4 training/Atlas
+projections. Source state/event records and their content receipts remain broker records, not a
+prompt interface. Preserve privileged historical parsing/digests; legacy records gain no automatic
+worker/training approval. The compiler still serializes complete events into trajectory rows.
+Exact observation receipts, projection use/rights, worker/control metadata separation, and coordinated
+GC remain unfinished. These local foundation changes require no model testing or cloud activation.
 
 ## Completion audit
 

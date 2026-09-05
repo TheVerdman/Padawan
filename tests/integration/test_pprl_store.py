@@ -395,7 +395,7 @@ async def test_process_fork_inherits_identical_project_payload(database) -> None
                     ),
                 ),
             ),
-            intervention={"planner": "alternative"},
+            intervention={"description": "planner=alternative"},
             fork_id="fork-paired-continuation",
             event_id="event-fork",
             occurred_at=NOW + timedelta(minutes=5),

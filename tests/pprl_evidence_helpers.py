@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 
 import pytest_asyncio
+from sqlalchemy import func, select
 
 from padawan.adapters.base import GenerationRequest
 from padawan.artifacts.information import (
@@ -15,7 +16,7 @@ from padawan.artifacts.information import (
     ProcessArtifactRef,
 )
 from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore
-from padawan.governance.amber import AmberActionRequest, AmberStatus
+from padawan.governance.amber import AmberActionRequest, AmberAdmissionDisposition, AmberStatus
 from padawan.governance.amber_store import AmberStore
 from padawan.models.contracts import (
     SamplingConfiguration,
@@ -24,6 +25,13 @@ from padawan.models.contracts import (
 from padawan.models.database import Database
 from padawan.models.hashing import sha256_digest
 from padawan.models.tables import (
+    ArtifactReferenceRow,
+    ProcessContentAdmissionRow,
+    ProcessEventRow,
+    ProcessExecutionRow,
+    ProcessForkRow,
+    ProcessRolloutRow,
+    ProcessStateRow,
     ProcessWorkerInvocationRow,
 )
 from padawan.orchestration.external_calls import IdempotentGenerationExecutor
@@ -266,3 +274,66 @@ async def _model_sources(
                 )
             ]
         )
+
+
+async def _counts(session):
+    return tuple(
+        [
+            await session.scalar(select(func.count()).select_from(table))
+            for table in (
+                ProcessRolloutRow,
+                ProcessStateRow,
+                ProcessEventRow,
+                ProcessForkRow,
+                ProcessExecutionRow,
+                ArtifactReferenceRow,
+                ProcessContentAdmissionRow,
+            )
+        ]
+    )
+
+
+async def _prepare_action(ctx, *, kind=ProcessEventKind.ARTIFACT_ADMITTED, artifact_bytes=0):
+    now = ctx.clock()
+    async with ctx.database.transaction() as session:
+        claimed = await ctx.process.claim_next(
+            session, worker_id="test.worker", lease_for=timedelta(minutes=5), now=now
+        )
+        assert claimed is not None
+        previous = claimed.state.payload.budget_usage
+        usage = previous.model_copy(
+            update={
+                "actions": previous.actions + 1,
+                "artifact_bytes": previous.artifact_bytes + artifact_bytes,
+                "wall_time_seconds": float(previous.wall_time_seconds) + 1.0,
+            }
+        )
+        request = AmberActionRequest(
+            authorization_digest=ctx.execution.amber_authorization_digest,
+            rollout_id=claimed.rollout.rollout_id,
+            rollout_sequence=claimed.rollout.sequence,
+            state_digest=claimed.state.state_digest,
+            lease_token_digest=sha256_digest(claimed.lease_token),
+            program_digest=ctx.execution.program_digest,
+            distribution_digest=ctx.execution.distribution_digest,
+            split=ctx.split,
+            persistence_mode=ctx.program.persistence_mode,
+            event_kind=kind,
+            role_id="researcher",
+            worker_model_digest=sha256_digest(ctx.execution.worker_models[0]),
+            target_class="scientific_math",
+            environment_fingerprint=ctx.execution.environment_fingerprint,
+            projected_usage=usage,
+            projected_artifact_bytes=usage.artifact_bytes,
+            requested_at=now,
+        )
+        decision = await ctx.amber.admit(session, request=request, active_workers=0)
+        assert decision.disposition == AmberAdmissionDisposition.ADMITTED
+    return claimed, decision, usage
+
+
+async def _admit(ctx, *, sources=()):
+    review = await _review(ctx, sources=sources)
+    async with ctx.database.transaction() as session:
+        await ctx.evidence.admit(session, review=review, now=ctx.clock())
+    return review

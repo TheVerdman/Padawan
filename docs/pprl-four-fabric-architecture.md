@@ -26,8 +26,11 @@ for exact source-binding limits, trusted-broker assumptions, and retained valida
 New initial-state/event references require reviewed admission; state/event ownership and multi-child
 forks are transactional, and claims refuse legacy or unretained references. SQLite transaction
 control preserves outer rollback across savepoints. See
-[reference ingress boundary](pprl-reference-ingress-boundary.md). Nested fields, allowlisted worker
-hydration, legacy training records, and coordinated GC remain unresolved parts of the boundary.
+[reference ingress boundary](pprl-reference-ingress-boundary.md). New content also has closed core
+shapes, registered extension schemas, admitted memory/evidence links, literal identifier checks,
+and immutable policy receipts. See [content admission](pprl-content-admission.md) for the structural
+proof boundary. Allowlisted worker hydration, legacy training/Atlas projections, semantic provenance,
+and coordinated GC remain unresolved parts of the information boundary.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by

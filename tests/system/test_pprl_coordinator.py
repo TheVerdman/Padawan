@@ -75,7 +75,7 @@ class OneActionHandler:
             cost=float(previous.cost) + float(increment.cost),
         )
         return ProcessActionResult(
-            event_payload={"expression": "21 * 2", "result": 42},
+            event_payload={"summary": "21 * 2 = 42"},
             resulting_state=claimed.state.payload.model_copy(
                 update={
                     "plan": ("calculation completed",),
