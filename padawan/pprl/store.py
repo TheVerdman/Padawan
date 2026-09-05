@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from functools import wraps
+from typing import Any, Concatenate, Literal
 from uuid import uuid4
 
 from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from padawan.artifacts.information import InformationClass, information_record_from_row
+from padawan.artifacts.information import (
+    InformationClass,
+    ProcessArtifactRef,
+    information_record_from_row,
+)
 from padawan.governance.amber import (
     AmberActionRequest,
     AmberAdmissionDecision,
@@ -57,9 +63,13 @@ from padawan.pprl.contracts import (
     ProjectStateVersion,
     RewardAuthorityKind,
     RolloutStatus,
+    StoredProcessArtifactRef,
     process_event_digest,
     project_state_digest,
+    stored_process_reference_id,
 )
+from padawan.pprl.evidence import ProcessEvidenceStore
+from padawan.pprl.evidence_contracts import ProcessEvidenceUse
 
 
 class ProcessInvariantError(RuntimeError):
@@ -89,11 +99,29 @@ _TERMINAL_ROLLOUTS = {
 }
 
 
+def _atomic_process_write[**P, R](
+    operation: Callable[Concatenate[ProcessStore, AsyncSession, P], Awaitable[R]],
+) -> Callable[Concatenate[ProcessStore, AsyncSession, P], Awaitable[R]]:
+    @wraps(operation)
+    async def wrapped(
+        self: ProcessStore, session: AsyncSession, /, *args: P.args, **kwargs: P.kwargs
+    ) -> R:
+        # Keep mutations atomic even when a caller catches an error and commits
+        # unrelated work in its outer transaction.
+        async with session.begin_nested():
+            return await operation(self, session, *args, **kwargs)
+
+    return wrapped
+
+
 class ProcessStore:
     """Durable macro-rollouts with immutable state/event lineage and leased actions."""
 
-    def __init__(self, amber: AmberStore | None = None) -> None:
+    def __init__(
+        self, amber: AmberStore | None = None, *, evidence: ProcessEvidenceStore | None = None
+    ) -> None:
         self.amber = amber or AmberStore()
+        self.evidence = evidence
 
     async def register_execution(
         self,
@@ -160,6 +188,7 @@ class ProcessStore:
         await session.flush()
         return digest
 
+    @_atomic_process_write
     async def create_rollout(
         self,
         session: AsyncSession,
@@ -172,6 +201,8 @@ class ProcessStore:
         fork_id: str | None = None,
         created_at: datetime | None = None,
     ) -> ProcessRolloutRecord:
+        initial_state = ProjectStatePayload.model_validate_json(initial_state.model_dump_json())
+        initial_references = _new_process_references(initial_state.artifact_refs)
         if replication_index < 0:
             raise ValueError("replication index cannot be negative")
         if (parent_rollout_id is None) != (fork_id is None):
@@ -206,6 +237,15 @@ class ProcessStore:
             raise PermissionError("process rollout creation falls outside active Amber authority")
         if instance.split not in envelope.allowed_splits:
             raise PermissionError("process rollout split is not authorized by Amber")
+        await self._validate_references(
+            session, initial_references, execution_digest=execution_digest, now=timestamp
+        )
+        if (
+            sum(reference.size_bytes for reference in initial_references)
+            > initial_state.budget_usage.artifact_bytes
+            or initial_state.budget_usage.artifact_bytes > envelope.budgets.artifact_bytes
+        ):
+            raise PermissionError("initial process artifacts exceed their declared byte budget")
         assigned_id = rollout_id or f"process-rollout-{uuid4()}"
         existing = await session.get(ProcessRolloutRow, assigned_id)
         if existing is not None:
@@ -213,8 +253,16 @@ class ProcessStore:
             if (
                 record.execution_digest != execution_digest
                 or record.replication_index != replication_index
+                or record.parent_rollout_id != parent_rollout_id
+                or record.fork_id != fork_id
             ):
                 raise ProcessInvariantError("rollout ID reused with different execution")
+            previous = await self.get_state(session, state_id=record.initial_state_id)
+            if previous.payload != initial_state:
+                raise ProcessInvariantError("rollout ID reused with different initial state")
+            await self._validate_state_references(
+                session, previous, execution_digest=execution_digest, now=timestamp
+            )
             return record
         duplicate = await session.scalar(
             select(ProcessRolloutRow).where(
@@ -223,7 +271,19 @@ class ProcessStore:
             )
         )
         if duplicate is not None:
-            return _rollout_from_row(duplicate)
+            record = _rollout_from_row(duplicate)
+            previous = await self.get_state(session, state_id=record.initial_state_id)
+            if (
+                (rollout_id is not None and record.rollout_id != rollout_id)
+                or record.parent_rollout_id != parent_rollout_id
+                or record.fork_id != fork_id
+                or previous.payload != initial_state
+            ):
+                raise ProcessInvariantError("replication reused with different rollout content")
+            await self._validate_state_references(
+                session, previous, execution_digest=execution_digest, now=timestamp
+            )
+            return record
         state_id = f"process-state-{uuid4()}"
         state = _build_state(
             state_id=state_id,
@@ -262,6 +322,14 @@ class ProcessStore:
         await session.flush()
         session.add(_state_row(state))
         await session.flush()
+        await self._retain_references(
+            session,
+            initial_references,
+            execution_digest=execution_digest,
+            owner_type="process_state",
+            owner_id=state.state_id,
+            now=timestamp,
+        )
         return _rollout_from_row(row)
 
     async def get_rollout(self, session: AsyncSession, *, rollout_id: str) -> ProcessRolloutRecord:
@@ -276,6 +344,7 @@ class ProcessStore:
             raise KeyError(state_id)
         return _state_from_row(row)
 
+    @_atomic_process_write
     async def claim_next(
         self,
         session: AsyncSession,
@@ -345,8 +414,12 @@ class ProcessStore:
             if row is None:
                 return None
         state = await self.get_state(session, state_id=row.current_state_id)
+        await self._validate_state_references(
+            session, state, execution_digest=row.execution_digest, now=timestamp
+        )
         return ClaimedProcessRollout(rollout=_rollout_from_row(row), state=state, lease_token=token)
 
+    @_atomic_process_write
     async def append_event(
         self,
         session: AsyncSession,
@@ -358,7 +431,7 @@ class ProcessStore:
         actor_id: str,
         payload: dict[str, Any],
         resulting_state: ProjectStatePayload,
-        artifact_refs: tuple[ArtifactRef, ...] = (),
+        artifact_refs: tuple[ProcessArtifactRef, ...] = (),
         worker_invocation_id: str | None = None,
         research_execution_digest: str | None = None,
         to_status: RolloutStatus = RolloutStatus.ACTIVE,
@@ -366,12 +439,11 @@ class ProcessStore:
         resulting_state_id: str | None = None,
         occurred_at: datetime | None = None,
     ) -> tuple[ProcessEventRecord, ProjectStateVersion]:
-        if any(
-            reference.raw_data for reference in (*artifact_refs, *resulting_state.artifact_refs)
-        ):
-            raise ProcessInvariantError(
-                "forensic/raw artifacts cannot enter process events or state"
-            )
+        resulting_state = ProjectStatePayload.model_validate_json(resulting_state.model_dump_json())
+        artifact_refs = _new_process_references(artifact_refs)
+        state_references = _new_process_references(resulting_state.artifact_refs)
+        cited_artifacts = _new_process_references((*artifact_refs, *state_references))
+        timestamp = _as_utc(occurred_at or datetime.now(UTC))
         assigned_event_id = event_id or f"process-event-{uuid4()}"
         existing_event = await session.get(ProcessEventRow, assigned_event_id)
         if existing_event is not None:
@@ -386,13 +458,24 @@ class ProcessStore:
                 or event.research_execution_digest != research_execution_digest
                 or event.rollout_status != to_status
                 or event.payload != payload
-                or event.artifact_refs
-                != tuple(sorted(artifact_refs, key=lambda reference: reference.artifact_id))
+                or event.artifact_refs != artifact_refs
                 or state.payload != resulting_state
                 or (resulting_state_id is not None and state.state_id != resulting_state_id)
                 or (occurred_at is not None and event.created_at != occurred_at)
             ):
                 raise ProcessInvariantError("process event ID reused with different content")
+            rollout = await self.get_rollout(session, rollout_id=rollout_id)
+            await self._validate_state_references(
+                session, state, execution_digest=rollout.execution_digest, now=timestamp
+            )
+            await self._validate_owned_references(
+                session,
+                artifact_refs,
+                execution_digest=rollout.execution_digest,
+                owner_type="process_event",
+                owner_id=event.event_id,
+                now=timestamp,
+            )
             return event, state
         decision = await session.get(AmberAdmissionDecisionRow, amber_decision_id)
         if decision is None:
@@ -417,7 +500,6 @@ class ProcessStore:
             or _as_utc(request_record.requested_at) != _as_utc(decision_record.decided_at)
         ):
             raise PermissionError("process event does not cite an admitted Amber decision")
-        timestamp = _as_utc(occurred_at or datetime.now(UTC))
         row = await session.scalar(
             select(ProcessRolloutRow)
             .where(
@@ -465,6 +547,9 @@ class ProcessStore:
         ):
             raise PermissionError("Amber authority changed after action admission")
         parent_state = await self.get_state(session, state_id=row.current_state_id)
+        await self._validate_state_references(
+            session, parent_state, execution_digest=row.execution_digest, now=timestamp
+        )
         if (
             request_record.rollout_sequence != row.sequence
             or request_record.state_digest != parent_state.state_digest
@@ -488,34 +573,21 @@ class ProcessStore:
         envelope = await self.amber.get(session, authorization_digest=row.authorization_digest)
         if timestamp >= envelope.expires_at:
             raise PermissionError("process event completed after Amber authorization expired")
-        cited_artifacts = tuple(
-            sorted(
-                {
-                    reference.artifact_id: reference
-                    for reference in (*artifact_refs, *resulting_state.artifact_refs)
-                }.values(),
-                key=lambda reference: reference.artifact_id,
-            )
+        await self._validate_references(
+            session, cited_artifacts, execution_digest=row.execution_digest, now=timestamp
         )
-        for reference in cited_artifacts:
-            artifact = await session.get(ArtifactRow, reference.artifact_id)
-            if artifact is None or not _artifact_matches(reference, artifact):
-                raise ProcessInvariantError("process event cites an invalid artifact")
-            if artifact.raw_data:
-                raise ProcessInvariantError(
-                    "forensic/raw artifacts cannot enter process events or state"
-                )
         artifact_reservation = (
             request_record.projected_usage.artifact_bytes
             - parent_state.payload.budget_usage.artifact_bytes
         )
         prior_artifact_ids = {
-            reference.artifact_id for reference in parent_state.payload.artifact_refs
+            stored_process_reference_id(reference)
+            for reference in parent_state.payload.artifact_refs
         }
         new_artifacts = {
-            reference.artifact_id: reference
+            reference.process_artifact_id: reference
             for reference in cited_artifacts
-            if reference.artifact_id not in prior_artifact_ids
+            if reference.process_artifact_id not in prior_artifact_ids
         }
         forensic_bytes = 0
         bound_invocation_id = await session.scalar(
@@ -571,7 +643,7 @@ class ProcessStore:
             amber_decision_id=amber_decision_id,
             rollout_status=to_status,
             payload=payload,
-            artifact_refs=tuple(sorted(artifact_refs, key=lambda ref: ref.artifact_id)),
+            artifact_refs=artifact_refs,
             created_at=timestamp,
         )
         session.add(_state_row(state))
@@ -586,7 +658,106 @@ class ProcessStore:
         row.lease_expires_at = None
         row.updated_at = timestamp
         await session.flush()
+        await self._retain_references(
+            session,
+            state_references,
+            execution_digest=row.execution_digest,
+            owner_type="process_state",
+            owner_id=state.state_id,
+            now=timestamp,
+        )
+        await self._retain_references(
+            session,
+            artifact_refs,
+            execution_digest=row.execution_digest,
+            owner_type="process_event",
+            owner_id=event.event_id,
+            now=timestamp,
+        )
         return event, state
+
+    async def _validate_references(
+        self,
+        session: AsyncSession,
+        references: tuple[ProcessArtifactRef, ...],
+        *,
+        execution_digest: str,
+        now: datetime,
+    ) -> None:
+        if references and self.evidence is None:
+            raise ProcessInvariantError("process references require an evidence admission boundary")
+        for reference in references:
+            assert self.evidence is not None
+            await self.evidence.read(
+                session,
+                reference=reference,
+                execution_digest=execution_digest,
+                use=ProcessEvidenceUse.PROCESS,
+                now=now,
+            )
+
+    async def _retain_references(
+        self,
+        session: AsyncSession,
+        references: tuple[ProcessArtifactRef, ...],
+        *,
+        execution_digest: str,
+        owner_type: Literal["process_state", "process_event"],
+        owner_id: str,
+        now: datetime,
+    ) -> None:
+        if references and self.evidence is None:
+            raise ProcessInvariantError("process references require an evidence admission boundary")
+        for reference in references:
+            assert self.evidence is not None
+            await self.evidence.retain_for_process(
+                session,
+                reference=reference,
+                execution_digest=execution_digest,
+                owner_type=owner_type,
+                owner_id=owner_id,
+                now=now,
+            )
+
+    async def _validate_owned_references(
+        self,
+        session: AsyncSession,
+        references: tuple[ProcessArtifactRef, ...],
+        *,
+        execution_digest: str,
+        owner_type: Literal["process_state", "process_event"],
+        owner_id: str,
+        now: datetime,
+    ) -> None:
+        await self._validate_references(
+            session, references, execution_digest=execution_digest, now=now
+        )
+        if self.evidence is not None:
+            await self.evidence.validate_process_ownership(
+                session,
+                references=references,
+                execution_digest=execution_digest,
+                owner_type=owner_type,
+                owner_id=owner_id,
+                now=now,
+            )
+
+    async def _validate_state_references(
+        self,
+        session: AsyncSession,
+        state: ProjectStateVersion,
+        *,
+        execution_digest: str,
+        now: datetime,
+    ) -> None:
+        await self._validate_owned_references(
+            session,
+            _new_process_references(state.payload.artifact_refs),
+            execution_digest=execution_digest,
+            owner_type="process_state",
+            owner_id=state.state_id,
+            now=now,
+        )
 
     async def record_outcome(
         self,
@@ -757,6 +928,7 @@ class ProcessStore:
         await session.flush()
         return _rollout_from_row(row)
 
+    @_atomic_process_write
     async def fork_rollout(
         self,
         session: AsyncSession,
@@ -780,7 +952,40 @@ class ProcessStore:
         assigned_fork_id = fork_id or f"process-fork-{uuid4()}"
         existing = await session.get(ProcessForkRow, assigned_fork_id)
         if existing is not None:
-            return ProcessForkRecord.model_validate(existing.record_json, strict=False)
+            record = ProcessForkRecord.model_validate(existing.record_json, strict=False)
+            if (
+                sha256_digest(record) != existing.record_digest
+                or record.parent_rollout_id != parent_rollout_id
+                or record.intervention != intervention
+                or record.children
+                != tuple(
+                    ProcessForkChild(
+                        rollout_id=child.rollout_id,
+                        condition_id=child.condition_id,
+                        seed=child.execution.seed,
+                    )
+                    for child in ordered
+                )
+                or (occurred_at is not None and record.created_at != occurred_at)
+            ):
+                raise ProcessInvariantError("process fork ID reused with different content")
+            for child in ordered:
+                rollout = await self.get_rollout(session, rollout_id=child.rollout_id)
+                if (
+                    rollout.execution_digest != sha256_digest(child.execution)
+                    or rollout.replication_index != child.replication_index
+                    or rollout.parent_rollout_id != parent_rollout_id
+                    or rollout.fork_id != assigned_fork_id
+                ):
+                    raise ProcessInvariantError("process fork retry differs from its child rollout")
+                state = await self.get_state(session, state_id=rollout.initial_state_id)
+                await self._validate_state_references(
+                    session,
+                    state,
+                    execution_digest=rollout.execution_digest,
+                    now=_as_utc(occurred_at or datetime.now(UTC)),
+                )
+            return record
         parent_row = await session.get(ProcessRolloutRow, parent_rollout_id)
         if parent_row is None:
             raise KeyError(parent_rollout_id)
@@ -963,7 +1168,7 @@ def _build_event(
     amber_decision_id: str,
     rollout_status: RolloutStatus,
     payload: dict[str, Any],
-    artifact_refs: tuple[ArtifactRef, ...],
+    artifact_refs: tuple[StoredProcessArtifactRef, ...],
     created_at: datetime,
 ) -> ProcessEventRecord:
     digest = process_event_digest(
@@ -1125,6 +1330,24 @@ def _event_from_row(row: ProcessEventRow) -> ProcessEventRecord:
 
 def _as_utc(value: datetime) -> datetime:
     return value.replace(tzinfo=UTC) if value.tzinfo is None else value
+
+
+def _new_process_references(
+    references: tuple[StoredProcessArtifactRef, ...],
+) -> tuple[ProcessArtifactRef, ...]:
+    admitted: dict[str, ProcessArtifactRef] = {}
+    for reference in references:
+        if not isinstance(reference, ProcessArtifactRef):
+            raise ProcessInvariantError(
+                "new process references require reviewed admission; "
+                "forensic/raw and legacy refs denied"
+            )
+        reference = ProcessArtifactRef.model_validate_json(reference.model_dump_json())
+        previous = admitted.get(reference.process_artifact_id)
+        if previous is not None and previous != reference:
+            raise ProcessInvariantError("process reference ID has conflicting content")
+        admitted[reference.process_artifact_id] = reference
+    return tuple(admitted[key] for key in sorted(admitted))
 
 
 async def _invocation_forensic_bytes(

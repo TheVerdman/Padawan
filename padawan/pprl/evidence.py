@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
+from typing import Literal
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -160,6 +161,84 @@ class ProcessEvidenceStore:
         use: ProcessEvidenceUse,
         now: datetime | None,
     ) -> bytes:
+        _receipt, candidate = await self._resolve(
+            session, reference=reference, execution_digest=execution_digest, use=use, now=now
+        )
+        return await artifact_read_bytes(self.catalog.backend, candidate, allow_restricted=True)
+
+    async def retain_for_process(
+        self,
+        session: AsyncSession,
+        *,
+        reference: ProcessArtifactRef,
+        execution_digest: str,
+        owner_type: Literal["process_state", "process_event"],
+        owner_id: str,
+        now: datetime,
+    ) -> None:
+        """Broker-only ownership; do not expose the resolved dependencies to workers."""
+        if owner_type not in {"process_state", "process_event"} or not owner_id.strip():
+            raise ValueError("process evidence requires a concrete state or event owner")
+        async with session.begin_nested():
+            receipt, candidate = await self._resolve(
+                session,
+                reference=reference,
+                execution_digest=execution_digest,
+                use=ProcessEvidenceUse.PROCESS,
+                now=now,
+            )
+            for artifact in (
+                candidate,
+                *(source.artifact for source in receipt.review.forensic_sources),
+            ):
+                await self.catalog.reference(
+                    session, artifact, owner_type=owner_type, owner_id=owner_id
+                )
+
+    async def validate_process_ownership(
+        self,
+        session: AsyncSession,
+        *,
+        references: tuple[ProcessArtifactRef, ...],
+        execution_digest: str,
+        owner_type: Literal["process_state", "process_event"],
+        owner_id: str,
+        now: datetime,
+    ) -> None:
+        """Broker-only check of the full private dependency set for one process record."""
+        expected = set()
+        for reference in references:
+            receipt, candidate = await self._resolve(
+                session,
+                reference=reference,
+                execution_digest=execution_digest,
+                use=ProcessEvidenceUse.PROCESS,
+                now=now,
+            )
+            expected.add(candidate.artifact_id)
+            expected.update(
+                source.artifact.artifact_id for source in receipt.review.forensic_sources
+            )
+        retained = set(
+            await session.scalars(
+                select(ArtifactReferenceRow.artifact_id).where(
+                    ArtifactReferenceRow.owner_type == owner_type,
+                    ArtifactReferenceRow.owner_id == owner_id,
+                )
+            )
+        )
+        if retained != expected:
+            raise ArtifactIntegrityError("process record has inconsistent retention ownership")
+
+    async def _resolve(
+        self,
+        session: AsyncSession,
+        *,
+        reference: ProcessArtifactRef,
+        execution_digest: str,
+        use: ProcessEvidenceUse,
+        now: datetime | None,
+    ) -> tuple[ProcessEvidenceAdmissionRecord, ArtifactRef]:
         if not isinstance(reference, ProcessArtifactRef) or not isinstance(use, ProcessEvidenceUse):
             raise PermissionError("process reads require a process reference and explicit use")
         if reference.execution_digest != execution_digest:
@@ -175,7 +254,7 @@ class ProcessEvidenceStore:
             raise PermissionError("process reference or requested use differs from admission")
         candidate, _ = await self._validate(session, review=review, now=timestamp)
         await _validate_pins(session, review)
-        return await artifact_read_bytes(self.catalog.backend, candidate, allow_restricted=True)
+        return receipt, candidate
 
     async def _validate(
         self, session: AsyncSession, *, review: ProcessEvidenceAdmission, now: datetime

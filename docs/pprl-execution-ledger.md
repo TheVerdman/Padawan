@@ -230,15 +230,47 @@ Checkpoint 3, model-result portion, 2026-09-04:
   model inference, worker activation, cloud use, or sibling edits were needed. Initial state, nested
   payloads, generic references, legacy projections, and coordinated retention/GC remain unfinished.
 
+Checkpoint 3, reference/ownership portion, 2026-09-04:
+
+Boundary and threat assumptions are recorded in `pprl-reference-ingress-boundary.md`. The broker,
+database, and owned backend remain trusted; references and old records may be malformed. This portion
+does not authenticate principals or validate nested/free-text content, hydration, training, or GC.
+
+- The model-result portion was committed locally as `fe6761e`. Its exact 15-file staged scan found
+  no credential patterns. Reviewed-reference ingress now preserves legacy parsing for privileged
+  replay while requiring admitted `ProcessArtifactRef` values in new initial/event artifact fields.
+  Claims and relevant retries validate admission and state/event ownership. Missing boundary
+  configuration denies reference use; old flags cannot grant authority.
+- Candidate and private source ownership is pinned with state/event mutations in savepoints.
+  Multi-child fork failure rolls back new executions, earlier children, parent advancement, and pins.
+  Cross-execution evidence transfer is not implicit. A rollback must preserve history and disable
+  consumers; it must not restore permissive legacy ingress or weaken transaction guarantees.
+- First new regression selection: **12 passed, 2 failed in 1.97 seconds**. One was a fixture error
+  (Amber requires the cumulative, not incremental, artifact projection). The other was a real
+  SQLite failure: a successful first savepoint survived outer rollback, leaving two rollouts/states
+  where one was expected. SQLite legacy transaction control had not begun the outer transaction.
+- `Database` now delegates SQLite `BEGIN` to SQLAlchemy for reads and savepoints too. Tests also
+  verify that an outer rollback removes a successful evidence admission and all its pins. The
+  earlier checkpoint-2 savepoint tests had not covered this driver-level failure mode.
+- After the corrections, the reference-ingress/admission/generation/store/coordinator selection
+  passed **52 tests in 5.73 seconds**. Full offline command: `PYTHONPATH=. .venv/bin/pytest -q
+  -m 'not postgres and not live and not lean and not gcs' --tb=short`.
+  Result: **363 passed, 6 deselected in 25.17 seconds**. Ruff passed; formatting checked 296 files;
+  all 129 schemas match; mypy passed for 159 source files; `git diff --check` passed.
+- Retained fixtures cover raw/unclassified/unreviewed/forged initial references, missing configured
+  admission, initial source ownership, unsafe initial retries, state/event pin failures, missing
+  ownership at claim, second-child scope failure, historical JSON/digest replay, forged event
+  references, and outer rollback. No real inference, cloud use, sibling edit, or production migration.
+
 ## Next executable step
 
 Checkpoints 1 and 2 and the model-result portion of checkpoint 3 are verified offline. Continue
-process ingress and worker/training projections. Preserve historical parsing and digests for
-privileged replay; require reviewed process references and explicit extension schemas for new
-worker use, including initial state, transitions, forks, and nested fields. The PPRL compiler still
-serializes complete events into trajectory rows. Process ingress, ownership/GC coordination, and
-safe projections remain unfinished. None of these local foundation changes requires model testing
-or cloud activation.
+the remaining checkpoint 3 after its now-verified reference/ownership portion: define allowlisted
+state/event content and versioned extension admission, followed by narrow worker observations and
+training projections. Preserve historical parsing/digests for privileged replay; legacy records
+gain no automatic worker/training approval. The compiler still serializes complete events into
+trajectory rows. Nested fields, memory/evidence strings, validated projections, and coordinated GC
+remain unfinished. These local foundation changes require no model testing or cloud activation.
 
 ## Completion audit
 

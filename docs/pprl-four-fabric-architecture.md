@@ -23,8 +23,11 @@ privileged invocation artifacts without inserting their references into shared e
 [worker output boundary](pprl-worker-output-boundary.md) and
 [reviewed evidence admission](process-evidence-admission.md)
 for exact source-binding limits, trusted-broker assumptions, and retained validation.
-Initial state, nested fields, generic references, legacy hydration/training records, and coordinated
-GC remain unresolved parts of the information boundary.
+New initial-state/event references require reviewed admission; state/event ownership and multi-child
+forks are transactional, and claims refuse legacy or unretained references. SQLite transaction
+control preserves outer rollback across savepoints. See
+[reference ingress boundary](pprl-reference-ingress-boundary.md). Nested fields, allowlisted worker
+hydration, legacy training records, and coordinated GC remain unresolved parts of the boundary.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by

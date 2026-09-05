@@ -2,16 +2,21 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import timedelta
+from uuid import uuid4
 
 import pytest
 from sqlalchemy import delete
 
 from padawan.adapters.base import GenerationRequest, GenerationResult
-from padawan.artifacts.information import ArtifactInformationStore
+from padawan.artifacts.information import (
+    ArtifactInformationStore,
+    InformationClass,
+    ProcessArtifactRef,
+)
 from padawan.artifacts.store import LocalArtifactStore
 from padawan.governance.amber import AmberActionRequest, AmberStatus
 from padawan.governance.amber_store import AmberStore
-from padawan.models.contracts import SamplingConfiguration
+from padawan.models.contracts import SamplingConfiguration, project_authored_internal_rights
 from padawan.models.hashing import canonical_json_bytes, sha256_digest
 from padawan.models.tables import ArtifactReferenceRow, ExternalCallRow, ProcessWorkerInvocationRow
 from padawan.orchestration.external_calls import IdempotentGenerationExecutor
@@ -22,6 +27,12 @@ from padawan.pprl.contracts import (
     ProjectStatePayload,
 )
 from padawan.pprl.distributions import ProcessDistributionRegistry
+from padawan.pprl.evidence import ProcessEvidenceStore
+from padawan.pprl.evidence_contracts import (
+    EvidenceAdmissionPolicy,
+    ProcessEvidenceAdmission,
+    ProcessEvidenceUse,
+)
 from padawan.pprl.generation import ProcessGenerationExecutor, ProcessGenerationUnavailableError
 from padawan.pprl.store import ProcessInvariantError, ProcessStore
 from tests.helpers import CallbackGenerationClient
@@ -281,7 +292,50 @@ async def test_process_generation_is_admission_bound_and_idempotent(
             owner_id=first.invocation_id,
         )
         oversized = executor.executor.artifacts.put_text("x" * 1_000_000)
-        await executor.executor.catalog.register(session, oversized)
+        evidence = ProcessEvidenceStore(
+            catalog=executor.executor.catalog,
+            amber=amber,
+            policy=EvidenceAdmissionPolicy(
+                policy_id="test.generation-evidence",
+                version="1.0.0",
+                reviewer_ids=("reviewer-a",),
+                maximum_bytes=2_000_000,
+                maximum_forensic_sources=0,
+                maximum_forensic_source_bytes=0,
+            ),
+        )
+        classification = await evidence.information.classify(
+            session,
+            artifact=oversized,
+            information_class=InformationClass.PROCESS_CANDIDATE,
+            classified_by="test.broker",
+            reason="synthetic oversized candidate",
+            classified_at=pprl_now(),
+        )
+        reviewed = await evidence.admit(
+            session,
+            review=ProcessEvidenceAdmission(
+                process_reference=ProcessArtifactRef(
+                    process_artifact_id=f"process-artifact-{uuid4().hex}",
+                    execution_digest=execution_digest,
+                    content_digest=oversized.digest,
+                    media_type=oversized.media_type,
+                    size_bytes=oversized.size_bytes,
+                ),
+                candidate_artifact_id=oversized.artifact_id,
+                candidate_classification_digest=classification.digest,
+                admission_policy=evidence.policy,
+                policy_digest=evidence.policy.digest,
+                reviewer_id="reviewer-a",
+                rationale="Synthetic reviewed result used to check combined byte accounting.",
+                contamination_scope="test-train",
+                rights=project_authored_internal_rights(reviewed_at=NOW),
+                allowed_uses=(ProcessEvidenceUse.PROCESS,),
+                reviewed_at=pprl_now(),
+            ),
+            now=pprl_now(),
+        )
+        store = ProcessStore(amber, evidence=evidence)
         with pytest.raises(PermissionError, match="Amber reservation"):
             await store.append_event(
                 session,
@@ -294,7 +348,7 @@ async def test_process_generation_is_admission_bound_and_idempotent(
                 resulting_state=ProjectStatePayload(
                     objective="perform one admitted model action",
                     budget_usage=action.projected_usage,
-                    artifact_refs=(oversized,),
+                    artifact_refs=(reviewed,),
                 ),
                 worker_invocation_id=first.invocation_id,
                 occurred_at=pprl_now(),

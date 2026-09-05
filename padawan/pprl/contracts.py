@@ -6,6 +6,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import Field, FiniteFloat, model_validator
 
+from padawan.artifacts.information import ProcessArtifactRef
 from padawan.models.contracts import (
     SCHEMA_VERSION,
     ArtifactRef,
@@ -23,6 +24,16 @@ from padawan.models.research_contracts import (
 NonNegativeFinite = Annotated[FiniteFloat, Field(ge=0.0)]
 Probability = Annotated[FiniteFloat, Field(ge=0.0, le=1.0)]
 PositiveProbability = Annotated[FiniteFloat, Field(gt=0.0, le=1.0)]
+
+# The legacy alternative is retained for exact privileged historical replay.
+# New ingress must validate admission; this union itself grants no process use.
+StoredProcessArtifactRef = ArtifactRef | ProcessArtifactRef
+
+
+def stored_process_reference_id(reference: StoredProcessArtifactRef) -> str:
+    if isinstance(reference, ProcessArtifactRef):
+        return reference.process_artifact_id
+    return reference.artifact_id
 
 
 class PersistenceMode(StrEnum):
@@ -382,7 +393,7 @@ class ProjectStatePayload(StrictRecord):
     plan: tuple[NonEmpty, ...] = ()
     hypotheses: tuple[ProjectHypothesis, ...] = ()
     claims: tuple[ProjectClaim, ...] = ()
-    artifact_refs: tuple[ArtifactRef, ...] = ()
+    artifact_refs: tuple[StoredProcessArtifactRef, ...] = ()
     dependencies: tuple[ProjectDependency, ...] = ()
     budget_usage: ProjectBudgetUsage = Field(default_factory=ProjectBudgetUsage)
     worker_assignments: tuple[WorkerAssignment, ...] = ()
@@ -397,7 +408,8 @@ class ProjectStatePayload(StrictRecord):
         )
         _require_canonical_unique(tuple(item.claim_id for item in self.claims), "claim IDs")
         _require_canonical_unique(
-            tuple(item.artifact_id for item in self.artifact_refs), "state artifacts"
+            tuple(stored_process_reference_id(item) for item in self.artifact_refs),
+            "state artifacts",
         )
         dependency_keys = tuple(
             (item.source_id, item.target_id, item.relation) for item in self.dependencies
@@ -464,7 +476,7 @@ class ProcessEventRecord(StrictRecord):
     amber_decision_id: NonEmpty
     rollout_status: RolloutStatus
     payload: dict[str, Any]
-    artifact_refs: tuple[ArtifactRef, ...] = ()
+    artifact_refs: tuple[StoredProcessArtifactRef, ...] = ()
     event_digest: Sha256
     created_at: datetime
 
@@ -472,7 +484,8 @@ class ProcessEventRecord(StrictRecord):
     def digest_is_valid(self) -> ProcessEventRecord:
         _require_timezone(self.created_at, "process event creation time")
         _require_canonical_unique(
-            tuple(item.artifact_id for item in self.artifact_refs), "event artifacts"
+            tuple(stored_process_reference_id(item) for item in self.artifact_refs),
+            "event artifacts",
         )
         expected = process_event_digest(
             event_id=self.event_id,
@@ -686,7 +699,7 @@ def process_event_digest(
     amber_decision_id: str,
     rollout_status: RolloutStatus,
     payload: dict[str, Any],
-    artifact_refs: tuple[ArtifactRef, ...],
+    artifact_refs: tuple[StoredProcessArtifactRef, ...],
     created_at: datetime,
 ) -> str:
     return sha256_digest(

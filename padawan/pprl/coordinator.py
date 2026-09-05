@@ -8,13 +8,13 @@ from uuid import uuid4
 
 from sqlalchemy import func, select
 
+from padawan.artifacts.information import ProcessArtifactRef
 from padawan.governance.amber import (
     AmberActionRequest,
     AmberAdmissionDecision,
     AmberAdmissionDisposition,
 )
 from padawan.governance.amber_store import AmberStore
-from padawan.models.contracts import ArtifactRef
 from padawan.models.database import Database
 from padawan.models.hashing import sha256_digest
 from padawan.models.tables import (
@@ -29,6 +29,7 @@ from padawan.pprl.contracts import (
     ProjectBudgetUsage,
     ProjectStatePayload,
     RolloutStatus,
+    stored_process_reference_id,
 )
 from padawan.pprl.distributions import ProcessDistributionRegistry
 from padawan.pprl.store import ClaimedProcessRollout, ProcessStore
@@ -71,7 +72,7 @@ class ProcessActionProposal:
 class ProcessActionResult:
     event_payload: dict[str, Any]
     resulting_state: ProjectStatePayload
-    artifact_refs: tuple[ArtifactRef, ...] = ()
+    artifact_refs: tuple[ProcessArtifactRef, ...] = ()
     worker_invocation_id: str | None = None
     research_execution_digest: str | None = None
     to_status: RolloutStatus = RolloutStatus.ACTIVE
@@ -321,12 +322,12 @@ def _validate_result_usage(
     if result.resulting_state.budget_usage != expected:
         raise ValueError("process result budget usage differs from its admitted projection")
     prior_artifact_ids = {
-        reference.artifact_id for reference in claimed.state.payload.artifact_refs
+        stored_process_reference_id(reference) for reference in claimed.state.payload.artifact_refs
     }
     new_artifacts = {
-        reference.artifact_id: reference
+        stored_process_reference_id(reference): reference
         for reference in (*result.artifact_refs, *result.resulting_state.artifact_refs)
-        if reference.artifact_id not in prior_artifact_ids
+        if stored_process_reference_id(reference) not in prior_artifact_ids
     }
     if sum(reference.size_bytes for reference in new_artifacts.values()) > (
         proposal.incremental_usage.artifact_bytes

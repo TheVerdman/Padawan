@@ -456,7 +456,7 @@
     {
       "name": "process-event",
       "schema": "process-event.schema.json",
-      "sha256": "c82305717b7a5b487d8a09c418751c3dbdd852f9e7273bd83c35c6d9e92a42ef"
+      "sha256": "1f9c4df29904fe76e0ec5cb961f2a985c5b2aac32f9b89e4d5970f5a9dcf91a6"
     },
     {
       "name": "process-execution-manifest",
@@ -501,7 +501,7 @@
     {
       "name": "project-state",
       "schema": "project-state.schema.json",
-      "sha256": "4880fd35d99dfe55f43de05548e4f83e487cd4c9b3e5e0de5c2c0e0fc72e0580"
+      "sha256": "de5888977d08b576544bc55beb8d626a664526b050792ecd6da75ec99e5b290a"
     },
     {
       "name": "reward",

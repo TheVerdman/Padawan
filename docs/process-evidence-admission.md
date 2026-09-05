@@ -75,6 +75,10 @@ now normalized separately; the remaining state and training interfaces still nee
 projections. See `pprl-worker-output-boundary.md`.
 
 Admission ownership is atomic in the database and is included in the catalog's retention set.
+New process state/event ownership also pins the candidate and declared source set. SQLite now
+explicitly begins outer transactions so a successful savepoint cannot escape a later rollback;
+the original checkpoint's validation had not exercised that legacy-driver failure. See
+`pprl-reference-ingress-boundary.md` for ingress, claim, retry, fork, and rollback behavior.
 Concurrent GC using a stale externally gathered set remains unresolved; the local file lock is not
 a coordinated database/GC transaction. Raw sources may stay pinned for the lifetime of their
 admission evidence. A later retention policy must preserve required lineage and distinguish content

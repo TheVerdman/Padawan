@@ -50,6 +50,12 @@ ID and counts their bytes against the reservation; it does not require those raw
 shared events. This closes the model-result path only. See `pprl-worker-output-boundary.md` for
 remaining state, hydration, and training-projection gaps.
 
+New initial-state and event artifact fields require reviewed process references. State/event
+ownership pins the admitted candidate and private source dependencies transactionally; fork child
+admission failure rolls back the whole fork. Claims refuse legacy or unretained references, while
+privileged replay preserves their historical representation. See `pprl-reference-ingress-boundary.md`
+for scope, SQLite rollback validation, and the still-unfinished nested and projection boundary.
+
 ## Distributions and evidence
 
 A process distribution declares train, adaptive-development, validation, and sealed partitions,

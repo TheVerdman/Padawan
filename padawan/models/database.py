@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from sqlalchemy import event, text
+from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -35,6 +36,7 @@ class Database:
         )
         if url.startswith("sqlite"):
             event.listen(self.engine.sync_engine, "connect", _configure_sqlite)
+            event.listen(self.engine.sync_engine, "begin", _begin_sqlite)
 
     @classmethod
     def sqlite(cls, path: Path | str) -> Database:
@@ -67,9 +69,17 @@ class Database:
 
 
 def _configure_sqlite(dbapi_connection: Any, _connection_record: object) -> None:
+    # SQLAlchemy must own BEGIN, including before a read or SAVEPOINT. The
+    # sqlite3 legacy mode otherwise releases a first savepoint as its own commit,
+    # allowing nested writes to survive an outer transaction rollback.
+    dbapi_connection.isolation_level = None
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.execute("PRAGMA busy_timeout=5000")
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.execute("PRAGMA synchronous=FULL")
     cursor.close()
+
+
+def _begin_sqlite(connection: Connection) -> None:
+    connection.exec_driver_sql("BEGIN")
