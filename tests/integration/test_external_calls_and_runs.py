@@ -43,6 +43,18 @@ async def test_response_persistence_prevents_duplicate_generation_after_crash(
     assert len(client.calls) == 1
     assert second.raw_response == first.raw_response
     assert second.raw_request == first.raw_request
+    for changed in ({"provider": "other-provider"}, {"purpose": "other-purpose"}):
+        with pytest.raises(ValueError, match="different content or owner"):
+            await executor.execute(
+                **{
+                    "run_id": run_id,
+                    "purpose": "student",
+                    "provider": "provider",
+                    "request": request,
+                    **changed,
+                }
+            )
+    assert len(client.calls) == 1
     async with database.transaction() as session:
         call = await session.get(ExternalCallRow, request.request_id)
         assert call is not None and call.status == "completed"

@@ -2,7 +2,8 @@
 
 Status: the model-result portion of information-boundary checkpoint 3. The reference/ownership
 portion is described in `pprl-reference-ingress-boundary.md`, and structural content admission in
-`pprl-content-admission.md`. Exact hydration and training projections remain unfinished.
+`pprl-content-admission.md`. Offline observation/training projections and exact generation-input
+admission now exist; executable replacement hydration and parameter-training readiness remain absent.
 
 `ProcessGenerationExecutor.execute` returns a broker `ProcessGenerationResult` containing an
 invocation ID and `ProcessWorkerOutput`. The latter contains only public `output_text` and validated
@@ -16,8 +17,10 @@ that a dishonest adapter classified its content correctly, or semantically filte
 text. An authorized adapter and independently enforced worker containment remain prerequisites.
 
 Requests and full generation results remain protected raw artifacts behind `ExternalCallRow` and
-`ProcessWorkerInvocationRow`. Successfully finalized PPRL invocations classify both artifacts as
-forensic and pin their retention ownership before returning. The lower-level
+`ProcessWorkerInvocationRow`. New calls also retain a private exact-input workload receipt and
+prepared transport envelope as described in `pprl-generation-workload-boundary.md`. Successfully
+finalized PPRL invocations classify all three artifacts as forensic and pin their retention ownership
+before returning. Original workload ownership is independently required. The lower-level
 `IdempotentGenerationExecutor` retains its complete-result interface for trusted broker operations;
 workers must not receive that object or the raw backend.
 
@@ -26,13 +29,14 @@ of requiring raw artifacts in event `artifact_refs`. It checks completed invocat
 chronology, distinct request/response records, forensic classification, catalog identity, and
 retention ownership. If an invocation exists for the Amber decision, the event must cite it. Omitting
 the ID cannot bypass the source checks or artifact-byte reservation. Retained request/response
-bytes count together with new process artifacts against the action's declared reservation.
+and prepared-envelope bytes count together with new process artifacts against the action's declared
+reservation.
 
 New initial/event/state top-level references require reviewed admission, including duplicate
 attempts. Generic references, even when non-raw, grant no new process use. This is not the complete
 ingress proof: nested dictionaries and memory/evidence strings now have structural admission, but
-semantic provenance and training projections remain unfinished. The later offline worker observation
-interface is in `pprl-worker-observation-boundary.md`. Privileged replay is distinct
+semantic provenance remains unfinished. The later offline worker observation and learning interfaces
+are in `pprl-worker-observation-boundary.md` and `pprl-training-projection-boundary.md`. Privileged replay is distinct
 from new worker use.
 
 Ordinary generation failures expose one `ProcessGenerationUnavailableError` with a fixed message

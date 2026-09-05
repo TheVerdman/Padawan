@@ -53,7 +53,11 @@ from padawan.pprl.contracts import (
 from padawan.pprl.distributions import ProcessDistributionRegistry
 from padawan.pprl.evidence_contracts import ProcessEvidenceUse
 from padawan.pprl.observations import ProcessObservationStore, _public_observation
-from padawan.pprl.store import ProcessStore, _invocation_forensic_bytes
+from padawan.pprl.store import (
+    ProcessStore,
+    _invocation_forensic_artifact_ids,
+    _invocation_forensic_bytes,
+)
 from padawan.training.compiler import TrainingCompiler, _artifact_ref
 from padawan.training.contracts import (
     PPRLForkPreferenceTrainingRow,
@@ -659,11 +663,9 @@ class ProcessTrainingProjectionStore:
                 ):
                     raise ValueError("trajectory invocation is inconsistent")
                 await _invocation_forensic_bytes(session, invocation, event.created_at)
-                for artifact_id in (
-                    invocation.request_artifact_id,
-                    invocation.response_artifact_id,
+                for artifact_id in await _invocation_forensic_artifact_ids(
+                    session, invocation, event.created_at
                 ):
-                    assert artifact_id is not None
                     forensic_source = await self.information.forensic_reference(
                         session, artifact_id=artifact_id
                     )

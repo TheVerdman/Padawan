@@ -1,6 +1,6 @@
 # PPRL execution plan and evidence ledger
 
-Status: active engineering work; no live institutional or parameter-learning result.
+Status: checkpoint review hold requested by the user; no live institutional or parameter-learning result.
 
 ## Mission and source of authority
 
@@ -38,12 +38,19 @@ implementation, offline tests, and local commits, including the tested Atlas evi
 This resolves the staging-authorization block below. The separate resource and authority gates
 above still apply.
 
+Latest user instruction, 2026-09-05: finish the current generation checkpoint, then pause the goal
+and explain all changes since goal activation against the audit and full roadmap. Do not start the
+next implementation slice until the user resumes. The current goal tool exposes no pause operation;
+Computer Use explicitly refused access to the Codex app. An app-level pause therefore requires its
+user-operated progress-row control. This ledger records the requested work hold, not a false claim
+that the scheduler was paused, the goal was blocked, or its objective was completed.
+
 ## Requirements and status
 
 | Requirement | Current state | Evidence needed for completion |
 | --- | --- | --- |
 | Information boundaries and retention | In progress, stage 1 below | Adversarial ingress/read/export/projection tests, authoritative classification, reviewed admission, transactional retention |
-| Containment, identity, causal tracing, budgets | Existing control-plane contracts; enforcement gaps remain | Exact workload/request/effect binding, independent enforcement, conserved reservations, explicit unknown effects |
+| Containment, identity, causal tracing, budgets | Exact observation/policy/prepared-request binding implemented offline; enforcement gaps remain | Authenticated runtime identity, independent enforcement/capture, conserved reservations and effect reconciliation |
 | Recovery and replacement | Committed state/leases exist; executable lifecycle absent | Crash/retry/fencing/reconciliation and exact hydration, including 100% roster replacement |
 | Communication, tracking, escalation | Declarative state and roles | Explicit delivery/read authority, causal replay, durable live views, bounded dispatch and escalation |
 | Atlas and mechanistic integration | Worker Atlas and separate runtime laboratories | Institutional subjects; versioned interchange; matched identities; protected forensic evidence and causal controls |
@@ -612,32 +619,140 @@ mismatches; sensitive-filename checks and `.env` exclusion passed, as did `git d
 Only this ledger changed since the recorded full test suite; no additional model or resource test
 was needed to commit the checkpoint.
 
+## Stage 2: exact generation workload binding
+
+The Atlas checkpoint is committed as `e486696`; the checkout was clean afterwards. The direct
+approval above resolves the local execution block. The app still reported the goal as blocked at
+that check. On the later continuation `get_goal` reported active again; no workaround goal was
+created and no goal-completion claim was made.
+
+The read-only consumer audit found no automatic production PPRL archive-to-worker/trainer consumer.
+`build_pprl_application` supplies no evidence policy and process references then fail closed.
+CLI inspect/replay and the version-1 compiler remain privileged reconstruction/archive surfaces;
+the explicit projection broker has no default learner caller. Heirloom exports developmental
+episodes rather than PPRL state. Atlas eligibility rows remain unconsumed. This is a call-graph
+finding under the trusted-broker assumption, not proof that arbitrary worker code is isolated.
+
+Implementation decision before editing: first bind the actual model-input and transport boundary,
+then implement conserved shared reservations. A configured generation policy must reconstruct the
+request from an exact current observation and fixed reviewed instructions/sampling/schema. A new
+private immutable workload receipt must join that request, the observation/decision, model and
+configured transport identities, actual destination and prepared request-body bytes. Missing
+composition, lineage or legacy admission must fail closed before provider I/O. The adapter must
+send those prepared bytes, with no hidden fallback, redirect or retry in this path. PPRL retries
+may reuse a persisted completed result; an unresolved prior dispatch cannot be sent again.
+
+Threat assumptions: the broker, database, artifact backend, configured adapter implementation,
+prompt-policy reviewer and HTTP transport are trusted. Malformed or substituted inputs, mutable
+nested request fields, changed configuration, damaged receipts/pins, stale authority/leases,
+duplicate dispatch and interruption are in scope. Declared runtime/checkpoint identities are not
+loaded-model attestation. An in-process fake is not evidence of network or OS containment.
+
+Acceptance: exact transmitted mock-HTTP body and destination; no calls for changed prompts,
+metadata, schema, sampling, destination, model/configuration, stale authority or missing observation;
+detached inputs under mutation; completed-response reuse; no duplicate send for a pending call;
+canonical immutable receipts and original/independent artifact ownership; caught errors and outer
+rollback leave no partial admission. Preserve private source errors, uncertain effects and artifacts.
+Retain the generation policy, canonical normalized request, prepared transport body/configuration,
+observation and decision joins, classified source bytes, dispatch/result logs and test evidence.
+
+Failure withholds worker output and does not reinterpret legacy invocations. Uncertain external
+effects remain unresolved, without automatic redispatch. Rollback disables the new dispatcher and
+preserves receipts and pins; it must not restore unbound PPRL calls. Non-goals for this first binding
+checkpoint: conserved account/reservation ledgers, authenticated workload identity or sandbox,
+complete response/trace capture, executable replacement/reconciliation, role-specific action masks,
+trainers, live models/workers, cloud activation, publication, or long-horizon scientific validation.
+Those remain required subsequent parts of the full goal.
+
+Implemented in this checkpoint:
+
+- `ProcessGenerationPolicy`, `ProcessGenerationWorkload`, `PreparedGeneration`, explicit generation
+  composition and migration `d8b541c9e2a6`. New invocations retain an exact workload digest; missing
+  new lineage cannot fall back to legacy records. Reviewed instruction rights, exact current
+  observation/decision, configured role/model/provider/destination and request byte bounds are
+  checked before publishing private intent.
+- The prepared OpenAI-compatible path sends canonical body bytes with explicit single dispatch,
+  no compatibility fallback or redirect, and no inherited client cookies/auth/headers/query values.
+  It rejects malformed/missing/coerced usage instead of turning it into zero. It retains available
+  malformed response bytes privately. Transport, credentials and loaded-model identity are still
+  trusted declarations, not attestation or independent resource measurement.
+- Current lineage and authority are checked after external intent before dispatch and again before
+  output admission. Admission time does not restart the action deadline. A pause or deadline while
+  a call is in flight withholds output while retaining the completed external result if available.
+- Completed replay preserves its original completion time and refuses to repair missing original
+  ownership. Pending/failed/cancelled process effects never automatically resend. Ambiguous effects
+  remain explicit in private call/invocation records; response-storage failure may leave a pending
+  call requiring future reconciliation.
+- Prepared source classification, original ownership, event artifact-byte accounting and independent
+  training-projection retention now travel together. The prepared envelope and its references stay
+  out of public worker output and learning JSONL. Projection readiness remains false.
+- Mock HTTP and disposable SQLite tests cover substituted prompts/schema/sampling/metadata,
+  configured identity/destination drift, fixed-policy rights/forensic identifiers/byte bounds,
+  nested mutation, concurrent delivery, pauses, deadlines, cancellation, persistence failure,
+  missing/corrupt source records, independent pins, outer rollback and immutable receipts. Existing
+  observation tests now scope their receipt counts to the tested worker, because their synthetic
+  model evidence itself requires an earlier observation. No acceptance invariant was removed.
+
+The implementation, read/write map, trust assumptions, evidence limits and rollback are specified in
+`pprl-generation-workload-boundary.md`. The canonical handoff and earlier boundary notes now distinguish
+implemented offline observations, generation input and learning projections from the still-absent
+live execution, recovery and trainer gates. Exact final validation and staged scan are recorded below
+before the local checkpoint commit.
+
+Final offline validation: `PYTHONPATH=. .venv/bin/pytest -q
+-m 'not postgres and not live and not lean and not gcs' --tb=short` completed with
+**604 passed, 6 deselected in 72.72 seconds**. Disposable SQLite migration/schema matching and
+all-revision upgrade/downgrade are included. PostgreSQL, live service/model, Lean and real GCS
+validation remain excluded. Ruff passed; formatting checked 326 files; mypy passed for 171 source
+files; all 158 generated schemas match; `git diff --check` passed. Earlier full sweeps exposed stale
+fixture receipt counts; a first test edit matched a different assertion and was corrected before
+this final sweep. No production acceptance check was loosened.
+
+The whole-goal checkpoint explanation is retained in `pprl-goal-checkpoint-review.md`. Only
+documentation and the precommit scan record change after this validation. No real inference,
+worker/model launch, cloud/GPU activation, trainer, sibling edit, production migration, push or
+deployment was performed.
+
+The 33-file changed/new credential-pattern scan passed with no findings. No tracked credential,
+private-key or model-weight filename candidate was found; `.env` remains ignored. Exact staged
+bytes then passed the same 33-file scan with no findings or working/staged mismatches;
+`git diff --cached --check` also passed. This is a change-scope check, not a new whole-history audit.
+
 ## Next executable step
 
-Current turn was verified engineering progress on explicit Atlas institutional-evidence admission.
-Commit this checkpoint after changed/new and exact staged-blob credential scans, then re-read Git
-state and this ledger on continuation. The goal remains active and incomplete.
+Finish the generation checkpoint's changed/new and exact staged-blob credential scans and reviewable
+local commit, then stop for the user-requested discussion. On an explicitly resumed continuation,
+re-read Git state and this ledger.
+The Atlas checkpoint is committed; the consumer audit and exact-input implementation above should
+not be restarted from scratch. The goal remains active and incomplete.
 
-Audit the remaining stage-1 consumer call graph before declaring its gate complete: default PPRL
-composition, compiler/export/reporting entry points, legacy record reads, and caller access to
-privileged source/receipt objects. Identify actual worker/training paths that bypass the validated
-interfaces, and distinguish privileged historical inspection from model input. Fix concrete bypasses
-within the information boundary; do not build an automatic Atlas eligibility consumer. Keep Atlas
-training materialization explicitly gated for its later attributable-learning path.
+Next select and implement the conserved-resource boundary. Revalidate the existing per-action
+projected totals, authorization-wide concurrency, invocation failures, child execution creation and
+retained-byte accounting before defining the shared account and reservation schema. The proposed
+invariant is that workers, retries, forks and replacement consume one explicit funding scope;
+relabeling an invocation or creating a child cannot replenish capacity. Reserve before dispatch,
+reconcile at most once, and preserve unresolved external effects without an automatic refund.
+Separate historical state budget snapshots from authoritative resource balances.
 
-Then take the dependency-correct step into workload/identity/resource integrity: bind the actual
-generation request and intended effect to admitted authority, preserve independent invocation
-evidence, and define conserved reservations across attempts, forks, and replacement. Revalidate
-those gaps in current code before choosing the implementation boundary. Define threat assumptions,
-invariants, acceptance tests, retained evidence, failure and rollback before editing. Offline fake
-providers/disposable workers remain available for validation; control-plane checks must never be
-reported as runtime authentication or an attested sandbox.
+Before editing that slice, specify unit/rate identities, funding/transfer authority, idempotent
+reservation identity, lock order, numeric precision, actual-use evidence and overage handling.
+Input/output token ceilings and costs require honest upper-bound or measurement assumptions; a
+provider's returned count is not independently verified use. Missing evidence must not manufacture
+unused capacity. Tests should cover competing workers, duplicate attempts, forks, total replacement,
+pause/revocation, crash windows, concurrent reservation/reconciliation, arithmetic bounds, unknown
+effects and transaction rollback. Retain grant, reservation and reconciliation lineage separately
+from worker-visible status. Rollback stops new dispatch while preserving balances and held capacity.
+
+This remains authorized offline engineering. It must not be described as authenticated resource
+enforcement or a live scheduler. Independent containment/capture, runtime identities and physical
+resource validation remain required before live execution. Keep Atlas training materialization
+gated for its later attributable-learning path.
 
 Non-goals: live Atlas campaigns, sibling telemetry integration, a trainer, parameter updates,
 permission to train, live workers, model stress tests, or cloud activation. Atlas institutional
 subjects and causal MI interchange, conserved resources, authenticated execution, coordinated GC,
 executable recovery, full replacement, and the 10M+ token milestone remain required later gates.
-No additional resource authority is needed for this local boundary review.
+No additional resource authority is needed for this local implementation work.
 
 ## Completion audit
 

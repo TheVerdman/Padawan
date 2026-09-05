@@ -1,8 +1,8 @@
 # PPRL reviewed references and transactional ownership
 
 Status: the reference/ownership portion of information-boundary checkpoint 3, validated offline.
-The subsequent structural content layer is described in `pprl-content-admission.md`. Worker
-hydration and training projection remain unfinished.
+The subsequent structural content layer is described in `pprl-content-admission.md`. Offline
+observation and training projections now exist; executable replacement hydration remains unfinished.
 
 ## New use and historical reconstruction
 
@@ -54,8 +54,9 @@ The broker, review configuration, database, and owned backend remain trusted. Th
 interfaces, not authenticated worker endpoints or an attested sandbox. Privileged inspection and
 ownership methods must not be handed to workers. State/event shapes, extensions, and memory/evidence
 strings now have structural admission and receipts. The subsequent worker projection is described in
-`pprl-worker-observation-boundary.md`; training projections remain unfinished. None of these boundaries
-makes full broker inputs, exports, or training products worker-safe,
+`pprl-worker-observation-boundary.md`; the separately admitted learning interface is described in
+`pprl-training-projection-boundary.md`. None of these boundaries makes arbitrary broker inputs,
+exports, or historical training products worker-safe,
 proves semantic redaction, or excludes encoded communication channels.
 
 Concurrent GC using a stale externally collected reference set remains unresolved. A savepoint and

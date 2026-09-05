@@ -1,0 +1,87 @@
+{
+  "$id": "https://schemas.padawan.local/v1/prepared-generation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "body_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Body Digest",
+      "type": "string"
+    },
+    "body_json": {
+      "minLength": 1,
+      "title": "Body Json",
+      "type": "string"
+    },
+    "configuration_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Configuration Digest",
+      "type": "string"
+    },
+    "destination": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Destination"
+    },
+    "model_id": {
+      "minLength": 1,
+      "title": "Model Id",
+      "type": "string"
+    },
+    "protocol": {
+      "minLength": 1,
+      "title": "Protocol",
+      "type": "string"
+    },
+    "provider": {
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "request_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Request Digest",
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "transport": {
+      "enum": [
+        "http",
+        "in_process"
+      ],
+      "title": "Transport",
+      "type": "string"
+    }
+  },
+  "required": [
+    "request_id",
+    "request_digest",
+    "provider",
+    "model_id",
+    "protocol",
+    "transport",
+    "destination",
+    "configuration_digest",
+    "body_json",
+    "body_digest"
+  ],
+  "title": "PreparedGeneration",
+  "type": "object"
+}

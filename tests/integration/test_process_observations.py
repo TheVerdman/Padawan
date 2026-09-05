@@ -179,7 +179,17 @@ async def test_public_observation_and_privileged_receipt_have_separate_surfaces(
         retry = await boundary.observe_claim(session, **_scope(claimed), now=ctx.clock())
         assert retry == delivered
         assert await _counts(session) == before
-        assert await session.scalar(select(func.count()).select_from(ProcessObservationRow)) == 1
+        assert (
+            await session.scalar(
+                select(func.count())
+                .select_from(ProcessObservationRow)
+                .where(
+                    ProcessObservationRow.rollout_id == claimed.rollout.rollout_id,
+                    ProcessObservationRow.worker_id == "observation-worker",
+                )
+            )
+            == 1
+        )
 
 
 async def test_replacement_changes_private_receipt_but_preserves_public_bytes(evidence_context):
@@ -484,7 +494,17 @@ async def test_caught_retention_failure_rolls_back_all_observation_writes(
         _uniform(failure)
         assert calls == (2 if phase == "during_pins" else 3)
         assert await _counts(session) == before
-        assert await session.scalar(select(func.count()).select_from(ProcessObservationRow)) == 0
+        assert (
+            await session.scalar(
+                select(func.count())
+                .select_from(ProcessObservationRow)
+                .where(
+                    ProcessObservationRow.rollout_id == claimed.rollout.rollout_id,
+                    ProcessObservationRow.worker_id == "observation-worker",
+                )
+            )
+            == 0
+        )
     async with ctx.database.transaction() as session:
         assert await _counts(session) == before
 

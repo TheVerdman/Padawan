@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 
 from padawan.adapters.base import GenerationRequest, GenerationResult
 from padawan.artifacts.information import ArtifactInformationStore, InformationClass
+from padawan.artifacts.store import artifact_read_bytes
 from padawan.governance.amber import (
     AmberActionRequest,
     AmberAdmissionDecision,
@@ -37,6 +38,8 @@ from padawan.pprl.contracts import (
     ProjectStateVersion,
     project_state_digest,
 )
+from padawan.pprl.generation_boundary import ProcessGenerationBoundary
+from padawan.pprl.store import _invocation_forensic_bytes
 
 
 @dataclass(frozen=True)
@@ -59,9 +62,21 @@ class ProcessGenerationExecutor:
         *,
         database: Database,
         executor: IdempotentGenerationExecutor,
+        boundary: ProcessGenerationBoundary | None = None,
     ) -> None:
         self.database = database
         self.executor = executor
+        self.boundary = boundary
+        if executor.database is not database or (
+            boundary is not None
+            and (
+                boundary.client is not executor.client
+                or boundary.catalog.backend is not executor.artifacts
+            )
+        ):
+            raise ValueError(
+                "process generation must share its configured database, client and backend"
+            )
 
     async def execute(
         self,
@@ -79,6 +94,11 @@ class ProcessGenerationExecutor:
     ) -> ProcessGenerationResult:
         cancelled = False
         try:
+            if self.boundary is None:
+                raise PermissionError("process generation requires explicit workload composition")
+            if self.boundary.client is not self.executor.client:
+                raise PermissionError("process generation adapter was replaced")
+            request = GenerationRequest.model_validate_json(request.model_dump_json())
             return await self._execute(
                 rollout_id=rollout_id,
                 lease_token=lease_token,
@@ -115,9 +135,15 @@ class ProcessGenerationExecutor:
         request: GenerationRequest,
         research_execution_digest: str | None = None,
     ) -> ProcessGenerationResult:
+        assert self.boundary is not None
         timestamp = datetime.now(UTC)
         async with self.database.transaction() as session:
-            rollout = await session.get(ProcessRolloutRow, rollout_id)
+            rollout = await session.scalar(
+                select(ProcessRolloutRow)
+                .where(ProcessRolloutRow.rollout_id == rollout_id)
+                .with_for_update()
+                .execution_options(populate_existing=True)
+            )
             if rollout is None:
                 raise KeyError(rollout_id)
             if (
@@ -278,9 +304,17 @@ class ProcessGenerationExecutor:
                     raise ValueError("process invocation ID reused with different content")
                 if existing.status in {"failed", "cancelled"}:
                     raise RuntimeError(f"cannot resume {existing.status} process invocation")
-                existing.status = "running"
-                existing.error = None
-                existing.completed_at = None
+                call = await session.get(ExternalCallRow, request.request_id)
+                if call is None or call.status != "completed" or not call.response_artifact_id:
+                    raise PermissionError(
+                        "prior process dispatch has an unresolved external effect"
+                    )
+                if existing.status == "completed":
+                    await _invocation_forensic_bytes(session, existing, timestamp)
+                if existing.status != "completed":
+                    existing.status = "running"
+                    existing.error = None
+                    existing.completed_at = None
             else:
                 active_workers = int(
                     await session.scalar(
@@ -317,20 +351,65 @@ class ProcessGenerationExecutor:
                         completed_at=None,
                     )
                 )
+            await session.flush()
+            if rollout.lease_owner is None:
+                raise PermissionError("process generation requires an owned observation lease")
+            workload = await self.boundary.admit(
+                session,
+                invocation_id=invocation_id,
+                rollout_id=rollout_id,
+                lease_token=lease_token,
+                worker_id=rollout.lease_owner,
+                decision_id=amber_decision_id,
+                request=request,
+                purpose=purpose,
+                is_new=existing is None,
+                maximum_artifact_bytes=reserved_artifact_bytes,
+                now=timestamp,
+            )
+            invocation = await session.get(ProcessWorkerInvocationRow, invocation_id)
+            assert invocation is not None
+            if existing is None:
+                invocation.workload_digest = workload.digest
+            elif invocation.workload_digest != workload.digest:
+                raise PermissionError("invocation has no matching retained workload identity")
+            if (
+                workload.prepared.model_id != serving_identity.model_id
+                or workload.prepared.protocol != serving_identity.protocol
+                or workload.prepared.provider != provider
+            ):
+                raise PermissionError("prepared transport differs from the admitted model identity")
+
+        async def before_dispatch() -> None:
+            assert self.boundary is not None
+            if self.boundary.client is not self.executor.client:
+                raise PermissionError("process generation adapter was replaced before dispatch")
+            async with self.database.transaction() as session:
+                await self.boundary.validate_current(
+                    session, workload, lease_token=lease_token, now=datetime.now(UTC)
+                )
+                if datetime.now(UTC) >= action_deadline:
+                    raise PermissionError("process action deadline expired before dispatch")
 
         try:
+            remaining_seconds = (action_deadline - datetime.now(UTC)).total_seconds()
+            if remaining_seconds <= 0:
+                raise PermissionError("process action deadline expired during admission")
             async with asyncio.timeout(remaining_seconds):
                 generation = await self.executor.execute(
                     process_rollout_id=rollout_id,
                     purpose=purpose,
                     provider=provider,
                     request=request,
+                    prepared=workload.prepared,
+                    before_dispatch=before_dispatch,
                 )
                 if (
                     generation.request_id != request.request_id
                     or generation.provider != provider
                     or generation.model_id != serving_identity.model_id
                     or generation.protocol != serving_identity.protocol
+                    or sha256_digest(generation.raw_request) != workload.prepared.body_digest
                     or _usage(generation, "input_tokens") > reserved_input_tokens
                     or _usage(generation, "output_tokens") > reserved_output_tokens
                 ):
@@ -361,6 +440,11 @@ class ProcessGenerationExecutor:
 
         try:
             async with self.database.transaction() as session:
+                await self.boundary.validate_current(
+                    session, workload, lease_token=lease_token, now=datetime.now(UTC)
+                )
+                if datetime.now(UTC) >= action_deadline:
+                    raise PermissionError("process action deadline expired before output admission")
                 invocation = await session.get(ProcessWorkerInvocationRow, invocation_id)
                 call = await session.get(ExternalCallRow, request.request_id)
                 if invocation is None or call is None:
@@ -369,15 +453,29 @@ class ProcessGenerationExecutor:
                     raise RuntimeError("process generation ledger owner or status is invalid")
                 if call.response_artifact_id is None:
                     raise RuntimeError("completed process generation has no response artifact")
+                if invocation.status == "completed":
+                    await _invocation_forensic_bytes(session, invocation, datetime.now(UTC))
                 request_artifact = await session.get(ArtifactRow, call.request_artifact_id)
                 response_artifact = await session.get(ArtifactRow, call.response_artifact_id)
                 if request_artifact is None or response_artifact is None:
                     raise RuntimeError("process generation artifact is missing")
+                retained_request = GenerationRequest.model_validate_json(
+                    await artifact_read_bytes(
+                        self.executor.artifacts,
+                        _artifact_reference(request_artifact),
+                        allow_restricted=True,
+                    )
+                )
+                if sha256_digest(retained_request) != workload.request_digest:
+                    raise RuntimeError(
+                        "retained process request differs from the admitted workload"
+                    )
                 references = tuple(
                     sorted(
                         (
                             _artifact_reference(request_artifact),
                             _artifact_reference(response_artifact),
+                            workload.prepared_artifact.artifact,
                         ),
                         key=lambda item: item.artifact_id,
                     )
@@ -401,12 +499,20 @@ class ProcessGenerationExecutor:
                         owner_type="process_worker_invocation",
                         owner_id=invocation_id,
                     )
-                invocation.request_artifact_id = request_artifact.artifact_id
-                invocation.response_artifact_id = response_artifact.artifact_id
-                invocation.usage = generation.usage
-                invocation.status = "completed"
-                invocation.error = None
-                invocation.completed_at = datetime.now(UTC)
+                if invocation.status == "completed":
+                    if (
+                        invocation.request_artifact_id != request_artifact.artifact_id
+                        or invocation.response_artifact_id != response_artifact.artifact_id
+                        or invocation.usage != generation.usage
+                    ):
+                        raise RuntimeError("completed invocation differs from its retained result")
+                else:
+                    invocation.request_artifact_id = request_artifact.artifact_id
+                    invocation.response_artifact_id = response_artifact.artifact_id
+                    invocation.usage = generation.usage
+                    invocation.status = "completed"
+                    invocation.error = None
+                    invocation.completed_at = datetime.now(UTC)
         except Exception as exc:
             await self._mark_terminal(
                 invocation_id=invocation_id,
@@ -434,7 +540,12 @@ class ProcessGenerationExecutor:
             if invocation is None or invocation.status == "completed":
                 return
             invocation.status = status
-            invocation.error = error
+            invocation.error = {
+                **error,
+                "external_effect": (
+                    "completed" if call is not None and call.status == "completed" else "unknown"
+                ),
+            }
             invocation.completed_at = datetime.now(UTC)
             if call is not None:
                 invocation.request_artifact_id = call.request_artifact_id

@@ -16,11 +16,13 @@ from padawan.adapters.base import (
     GenerationStreamEvent,
     ModelProviderError,
 )
+from padawan.adapters.prepared import PreparedGeneration
 from padawan.models.contracts import (
     Capability,
     CapabilityAvailability,
     RuntimeCapabilities,
 )
+from padawan.models.hashing import canonical_json_bytes, sha256_digest
 
 ProtocolName = Literal["responses", "chat_completions", "completions", "auto"]
 
@@ -66,6 +68,126 @@ class OpenAICompatibleClient:
     async def close(self) -> None:
         if self._owned_client:
             await self.client.aclose()
+
+    def prepare_generation(self, request: GenerationRequest) -> PreparedGeneration:
+        """Prepare one exact non-streaming HTTP effect without network access."""
+        if self.allow_legacy_fallback or self.retry_attempts != 1 or self.protocol == "auto":
+            raise ValueError("prepared generation forbids implicit retries and protocol fallback")
+        request = GenerationRequest.model_validate_json(request.model_dump_json())
+        if self.protocol == "responses":
+            path, payload = "/v1/responses", _responses_payload(request, self.model, stream=False)
+        elif self.protocol == "chat_completions":
+            path, payload = "/v1/chat/completions", _chat_payload(request, self.model, stream=False)
+        elif self.protocol == "completions":
+            path, payload = (
+                "/v1/completions",
+                _completion_payload(request, self.model, stream=False),
+            )
+        else:
+            raise ValueError("prepared generation has an unsupported protocol")
+        body = canonical_json_bytes(payload)
+        return PreparedGeneration(
+            request_id=request.request_id,
+            request_digest=sha256_digest(request),
+            provider=self.provider,
+            model_id=self.model,
+            protocol=self.protocol,
+            transport="http",
+            destination=str(httpx.URL(f"{self.base_url}{path}")),
+            configuration_digest=sha256_digest(
+                {
+                    "adapter": "padawan.openai-compatible.prepared.v1",
+                    "base_url": self.base_url,
+                    "model": self.model,
+                    "provider": self.provider,
+                    "protocol": self.protocol,
+                    "retry_attempts": self.retry_attempts,
+                    "allow_legacy_fallback": self.allow_legacy_fallback,
+                    "timeout_seconds": self.timeout_seconds,
+                    "capture_private_reasoning": self.capture_private_reasoning,
+                    "capabilities_override": self.capabilities_override,
+                }
+            ),
+            body_json=body.decode("utf-8"),
+            body_digest=sha256_digest(body),
+        )
+
+    async def generate_prepared(
+        self, request: GenerationRequest, prepared: PreparedGeneration
+    ) -> GenerationResult:
+        """Send retained body bytes once; no redirects, fallback, or internal retry."""
+        prepared = PreparedGeneration.model_validate_json(prepared.model_dump_json())
+        request = GenerationRequest.model_validate_json(request.model_dump_json())
+        if self.prepare_generation(request) != prepared:
+            raise ValueError("prepared generation differs from the request or current adapter")
+        assert prepared.destination is not None
+        client = self.client
+        headers = self._headers(request_id=prepared.request_id)
+        # A directly built Request avoids inherited client query parameters, cookies,
+        # headers and auth. The configured transport itself remains trusted.
+        message = httpx.Request(
+            "POST",
+            prepared.destination,
+            headers=headers,
+            content=prepared.body_json.encode("utf-8"),
+            extensions={"timeout": httpx.Timeout(self.timeout_seconds).as_dict()},
+        )
+        started = time.monotonic()
+        try:
+            response = await client.send(message, auth=None, follow_redirects=False)
+        except (httpx.TimeoutException, httpx.NetworkError) as exc:
+            raise ModelProviderError(
+                "prepared transport has an unresolved external effect",
+                provider=prepared.provider,
+                retryable=False,
+            ) from exc
+        if response.status_code < 200 or response.status_code >= 300:
+            raise ModelProviderError(
+                f"prepared transport returned HTTP {response.status_code}",
+                provider=prepared.provider,
+                status_code=response.status_code,
+                retryable=False,
+                response_body=response.content,
+            )
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise ModelProviderError(
+                "prepared transport returned invalid JSON",
+                provider=prepared.provider,
+                response_body=response.content,
+            ) from exc
+        if not isinstance(payload, dict):
+            raise ModelProviderError(
+                "prepared transport response must be an object",
+                provider=prepared.provider,
+                response_body=response.content,
+            )
+        try:
+            _validate_prepared_usage(payload.get("usage"))
+            result = self._generation_result(
+                request_id=prepared.request_id,
+                protocol=prepared.protocol,
+                response_json=payload,
+                raw_request=prepared.body_json.encode("utf-8"),
+                raw_response=response.content,
+                latency_ms=(time.monotonic() - started) * 1000.0,
+                stream=False,
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ModelProviderError(
+                "prepared transport response could not be parsed",
+                provider=prepared.provider,
+                response_body=response.content,
+            ) from exc
+        # Response parsing may consult adapter fields: reject drift during the await too.
+        if self.prepare_generation(request) != prepared:
+            raise ModelProviderError(
+                "adapter configuration changed during prepared generation",
+                provider=prepared.provider,
+                response_body=response.content,
+            )
+        return result
 
     async def negotiate(self) -> dict[str, Any]:
         """Read server identity without triggering a generation."""
@@ -377,6 +499,27 @@ class OpenAICompatibleClient:
                 raise AssertionError("retry loop exited without response or error")
             raise last_error
         latency_ms = (time.monotonic() - started) * 1000.0
+        return self._generation_result(
+            request_id=request.request_id,
+            protocol=protocol,
+            response_json=response_json,
+            raw_request=raw_request,
+            raw_response=raw_response,
+            latency_ms=latency_ms,
+            stream=stream,
+        )
+
+    def _generation_result(
+        self,
+        *,
+        request_id: str,
+        protocol: str,
+        response_json: dict[str, Any],
+        raw_request: bytes,
+        raw_response: bytes,
+        latency_ms: float,
+        stream: bool,
+    ) -> GenerationResult:
         if protocol == "responses":
             parsed = _parse_responses(response_json)
         elif protocol == "chat_completions":
@@ -392,7 +535,7 @@ class OpenAICompatibleClient:
             ),
         )
         return GenerationResult(
-            request_id=request.request_id,
+            request_id=request_id,
             response_id=parsed["response_id"],
             provider=self.provider,
             model_id=str(response_json.get("model") or self.model),
@@ -741,6 +884,27 @@ def _parse_completion(payload: dict[str, Any]) -> dict[str, Any]:
         "finish_reason": str(choice.get("finish_reason")) if choice.get("finish_reason") else None,
         "telemetry": _optional_dict(payload.get("padawan_telemetry")),
     }
+
+
+def _validate_prepared_usage(usage: Any) -> None:
+    """Do not turn missing, coerced or malformed provider accounting into zero usage."""
+    if not isinstance(usage, dict):
+        raise ValueError("prepared generation requires explicit provider usage")
+    for primary, alias in (
+        ("input_tokens", "prompt_tokens"),
+        ("output_tokens", "completion_tokens"),
+    ):
+        present = [usage[key] for key in (primary, alias) if key in usage]
+        if (
+            not present
+            or any(type(value) is not int or value < 0 for value in present)
+            or len(set(present)) != 1
+        ):
+            raise ValueError("prepared generation requires exact nonnegative token counts")
+    if "total_tokens" in usage and (
+        type(usage["total_tokens"]) is not int or usage["total_tokens"] < 0
+    ):
+        raise ValueError("prepared generation has invalid total token count")
 
 
 def _normalize_usage(usage: dict[str, Any]) -> dict[str, int]:

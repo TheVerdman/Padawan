@@ -124,6 +124,21 @@
       "sha256": "33e2b8ff92632591a3b4d51c741aec42405ad5b1bcd4fe08bddb6ccd8df7f3de"
     },
     {
+      "name": "prepared-generation",
+      "schema": "prepared-generation.schema.json",
+      "sha256": "6312704b748a28bbb238a417811036c7d55411d6a9ba2520730dce66dd278f98"
+    },
+    {
+      "name": "process-generation-policy",
+      "schema": "process-generation-policy.schema.json",
+      "sha256": "cdb3130967ee7b47d66559018b8b5da5a02a6e99dcc3208616da24f0d37827d3"
+    },
+    {
+      "name": "process-generation-workload",
+      "schema": "process-generation-workload.schema.json",
+      "sha256": "858de79e68aaee3b56de445fad220559beca62086169c5a34103bd339728474e"
+    },
+    {
       "name": "process-learning-outcome-component",
       "schema": "process-learning-outcome-component.schema.json",
       "sha256": "45d201bc5225760e35b70a03ec834f7519c7a874678722b61cd8679f4a7f23e8"

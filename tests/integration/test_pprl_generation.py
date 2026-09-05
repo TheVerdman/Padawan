@@ -16,7 +16,7 @@ from padawan.artifacts.information import (
 from padawan.artifacts.store import LocalArtifactStore
 from padawan.governance.amber import AmberActionRequest, AmberStatus
 from padawan.governance.amber_store import AmberStore
-from padawan.models.contracts import SamplingConfiguration, project_authored_internal_rights
+from padawan.models.contracts import project_authored_internal_rights
 from padawan.models.hashing import canonical_json_bytes, sha256_digest
 from padawan.models.tables import ArtifactReferenceRow, ExternalCallRow, ProcessWorkerInvocationRow
 from padawan.orchestration.external_calls import IdempotentGenerationExecutor
@@ -34,8 +34,10 @@ from padawan.pprl.evidence_contracts import (
     ProcessEvidenceUse,
 )
 from padawan.pprl.generation import ProcessGenerationExecutor, ProcessGenerationUnavailableError
+from padawan.pprl.observations import ProcessObservationStore
 from padawan.pprl.store import ProcessInvariantError, ProcessStore
 from tests.helpers import CallbackGenerationClient
+from tests.pprl_generation_helpers import generation_boundary
 from tests.pprl_helpers import (
     NOW,
     DeterministicProjectGenerator,
@@ -117,6 +119,14 @@ async def test_process_generation_is_admission_bound_and_idempotent(
             now=action_time,
         )
         assert claimed is not None
+        observations = ProcessObservationStore(store)
+        observed = await observations.observe_claim(
+            session,
+            rollout_id=claimed.rollout.rollout_id,
+            lease_token=claimed.lease_token,
+            worker_id="process-worker",
+            now=action_time,
+        )
         action = AmberActionRequest(
             authorization_digest=authorization_digest,
             rollout_id=claimed.rollout.rollout_id,
@@ -148,6 +158,15 @@ async def test_process_generation_is_admission_bound_and_idempotent(
             active_workers=0,
             decision_id="process-generation-admission",
         )
+        await observations.bind_decision(
+            session,
+            observation_id=observed.observation_id,
+            decision_id=admission.decision_id,
+            rollout_id=claimed.rollout.rollout_id,
+            lease_token=claimed.lease_token,
+            worker_id="process-worker",
+            now=action_time,
+        )
 
     class PrivateTraceClient(CallbackGenerationClient):
         async def generate(self, request: GenerationRequest) -> GenerationResult:
@@ -164,20 +183,22 @@ async def test_process_generation_is_admission_bound_and_idempotent(
             )
 
     client = PrivateTraceClient(lambda _request: "candidate result", "test-open-weight")
+    external = IdempotentGenerationExecutor(
+        database=database,
+        artifacts=LocalArtifactStore(tmp_path / "process-artifacts"),
+        client=client,
+    )
+    boundary = generation_boundary(
+        store, external, instructions="work only inside the admitted project"
+    )
     executor = ProcessGenerationExecutor(
         database=database,
-        executor=IdempotentGenerationExecutor(
-            database=database,
-            artifacts=LocalArtifactStore(tmp_path / "process-artifacts"),
-            client=client,
-        ),
+        executor=external,
+        boundary=boundary,
     )
-    request = GenerationRequest(
+    request = boundary.request(
         request_id="process-generation-request",
-        instructions="work only inside the admitted project",
-        input="derive a candidate result",
-        sampling=SamplingConfiguration(max_output_tokens=12),
-        store=False,
+        observation=observed.observation,
     )
     with pytest.raises(ProcessGenerationUnavailableError):
         await executor.execute(

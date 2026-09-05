@@ -1,0 +1,704 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "DistributionScope": {
+      "enum": [
+        "internal_only",
+        "agreement_restricted",
+        "redistributable"
+      ],
+      "title": "DistributionScope",
+      "type": "string"
+    },
+    "ForensicArtifactRef": {
+      "additionalProperties": false,
+      "description": "Researcher-only reference; never part of a worker projection.",
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "classification_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Classification Digest",
+          "type": "string"
+        },
+        "domain": {
+          "const": "forensic",
+          "default": "forensic",
+          "title": "Domain",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact",
+        "classification_digest"
+      ],
+      "title": "ForensicArtifactRef",
+      "type": "object"
+    },
+    "PreparedGeneration": {
+      "additionalProperties": false,
+      "properties": {
+        "body_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Body Digest",
+          "type": "string"
+        },
+        "body_json": {
+          "minLength": 1,
+          "title": "Body Json",
+          "type": "string"
+        },
+        "configuration_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Configuration Digest",
+          "type": "string"
+        },
+        "destination": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Destination"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "protocol": {
+          "minLength": 1,
+          "title": "Protocol",
+          "type": "string"
+        },
+        "provider": {
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "request_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Request Digest",
+          "type": "string"
+        },
+        "request_id": {
+          "minLength": 1,
+          "title": "Request Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "transport": {
+          "enum": [
+            "http",
+            "in_process"
+          ],
+          "title": "Transport",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_id",
+        "request_digest",
+        "provider",
+        "model_id",
+        "protocol",
+        "transport",
+        "destination",
+        "configuration_digest",
+        "body_json",
+        "body_digest"
+      ],
+      "title": "PreparedGeneration",
+      "type": "object"
+    },
+    "ProcessGenerationPolicy": {
+      "additionalProperties": false,
+      "description": "Explicit trusted composition; reviewer identity is declared, not authenticated.",
+      "properties": {
+        "input_projection": {
+          "const": "canonical_worker_observation",
+          "default": "canonical_worker_observation",
+          "title": "Input Projection",
+          "type": "string"
+        },
+        "instructions": {
+          "minLength": 1,
+          "title": "Instructions",
+          "type": "string"
+        },
+        "instructions_rights": {
+          "$ref": "#/$defs/SourceRights"
+        },
+        "json_schema": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Json Schema"
+        },
+        "maximum_prepared_bytes": {
+          "default": 4000000,
+          "exclusiveMinimum": 0,
+          "title": "Maximum Prepared Bytes",
+          "type": "integer"
+        },
+        "maximum_request_bytes": {
+          "default": 2000000,
+          "exclusiveMinimum": 0,
+          "title": "Maximum Request Bytes",
+          "type": "integer"
+        },
+        "policy_id": {
+          "minLength": 1,
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "provider": {
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "reviewed_at": {
+          "format": "date-time",
+          "title": "Reviewed At",
+          "type": "string"
+        },
+        "reviewed_by": {
+          "minLength": 1,
+          "title": "Reviewed By",
+          "type": "string"
+        },
+        "role_id": {
+          "minLength": 1,
+          "title": "Role Id",
+          "type": "string"
+        },
+        "sampling": {
+          "$ref": "#/$defs/SamplingConfiguration"
+        },
+        "schema_name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema Name"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "transport_configuration_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Transport Configuration Digest",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "worker_model_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Worker Model Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "version",
+        "role_id",
+        "worker_model_digest",
+        "provider",
+        "transport_configuration_digest",
+        "instructions",
+        "sampling",
+        "reviewed_by",
+        "reviewed_at",
+        "instructions_rights"
+      ],
+      "title": "ProcessGenerationPolicy",
+      "type": "object"
+    },
+    "RightsBasis": {
+      "enum": [
+        "project_authored",
+        "public_domain",
+        "open_license",
+        "contract_authorized",
+        "fair_use_reviewed",
+        "provider_terms",
+        "unknown"
+      ],
+      "title": "RightsBasis",
+      "type": "string"
+    },
+    "RightsReviewStatus": {
+      "enum": [
+        "confirmed",
+        "review_required",
+        "prohibited"
+      ],
+      "title": "RightsReviewStatus",
+      "type": "string"
+    },
+    "RightsUse": {
+      "enum": [
+        "evidence_retention",
+        "internal_research",
+        "evaluation",
+        "continued_pretraining",
+        "sft",
+        "preference",
+        "rlvr",
+        "process",
+        "redistribution"
+      ],
+      "title": "RightsUse",
+      "type": "string"
+    },
+    "SamplingConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "max_output_tokens": {
+          "exclusiveMinimum": 0,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        },
+        "reasoning_effort": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Effort"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "stop": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Stop",
+          "type": "array"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "top_logprobs": {
+          "anyOf": [
+            {
+              "maximum": 20,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Logprobs"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        }
+      },
+      "required": [
+        "max_output_tokens"
+      ],
+      "title": "SamplingConfiguration",
+      "type": "object"
+    },
+    "SourceRights": {
+      "additionalProperties": false,
+      "description": "Versioned use authority; this is governance evidence, not a legal conclusion.",
+      "properties": {
+        "attribution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attribution"
+        },
+        "basis": {
+          "$ref": "#/$defs/RightsBasis"
+        },
+        "basis_detail": {
+          "minLength": 1,
+          "title": "Basis Detail",
+          "type": "string"
+        },
+        "distribution_scope": {
+          "$ref": "#/$defs/DistributionScope"
+        },
+        "license_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License Id"
+        },
+        "permitted_uses": {
+          "items": {
+            "$ref": "#/$defs/RightsUse"
+          },
+          "title": "Permitted Uses",
+          "type": "array"
+        },
+        "restrictions": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Restrictions",
+          "type": "array"
+        },
+        "review_status": {
+          "$ref": "#/$defs/RightsReviewStatus"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "reviewed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed By"
+        },
+        "rights_id": {
+          "minLength": 1,
+          "title": "Rights Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "terms_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Terms Digest"
+        },
+        "terms_uri": {
+          "anyOf": [
+            {
+              "pattern": "^https://[^\\s]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Terms Uri"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rights_id",
+        "version",
+        "basis",
+        "basis_detail",
+        "permitted_uses",
+        "distribution_scope",
+        "review_status"
+      ],
+      "title": "SourceRights",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-generation-workload.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Retained before I/O. Never deliver this receipt or its references to a worker.",
+  "properties": {
+    "admitted_at": {
+      "format": "date-time",
+      "title": "Admitted At",
+      "type": "string"
+    },
+    "decision_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Decision Digest",
+      "type": "string"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Execution Digest",
+      "type": "string"
+    },
+    "invocation_id": {
+      "minLength": 1,
+      "title": "Invocation Id",
+      "type": "string"
+    },
+    "lease_token_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Lease Token Digest",
+      "type": "string"
+    },
+    "observation_decision_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Observation Decision Digest",
+      "type": "string"
+    },
+    "observation_id": {
+      "minLength": 1,
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "observation_receipt_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Observation Receipt Digest",
+      "type": "string"
+    },
+    "policy": {
+      "$ref": "#/$defs/ProcessGenerationPolicy"
+    },
+    "policy_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Policy Digest",
+      "type": "string"
+    },
+    "prepared": {
+      "$ref": "#/$defs/PreparedGeneration"
+    },
+    "prepared_artifact": {
+      "$ref": "#/$defs/ForensicArtifactRef"
+    },
+    "purpose": {
+      "minLength": 1,
+      "title": "Purpose",
+      "type": "string"
+    },
+    "request_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Request Digest",
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "request_json": {
+      "minLength": 1,
+      "title": "Request Json",
+      "type": "string"
+    },
+    "role_id": {
+      "minLength": 1,
+      "title": "Role Id",
+      "type": "string"
+    },
+    "rollout_id": {
+      "minLength": 1,
+      "title": "Rollout Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "worker_id": {
+      "minLength": 1,
+      "title": "Worker Id",
+      "type": "string"
+    },
+    "worker_model_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Worker Model Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "invocation_id",
+    "request_id",
+    "rollout_id",
+    "execution_digest",
+    "worker_id",
+    "role_id",
+    "worker_model_digest",
+    "purpose",
+    "lease_token_digest",
+    "observation_id",
+    "observation_receipt_digest",
+    "observation_decision_digest",
+    "decision_id",
+    "decision_digest",
+    "policy",
+    "policy_digest",
+    "request_json",
+    "request_digest",
+    "prepared",
+    "prepared_artifact",
+    "admitted_at"
+  ],
+  "title": "ProcessGenerationWorkload",
+  "type": "object"
+}

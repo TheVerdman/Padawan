@@ -36,19 +36,22 @@ complete action request and its decision against the active immutable envelope. 
 decision is passed into `execute`; it is bound to the exact rollout sequence, state digest, and
 hashed lease token, and the resulting event must cite that same decision. Model calls add a second
 check: `ProcessGenerationExecutor` requires the current unexpired rollout lease, admitted request,
-role, and worker-model identity, then records the rollout as the exclusive owner of the shared
-idempotent external call. Provider-hosted state and tools are disabled on this path: state remains
-local, and tool use crosses its own separately admitted action boundary. Each admission reserves
+role, worker-model identity, and explicit exact-input boundary, then records the rollout as the
+exclusive owner of the shared external call. Provider-hosted state and tools are disabled on this
+path: state remains
+local, and tool use crosses its own separately admitted action boundary. Each admission declares
 the next cumulative action, token,
 artifact-byte, wall-time, and cost totals. The committed state must equal that reservation, and the
 lease covers the reserved action wall time so a timeout cannot be mistaken for an unowned retry.
+These are per-action declarations, not conserved shared resource accounts. New PPRL dispatch does
+not automatically retry an unresolved external effect.
 
 The PPRL model wrapper returns normalized public output and explicit token counts. Raw results,
 private channels, arbitrary provider metadata, and artifact references remain in privileged
 invocation records. Event commit verifies their classification and retention through the invocation
 ID and counts their bytes against the reservation; it does not require those raw references in
-shared events. This closes the model-result path only. See `pprl-worker-output-boundary.md` for
-remaining state, hydration, and training-projection gaps.
+shared events. See `pprl-worker-output-boundary.md` and the observation/training boundaries below for
+the implemented offline interfaces and their remaining runtime and semantic limits.
 
 New initial-state and event artifact fields require reviewed process references. State/event
 ownership pins the admitted candidate and private source dependencies transactionally; fork child
@@ -62,8 +65,11 @@ describes the allowlisted public planner DTO, exact canonical observation receip
 retention, scope/rights validation, and admitted/denied proposal linkage. The planner receives a
 detached observation; the effect executor is a separately configured trusted broker adapter.
 Unbound decisions do not execute through the coordinator, and binding failure preserves the original
-Amber decision. These receipts do not yet bind actual provider prompts, authenticated workers, action
-masks, or executable replacement hydration.
+Amber decision. `pprl-generation-workload-boundary.md` adds a private exact-input receipt joining the
+observation to fixed reviewed instructions/sampling/schema, configured model/transport and prepared
+body/destination. Current admission is rechecked before dispatch and output admission. Completed
+replay preserves its original time and ownership. Authenticated workers, loaded-model identity,
+action masks, independently enforced execution and executable replacement hydration remain absent.
 
 ## Distributions and evidence
 

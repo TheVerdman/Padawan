@@ -20,6 +20,7 @@ from padawan.models.tables import (
     ArtifactInformationRow,
     ArtifactReferenceRow,
     ProcessContentAdmissionRow,
+    ProcessGenerationWorkloadRow,
     ProcessObservationDecisionRow,
     ProcessObservationRow,
     ProcessRolloutRow,
@@ -55,6 +56,7 @@ from padawan.training.process_projection import (
 from padawan.training.process_projection_contracts import ProcessTrainingProjectionReceipt
 from tests.helpers import CallbackGenerationClient
 from tests.pprl_evidence_helpers import EvidenceContext, _review
+from tests.pprl_generation_helpers import generation_boundary
 from tests.pprl_helpers import (
     DeterministicProjectGenerator,
     distribution,
@@ -310,13 +312,15 @@ async def _campaign(
             client = CallbackGenerationClient(
                 lambda _request: "RAW_FORENSIC_MARKER", "test-open-weight"
             )
+            external = IdempotentGenerationExecutor(
+                database=database,
+                artifacts=artifacts,
+                client=client,
+            )
             generation = ProcessGenerationExecutor(
                 database=database,
-                executor=IdempotentGenerationExecutor(
-                    database=database,
-                    artifacts=artifacts,
-                    client=client,
-                ),
+                executor=external,
+                boundary=generation_boundary(process, external),
             )
             result = await generation.execute(
                 rollout_id=claimed.rollout.rollout_id,
@@ -969,18 +973,27 @@ async def test_selected_preference_labels_cannot_leak_forensic_references_and_pa
     }
 
 
+@pytest.mark.parametrize("damage", ["invocation_pins", "workload_pin", "workload", "marker"])
 async def test_invocation_traffic_is_privately_retained_and_never_becomes_learning_content(
     database,
     tmp_path,
     pprl_now,
+    damage,
 ):
     ctx = await _campaign(database, tmp_path, pprl_now, invocations=True)
     receipt = await _compile(ctx)
     assert _counts(receipt)["pprl_trajectory"] == 4
     public = await _read(ctx, receipt)
     assert b"RAW_FORENSIC_MARKER" not in public
-    assert all(len(source.forensic_artifacts) == 2 for source in receipt.sources)
+    assert all(len(source.forensic_artifacts) == 3 for source in receipt.sources)
     for source in receipt.sources:
+        assert (
+            sum(
+                reference.artifact.media_type == "application/vnd.padawan.prepared-generation+json"
+                for reference in source.forensic_artifacts
+            )
+            == 1
+        )
         for reference in source.forensic_artifacts:
             assert reference.artifact.uri.encode() not in public
             assert reference.artifact.artifact_id.encode() not in public
@@ -1002,12 +1015,26 @@ async def test_invocation_traffic_is_privately_retained_and_never_becomes_learni
         invocation = await session.get(
             ProcessWorkerInvocationRow, ctx.events[0].worker_invocation_id
         )
-        await session.execute(
-            delete(ArtifactReferenceRow).where(
-                ArtifactReferenceRow.owner_type == "process_worker_invocation",
-                ArtifactReferenceRow.owner_id == invocation.invocation_id,
+        if damage == "workload":
+            await session.execute(
+                delete(ProcessGenerationWorkloadRow).where(
+                    ProcessGenerationWorkloadRow.invocation_id == invocation.invocation_id
+                )
             )
-        )
+        elif damage == "marker":
+            invocation.workload_digest = None
+        else:
+            await session.execute(
+                delete(ArtifactReferenceRow).where(
+                    ArtifactReferenceRow.owner_type
+                    == (
+                        "process_worker_invocation"
+                        if damage == "invocation_pins"
+                        else "process_generation_workload"
+                    ),
+                    ArtifactReferenceRow.owner_id == invocation.invocation_id,
+                )
+            )
     with pytest.raises(ProcessTrainingProjectionDeniedError) as failure:
         await _read(ctx, receipt)
     _uniform(failure)

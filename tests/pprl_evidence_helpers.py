@@ -8,7 +8,6 @@ from uuid import uuid4
 import pytest_asyncio
 from sqlalchemy import func, select
 
-from padawan.adapters.base import GenerationRequest
 from padawan.artifacts.information import (
     ArtifactInformationStore,
     ForensicArtifactRef,
@@ -16,10 +15,14 @@ from padawan.artifacts.information import (
     ProcessArtifactRef,
 )
 from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore
-from padawan.governance.amber import AmberActionRequest, AmberAdmissionDisposition, AmberStatus
+from padawan.governance.amber import (
+    AmberActionRequest,
+    AmberAdmissionDisposition,
+    AmberEgressMode,
+    AmberStatus,
+)
 from padawan.governance.amber_store import AmberStore
 from padawan.models.contracts import (
-    SamplingConfiguration,
     project_authored_internal_rights,
 )
 from padawan.models.database import Database
@@ -51,8 +54,10 @@ from padawan.pprl.evidence_contracts import (
     ProcessEvidenceUse,
 )
 from padawan.pprl.generation import ProcessGenerationExecutor
+from padawan.pprl.observations import ProcessObservationStore
 from padawan.pprl.store import ProcessStore
 from tests.helpers import CallbackGenerationClient
+from tests.pprl_generation_helpers import generation_boundary
 from tests.pprl_helpers import (
     NOW,
     DeterministicProjectGenerator,
@@ -85,7 +90,8 @@ class EvidenceContext:
 
 @pytest_asyncio.fixture
 async def evidence_context(database, tmp_path, pprl_now, request) -> EvidenceContext:
-    split = getattr(request, "param", ProjectSplit.TRAIN)
+    configured = getattr(request, "param", ProjectSplit.TRAIN)
+    split = configured["split"] if isinstance(configured, dict) else configured
     registry = ProcessDistributionRegistry()
     amber = AmberStore()
     process = ProcessStore(amber)
@@ -103,6 +109,19 @@ async def evidence_context(database, tmp_path, pprl_now, request) -> EvidenceCon
         authorization = envelope(
             program_digest=program_digest, distribution_digest=distribution_digest
         )
+        if isinstance(configured, dict):
+            # Only test declarations; HTTP tests supply MockTransport, never a live endpoint.
+            authorization = authorization.model_copy(
+                update={
+                    "environment": authorization.environment.model_copy(
+                        update={
+                            "network_enabled": True,
+                            "egress_mode": AmberEgressMode.ALLOWLIST,
+                            "allowed_destinations": (configured["destination"],),
+                        }
+                    )
+                }
+            )
         await amber.prepare(session, envelope=authorization, actor_id="preparer")
         for status, minute in ((AmberStatus.AUTHORIZED, 1), (AmberStatus.ACTIVE, 2)):
             await amber.transition(
@@ -204,6 +223,15 @@ async def _model_sources(
         claimed = await ctx.process.claim_next(
             session, worker_id="synthetic-worker", lease_for=timedelta(minutes=5), now=instant
         )
+        observations = ProcessObservationStore(ctx.process)
+        assert claimed is not None
+        observed = await observations.observe_claim(
+            session,
+            rollout_id=claimed.rollout.rollout_id,
+            lease_token=claimed.lease_token,
+            worker_id="synthetic-worker",
+            now=instant,
+        )
         assert claimed is not None
         admission = await ctx.amber.admit(
             session,
@@ -234,14 +262,26 @@ async def _model_sources(
             ),
             active_workers=0,
         )
+        await observations.bind_decision(
+            session,
+            observation_id=observed.observation_id,
+            decision_id=admission.decision_id,
+            rollout_id=claimed.rollout.rollout_id,
+            lease_token=claimed.lease_token,
+            worker_id="synthetic-worker",
+            now=instant,
+        )
     client = client or CallbackGenerationClient(
         lambda _request: "synthetic raw model output", "test-open-weight"
     )
+    external = IdempotentGenerationExecutor(
+        database=ctx.database, artifacts=ctx.artifacts, client=client
+    )
+    boundary = generation_boundary(ctx.process, external)
     generation = ProcessGenerationExecutor(
         database=ctx.database,
-        executor=IdempotentGenerationExecutor(
-            database=ctx.database, artifacts=ctx.artifacts, client=client
-        ),
+        executor=external,
+        boundary=boundary,
     )
     result = await generation.execute(
         rollout_id=claimed.rollout.rollout_id,
@@ -252,12 +292,8 @@ async def _model_sources(
         worker_model_digest=sha256_digest(worker_model()),
         purpose="process_worker",
         provider="test-open-weight",
-        request=GenerationRequest(
-            request_id="evidence-source-request",
-            instructions="synthetic fixture",
-            input="calculate",
-            sampling=SamplingConfiguration(max_output_tokens=12),
-            store=False,
+        request=boundary.request(
+            request_id="evidence-source-request", observation=observed.observation
         ),
     )
     assert len(client.calls) == 1

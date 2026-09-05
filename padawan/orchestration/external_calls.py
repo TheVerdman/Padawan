@@ -3,10 +3,10 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import replace
 from datetime import UTC, datetime
-from typing import Protocol
+from typing import Protocol, cast
 
 from sqlalchemy import select
 
@@ -16,6 +16,7 @@ from padawan.adapters.base import (
     GenerationStreamEvent,
     ModelProviderError,
 )
+from padawan.adapters.prepared import PreparedGeneration, PreparedGenerationClient
 from padawan.artifacts.store import (
     ArtifactBackend,
     ArtifactCatalog,
@@ -64,9 +65,29 @@ class IdempotentGenerationExecutor:
         purpose: str,
         provider: str,
         request: GenerationRequest,
+        prepared: PreparedGeneration | None = None,
+        before_dispatch: Callable[[], Awaitable[None]] | None = None,
     ) -> GenerationResult:
         if (run_id is None) == (process_rollout_id is None):
             raise ValueError("generation call requires exactly one run or process rollout owner")
+        # Detach every nested input before the first await. A frozen Pydantic envelope
+        # alone does not freeze its dictionaries, lists or caller-owned references.
+        request = GenerationRequest.model_validate_json(request.model_dump_json())
+        if process_rollout_id is not None:
+            if prepared is None or before_dispatch is None:
+                raise PermissionError(
+                    "process I/O requires prepared transport and current admission"
+                )
+            prepared = PreparedGeneration.model_validate_json(prepared.model_dump_json())
+            if (
+                prepared.request_id != request.request_id
+                or prepared.request_digest != sha256_digest(request)
+                or prepared.provider != provider
+                or not callable(getattr(self.client, "generate_prepared", None))
+            ):
+                raise PermissionError("process I/O differs from its prepared input")
+        elif prepared is not None or before_dispatch is not None:
+            raise ValueError("prepared transport is scoped to an admitted process owner")
         if purpose == "capability_atlas":
             raise PermissionError(
                 "Capability Atlas execution requires the governed activation gateway; "
@@ -88,6 +109,8 @@ class IdempotentGenerationExecutor:
                     or existing.run_id != run_id
                     or existing.interaction_trace_id is not None
                     or existing.process_rollout_id != process_rollout_id
+                    or existing.provider != provider
+                    or existing.purpose != purpose
                 ):
                     raise ValueError("request ID reused with different content or owner")
                 if existing.status == "completed" and existing.response_artifact_id:
@@ -99,6 +122,10 @@ class IdempotentGenerationExecutor:
                         self.artifacts, reference, allow_restricted=True
                     )
                     return _deserialize_result(payload)
+                if process_rollout_id is not None:
+                    raise PermissionError(
+                        "unresolved process effects cannot be automatically retried"
+                    )
                 if existing.status not in {"pending", "failed_retryable"}:
                     raise RuntimeError(f"cannot resume terminal external call: {existing.status}")
                 try:
@@ -172,7 +199,14 @@ class IdempotentGenerationExecutor:
                 )
 
         try:
-            result = await self.client.generate(request)
+            if prepared is not None:
+                assert before_dispatch is not None
+                await before_dispatch()
+                result = await cast(PreparedGenerationClient, self.client).generate_prepared(
+                    request, prepared
+                )
+            else:
+                result = await self.client.generate(request)
         except asyncio.CancelledError:
             async with self.database.transaction() as session:
                 row = await session.get(ExternalCallRow, request.request_id)
@@ -181,6 +215,7 @@ class IdempotentGenerationExecutor:
                     row.error = {
                         "classification": "cancelled",
                         "message": "generation consumer cancelled the call",
+                        "external_effect": "unknown",
                     }
                     row.completed_at = datetime.now(UTC)
                     await self.telemetry.transition(
@@ -222,6 +257,7 @@ class IdempotentGenerationExecutor:
                             "timeout" if "timeout" in str(exc).casefold() else "provider_error"
                         ),
                         "response_digest": response_digest,
+                        "external_effect": "unknown",
                         "response_artifact_id": (
                             error_response_ref.artifact_id
                             if error_response_ref is not None

@@ -64,6 +64,34 @@ class CallbackGenerationClient:
         self.calls: list[GenerationRequest] = []
         self.data = data or {}
 
+    def prepare_generation(self, request: GenerationRequest):
+        from padawan.adapters.prepared import PreparedGeneration
+        from padawan.models.hashing import canonical_json_bytes, sha256_digest
+
+        body = canonical_json_bytes({"request": request.model_dump(mode="json")})
+        return PreparedGeneration(
+            request_id=request.request_id,
+            request_digest=sha256_digest(request),
+            provider=self.provider,
+            model_id=f"{self.provider}-model",
+            protocol="responses",
+            transport="in_process",
+            destination=None,
+            configuration_digest=sha256_digest(
+                {"adapter": "synthetic.fixture.v1", "provider": self.provider}
+            ),
+            body_json=body.decode(),
+            body_digest=sha256_digest(body),
+        )
+
+    async def generate_prepared(self, request: GenerationRequest, prepared):
+        from dataclasses import replace
+
+        if self.prepare_generation(request) != prepared:
+            raise ValueError("synthetic prepared input changed")
+        result = await self.generate(request)
+        return replace(result, raw_request=prepared.body_json.encode())
+
     async def generate(self, request: GenerationRequest) -> GenerationResult:
         self.calls.append(request)
         output = self.callback(request)

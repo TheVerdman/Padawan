@@ -11,6 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from padawan.adapters.prepared import PreparedGeneration
 from padawan.artifacts.information import (
     ArtifactInformationRecord,
     ForensicArtifactRef,
@@ -151,6 +152,7 @@ from padawan.pprl.evidence_contracts import (
     ProcessEvidenceAdmission,
     ProcessEvidenceAdmissionRecord,
 )
+from padawan.pprl.generation_contracts import ProcessGenerationPolicy, ProcessGenerationWorkload
 from padawan.pprl.observation_contracts import (
     ProcessObservationDecisionBinding,
     ProcessObservationPolicy,
@@ -231,6 +233,9 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("process-observation-policy", ProcessObservationPolicy),
     ("process-observation-receipt", ProcessObservationReceipt),
     ("process-observation-decision-binding", ProcessObservationDecisionBinding),
+    ("prepared-generation", PreparedGeneration),
+    ("process-generation-policy", ProcessGenerationPolicy),
+    ("process-generation-workload", ProcessGenerationWorkload),
     ("process-learning-outcome-component", ProcessLearningOutcomeComponent),
     ("process-learning-outcome", ProcessLearningOutcome),
     ("process-learning-step", ProcessLearningStep),

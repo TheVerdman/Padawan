@@ -45,9 +45,17 @@ and other Atlas reporting/analysis paths still require use-boundary review. Expl
 Atlas-to-process admission now binds native source/context identities, source/output rights,
 target scope, and a pinned disclosure policy in a version-2 private receipt. Only the separate
 reviewed derivative reaches process consumers; Atlas training use remains denied. See
-[Atlas process evidence](atlas-process-evidence-boundary.md). Actual provider-prompt binding,
+[Atlas process evidence](atlas-process-evidence-boundary.md).
+
+The first stage-2 checkpoint now binds new PPRL calls to an exact current observation, fixed reviewed
+prompt policy, canonical normalized request and prepared HTTP body/destination. Private immutable
+workload receipts are retained before I/O. Completed-response reuse rechecks original lineage;
+unresolved process effects cannot automatically resend. Mock HTTP tests cover substituted inputs,
+ambient client state, configuration drift, pause and interruption. See
+[generation workload boundary](pprl-generation-workload-boundary.md). Authenticated runtime and
+loaded-model identity, independently enforced containment/capture, conserved shared reservations,
 executable hydration/recovery, Atlas learning projections, semantic provenance, coordinated GC, and
-parameter-training readiness remain unresolved; these offline properties do not attest a live runtime.
+parameter-training readiness remain unresolved. These offline properties do not attest a live runtime.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
@@ -121,8 +129,9 @@ The PPRL data model has a real durable substrate:
   artifact ownership; this table is not worker memory or a parameter-training authorization;
 - Amber authorization, lifecycle, head, and action-decision tables bind each admitted transition to
   exact authority and cumulative budget; and
-- `process_worker_invocations`, `external_calls`, and the artifact catalog bind model I/O to the
-  rollout and admission decision.
+- `process_worker_invocations`, `process_generation_workloads`, `external_calls`, and the artifact
+  catalog bind new model I/O to the rollout, exact observed input, reviewed prompt policy, prepared
+  transport and admission decision. Workload receipts and raw traffic belong to the forensic fabric.
 
 The core contracts are in [`padawan/pprl/contracts.py`](../padawan/pprl/contracts.py), persistence
 is in [`padawan/pprl/store.py`](../padawan/pprl/store.py), and the database rows are in
@@ -144,9 +153,11 @@ in [`padawan/artifacts`](../padawan/artifacts).
 6. The broker binds the decision to its observation. Only an admitted, successfully bound action
    reaches the separately injected trusted `ProcessActionExecutor.execute`. Binding failure preserves
    the earlier Amber decision and prevents execution.
-7. A model action uses `ProcessGenerationExecutor`, which validates the current lease and decision
-   and calls the shared idempotent external-call executor. The request artifact is stored before
-   provider I/O and the response artifact after it.
+7. A model action uses an explicitly composed `ProcessGenerationExecutor` and generation boundary.
+   They reconstruct the exact observation/policy request, retain private prepared transport intent,
+   and invoke the shared external-call executor. Current admission is rechecked before dispatch and
+   output admission. Normalized input is stored before I/O and response bytes after it. Prepared
+   HTTP sends once with no automatic retry, redirect or protocol fallback.
 8. `append_event` atomically verifies the admission, records the event and artifact references,
    writes the successor immutable state, advances the rollout head, and releases the lease.
 9. A later worker can claim the rollout and read the new canonical state.
@@ -157,7 +168,9 @@ receipt plus archive/evidence/forensic ownership in one database transaction. It
 returns only canonical public JSONL after current-use revalidation; `inspect_receipt` is privileged.
 Per-product replication minima apply after exclusions, while private row offsets preserve sample
 multiplicity and fork relationships. These payloads explicitly declare `parameter_training_ready`
-false; exact prompt, behavior-policy, action-mask, credit, trainer, and execution gates remain.
+false; complete behavior-policy/action-mask/credit attribution, trainer and execution gates remain.
+New generation receipts retain exact prompts, but do not themselves make projected decisions
+parameter-training ready or establish semantic source completeness.
 
 This supports meaningful continuity at committed action boundaries. With PostgreSQL and a shared
 artifact backend, a completely different worker node can resume from the current state head.
@@ -169,12 +182,13 @@ them; they are not a cross-node fabric.
 - `ProjectStatePayload.memory_refs` is a typed seam, not an implemented governed cross-project
   process-memory service.
 - Artifact references in state do not provide worker-specific capabilities or audited dereferences.
-- Observation receipts now record the exact canonical state projection supplied to an offline
-  planner. They do not attest the complete model prompt or which artifact bytes a worker read.
+- Observation receipts record the exact canonical state projection supplied to an offline planner.
+  New generation workloads bind those bytes plus a fixed policy to prepared provider input. Neither
+  receipt attests loaded runtime identity or arbitrary subsequent worker artifact reads.
 - A running action has no incremental process checkpoint. Work after the last committed event can be
   lost with the worker.
-- PPRL has an offline allowlisted observation service, but no executable replacement lifecycle,
-  provider-request binding, role-specific view/action mask, or attested hydration transport.
+- PPRL has offline allowlisted observations and exact configured generation input binding, but no
+  executable replacement lifecycle, role-specific view/action mask, or attested hydration transport.
 - Local-regret policy is declarative; no live estimator or epsilon-charitable action selector is
   connected to the coordinator.
 
@@ -184,8 +198,8 @@ The current system can preserve **committed macro-state** through 100 percent wo
 the replacement process shares the database and artifact backend. It cannot itself detect, launch,
 hydrate, or assign the replacements, preserve uncommitted internal work, or guarantee that a new
 worker received an exact and contamination-safe model prompt. Offline fixtures establish identical
-public observation bytes under fresh worker/lease receipts; they do not establish live replacement
-or recovery of interrupted external work.
+public observation bytes under fresh worker/lease receipts and exact mock-HTTP generation input;
+they do not establish live replacement or recovery of interrupted external work.
 
 ## 2. Communication and coordination fabric
 
@@ -279,7 +293,9 @@ For a successful model-backed process action, a researcher can join:
 2. the complete action request and admission decision;
 3. the rollout and exact parent-state head;
 4. `ProcessWorkerInvocationRow` with request, rollout, role, model digest, decision, optional
-   research execution, status, request/response artifact IDs, usage, error, and timestamps;
+   research execution, workload digest, status, request/response artifact IDs, usage, error, and
+   timestamps; the private workload receipt joins observation, reviewed instructions/sampling/schema,
+   normalized request, configured provider/model/protocol/destination and retained prepared body;
 5. `ExternalCallRow` with provider, purpose, request hash, operation status, provider response ID,
    raw-envelope/output/capability digests, usage, latency, errors, and timestamps;
 6. the restricted serialized `GenerationRequest`;
@@ -326,7 +342,7 @@ training use. Native source context and private origins remain researcher-only.
 
 | Evidence category | Current preservation | Currently lost or incomplete |
 | --- | --- | --- |
-| prompts and model context | full `GenerationRequest` for governed model calls | handler-local assembly and undocumented transforms |
+| prompts and model context | exact observation/policy request and prepared body for new PPRL generation | legacy handler-local assembly, runtime tokenization and provider-side transforms |
 | model output and wire I/O | output plus raw provider request/response and available token data | non-streaming PPRL deltas and provider internals not exposed by the adapter |
 | private reasoning | retained when supplied by the runtime | unavailable provider reasoning and any unexposed internal computation |
 | tool calls and observations | optional event kind and handler-defined payload | no standard PPRL sequence, argument/result envelope, or generic tool trace |
@@ -371,7 +387,9 @@ credential boundary. The eventual forensic plane needs:
 PPRL rollouts have exclusive leases. An expired lease can be reclaimed, so the current committed
 state is not permanently owned by a dead coordinator. Model calls use a durable idempotency ledger,
 so a completed persisted provider response can be reused after a caller crash instead of blindly
-duplicating external work.
+duplicating external work. New PPRL generation forbids automatic redispatch of pending, cancelled or
+failed effects and preserves uncertainty. It still lacks an external-effect reconciler; conservative
+denial alone does not establish automatic recovery.
 
 The separate developmental runtime has:
 
@@ -392,7 +410,8 @@ These mechanisms demonstrate useful patterns but do not operate on PPRL rollouts
 - executable assignment ownership;
 - reconciliation of planned or running process invocations after worker death;
 - partial-action checkpoints;
-- hydration projection and exact context receipt evidence;
+- executable replacement hydration and attested context delivery; offline observation and exact
+  configured generation receipts now exist;
 - retry classification and safe action resumption;
 - intentional handoff and acknowledgement;
 - dependency-aware task scheduling;
@@ -606,6 +625,8 @@ by retained evidence:
 | process persistence and replay | `padawan/pprl/store.py` |
 | action proposal, admission, and commit loop | `padawan/pprl/coordinator.py` |
 | admission-bound model invocation | `padawan/pprl/generation.py` |
+| exact observation/policy/workload admission | `padawan/pprl/generation_boundary.py`, `generation_contracts.py` |
+| prepared provider body and single HTTP dispatch | `padawan/adapters/prepared.py`, `openai_compatible/client.py` |
 | Amber contracts and policy | `padawan/governance/amber.py` |
 | Amber persistence | `padawan/governance/amber_store.py` |
 | external model-call intent and results | `padawan/orchestration/external_calls.py` |

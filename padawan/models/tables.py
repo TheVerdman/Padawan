@@ -302,6 +302,30 @@ class ProcessObservationDecisionRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ProcessGenerationWorkloadRow(Base):
+    __tablename__ = "process_generation_workloads"
+
+    invocation_id: Mapped[str] = mapped_column(
+        ForeignKey("process_worker_invocations.invocation_id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    request_id: Mapped[str] = mapped_column(String(160), nullable=False, unique=True)
+    decision_id: Mapped[str] = mapped_column(
+        ForeignKey("amber_admission_decisions.decision_id", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+    )
+    observation_id: Mapped[str] = mapped_column(
+        ForeignKey("process_observations.observation_id", ondelete="RESTRICT"), nullable=False
+    )
+    prepared_artifact_id: Mapped[str] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT"), nullable=False
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class ProcessTrainingProjectionRow(Base):
     __tablename__ = "process_training_projections"
 
@@ -2756,6 +2780,7 @@ class ProcessWorkerInvocationRow(Base):
         ForeignKey("artifacts.artifact_id", ondelete="RESTRICT")
     )
     usage: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    workload_digest: Mapped[str | None] = mapped_column(String(71))
     error: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -2800,6 +2825,7 @@ for _immutable_type in (
     ProcessContentAdmissionRow,
     ProcessObservationRow,
     ProcessObservationDecisionRow,
+    ProcessGenerationWorkloadRow,
     ProcessTrainingProjectionRow,
     ProvenanceEventRow,
     TrainingSourceDocumentRow,

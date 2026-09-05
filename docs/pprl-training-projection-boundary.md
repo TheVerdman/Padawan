@@ -38,6 +38,13 @@ receipt, worker, lease digest, rights, Amber sequence, policy, and chronology. E
 must independently authorize `training_projection` use. The new receipt includes its reviewed
 admission and rights digests; process visibility alone does not grant training use.
 
+For new model invocations, the prepared transport envelope is a third private source alongside the
+normalized request and full result. Projection retention requires original workload and invocation
+ownership and independently pins the envelope under `process_training_forensic`. A missing receipt
+or mismatched invocation workload marker denies projection rather than reverting to legacy source
+accounting. Exact generation input is described in `pprl-generation-workload-boundary.md`; retaining
+it does not yet supply a complete behavior policy, action mask, credit model or training authority.
+
 Current training reads can follow active, paused, or release-approved authority when the envelope
 and all existing rights checks permit training. New evidence admission and live process observations
 still require active authority. An Amber sequence or projection-policy change invalidates reads of

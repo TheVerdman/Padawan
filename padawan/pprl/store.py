@@ -36,6 +36,7 @@ from padawan.models.tables import (
     ProcessExecutionRow,
     ProcessForkChildRow,
     ProcessForkRow,
+    ProcessGenerationWorkloadRow,
     ProcessOutcomeRow,
     ProcessProgramRow,
     ProcessRolloutRow,
@@ -71,6 +72,7 @@ from padawan.pprl.contracts import (
 )
 from padawan.pprl.evidence import ProcessEvidenceStore
 from padawan.pprl.evidence_contracts import ProcessEvidenceUse
+from padawan.pprl.generation_contracts import generation_workload_from_row
 
 
 class ProcessInvariantError(RuntimeError):
@@ -1385,7 +1387,7 @@ async def _invocation_forensic_bytes(
         raise ProcessInvariantError(
             "worker invocation request and response records are not distinct"
         )
-    artifact_ids = {invocation.request_artifact_id, invocation.response_artifact_id}
+    artifact_ids = await _invocation_forensic_artifact_ids(session, invocation, timestamp)
     total = 0
     for artifact_id in artifact_ids:
         artifact = await session.get(ArtifactRow, artifact_id)
@@ -1410,6 +1412,52 @@ async def _invocation_forensic_bytes(
             raise ProcessInvariantError("worker invocation lost forensic retention ownership")
         total += artifact.size_bytes
     return total
+
+
+async def _invocation_forensic_artifact_ids(
+    session: AsyncSession, invocation: ProcessWorkerInvocationRow, timestamp: datetime
+) -> set[str]:
+    if invocation.request_artifact_id is None or invocation.response_artifact_id is None:
+        raise ProcessInvariantError("worker invocation has incomplete forensic records")
+    artifact_ids = {invocation.request_artifact_id, invocation.response_artifact_id}
+    row = await session.get(ProcessGenerationWorkloadRow, invocation.invocation_id)
+    if row is None and invocation.workload_digest is not None:
+        raise ProcessInvariantError(
+            "prepared invocation lost its workload; legacy fallback is forbidden"
+        )
+    if row is not None:
+        workload = generation_workload_from_row(row)
+        if (
+            invocation.workload_digest != workload.digest
+            or workload.request_id != invocation.request_id
+            or workload.rollout_id != invocation.rollout_id
+            or workload.decision_id != invocation.amber_decision_id
+            or workload.role_id != invocation.role_id
+            or workload.worker_model_digest != invocation.worker_model_digest
+            or workload.admitted_at > timestamp
+        ):
+            raise ProcessInvariantError("invocation differs from its prepared generation workload")
+        artifact_id = workload.prepared_artifact.artifact.artifact_id
+        information = await session.get(ArtifactInformationRow, artifact_id)
+        if information is None:
+            raise ProcessInvariantError("prepared generation lost its original classification")
+        classified = information_record_from_row(information)
+        if (
+            classified.digest != workload.prepared_artifact.classification_digest
+            or classified.artifact != workload.prepared_artifact.artifact
+        ):
+            raise ProcessInvariantError("prepared generation classification differs from workload")
+        pin = await session.scalar(
+            select(ArtifactReferenceRow.reference_id).where(
+                ArtifactReferenceRow.owner_type == "process_generation_workload",
+                ArtifactReferenceRow.owner_id == invocation.invocation_id,
+                ArtifactReferenceRow.artifact_id == artifact_id,
+            )
+        )
+        if pin is None:
+            raise ProcessInvariantError("prepared generation lost its original retention ownership")
+        artifact_ids.add(artifact_id)
+    return artifact_ids
 
 
 def _artifact_matches(reference: ArtifactRef, row: ArtifactRow) -> bool:
