@@ -1,0 +1,49 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-task.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "condition_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Condition Id",
+      "type": "string"
+    },
+    "execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Execution Digest",
+      "type": "string"
+    },
+    "initial_payload_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Initial Payload Digest",
+      "type": "string"
+    },
+    "instance_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Instance Digest",
+      "type": "string"
+    },
+    "replication_index": {
+      "minimum": 0,
+      "title": "Replication Index",
+      "type": "integer"
+    },
+    "rollout_id": {
+      "maxLength": 192,
+      "minLength": 1,
+      "title": "Rollout Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "instance_digest",
+    "condition_id",
+    "replication_index",
+    "execution_digest",
+    "rollout_id",
+    "initial_payload_digest"
+  ],
+  "title": "ProcessTask",
+  "type": "object"
+}

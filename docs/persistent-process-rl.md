@@ -101,12 +101,22 @@ reviewed source admission for complete model/container effects, including late r
 The private version-3 origin binds the full checked source set; only a separate process derivative
 is admitted. Ordinary sources with recovery ownership cannot bypass that origin, and training use
 is denied. Admission neither changes canonical state nor clears the effect barrier. Reviewed
-continuing successor and task ownership remain designs in `pprl-effect-resolution-boundary.md`.
+continuing successors remain a design in `pprl-effect-resolution-boundary.md`.
 `ProcessAbandonmentStore` now supports an explicitly reviewed terminal branch: cancel the fenced
 rollout without rewriting its state/events, releasing unknown holds or changing recorded charges.
 The private immutable disposition independently retains recovery sources, survives broker restart,
 and enters privileged replay/compiler evidence at its own watermark with explicit learning
 exclusions. It is not a domain failure, physical-cleanup proof, or permission for a replacement task.
+
+`ProcessTaskStore` supplies explicit finite ownership before any rollout under an authorization.
+Its immutable plan binds exact instance/condition/replication coordinates to one execution, rollout
+and initial payload, using the original resource grant. Protected creation, claim, observation,
+accounting and replay paths reject missing or substituted ownership. Worker replacement can advance
+the same task through ordinary commits or resume after reviewed release of unstarted work. An
+unresolved abandoned task cannot obtain a replacement owner or extra replica under that plan.
+The compiler retains the plan privately. Legacy authorizations remain unenrolled; reviewer honesty,
+semantic task identity and the trusted broker/storage perimeter remain assumptions. See
+`pprl-task-ownership-boundary.md`. This does not implement a dynamic task graph or scheduler.
 
 ## Distributions and evidence
 

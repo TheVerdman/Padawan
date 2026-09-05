@@ -59,6 +59,8 @@ from padawan.pprl.contracts import (
     RolloutStatus,
 )
 from padawan.pprl.recovery_contracts import ProcessRecoveryReceipt
+from padawan.pprl.task_contracts import ProcessTaskPlan
+from padawan.pprl.tasks import ProcessTaskStore
 from padawan.training.contracts import (
     CompiledRow,
     EvidenceLedgerEntry,
@@ -301,6 +303,15 @@ async def compile_pprl_snapshot(
         for row in rollouts
     }
     rollout_authorizations = {row.rollout_id: row.authorization_digest for row in rollouts}
+    task_plans: dict[str, ProcessTaskPlan] = {}
+    rollout_task_plans: dict[str, str] = {}
+    for row in rollouts:
+        plan = await ProcessTaskStore().check_rollout(session, row)
+        if plan is not None:
+            if plan.created_at > as_of:
+                raise PPRLTrainingCompilationError("task ownership postdates its rollout watermark")
+            task_plans[plan.plan_id] = plan
+            rollout_task_plans[row.rollout_id] = plan.plan_id
     abandonment_records: dict[str, ProcessAbandonmentReceipt] = {}
     recovery_records: dict[str, ProcessRecoveryReceipt] = {}
     abandoned_rollouts: dict[str, ProcessAbandonmentReceipt] = {}
@@ -366,6 +377,7 @@ async def compile_pprl_snapshot(
         fork_records=fork_records,
         abandonment_records=abandonment_records,
         recovery_records=recovery_records,
+        task_plans=task_plans,
     )
     source_index = {(source.kind, source.source_id): source for source in sources}
     replication_ready = _replication_ready_distributions(
@@ -437,6 +449,15 @@ async def compile_pprl_snapshot(
             required_lane=ProcessLearningLane.TRAJECTORY,
             replication_ready=rollout.distribution_digest in replication_ready,
         )
+        if rollout_id in rollout_task_plans:
+            plan_source = source_index[
+                (EvidenceSourceKind.PROCESS_TASK_PLAN, rollout_task_plans[rollout_id])
+            ]
+            lineage = (
+                tuple(sorted(set(lineage[0]) | {plan_source.reference})),
+                tuple(sorted(set(lineage[1]) | {plan_source.digest})),
+                lineage[2],
+            )
         if rollout_id in abandoned_rollouts:
             receipt = abandoned_rollouts[rollout_id]
             additions = [
@@ -771,6 +792,7 @@ def _sources(
     fork_records: dict[str, ProcessForkRecord],
     abandonment_records: dict[str, ProcessAbandonmentReceipt],
     recovery_records: dict[str, ProcessRecoveryReceipt],
+    task_plans: dict[str, ProcessTaskPlan],
 ) -> tuple[_Source, ...]:
     sources: list[_Source] = []
     for digest, distribution_record in distribution_records.items():
@@ -852,6 +874,10 @@ def _sources(
     sources.extend(
         _source(EvidenceSourceKind.PROCESS_RECOVERY, key, record)
         for key, record in recovery_records.items()
+    )
+    sources.extend(
+        _source(EvidenceSourceKind.PROCESS_TASK_PLAN, key, record)
+        for key, record in task_plans.items()
     )
     return tuple(sorted(sources, key=lambda item: (item.kind.value, item.source_id)))
 

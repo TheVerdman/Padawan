@@ -194,6 +194,16 @@
       "sha256": "9a66ec0bfff37931a17cc26068c540fd381574c7115a5ebbd0a3a34d9e2fd609"
     },
     {
+      "name": "process-task",
+      "schema": "process-task.schema.json",
+      "sha256": "95a0456e5b8378e856b52d337fade6951f9ba8ef719d490d1ece9511becab3f9"
+    },
+    {
+      "name": "process-task-plan",
+      "schema": "process-task-plan.schema.json",
+      "sha256": "f53bcd051ffbfb2dfea75c8ed157f4dc03b22f0f9bd69bf968c3fef5fa24e2ef"
+    },
+    {
       "name": "recovery-evidence-disclosure-policy",
       "schema": "recovery-evidence-disclosure-policy.schema.json",
       "sha256": "8c281e7564d14a20a4c3d74ebb95845e7ddeaba22a938cdb6fc3cba494b535b4"
@@ -596,7 +606,7 @@
     {
       "name": "evidence-ledger-entry",
       "schema": "evidence-ledger-entry.schema.json",
-      "sha256": "657a6759d5565e9cc6345e29e1f4443310357ba9d1ecf3b77d005f6b4b6c492a"
+      "sha256": "4db205954dc7b8ea851c4056ced589cf0a1acbf3f42a6c299e3819f7b5a61339"
     },
     {
       "name": "evaluation-outcome",

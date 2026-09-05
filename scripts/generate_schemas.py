@@ -186,6 +186,7 @@ from padawan.pprl.resource_contracts import (
     ProcessResourceReservation,
     ProcessResources,
 )
+from padawan.pprl.task_contracts import ProcessTask, ProcessTaskPlan
 from padawan.pprl.worker_contracts import (
     ProcessWorkerDecisionBinding,
     ProcessWorkerLeaseAssignment,
@@ -287,6 +288,8 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("process-recovery-receipt", ProcessRecoveryReceipt),
     ("process-abandonment-request", ProcessAbandonmentRequest),
     ("process-abandonment-receipt", ProcessAbandonmentReceipt),
+    ("process-task", ProcessTask),
+    ("process-task-plan", ProcessTaskPlan),
     ("recovery-evidence-disclosure-policy", RecoveryEvidenceDisclosurePolicy),
     ("recovered-effect-source", RecoveredEffectSource),
     ("recovered-evidence-origin-review", RecoveredEvidenceOriginReview),

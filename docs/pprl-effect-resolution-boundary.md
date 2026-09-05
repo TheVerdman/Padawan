@@ -1,12 +1,12 @@
 # Reviewed resolution of completed effects
 
 Status: resolution design specified at `ebe1000`; exact historical recovery-source validation,
-reviewed recovered-source admission and terminal abandonment are implemented. Continuing reviewed
-successors and full logical-task ownership remain unimplemented. This is a stage toward executable task/retry
+reviewed recovered-source admission, terminal abandonment and finite task ownership are implemented.
+Continuing reviewed successors and dynamic task graphs remain unimplemented. This is a stage toward executable task/retry
 scheduling, not a reduction of PPRL or its long-horizon program. The user resumed the finite
 checkpoint after that review on 2026-09-05. Optional consolidation follows the behavioral baseline.
 
-## Revalidated dependencies
+## Dependency findings and subsequent changes
 
 - `ProcessStore.append_event` requires the original current lease, worker capability, assignment,
   admission and authority sequence. Recovery fences that lease. Bypassing these checks would
@@ -16,13 +16,14 @@ checkpoint after that review on 2026-09-05. Optional consolidation follows the b
   complete source set in a private version-3 origin; process use requires separate review and
   training is denied. Ordinary source admission/read now rejects recovery-owned source artifacts.
   See `pprl-recovered-evidence-boundary.md`. Recovery retention alone grants no admission.
-- `ProcessRecoveryStore.read` must establish the exact retained request/result relationships before
+- Original source-reader finding, now implemented: `ProcessRecoveryStore.read` must establish the exact retained request/result relationships before
   a future consumer may rely on a completed-effect assessment. At the design HEAD, the model reader
   checks source bytes/pins and workload digest but not their complete native ownership/result joins;
   the container reader does not require the snapshot's complete declared source set.
-- `compile_pprl_snapshot` derives completion from process events and cites selected outcomes and
-  eligibility decisions. It has no recovered-transition, reviewed-intervention or abandonment
-  record type. `record_outcome` and `record_training_eligibility` cannot establish that an external
+- Original compiler finding, partly resolved by terminal abandonment: `compile_pprl_snapshot` derives completion from process events and cites selected outcomes and
+  eligibility decisions. At the design HEAD it had no recovered-transition, reviewed-intervention
+  or abandonment record type; abandonment now has explicit private evidence and exclusions.
+  `record_outcome` and `record_training_eligibility` cannot establish that an external
   effect has been reconciled or that a reviewed replacement transition was the behavior policy's
   action. New resolution cannot silently reuse those meanings.
 
@@ -47,8 +48,9 @@ continue to stop unresolved effects. No resolution bypass exists in the bounded 
 4. Connect the resolution timeline to historical replay, outcomes, compiler exclusions and later
    attribution. Then add retry/task lifecycle and automatic replacement scheduling.
 
-Items 1 and 2 have offline implementation evidence. Items 3 and 4 are the remaining dependencies;
-their local implementation is now authorized within the finite foundation checkpoint.
+Items 1 and 2 have offline implementation evidence. Items 3 and 4 now have a terminal branch and
+finite task ownership. Their general continuing-successor branch remains a dependency for that
+capability, not for the accepted first workflow's alternative of explicit terminal abandonment.
 
 ### First executable terminal disposition
 
@@ -70,6 +72,16 @@ This terminal branch does not resume a completed-but-uncommitted task, release u
 authorize a fresh replica, infer cleanup, or implement a scheduler. Continuing successors still
 require explicit logical-task ownership and reviewed admitted domain evidence. Validation uses
 synthetic effects, disposable databases, and PostgreSQL races, never live models or cloud resources.
+
+### Finite ownership for the terminal branch
+
+The accepted foundation gate says completed-result review **or terminal abandonment**. The first
+workflow chooses abandonment and excludes interrupted unresolved samples. `ProcessTaskStore` now
+enrolls one immutable finite plan before any rollout in the original funding authority. It fixes
+task coordinates, initial state and rollout ownership; new names, undeclared replicas or forks do
+not create retry authority. Ordinary commits and reviewed release of untouched reservations can
+advance that same owner. Planned task IDs and digests remain private. See
+`pprl-task-ownership-boundary.md` for the exact scope, legacy limit and adversarial acceptance.
 
 ## Proposed resolution boundary and invariants
 
@@ -132,7 +144,7 @@ clearing a barrier, physical cleanup of unknown effects, background scheduling, 
 authenticated reviewers, model/host attestation, semantic redaction proofs, scientific competence,
 training or actual model execution. The later steps above remain required and unfinished.
 
-Decision: source validation and the offline admission checkpoint can be retained for review;
-no-go for automatic continuation until task disposition, reviewed-transition lineage and compiler
-handling are implemented and validated. The user resumed the finite checkpoint after review;
-optional consolidation follows the baseline rather than preceding it.
+Decision: the finite workflow can use the validated terminal branch with enrolled task ownership;
+no-go for automatic continuation of completed-but-uncommitted or unknown effects. A general
+reviewed successor still needs its own transition and credit lineage. This stage preserves the full
+research program. Optional consolidation follows the baseline rather than preceding it.

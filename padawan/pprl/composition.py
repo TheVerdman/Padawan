@@ -22,6 +22,7 @@ from padawan.pprl.recovered_evidence import RecoveryEvidenceSourceBoundary
 from padawan.pprl.recovered_evidence_contracts import RecoveryEvidenceDisclosurePolicy
 from padawan.pprl.recovery import ProcessRecoveryStore
 from padawan.pprl.store import ProcessStore
+from padawan.pprl.tasks import ProcessTaskStore
 from padawan.training.compiler import TrainingCompiler
 
 
@@ -51,6 +52,10 @@ class PPRLApplication:
     def abandonment(self) -> ProcessAbandonmentStore:
         """Explicit privileged terminal-disposition API; construction launches nothing."""
         return ProcessAbandonmentStore(self.recovery())
+
+    def tasks(self) -> ProcessTaskStore:
+        """Explicit finite ownership enrollment; no scheduler or worker is launched."""
+        return ProcessTaskStore()
 
     def recovered_evidence(
         self,

@@ -483,7 +483,10 @@ async def test_migration_refuses_to_remove_populated_terminal_history(
     config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
     config.set_main_option("sqlalchemy.url", database.url)
     monkeypatch.setenv("PADAWAN_DATABASE_URL", database.url)
-    await asyncio.to_thread(command.stamp, config, "head")
+    # Exercise this migration's refusal independently of later additive migrations.
+    # SQLite DDL is not transactional: an empty later migration could otherwise
+    # downgrade successfully before this populated history correctly refuses.
+    await asyncio.to_thread(command.stamp, config, "a7c82e41d906")
     with pytest.raises(RuntimeError, match="populated abandonment"):
         await asyncio.to_thread(command.downgrade, config, "f4d63b18a920")
     assert await snapshot(ctx) == before

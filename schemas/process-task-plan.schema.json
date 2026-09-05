@@ -1,0 +1,131 @@
+{
+  "$defs": {
+    "ProcessTask": {
+      "additionalProperties": false,
+      "properties": {
+        "condition_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "execution_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Execution Digest",
+          "type": "string"
+        },
+        "initial_payload_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Initial Payload Digest",
+          "type": "string"
+        },
+        "instance_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Instance Digest",
+          "type": "string"
+        },
+        "replication_index": {
+          "minimum": 0,
+          "title": "Replication Index",
+          "type": "integer"
+        },
+        "rollout_id": {
+          "maxLength": 192,
+          "minLength": 1,
+          "title": "Rollout Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instance_digest",
+        "condition_id",
+        "replication_index",
+        "execution_digest",
+        "rollout_id",
+        "initial_payload_digest"
+      ],
+      "title": "ProcessTask",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-task-plan.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authorization_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Digest",
+      "type": "string"
+    },
+    "authorization_event_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Event Digest",
+      "type": "string"
+    },
+    "authorization_sequence": {
+      "minimum": 0,
+      "title": "Authorization Sequence",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "enrollment_expires_at": {
+      "format": "date-time",
+      "title": "Enrollment Expires At",
+      "type": "string"
+    },
+    "plan_id": {
+      "pattern": "^process-task-plan-[0-9a-f]{32}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "resource_grant_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Resource Grant Digest",
+      "type": "string"
+    },
+    "review_evidence": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Review Evidence",
+      "type": "string"
+    },
+    "reviewed_by": {
+      "minLength": 1,
+      "title": "Reviewed By",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tasks": {
+      "items": {
+        "$ref": "#/$defs/ProcessTask"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Tasks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "plan_id",
+    "authorization_digest",
+    "authorization_sequence",
+    "authorization_event_digest",
+    "resource_grant_digest",
+    "tasks",
+    "reviewed_by",
+    "review_evidence",
+    "created_at",
+    "enrollment_expires_at"
+  ],
+  "title": "ProcessTaskPlan",
+  "type": "object"
+}

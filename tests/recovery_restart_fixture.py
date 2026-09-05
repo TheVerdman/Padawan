@@ -15,6 +15,7 @@ from padawan.pprl.abandonment_contracts import ProcessAbandonmentRequest
 from padawan.pprl.recovery import ProcessRecoveryStore
 from padawan.pprl.recovery_contracts import ProcessRecoveryRequest
 from padawan.pprl.store import ProcessStore
+from padawan.pprl.tasks import ProcessTaskStore
 from padawan.pprl.worker_broker import ProcessWorkerBroker
 from tests.worker_helpers import disposable_client, worker_request
 
@@ -27,7 +28,17 @@ async def main() -> None:
     recovery = ProcessRecoveryStore(processes, catalog)
     try:
         async with database.transaction() as session:
-            if data["mode"] in {"abandon", "inspect_abandonment"}:
+            if data["mode"] == "inspect_task":
+                from padawan.models.tables import ProcessRolloutRow
+
+                row = await session.get(ProcessRolloutRow, data["rollout_id"])
+                if row is None:
+                    raise ValueError("fixture task owner missing")
+                plan = await ProcessTaskStore().check_rollout(session, row)
+                if plan is None:
+                    raise ValueError("fixture task owner is not planned")
+                result = plan.model_dump(mode="json")
+            elif data["mode"] in {"abandon", "inspect_abandonment"}:
                 dispositions = ProcessAbandonmentStore(recovery)
                 if data["mode"] == "abandon":
                     request = ProcessAbandonmentRequest.model_validate(

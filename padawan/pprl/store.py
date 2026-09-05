@@ -277,8 +277,21 @@ class ProcessStore:
         ):
             raise PermissionError("initial process artifacts exceed their declared byte budget")
         assigned_id = rollout_id or f"process-rollout-{uuid4()}"
+        from padawan.pprl.tasks import ProcessTaskStore
+
+        task_plan_digest = await ProcessTaskStore().creation(
+            session,
+            authorization_digest=execution.amber_authorization_digest,
+            execution_digest=execution_digest,
+            rollout_id=assigned_id,
+            replication_index=replication_index,
+            initial_payload_digest=sha256_digest(initial_state),
+            parent_rollout_id=parent_rollout_id,
+            now=timestamp,
+        )
         existing = await session.get(ProcessRolloutRow, assigned_id)
         if existing is not None:
+            await ProcessTaskStore().check_rollout(session, existing)
             record = _rollout_from_row(existing)
             if (
                 record.execution_digest != execution_digest
@@ -301,6 +314,7 @@ class ProcessStore:
             )
         )
         if duplicate is not None:
+            await ProcessTaskStore().check_rollout(session, duplicate)
             record = _rollout_from_row(duplicate)
             previous = await self.get_state(session, state_id=record.initial_state_id)
             if (
@@ -361,6 +375,7 @@ class ProcessStore:
             )
         row = ProcessRolloutRow(
             rollout_id=assigned_id,
+            task_plan_digest=task_plan_digest,
             execution_digest=execution_digest,
             program_digest=execution.program_digest,
             distribution_digest=execution.distribution_digest,
@@ -404,6 +419,9 @@ class ProcessStore:
         row = await session.get(ProcessRolloutRow, rollout_id)
         if row is None:
             raise KeyError(rollout_id)
+        from padawan.pprl.tasks import ProcessTaskStore
+
+        await ProcessTaskStore().check_rollout(session, row)
         if row.terminal_abandonment_id is not None:
             from padawan.pprl.abandonment import read_abandonment
 
@@ -1105,6 +1123,9 @@ class ProcessStore:
         parent = await self.get_rollout(session, rollout_id=parent_rollout_id)
         if await self.workers.scope(session, parent.execution_digest) is not None:
             raise PermissionError("enrolled forks require explicit child worker-scope support")
+        parent_identity = await session.get(ProcessRolloutRow, parent_rollout_id)
+        if parent_identity is not None and parent_identity.task_plan_digest is not None:
+            raise PermissionError("planned forks require explicit child task ownership")
         await self.content.check_intervention(session, intervention)
         if len(children) < 2:
             raise ValueError("process fork requires at least two continuations")

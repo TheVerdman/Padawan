@@ -1132,8 +1132,9 @@ work segment; further implementation is held for the user's complexity and roadm
 
 Resumed from `1a75354` after the user's explicit instruction to proceed. Optional consolidation is
 deferred until after a frozen repeated behavioral baseline. This checkpoint implements the terminal
-branch of task/effect disposition; continuing reviewed successors and logical-task ownership remain
-required before the complete scripted continuity milestone or live institutional pilot.
+branch of task/effect disposition. Finite logical-task ownership is supplied by the next checkpoint;
+general continuing reviewed successors remain a separate capability. The complete scripted
+continuity milestone and live institutional pilot were not executed here.
 
 `ProcessAbandonmentStore` binds a fresh, at-most-five-minute review to the checked original recovery,
 current state, authority sequence and shared account frontier. One immutable SQL receipt per rollout
@@ -1178,20 +1179,66 @@ delegation, deployment or remote publication was used. Secret/source manifests a
 commit identity are retained with the validation record. This is progress within the resumed
 checkpoint, not completion of the full foundation or research goal.
 
+## Finite task ownership checkpoint, 2026-09-05
+
+Continued from terminal-abandonment commit `ca0079a`. Review of the accepted foundation exit gate
+resolved an unnecessary proposed prerequisite: it says completed-result review **or terminal
+abandonment**. Use the terminal alternative for the first workflow; keep general reviewed continuing
+successors in the full roadmap without making them a prerequisite for that pilot. The boundary was
+specified in `pprl-task-ownership-boundary.md` before implementation.
+
+`ProcessTaskStore` now enrolls one immutable finite plan per original Amber/funding authority before
+its first rollout. Up to 128 declared instance/condition/replication coordinates bind exact execution,
+rollout and initial-payload identities. Each task remains owned by its rollout through ordinary
+commits and worker replacement. The plan cannot be replaced or expanded; undeclared roots, changed
+execution/rollout IDs, extra replicas and forks are denied. Enrollment serializes with root creation
+using the existing authorization lock. No resource grant or new worker is created by enrollment.
+
+`process_task_plans` and a private rollout marker retain ownership. Checked creation, claim,
+observation, reservation/accounting, abandonment and replay/compilation paths validate that binding;
+missing or substituted plans cannot fall back to legacy behavior. Private compiler evidence retains
+the plan, while process content denies its identifiers and digest. Migration `b819f0a35d62` refuses
+populated ownership downgrade. Reviewer/domain identity and broker/storage trust remain assumptions.
+There is no semantic deduplicator, dynamic task graph, scheduler or automatic backfill. The finite
+workflow must enroll both worker scopes and task ownership; legacy authorizations gain neither by
+inference. Separately authorized campaigns retain their distinct sampled identities and costs.
+
+Retained evidence: `runs/pprl-task-ownership-validation-20260905/` (ignored).
+
+- Full offline suite: **928 passed, 38 deselected in 193.31 seconds**, excluding PostgreSQL, live,
+  Lean, Docker and GCS markers. The final focused 31-test ownership suite additionally retains its
+  SQLite/artifact fixtures, including native broker reconstruction and synthetic credential turnover.
+- PostgreSQL races plus prior abandonment/recovery races and Alembic schema check: **17 passed in
+  36.15 seconds**. Cached PG17 used 1 CPU/512 MiB, no network or host data mounts, a bounded loopback
+  fixture proxy and automatic cleanup. No application/model container was launched.
+- Ruff lint/format and generated schemas pass (**189 schemas**); mypy passes on **191 source files**.
+- The initial ownership suite passed 26 tests. An expanded compatibility run had **109 passes and
+  one failure**: the older abandonment migration test assumed its revision was still HEAD. SQLite
+  correctly downgraded the new empty migration before the older populated-history guard refused,
+  so the test's later ORM query used a removed column. The test now targets its own migration's
+  refusal. Production populated-history protections were preserved. The full suite passes afterward.
+- Source/staged/committed manifests, redacted secret scans, exact local commit identity, logs and
+  restricted fixture hashes are retained with the validation record. No restricted fixtures are
+  tracked. No model inference/training, cloud/GPU activation, live institution, sibling edit,
+  delegation, deployment or remote publication was performed.
+
+This satisfies the first finite foundation review milestone using the terminal option. It does not
+establish complete institutional continuity, a scientific persistence benefit or training evidence.
+
 ## Next implementation dependency
 
 The finite foundation exit gate was accepted, with discretionary consolidation moved after the
-baseline. Recovered-source admission and terminal abandonment do not complete recovery or
-institutional continuity. The remaining dependency is logical-task ownership and a distinct reviewed
-continuing successor, together with replay/compiler treatment of interventions and credit exclusions.
-Select independent domain evidence for successor review; preserve original effects and costs and
-keep unknown effects stopped. A new lease or task ID cannot silently repeat an abandoned effect or
-hide an exclusion in scientific credit. Automatic replacement scheduling depends on these contracts.
+baseline. The task/effect review milestone now uses terminal abandonment and finite ownership.
+Next is one bounded scripted institutional workflow over these existing stores: assign, observe,
+act, commit, stop, recover and resume when no unresolved effect exists. Restart every broker and
+replace 100% of disposable workers, preserving admitted state, task ownership and original costs.
+Repeat churn and named crash boundaries. Keep interrupted unresolved samples stopped and excluded;
+do not add a general continuing successor or new replica as an implicit recovery mechanism.
 
-Then connect heartbeat, stale-worker detection, durable task ownership, role-specific action masks
-and deterministic scheduling to the existing scoped credential and recovery boundary. Credential
-delivery/isolation and child enrollment need explicit contracts. Retain byte-exact hydration and
-test complete roster churn, interrupted handoffs and lifecycle races with simulated workers first.
+Connect bounded heartbeat/stale-worker detection, role-specific action masks and deterministic
+scheduling only as needed for that workflow. Credential delivery/isolation needs an explicit trusted
+fixture contract; planned forks remain denied until child enrollment is separately defined. Retain
+byte-exact hydration and test interrupted handoffs and lifecycle races with simulated workers first.
 The current clear-claim integrity check traverses rollout history; benchmark and bound its growth,
 and design checked incremental frontiers before long-horizon execution. Keep the agreed review
 milestones and return for discussion before adding any substantial prerequisite outside this scope.
@@ -1206,7 +1253,7 @@ Model/GPU validation, Atlas institutional subjects and causal MI interchange, au
 explicit communication/economics, the 10M+ token milestone, preregistered learning, an actual trainer/
 parameter candidate and independent evaluation remain in the full roadmap. Keep Atlas training
 materialization gated. Prepare the required concrete campaign before requesting any additional
-execution authority. The current hold does not change the full research scope or its resource gates.
+execution authority. The milestone review does not change the full research scope or its resource gates.
 
 ## Completion audit
 

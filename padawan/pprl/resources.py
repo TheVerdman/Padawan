@@ -281,6 +281,10 @@ class ProcessResourceStore:
         from padawan.pprl.store import _event_from_row
 
         rollout = await session.get(ProcessRolloutRow, rollout_id)
+        if rollout is not None:
+            from padawan.pprl.tasks import ProcessTaskStore
+
+            await ProcessTaskStore().check_rollout(session, rollout)
         if rollout is not None and rollout.terminal_abandonment_id is not None:
             raise PermissionError("terminally abandoned rollout cannot resume")
 
@@ -417,6 +421,12 @@ class ProcessResourceStore:
         record = ProcessResourceReservation.model_validate(row.record_json, strict=False)
         if sha256_digest(row.record_json) != row.record_digest:
             raise ValueError("resource reservation JSON is corrupt")
+        from padawan.pprl.tasks import ProcessTaskStore
+
+        rollout = await session.get(ProcessRolloutRow, row.rollout_id)
+        if rollout is None:
+            raise ValueError("resource reservation lost its task owner")
+        await ProcessTaskStore().check_rollout(session, rollout)
         if (
             record.digest,
             record.authorization_digest,

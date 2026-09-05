@@ -36,6 +36,7 @@ from padawan.models.tables import (
     ProcessResourceReservationRow,
     ProcessRolloutRow,
     ProcessStateRow,
+    ProcessTaskPlanRow,
     ProcessWorkerDecisionBindingRow,
     ProcessWorkerLeaseAssignmentRow,
     ProcessWorkerRegistrationRow,
@@ -496,7 +497,7 @@ class ProcessContentBoundary:
         for value in strings:
             if re.search(
                 r"(?:process-container-|padawan-cpu-|process-worker-|worker-assignment-|"
-                r"worker-request-|process-recovery-|process-abandonment-)[0-9a-f]{32}",
+                r"worker-request-|process-recovery-|process-abandonment-|process-task-plan-)[0-9a-f]{32}",
                 value,
             ):
                 raise ValueError("process content references private runtime identity")
@@ -564,6 +565,7 @@ class ProcessContentBoundary:
                 ProcessWorkerDecisionBindingRow,
                 ProcessWorkerRequestRow,
                 ProcessAbandonmentRow,
+                ProcessTaskPlanRow,
                 ProcessRecoveryRow,
             ):
                 if (

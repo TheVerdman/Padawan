@@ -202,6 +202,7 @@ async def container_context(
     enrolled=False,
     prepare_action=True,
     scope_updates=None,
+    planned=False,
 ):
     now = clock()
     profile = profile or container_profile(now)
@@ -284,12 +285,21 @@ async def container_context(
                 now=now,
             )
             worker_id = registration.worker_id
+        initial = ProjectStatePayload(objective="execute a bounded scientific tool")
+        plan = None
+        if planned:
+            from padawan.pprl.tasks import ProcessTaskStore
+            from tests.pprl_task_helpers import task_plan
+
+            plan = await task_plan(session, amber, manifest, initial, now)
+            await ProcessTaskStore().enroll(session, plan, now=now)
         rollout = await process.create_rollout(
             session,
             execution_digest=sha256_digest(manifest),
             replication_index=0,
-            initial_state=ProjectStatePayload(objective="execute a bounded scientific tool"),
-            created_at=now if enrolled else now - timedelta(minutes=5),
+            initial_state=initial,
+            rollout_id=plan.tasks[0].rollout_id if plan else None,
+            created_at=now if enrolled or planned else now - timedelta(minutes=5),
         )
         driver = driver or SyntheticContainerDriver(profile, clock)
         service = ProcessContainerExecutor(
@@ -309,6 +319,7 @@ async def container_context(
             execution=manifest,
             program=pp,
             rollout=rollout,
+            task_plan=plan,
         )
         if not prepare_action:
             return SimpleNamespace(**base, worker_access=worker_access, worker_id=worker_id)

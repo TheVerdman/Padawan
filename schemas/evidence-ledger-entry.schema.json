@@ -83,6 +83,7 @@
         "process_event",
         "process_recovery",
         "process_abandonment",
+        "process_task_plan",
         "process_fork",
         "process_outcome",
         "process_training_eligibility"

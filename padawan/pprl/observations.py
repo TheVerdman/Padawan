@@ -401,6 +401,9 @@ class ProcessObservationStore:
             or not _utc(rollout.updated_at) <= now < _utc(rollout.lease_expires_at)
         ):
             raise ValueError("observation requires a current owned lease")
+        from padawan.pprl.tasks import ProcessTaskStore
+
+        await ProcessTaskStore().check_rollout(session, rollout)
         await self.store.workers.require(
             session, rollout=rollout, access=worker_access, now=now, worker_id=worker_id
         )

@@ -107,6 +107,13 @@ to the review before expanding scope. Prefer one existing verifier-backed domain
 new benchmark family. The first pilot should test persistence and replacement with simple routing;
 three-tier hierarchy and frontier escalation value need later controlled comparisons.
 
+Implementation selection after resumption: item 1 uses its **terminal abandonment** alternative.
+Finite task plans fix rollout ownership before dispatch and preserve stopped samples and original
+funding. General reviewed continuing successors remain required for that broader capability; they
+are not silently added as a prerequisite for the first pilot. This keeps the exit gate finite while
+retaining explicit exclusions for completed-but-uncommitted or unknown effects. The scripted
+continuity workflow and behavioral baseline remain separate subsequent validation milestones.
+
 This is proposed sequencing, not reduced program scope or permission to claim the goal complete.
 Capability Atlas still needs distinct worker/institution subjects and protected behavioral/MI
 interchange. Live coordination/economics, independent distributions and repeated stochastic

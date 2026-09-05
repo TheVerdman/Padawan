@@ -187,6 +187,7 @@ class EvidenceSourceKind(StrEnum):
     PROCESS_EVENT = "process_event"
     PROCESS_RECOVERY = "process_recovery"
     PROCESS_ABANDONMENT = "process_abandonment"
+    PROCESS_TASK_PLAN = "process_task_plan"
     PROCESS_FORK = "process_fork"
     PROCESS_OUTCOME = "process_outcome"
     PROCESS_TRAINING_ELIGIBILITY = "process_training_eligibility"

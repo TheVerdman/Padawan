@@ -68,7 +68,15 @@ A privileged terminal abandonment API now cancels a fenced unresolved rollout wi
 review and independent source ownership. It preserves state/events, costs and unknown-effect holds;
 private replay and compiler exclusions retain the original attempt. It does not create a continuing
 successor, admit a domain outcome, prove cleanup, or authorize a new task. See
-`docs/pprl-effect-resolution-boundary.md`. Full task ownership and continuing recovery remain ahead.
+`docs/pprl-effect-resolution-boundary.md`.
+
+An explicitly enrolled finite task plan now binds each declared instance/condition/replication to
+one exact rollout, execution, initial payload and original shared resource grant. Enrollment precedes
+all rollouts in that authorization; replacement preserves the task owner, and undeclared roots or
+forks are refused. This is private control state, not authored `worker_assignments` or scientific
+preregistration. Legacy authorizations gain no implicit ownership guarantee. The first finite
+workflow uses terminal abandonment for unresolved effects; general reviewed continuing successors,
+dynamic task graphs and scheduling remain ahead. See `docs/pprl-task-ownership-boundary.md`.
 
 Use **PPRL** for the general program and **PPRL-VR** only when the declared outcome is genuinely
 verifiable. RL evidence requires sampled task distributions and repeated stochastic rollouts; a

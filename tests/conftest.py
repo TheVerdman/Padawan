@@ -23,6 +23,7 @@ def pprl_now(monkeypatch: pytest.MonkeyPatch) -> Callable[[], datetime]:
         recovery,
         resources,
         store,
+        tasks,
         worker_broker,
         worker_identities,
     )
@@ -52,6 +53,7 @@ def pprl_now(monkeypatch: pytest.MonkeyPatch) -> Callable[[], datetime]:
         recovery,
         resources,
         store,
+        tasks,
         worker_broker,
         worker_identities,
     ):

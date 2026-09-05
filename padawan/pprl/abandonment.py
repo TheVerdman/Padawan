@@ -115,6 +115,9 @@ async def read_abandonment(
         or state.sequence != receipt.state_sequence
     ):
         raise ValueError("abandonment lost its exact terminal head")
+    from padawan.pprl.tasks import ProcessTaskStore
+
+    await ProcessTaskStore().check_rollout(session, head)
     _, _, envelope = await processes.workers._context(
         session, receipt.execution_digest, now=receipt.created_at, active=False
     )

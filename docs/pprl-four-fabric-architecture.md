@@ -111,6 +111,15 @@ This is terminal abandonment, not a continuing successor, physical cleanup or lo
 Continuing task disposition remains a design in [effect resolution boundary](pprl-effect-resolution-boundary.md).
 The user resumed the finite checkpoint after review; optional consolidation follows the baseline.
 
+`ProcessTaskStore` now binds a finite reviewed task namespace to the original authorization and
+resource grant before its first rollout. Each instance/condition/replication coordinate has one exact
+execution, rollout and initial-payload identity. New names, undeclared replicas and forks cannot
+replace an enrolled task owner. Checked creation, claim, observation, accounting and replay retain
+this boundary through ordinary state advancement and worker replacement. The compiler retains the
+plan as private source evidence. The accepted first workflow uses terminal abandonment for unresolved
+effects; general continuing successors remain later work. Legacy authorizations gain no implicit
+enrollment or semantic deduplication guarantee. See [finite task ownership](pprl-task-ownership-boundary.md).
+
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
 who may use the record and for what purpose, not merely by whether it is stored.
@@ -197,6 +206,9 @@ The PPRL data model has a real durable substrate:
   independently; neither the record nor its identifiers enter process state or observations;
 - `process_abandonments` retains one immutable terminal review per rollout, linked from a private
   terminal marker. Its independent source pins and compiler evidence remain researcher-only;
+- `process_task_plans` retains one immutable finite plan per authorization, anchored by each planned
+  rollout's private `task_plan_digest`. `ProcessTaskStore.enroll` writes it before any root exists;
+  `creation`, `check_rollout` and private compiler reads recheck its declared ownership and sources;
 - Amber authorization, lifecycle, head, and action-decision tables bind each admitted transition to
   exact authority and cumulative budget; and
 - `process_worker_invocations`, `process_generation_workloads`, `external_calls`, and the artifact
@@ -319,6 +331,10 @@ The bounded `ProcessWorkerBroker` has addressed request receipts and conservativ
 history quotas. This is not peer messaging, a multi-action assignment lifecycle, or a scheduler.
 Unenrolled APIs retain their trusted legacy meaning; the older `ProcessCoordinator` cannot claim
 enrolled executions. Enrolled forks are refused until child-scope inheritance is explicit.
+
+Finite task plans are another private boundary, not bindings to authored `WorkerAssignment` fields.
+They fix each task's rollout owner across successive one-action worker assignments. Their maximum
+128-entry declaration is not a live queue, dependency scheduler, heartbeat protocol or transfer API.
 
 `WorkerRoleSpec` and Amber validate the role, worker-model digest, and allowed tool identity declared
 by a proposal. They do not attest which live process made the declaration.
