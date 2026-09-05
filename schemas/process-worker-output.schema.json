@@ -1,0 +1,35 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-worker-output.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Normalized public model output with bounded, explicit usage fields.",
+  "properties": {
+    "input_tokens": {
+      "minimum": 0,
+      "title": "Input Tokens",
+      "type": "integer"
+    },
+    "output_text": {
+      "title": "Output Text",
+      "type": "string"
+    },
+    "output_tokens": {
+      "minimum": 0,
+      "title": "Output Tokens",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "output_text",
+    "input_tokens",
+    "output_tokens"
+  ],
+  "title": "ProcessWorkerOutput",
+  "type": "object"
+}

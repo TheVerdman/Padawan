@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from uuid import uuid4
 
@@ -9,7 +10,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy import delete, func, select, update
 
-from padawan.adapters.base import GenerationRequest
+from padawan.adapters.base import GenerationRequest, GenerationResult, ModelProviderError
 from padawan.artifacts.information import (
     ArtifactInformationStore,
     ForensicArtifactRef,
@@ -30,6 +31,7 @@ from padawan.models.tables import (
     ArtifactInformationRow,
     ArtifactReferenceRow,
     ProcessEvidenceAdmissionRow,
+    ProcessWorkerInvocationRow,
 )
 from padawan.orchestration.external_calls import IdempotentGenerationExecutor
 from padawan.pprl.contracts import (
@@ -47,7 +49,7 @@ from padawan.pprl.evidence_contracts import (
     ProcessEvidenceAdmission,
     ProcessEvidenceUse,
 )
-from padawan.pprl.generation import ProcessGenerationExecutor
+from padawan.pprl.generation import ProcessGenerationExecutor, ProcessGenerationUnavailableError
 from padawan.pprl.store import ProcessStore
 from tests.helpers import CallbackGenerationClient
 from tests.pprl_helpers import (
@@ -192,7 +194,9 @@ async def _review(
     )
 
 
-async def _model_sources(ctx: EvidenceContext) -> tuple[ForensicArtifactRef, ...]:
+async def _model_sources(
+    ctx: EvidenceContext, client: CallbackGenerationClient | None = None
+) -> tuple[ForensicArtifactRef, ...]:
     instant = ctx.clock()
     async with ctx.database.transaction() as session:
         claimed = await ctx.process.claim_next(
@@ -228,7 +232,7 @@ async def _model_sources(ctx: EvidenceContext) -> tuple[ForensicArtifactRef, ...
             ),
             active_workers=0,
         )
-    client = CallbackGenerationClient(
+    client = client or CallbackGenerationClient(
         lambda _request: "synthetic raw model output", "test-open-weight"
     )
     generation = ProcessGenerationExecutor(
@@ -256,12 +260,112 @@ async def _model_sources(ctx: EvidenceContext) -> tuple[ForensicArtifactRef, ...
     )
     assert len(client.calls) == 1
     async with ctx.database.transaction() as session:
+        invocation = await session.get(ProcessWorkerInvocationRow, result.invocation_id)
+        assert invocation is not None
+        assert invocation.request_artifact_id is not None
+        assert invocation.response_artifact_id is not None
         return tuple(
             [
-                await ctx.information.forensic_reference(session, artifact_id=artifact.artifact_id)
-                for artifact in result.artifact_refs
+                await ctx.information.forensic_reference(session, artifact_id=artifact_id)
+                for artifact_id in sorted(
+                    (invocation.request_artifact_id, invocation.response_artifact_id)
+                )
             ]
         )
+
+
+async def test_generation_failure_keeps_provider_payloads_out_of_worker_errors(
+    evidence_context,
+) -> None:
+    ctx = evidence_context
+
+    class FailingClient(CallbackGenerationClient):
+        async def generate(self, request: GenerationRequest) -> GenerationResult:
+            self.calls.append(request)
+            raise ModelProviderError(
+                "SYNTHETIC_PRIVATE_PROVIDER_ERROR",
+                provider=self.provider,
+                status_code=500,
+                response_body=b"SYNTHETIC_PRIVATE_PROVIDER_BODY",
+            )
+
+    client = FailingClient(lambda _request: "unused", "test-open-weight")
+    with pytest.raises(ProcessGenerationUnavailableError) as failure:
+        await _model_sources(ctx, client)
+    assert len(client.calls) == 1
+    assert str(failure.value) == "process generation produced no admitted output"
+    assert failure.value.__cause__ is None and failure.value.__context__ is None
+    async with ctx.database.transaction() as session:
+        invocation = await session.get(ProcessWorkerInvocationRow, "evidence-source-invocation")
+        assert invocation is not None and invocation.status == "failed"
+        assert invocation.error["message"] == "SYNTHETIC_PRIVATE_PROVIDER_ERROR"
+        assert invocation.request_artifact_id is not None
+        assert invocation.response_artifact_id is None
+
+
+@pytest.mark.parametrize("invalid_usage", [True, None, "SYNTHETIC_PRIVATE_USAGE"])
+async def test_generation_rejects_unknown_or_noninteger_usage(
+    evidence_context, invalid_usage
+) -> None:
+    ctx = evidence_context
+
+    class InvalidUsageClient(CallbackGenerationClient):
+        async def generate(self, request: GenerationRequest) -> GenerationResult:
+            result = await super().generate(request)
+            return replace(result, usage={**result.usage, "input_tokens": invalid_usage})
+
+    client = InvalidUsageClient(lambda _request: "public output", "test-open-weight")
+    with pytest.raises(ProcessGenerationUnavailableError) as failure:
+        await _model_sources(ctx, client)
+    assert len(client.calls) == 1
+    assert "SYNTHETIC_" not in str(failure.value)
+    async with ctx.database.transaction() as session:
+        invocation = await session.get(ProcessWorkerInvocationRow, "evidence-source-invocation")
+        assert invocation is not None and invocation.status == "failed"
+
+
+async def test_generation_cancellation_preserves_semantics_without_private_payload(
+    evidence_context,
+) -> None:
+    ctx = evidence_context
+
+    class CancelledClient(CallbackGenerationClient):
+        async def generate(self, request: GenerationRequest) -> GenerationResult:
+            self.calls.append(request)
+            raise asyncio.CancelledError("SYNTHETIC_PRIVATE_CANCELLATION")
+
+    client = CancelledClient(lambda _request: "unused", "test-open-weight")
+    with pytest.raises(asyncio.CancelledError) as cancellation:
+        await _model_sources(ctx, client)
+    assert len(client.calls) == 1
+    assert str(cancellation.value) == "process generation cancelled"
+    assert cancellation.value.__cause__ is None and cancellation.value.__context__ is None
+    async with ctx.database.transaction() as session:
+        invocation = await session.get(ProcessWorkerInvocationRow, "evidence-source-invocation")
+        assert invocation is not None and invocation.status == "cancelled"
+
+
+async def test_evidence_read_cancellation_has_no_private_payload(
+    evidence_context, monkeypatch
+) -> None:
+    ctx = evidence_context
+    review = await _review(ctx)
+
+    async def cancelled_read(*args, **kwargs):
+        raise asyncio.CancelledError("SYNTHETIC_PRIVATE_READ_CANCELLATION")
+
+    monkeypatch.setattr(ctx.evidence, "_read", cancelled_read)
+    async with ctx.database.transaction() as session:
+        with pytest.raises(asyncio.CancelledError) as cancellation:
+            await ctx.evidence.read(
+                session,
+                reference=review.process_reference,
+                execution_digest=ctx.execution_digest,
+                use=ProcessEvidenceUse.PROCESS,
+                now=ctx.clock(),
+            )
+    assert str(cancellation.value) == "process evidence read cancelled"
+    assert cancellation.value.__cause__ is None and cancellation.value.__context__ is None
 
 
 async def test_candidate_classification_is_not_admission(evidence_context) -> None:

@@ -104,7 +104,7 @@ class ArtifactInformationStore:
         await self.catalog.register(session, artifact)
         existing = await session.get(ArtifactInformationRow, artifact.artifact_id)
         if existing is not None:
-            stored = _information_record(existing)
+            stored = information_record_from_row(existing)
             if stored.artifact != artifact or stored.information_class != information_class:
                 raise ArtifactIntegrityError("artifact information class is immutable")
             return stored
@@ -124,7 +124,7 @@ class ArtifactInformationStore:
         row = await session.get(ArtifactInformationRow, artifact_id)
         if row is None:
             raise PermissionError("artifact has no admitted information classification")
-        record = _information_record(row)
+        record = information_record_from_row(row)
         await self.catalog.register(session, record.artifact)
         return record
 
@@ -137,7 +137,7 @@ class ArtifactInformationStore:
         return ForensicArtifactRef(artifact=record.artifact, classification_digest=record.digest)
 
 
-def _information_record(row: ArtifactInformationRow) -> ArtifactInformationRecord:
+def information_record_from_row(row: ArtifactInformationRow) -> ArtifactInformationRecord:
     record = ArtifactInformationRecord.model_validate(row.record_json, strict=False)
     if (
         sha256_digest(row.record_json) != row.record_digest

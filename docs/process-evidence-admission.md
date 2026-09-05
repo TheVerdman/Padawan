@@ -30,7 +30,7 @@ queryable identity columns are checked against the receipt when read.
 ## Admission and read path
 
 1. The broker stores and explicitly classifies a candidate. Classification is broker-only; no worker
-   endpoint is installed. PPRL's generation executor classifies retained requests/responses as forensic.
+   endpoint is installed. Successfully finalized PPRL calls classify requests/responses as forensic.
 2. A declared reviewer reviews the exact candidate and source set under a pinned admission policy.
    The review must authorize retention and internal research. Process-training projection also
    requires process rights, a training split, and the execution/distribution/Amber training grants.
@@ -51,6 +51,7 @@ queryable identity columns are checked against the receipt when read.
    admission. Pause/expiry withholds worker use while privileged review history remains available.
    Every ordinary read failure is a uniform denial with no embedded privileged validation input,
    physical path, or chained exception. Privileged inspection is a separate broker operation.
+   Cancellation keeps its control-flow meaning but discards any private exception payload.
 
 Process-training projection permission is one input to a future safe compiler; it does not grant
 training eligibility to a rollout, authorize a trainer, or imply that any parameters were updated.
@@ -69,8 +70,9 @@ and an attested sandbox remain separate requirements.
 Digest matching proves byte identity, not semantic safety, honest review, source completeness, or
 causal influence. Literal-reference checks do not prove removal of encoded references or covert
 channels. No process-state hydration, arbitrary nested payload, public export, or existing training
-row is automatically safe because these new contracts exist. The following checkpoint must route
-those interfaces through validated projections and remove raw result exposure.
+row is automatically safe because these new contracts exist. The PPRL model-result interface is
+now normalized separately; the remaining state and training interfaces still need validated
+projections. See `pprl-worker-output-boundary.md`.
 
 Admission ownership is atomic in the database and is included in the catalog's retention set.
 Concurrent GC using a stale externally gathered set remains unresolved; the local file lock is not

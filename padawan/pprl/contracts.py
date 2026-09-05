@@ -351,6 +351,15 @@ class ProjectDependency(StrictRecord):
         return self
 
 
+class ProcessWorkerOutput(StrictRecord):
+    """Normalized public model output with bounded, explicit usage fields."""
+
+    schema_version: Literal["1.0.0"] = SCHEMA_VERSION
+    output_text: str
+    input_tokens: Annotated[int, Field(ge=0)]
+    output_tokens: Annotated[int, Field(ge=0)]
+
+
 class WorkerAssignment(StrictRecord):
     assignment_id: NonEmpty
     role_id: NonEmpty

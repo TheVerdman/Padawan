@@ -33,6 +33,7 @@ from padawan.models.tables import (
 from padawan.orchestration.external_calls import IdempotentGenerationExecutor
 from padawan.pprl.contracts import (
     ProcessExecutionManifest,
+    ProcessWorkerOutput,
     ProjectStateVersion,
     project_state_digest,
 )
@@ -40,9 +41,14 @@ from padawan.pprl.contracts import (
 
 @dataclass(frozen=True)
 class ProcessGenerationResult:
+    """Broker result: retain the causal invocation ID outside worker prompt assembly."""
+
     invocation_id: str
-    generation: GenerationResult
-    artifact_refs: tuple[ArtifactRef, ...]
+    output: ProcessWorkerOutput
+
+
+class ProcessGenerationUnavailableError(RuntimeError):
+    """Worker-facing failure without provider payloads or privileged exception context."""
 
 
 class ProcessGenerationExecutor:
@@ -58,6 +64,44 @@ class ProcessGenerationExecutor:
         self.executor = executor
 
     async def execute(
+        self,
+        *,
+        rollout_id: str,
+        lease_token: str,
+        amber_decision_id: str,
+        invocation_id: str,
+        role_id: str,
+        worker_model_digest: str,
+        purpose: str,
+        provider: str,
+        request: GenerationRequest,
+        research_execution_digest: str | None = None,
+    ) -> ProcessGenerationResult:
+        cancelled = False
+        try:
+            return await self._execute(
+                rollout_id=rollout_id,
+                lease_token=lease_token,
+                amber_decision_id=amber_decision_id,
+                invocation_id=invocation_id,
+                role_id=role_id,
+                worker_model_digest=worker_model_digest,
+                purpose=purpose,
+                provider=provider,
+                request=request,
+                research_execution_digest=research_execution_digest,
+            )
+        except asyncio.CancelledError:
+            cancelled = True
+        except Exception:
+            # Provider and validation errors may carry raw traffic or private fields.
+            # Existing invocation/call ledgers retain details when durable intent exists.
+            pass
+        if cancelled:
+            raise asyncio.CancelledError("process generation cancelled")
+        raise ProcessGenerationUnavailableError("process generation produced no admitted output")
+
+    async def _execute(
         self,
         *,
         rollout_id: str,
@@ -293,6 +337,11 @@ class ProcessGenerationExecutor:
                     raise PermissionError(
                         "process generation result exceeds or differs from its admission"
                     )
+                worker_output = ProcessWorkerOutput(
+                    output_text=generation.output_text,
+                    input_tokens=_usage(generation, "input_tokens"),
+                    output_tokens=_usage(generation, "output_tokens"),
+                )
         except asyncio.CancelledError:
             await self._mark_terminal(
                 invocation_id=invocation_id,
@@ -368,8 +417,7 @@ class ProcessGenerationExecutor:
             raise
         return ProcessGenerationResult(
             invocation_id=invocation_id,
-            generation=generation,
-            artifact_refs=references,
+            output=worker_output,
         )
 
     async def _mark_terminal(
@@ -410,7 +458,7 @@ def _artifact_reference(row: ArtifactRow) -> ArtifactRef:
 
 def _usage(generation: GenerationResult, key: str) -> int:
     value = generation.usage.get(key)
-    if not isinstance(value, int) or value < 0:
+    if type(value) is not int or value < 0:
         raise ValueError(f"process generation result has invalid {key} usage")
     return value
 

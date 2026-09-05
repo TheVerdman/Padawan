@@ -8,6 +8,7 @@ from uuid import uuid4
 from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from padawan.artifacts.information import InformationClass, information_record_from_row
 from padawan.governance.amber import (
     AmberActionRequest,
     AmberAdmissionDecision,
@@ -21,6 +22,8 @@ from padawan.models.tables import (
     AmberAdmissionDecisionRow,
     AmberAuthorizationHeadRow,
     AmberAuthorizationRow,
+    ArtifactInformationRow,
+    ArtifactReferenceRow,
     ArtifactRow,
     ProcessDistributionRow,
     ProcessEventRow,
@@ -363,6 +366,12 @@ class ProcessStore:
         resulting_state_id: str | None = None,
         occurred_at: datetime | None = None,
     ) -> tuple[ProcessEventRecord, ProjectStateVersion]:
+        if any(
+            reference.raw_data for reference in (*artifact_refs, *resulting_state.artifact_refs)
+        ):
+            raise ProcessInvariantError(
+                "forensic/raw artifacts cannot enter process events or state"
+            )
         assigned_event_id = event_id or f"process-event-{uuid4()}"
         existing_event = await session.get(ProcessEventRow, assigned_event_id)
         if existing_event is not None:
@@ -492,6 +501,10 @@ class ProcessStore:
             artifact = await session.get(ArtifactRow, reference.artifact_id)
             if artifact is None or not _artifact_matches(reference, artifact):
                 raise ProcessInvariantError("process event cites an invalid artifact")
+            if artifact.raw_data:
+                raise ProcessInvariantError(
+                    "forensic/raw artifacts cannot enter process events or state"
+                )
         artifact_reservation = (
             request_record.projected_usage.artifact_bytes
             - parent_state.payload.budget_usage.artifact_bytes
@@ -504,10 +517,14 @@ class ProcessStore:
             for reference in cited_artifacts
             if reference.artifact_id not in prior_artifact_ids
         }
-        if sum(reference.size_bytes for reference in new_artifacts.values()) > (
-            artifact_reservation
-        ):
-            raise PermissionError("process event artifacts exceed their Amber reservation")
+        forensic_bytes = 0
+        bound_invocation_id = await session.scalar(
+            select(ProcessWorkerInvocationRow.invocation_id).where(
+                ProcessWorkerInvocationRow.amber_decision_id == amber_decision_id
+            )
+        )
+        if bound_invocation_id is not None and worker_invocation_id != bound_invocation_id:
+            raise ProcessInvariantError("process event must bind its admitted worker invocation")
         if worker_invocation_id is not None:
             invocation = await session.get(ProcessWorkerInvocationRow, worker_invocation_id)
             if invocation is None:
@@ -523,17 +540,11 @@ class ProcessStore:
                 raise ProcessInvariantError(
                     "process event worker invocation differs from admission"
                 )
-            artifact_ids = {reference.artifact_id for reference in artifact_refs}
-            required_artifacts = {
-                artifact_id
-                for artifact_id in (
-                    invocation.request_artifact_id,
-                    invocation.response_artifact_id,
-                )
-                if artifact_id is not None
-            }
-            if not required_artifacts.issubset(artifact_ids):
-                raise ProcessInvariantError("process event omits worker invocation artifacts")
+            forensic_bytes = await _invocation_forensic_bytes(session, invocation, timestamp)
+        if sum(reference.size_bytes for reference in new_artifacts.values()) + forensic_bytes > (
+            artifact_reservation
+        ):
+            raise PermissionError("process event artifacts exceed their Amber reservation")
         sequence = row.sequence + 1
         assigned_state_id = resulting_state_id or f"process-state-{uuid4()}"
         state = _build_state(
@@ -1114,6 +1125,44 @@ def _event_from_row(row: ProcessEventRow) -> ProcessEventRecord:
 
 def _as_utc(value: datetime) -> datetime:
     return value.replace(tzinfo=UTC) if value.tzinfo is None else value
+
+
+async def _invocation_forensic_bytes(
+    session: AsyncSession, invocation: ProcessWorkerInvocationRow, timestamp: datetime
+) -> int:
+    if invocation.completed_at is None or _as_utc(invocation.completed_at) > timestamp:
+        raise ProcessInvariantError("process event predates its completed worker invocation")
+    if invocation.request_artifact_id is None or invocation.response_artifact_id is None:
+        raise ProcessInvariantError("worker invocation has incomplete forensic records")
+    if invocation.request_artifact_id == invocation.response_artifact_id:
+        raise ProcessInvariantError(
+            "worker invocation request and response records are not distinct"
+        )
+    artifact_ids = {invocation.request_artifact_id, invocation.response_artifact_id}
+    total = 0
+    for artifact_id in artifact_ids:
+        artifact = await session.get(ArtifactRow, artifact_id)
+        information = await session.get(ArtifactInformationRow, artifact_id)
+        if artifact is None or information is None:
+            raise ProcessInvariantError("worker invocation lost its forensic classification")
+        classified = information_record_from_row(information)
+        if (
+            classified.information_class != InformationClass.FORENSIC
+            or not _artifact_matches(classified.artifact, artifact)
+            or classified.classified_at > timestamp
+        ):
+            raise ProcessInvariantError("worker invocation has invalid forensic classification")
+        pin = await session.scalar(
+            select(ArtifactReferenceRow.reference_id).where(
+                ArtifactReferenceRow.owner_type == "process_worker_invocation",
+                ArtifactReferenceRow.owner_id == invocation.invocation_id,
+                ArtifactReferenceRow.artifact_id == artifact_id,
+            )
+        )
+        if pin is None:
+            raise ProcessInvariantError("worker invocation lost forensic retention ownership")
+        total += artifact.size_bytes
+    return total
 
 
 def _artifact_matches(reference: ArtifactRef, row: ArtifactRow) -> bool:

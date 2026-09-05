@@ -54,6 +54,11 @@
       "sha256": "83be70b779171d2100961e33d5f18add47eca6fca14974c80599c4ae1ffef5ac"
     },
     {
+      "name": "process-worker-output",
+      "schema": "process-worker-output.schema.json",
+      "sha256": "a8c1c85f2bbd712180168dcd250639274269a63f74a82ac6a431e2ce117856c8"
+    },
+    {
       "name": "atlas-adapter-descriptor",
       "schema": "atlas-adapter-descriptor.schema.json",
       "sha256": "ff0fd24421e16425960236aadaa4f1a4b191e84174bd379770b225305a3ddc20"

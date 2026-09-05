@@ -17,10 +17,14 @@ below retain their status unless explicitly updated.
 
 The same offline stage now also provides immutable process/forensic information classes, separate
 reference contracts, and a reviewed evidence-admission service with execution-scoped reads and
-transactional admission ownership. PPRL model I/O receives forensic classification. The service is
-not yet wired into every state/hydration/training path; the existing complete-generation result and
-raw event references remain gaps. See [reviewed evidence admission](process-evidence-admission.md)
+transactional admission ownership. Successfully finalized PPRL model I/O receives forensic
+classification. PPRL generation now returns normalized public output, and event commits verify
+privileged invocation artifacts without inserting their references into shared events. See
+[worker output boundary](pprl-worker-output-boundary.md) and
+[reviewed evidence admission](process-evidence-admission.md)
 for exact source-binding limits, trusted-broker assumptions, and retained validation.
+Initial state, nested fields, generic references, legacy hydration/training records, and coordinated
+GC remain unresolved parts of the information boundary.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
@@ -290,8 +294,10 @@ capture contract for every worker action.
 `ExportPolicy` is role- and purpose-aware. Local backend reads now validate broker-owned immutable
 metadata, and both local and GCS reads deny raw/restricted data unless `allow_restricted` is explicit.
 That boolean still does not authenticate a principal or purpose and does not append a read audit.
-The idempotent generation executor can also return the complete persisted
-`GenerationResult`, including private reasoning, to its in-process caller.
+The shared `IdempotentGenerationExecutor` still returns complete persisted `GenerationResult`
+objects inside the trusted broker. The PPRL wrapper exposes only `ProcessWorkerOutput` and a broker
+invocation ID, with generic errors; it no longer forwards raw results or raw artifact references.
+Neither lower-level objects nor privileged inspection methods may be given to workers.
 
 Consequently, the current separation is a strong semantic policy but not yet a hard service and
 credential boundary. The eventual forensic plane needs:

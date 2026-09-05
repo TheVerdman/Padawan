@@ -130,6 +130,7 @@ from padawan.pprl.contracts import (
     ProcessProgram,
     ProcessRolloutRecord,
     ProcessTrainingEligibilityDecision,
+    ProcessWorkerOutput,
     ProjectInstance,
     ProjectStateVersion,
 )
@@ -182,6 +183,7 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("evidence-admission-policy", EvidenceAdmissionPolicy),
     ("process-evidence-admission", ProcessEvidenceAdmission),
     ("process-evidence-admission-record", ProcessEvidenceAdmissionRecord),
+    ("process-worker-output", ProcessWorkerOutput),
     ("atlas-adapter-descriptor", AdapterDescriptor),
     ("atlas-campaign-manifest", AtlasCampaignManifest),
     ("atlas-campaign-execution-binding", CampaignExecutionBinding),

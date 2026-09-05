@@ -6,6 +6,7 @@ Identity authentication and an external containment boundary are separate gates.
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 
 from sqlalchemy import or_, select
@@ -134,15 +135,20 @@ class ProcessEvidenceStore:
         now: datetime | None = None,
     ) -> bytes:
         """Return only admitted bytes, under broker-supplied execution/use authority."""
+        cancelled = False
         try:
             return await self._read(
                 session, reference=reference, execution_digest=execution_digest, use=use, now=now
             )
+        except asyncio.CancelledError:
+            cancelled = True
         except Exception:
             # Validation and backend exceptions can embed privileged records or
             # physical paths. Keep their payloads out of the worker-facing result.
             pass
         # Raise outside the handler so even __context__ contains no private error.
+        if cancelled:
+            raise asyncio.CancelledError("process evidence read cancelled")
         raise ProcessEvidenceReadDeniedError("process evidence read denied")
 
     async def _read(

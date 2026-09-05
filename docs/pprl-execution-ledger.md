@@ -176,6 +176,7 @@ improvement claims. These remain required later work, not reductions in program 
 
 Checkpoint 2, 2026-09-04:
 
+- Committed locally as `11e9651` (`feat: add scoped process evidence admission`).
 - Added `artifact_information` and `process_evidence_admissions`, six versioned contracts, and
   trusted-broker classification/admission/read APIs. Review receipts retain the exact policy,
   actual admission time, and Amber sequence. PPRL generation classifies its raw request/response.
@@ -205,14 +206,39 @@ Checkpoint 2, 2026-09-04:
 - A local credential-pattern scan of all 18 changed/new nonignored files found no findings before
   staging. No credentials, model weights, or real restricted traces were added.
 
+Checkpoint 3, model-result portion, 2026-09-04:
+
+- `ProcessGenerationResult` now contains only broker invocation identity and normalized public
+  text/integer token counts. It no longer exposes the complete generation or raw artifact references.
+  Privileged invocation/call records retain request/response joins. Successfully finalized model I/O
+  remains classified and pinned before return.
+- New event commits reject top-level raw references and must bind an invocation when one exists for
+  the admission. They verify completed invocation identity, chronology, forensic classification,
+  catalog identity, and ownership, and count retained source bytes against the artifact reservation.
+  Omitting the invocation cannot evade this accounting. Detailed limitations and rollback are in
+  `pprl-worker-output-boundary.md`.
+- Worker-facing generation errors and evidence-read cancellations contain no private provider or
+  validation payload, including exception cause/context. Cancellation still propagates as cancellation.
+  Unknown, Boolean, and noninteger token usage is rejected rather than counted as zero.
+- Targeted PPRL generation/admission tests passed 36 tests in 4.43 seconds before the cancellation
+  cases. The first full sweep passed 346 tests with 6 deselected in 23.88 seconds. Final full command
+  after cancellation coverage: `PYTHONPATH=. .venv/bin/pytest -q
+  -m 'not postgres and not live and not lean and not gcs' --tb=short`.
+  Result: **348 passed, 6 deselected in 24.01 seconds**. Ruff passed, formatting checked 293 files,
+  all 129 schemas match, mypy passed for 159 source files, and `git diff --check` passed.
+- Tests use synthetic provider/private-reasoning/telemetry fields and failure injection only. No real
+  model inference, worker activation, cloud use, or sibling edits were needed. Initial state, nested
+  payloads, generic references, legacy projections, and coordinated retention/GC remain unfinished.
+
 ## Next executable step
 
-Checkpoints 1 and 2 are verified offline. Continue process ingress and worker/training projections.
-Existing `ProcessGenerationResult` still returns the complete generation and raw
-artifact references; `ProcessStore.append_event` requires those references in the event; the PPRL
-compiler serializes complete events into trajectory rows. Preserve their privileged forensic join
-while removing automatic worker/training visibility in the following checkpoints. Process ingress,
-ownership/GC coordination, and safe projections remain unfinished.
+Checkpoints 1 and 2 and the model-result portion of checkpoint 3 are verified offline. Continue
+process ingress and worker/training projections. Preserve historical parsing and digests for
+privileged replay; require reviewed process references and explicit extension schemas for new
+worker use, including initial state, transitions, forks, and nested fields. The PPRL compiler still
+serializes complete events into trajectory rows. Process ingress, ownership/GC coordination, and
+safe projections remain unfinished. None of these local foundation changes requires model testing
+or cloud activation.
 
 ## Completion audit
 

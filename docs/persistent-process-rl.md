@@ -43,6 +43,13 @@ the next cumulative action, token,
 artifact-byte, wall-time, and cost totals. The committed state must equal that reservation, and the
 lease covers the reserved action wall time so a timeout cannot be mistaken for an unowned retry.
 
+The PPRL model wrapper returns normalized public output and explicit token counts. Raw results,
+private channels, arbitrary provider metadata, and artifact references remain in privileged
+invocation records. Event commit verifies their classification and retention through the invocation
+ID and counts their bytes against the reservation; it does not require those raw references in
+shared events. This closes the model-result path only. See `pprl-worker-output-boundary.md` for
+remaining state, hydration, and training-projection gaps.
+
 ## Distributions and evidence
 
 A process distribution declares train, adaptive-development, validation, and sealed partitions,
