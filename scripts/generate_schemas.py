@@ -144,6 +144,13 @@ from padawan.pprl.evidence_contracts import (
     ProcessEvidenceAdmission,
     ProcessEvidenceAdmissionRecord,
 )
+from padawan.pprl.observation_contracts import (
+    ProcessObservationDecisionBinding,
+    ProcessObservationPolicy,
+    ProcessObservationReceipt,
+    ProcessWorkerObservation,
+    ProcessWorkerState,
+)
 from padawan.temporal.contracts import (
     DurationProfile,
     OperationSpanEventRecord,
@@ -192,6 +199,11 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("process-content-schema", ProcessContentSchema),
     ("process-evidence-admission-record", ProcessEvidenceAdmissionRecord),
     ("process-worker-output", ProcessWorkerOutput),
+    ("process-worker-state", ProcessWorkerState),
+    ("process-worker-observation", ProcessWorkerObservation),
+    ("process-observation-policy", ProcessObservationPolicy),
+    ("process-observation-receipt", ProcessObservationReceipt),
+    ("process-observation-decision-binding", ProcessObservationDecisionBinding),
     ("atlas-adapter-descriptor", AdapterDescriptor),
     ("atlas-campaign-manifest", AtlasCampaignManifest),
     ("atlas-campaign-execution-binding", CampaignExecutionBinding),

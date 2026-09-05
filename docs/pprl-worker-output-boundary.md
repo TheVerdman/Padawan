@@ -31,7 +31,8 @@ bytes count together with new process artifacts against the action's declared re
 New initial/event/state top-level references require reviewed admission, including duplicate
 attempts. Generic references, even when non-raw, grant no new process use. This is not the complete
 ingress proof: nested dictionaries and memory/evidence strings now have structural admission, but
-semantic provenance and worker/training projections remain unfinished. Privileged replay is distinct
+semantic provenance and training projections remain unfinished. The later offline worker observation
+interface is in `pprl-worker-observation-boundary.md`. Privileged replay is distinct
 from new worker use.
 
 Ordinary generation failures expose one `ProcessGenerationUnavailableError` with a fixed message

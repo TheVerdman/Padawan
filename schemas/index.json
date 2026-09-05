@@ -74,6 +74,31 @@
       "sha256": "a8c1c85f2bbd712180168dcd250639274269a63f74a82ac6a431e2ce117856c8"
     },
     {
+      "name": "process-worker-state",
+      "schema": "process-worker-state.schema.json",
+      "sha256": "2b1f32e8cd4697392231f398396d548e8828805b78bb5b7d85671011fbb0a3f0"
+    },
+    {
+      "name": "process-worker-observation",
+      "schema": "process-worker-observation.schema.json",
+      "sha256": "a34b5f9ed50a97c549518dd7dabb115f7959952148d997620b8abb7f54c74b49"
+    },
+    {
+      "name": "process-observation-policy",
+      "schema": "process-observation-policy.schema.json",
+      "sha256": "48b41cace280498ea5797957c1f65e738a7217e6abe0b1ff67f89f22de2c8d0d"
+    },
+    {
+      "name": "process-observation-receipt",
+      "schema": "process-observation-receipt.schema.json",
+      "sha256": "12f47eca2197092b73f0e1d50b5ef9031a9503a86abb69f184634b1e344ffd73"
+    },
+    {
+      "name": "process-observation-decision-binding",
+      "schema": "process-observation-decision-binding.schema.json",
+      "sha256": "33e2b8ff92632591a3b4d51c741aec42405ad5b1bcd4fe08bddb6ccd8df7f3de"
+    },
+    {
       "name": "atlas-adapter-descriptor",
       "schema": "atlas-adapter-descriptor.schema.json",
       "sha256": "ff0fd24421e16425960236aadaa4f1a4b191e84174bd379770b225305a3ddc20"

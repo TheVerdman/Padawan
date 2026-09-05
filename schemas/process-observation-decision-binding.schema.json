@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "AmberAdmissionDisposition": {
+      "enum": [
+        "admitted",
+        "denied",
+        "review_required"
+      ],
+      "title": "AmberAdmissionDisposition",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-observation-decision-binding.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Declared observation/action lineage; no claim of attested model execution.",
+  "properties": {
+    "bound_at": {
+      "format": "date-time",
+      "title": "Bound At",
+      "type": "string"
+    },
+    "decision_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Decision Digest",
+      "type": "string"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "declared_role_id": {
+      "minLength": 1,
+      "title": "Declared Role Id",
+      "type": "string"
+    },
+    "declared_worker_model_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Declared Worker Model Digest",
+      "type": "string"
+    },
+    "disposition": {
+      "$ref": "#/$defs/AmberAdmissionDisposition"
+    },
+    "observation_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Observation Digest",
+      "type": "string"
+    },
+    "observation_id": {
+      "minLength": 1,
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "observation_receipt_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Observation Receipt Digest",
+      "type": "string"
+    },
+    "request_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Request Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "observation_id",
+    "observation_receipt_digest",
+    "observation_digest",
+    "decision_id",
+    "request_digest",
+    "decision_digest",
+    "disposition",
+    "declared_role_id",
+    "declared_worker_model_digest",
+    "bound_at"
+  ],
+  "title": "ProcessObservationDecisionBinding",
+  "type": "object"
+}

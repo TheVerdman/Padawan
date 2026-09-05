@@ -1,7 +1,8 @@
 # PPRL structural content admission
 
-Status: the nested-content portion of information-boundary checkpoint 3. Worker observations,
-training/Atlas projections, and coordinated GC remain unfinished. This is offline broker validation,
+Status: the nested-content portion of information-boundary checkpoint 3. The subsequent offline
+worker observation interface is in `pprl-worker-observation-boundary.md`. Training/Atlas projections
+and coordinated GC remain unfinished. This is offline broker validation,
 not proof of semantic redaction, authentic authorship, or an execution sandbox.
 
 ## Contracts and paths
@@ -72,7 +73,8 @@ normalized public worker/tool path or explicit reviewed evidence admission. This
 make a privileged broker object or the full historical event record suitable for worker hydration.
 It also does not attest a filesystem, secret, network, GPU, or OS boundary.
 
-Exact worker observations and training/Atlas products still require narrow projections. The existing
+Worker observations now have a narrow projection and exact receipts; complete provider inputs and
+training/Atlas products remain unbound. The existing
 training compiler still includes full historical records; content receipts alone do not authorize
 their training use. Communication authorization, authenticated identities, conserved resources,
 forensic completeness, and concurrent GC are separate remaining requirements.

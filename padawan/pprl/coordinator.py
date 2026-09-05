@@ -32,6 +32,8 @@ from padawan.pprl.contracts import (
     stored_process_reference_id,
 )
 from padawan.pprl.distributions import ProcessDistributionRegistry
+from padawan.pprl.observation_contracts import ProcessWorkerObservation
+from padawan.pprl.observations import ProcessObservationStore
 from padawan.pprl.store import ClaimedProcessRollout, ProcessStore
 
 
@@ -78,16 +80,21 @@ class ProcessActionResult:
     to_status: RolloutStatus = RolloutStatus.ACTIVE
 
 
-class ProcessWorkHandler(Protocol):
-    def propose(self, claimed: ClaimedProcessRollout) -> ProcessActionProposal:
+class ProcessPlanner(Protocol):
+    def propose(self, observation: ProcessWorkerObservation) -> ProcessActionProposal:
         """Return a proposal without network, tool, filesystem, or model side effects."""
         ...
+
+
+class ProcessActionExecutor(Protocol):
+    """Trusted effect adapter; its broker arguments must never be sent to a worker."""
 
     async def execute(
         self,
         claimed: ClaimedProcessRollout,
         proposal: ProcessActionProposal,
         admission: AmberAdmissionDecision,
+        observation: ProcessWorkerObservation,
     ) -> ProcessActionResult: ...
 
 
@@ -100,14 +107,20 @@ class ProcessCoordinator:
         database: Database,
         store: ProcessStore,
         amber: AmberStore,
-        handler: ProcessWorkHandler,
+        planner: ProcessPlanner,
+        executor: ProcessActionExecutor,
         worker_id: str,
         lease_for: timedelta = timedelta(minutes=5),
+        observations: ProcessObservationStore | None = None,
     ) -> None:
         self.database = database
         self.store = store
         self.amber = amber
-        self.handler = handler
+        self.planner = planner
+        self.executor = executor
+        self.observations = observations or ProcessObservationStore(store)
+        if self.observations.store is not store:
+            raise ValueError("coordinator observation boundary must use its process store")
         self.worker_id = worker_id
         self.lease_for = lease_for
 
@@ -122,11 +135,19 @@ class ProcessCoordinator:
                     worker_id=self.worker_id,
                     lease_for=self.lease_for,
                 )
-            if claimed is None:
-                break
-            proposal = self.handler.propose(claimed)
-            now = datetime.now(UTC)
+                if claimed is None:
+                    break
+                # A failed projection must roll back the newly acquired claim too.
+                observed = await self.observations.observe_claim(
+                    session,
+                    rollout_id=claimed.rollout.rollout_id,
+                    lease_token=claimed.lease_token,
+                    worker_id=self.worker_id,
+                    now=datetime.now(UTC),
+                )
             try:
+                proposal = self.planner.propose(observed.observation)
+                now = datetime.now(UTC)
                 async with self.database.transaction() as session:
                     execution_row = await session.get(
                         ProcessExecutionRow, claimed.rollout.execution_digest
@@ -171,6 +192,18 @@ class ProcessCoordinator:
                         active_workers=active_workers,
                         decision_id=f"amber-decision-{uuid4()}",
                     )
+                # Keep the exact admission or denial even if later observation
+                # binding fails. An unbound decision never reaches this executor.
+                async with self.database.transaction() as session:
+                    await self.observations.bind_decision(
+                        session,
+                        observation_id=observed.observation_id,
+                        decision_id=decision.decision_id,
+                        rollout_id=claimed.rollout.rollout_id,
+                        lease_token=claimed.lease_token,
+                        worker_id=self.worker_id,
+                        now=datetime.now(UTC),
+                    )
                     if decision.disposition != AmberAdmissionDisposition.ADMITTED:
                         target = (
                             RolloutStatus.QUARANTINED
@@ -209,8 +242,17 @@ class ProcessCoordinator:
                     current_expiry = rollout_row.lease_expires_at
                     if current_expiry is None or _as_utc(current_expiry) < reserved_until:
                         rollout_row.lease_expires_at = reserved_until
+                    # Rebuild from retained bytes, not from the planner's mutable nested values.
+                    observation = await self.observations.read(
+                        session,
+                        observation_id=observed.observation_id,
+                        rollout_id=claimed.rollout.rollout_id,
+                        lease_token=claimed.lease_token,
+                        worker_id=self.worker_id,
+                        now=datetime.now(UTC),
+                    )
                 async with asyncio.timeout(float(proposal.incremental_usage.wall_time_seconds)):
-                    result = await self.handler.execute(claimed, proposal, decision)
+                    result = await self.executor.execute(claimed, proposal, decision, observation)
                 _validate_result_usage(claimed, proposal, result)
                 async with self.database.transaction() as session:
                     await self.store.append_event(

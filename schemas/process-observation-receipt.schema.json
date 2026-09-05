@@ -1,0 +1,169 @@
+{
+  "$defs": {
+    "ProcessObservationPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "content_policy_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Policy Digest",
+          "type": "string"
+        },
+        "maximum_bytes": {
+          "default": 1100000,
+          "exclusiveMinimum": 0,
+          "title": "Maximum Bytes",
+          "type": "integer"
+        },
+        "observation_schema_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Observation Schema Digest",
+          "type": "string"
+        },
+        "policy_id": {
+          "minLength": 1,
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "use": {
+          "const": "worker_observation",
+          "default": "worker_observation",
+          "title": "Use",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "version",
+        "observation_schema_digest",
+        "content_policy_digest"
+      ],
+      "title": "ProcessObservationPolicy",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-observation-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Privileged linkage and exact public bytes; never serialize this into a prompt.",
+  "properties": {
+    "authorization_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Digest",
+      "type": "string"
+    },
+    "authorization_sequence": {
+      "minimum": 0,
+      "title": "Authorization Sequence",
+      "type": "integer"
+    },
+    "content_receipt_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Receipt Digest",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Execution Digest",
+      "type": "string"
+    },
+    "lease_token_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Lease Token Digest",
+      "type": "string"
+    },
+    "observation_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Observation Digest",
+      "type": "string"
+    },
+    "observation_id": {
+      "minLength": 1,
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "observation_json": {
+      "minLength": 1,
+      "title": "Observation Json",
+      "type": "string"
+    },
+    "policy": {
+      "$ref": "#/$defs/ProcessObservationPolicy"
+    },
+    "policy_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Policy Digest",
+      "type": "string"
+    },
+    "rights_digests": {
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Rights Digests",
+      "type": "array"
+    },
+    "rollout_id": {
+      "minLength": 1,
+      "title": "Rollout Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "State Digest",
+      "type": "string"
+    },
+    "state_id": {
+      "minLength": 1,
+      "title": "State Id",
+      "type": "string"
+    },
+    "worker_id": {
+      "minLength": 1,
+      "title": "Worker Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "observation_id",
+    "rollout_id",
+    "state_id",
+    "state_digest",
+    "execution_digest",
+    "content_receipt_digest",
+    "worker_id",
+    "lease_token_digest",
+    "authorization_digest",
+    "authorization_sequence",
+    "rights_digests",
+    "policy",
+    "policy_digest",
+    "observation_json",
+    "observation_digest",
+    "created_at"
+  ],
+  "title": "ProcessObservationReceipt",
+  "type": "object"
+}

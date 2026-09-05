@@ -104,10 +104,14 @@ padawan --json pprl rollout create \
   --initial-state-file initial-state.json
 ```
 
-A concrete scientific or mathematical environment injects a `ProcessWorkHandler` into
-`PPRLApplication.coordinator`. Proposals must be side-effect-free. Amber stores the complete action
-request and admits it before execution; denied or review-required actions never reach the handler.
-Model-backed handlers use `ProcessGenerationExecutor`, which additionally requires the current
+A concrete scientific or mathematical environment injects a `ProcessPlanner` and a trusted
+`ProcessActionExecutor` using `PPRLApplication.coordinator(planner=..., executor=...)`. The planner
+receives only a detached `ProcessWorkerObservation`; its canonical bytes and private source/scope
+receipt are retained before planning. Proposals must be side-effect-free. Amber stores the complete
+request and decision; the broker then binds it to the observation. Denied, review-required, or
+unbound actions never reach the executor. The executor's full broker arguments are privileged and
+must not be forwarded to workers. See `pprl-worker-observation-boundary.md` for scope and limits.
+Model-backed executors use `ProcessGenerationExecutor`, which additionally requires the current
 unexpired lease and that exact admitted decision. It checks the bound serving identity, protocol,
 reported token use, and artifact-byte reservation. Provider-hosted state and tool execution are
 disabled; tools cross separately admitted typed actions. Hosted and self-hosted models use the same

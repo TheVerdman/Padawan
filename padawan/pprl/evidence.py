@@ -172,13 +172,16 @@ class ProcessEvidenceStore:
         *,
         reference: ProcessArtifactRef,
         execution_digest: str,
-        owner_type: Literal["process_state", "process_event"],
+        owner_type: Literal["process_state", "process_event", "process_observation"],
         owner_id: str,
         now: datetime,
     ) -> None:
         """Broker-only ownership; do not expose the resolved dependencies to workers."""
-        if owner_type not in {"process_state", "process_event"} or not owner_id.strip():
-            raise ValueError("process evidence requires a concrete state or event owner")
+        if (
+            owner_type not in {"process_state", "process_event", "process_observation"}
+            or not owner_id.strip()
+        ):
+            raise ValueError("process evidence requires a concrete process record owner")
         async with session.begin_nested():
             receipt, candidate = await self._resolve(
                 session,
@@ -201,7 +204,7 @@ class ProcessEvidenceStore:
         *,
         references: tuple[ProcessArtifactRef, ...],
         execution_digest: str,
-        owner_type: Literal["process_state", "process_event"],
+        owner_type: Literal["process_state", "process_event", "process_observation"],
         owner_id: str,
         now: datetime,
     ) -> None:

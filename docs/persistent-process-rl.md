@@ -56,7 +56,13 @@ admission failure rolls back the whole fork. Claims refuse legacy or unretained 
 privileged replay preserves their historical representation. See `pprl-reference-ingress-boundary.md`
 for scope and SQLite rollback validation. `pprl-content-admission.md` describes the subsequent closed
 content shapes, extension registry, admitted memory/evidence links, and policy receipts. Narrow
-worker/training projections and semantic provenance remain unfinished.
+training projections and semantic provenance remain unfinished. `pprl-worker-observation-boundary.md`
+describes the allowlisted public planner DTO, exact canonical observation receipts, independent
+retention, scope/rights validation, and admitted/denied proposal linkage. The planner receives a
+detached observation; the effect executor is a separately configured trusted broker adapter.
+Unbound decisions do not execute through the coordinator, and binding failure preserves the original
+Amber decision. These receipts do not yet bind actual provider prompts, authenticated workers, action
+masks, or executable replacement hydration.
 
 ## Distributions and evidence
 
@@ -107,7 +113,8 @@ increase horizon, worker dynamism, compute, and target breadth without replacing
 `padawan pprl` registers distributions, programs, Amber envelopes, exact executions, rollouts,
 outcomes, and eligibility decisions, and exposes authorization history plus deterministic rollout
 inspection/replay. It intentionally has no generic `execute` command. Concrete scientific and
-mathematical environments inject typed handlers into the PPRL composition root, which preserves the
+mathematical environments inject separate typed planners and trusted executors into the PPRL
+composition root, which preserves the
 full declared context, horizon, workers, and tools inside Amber's boundary.
 
 Amber is the authorization and evidence plane; it does not by itself instantiate or attest an OS,

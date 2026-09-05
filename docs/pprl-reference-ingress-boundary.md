@@ -53,8 +53,9 @@ evidence transfer across executions remains a separate policy requirement.
 The broker, review configuration, database, and owned backend remain trusted. These are control-plane
 interfaces, not authenticated worker endpoints or an attested sandbox. Privileged inspection and
 ownership methods must not be handed to workers. State/event shapes, extensions, and memory/evidence
-strings now have structural admission and receipts, but still require narrow worker/training
-projections. Neither boundary makes full coordinator inputs, exports, or training products worker-safe,
+strings now have structural admission and receipts. The subsequent worker projection is described in
+`pprl-worker-observation-boundary.md`; training projections remain unfinished. None of these boundaries
+makes full broker inputs, exports, or training products worker-safe,
 proves semantic redaction, or excludes encoded communication channels.
 
 Concurrent GC using a stale externally collected reference set remains unresolved. A savepoint and

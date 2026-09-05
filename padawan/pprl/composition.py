@@ -9,7 +9,7 @@ from padawan.artifacts.store import ArtifactBackend, ArtifactCatalog
 from padawan.config.settings import Settings
 from padawan.governance.amber_store import AmberStore
 from padawan.models.database import Database
-from padawan.pprl.coordinator import ProcessCoordinator, ProcessWorkHandler
+from padawan.pprl.coordinator import ProcessActionExecutor, ProcessCoordinator, ProcessPlanner
 from padawan.pprl.distributions import ProcessDistributionRegistry
 from padawan.pprl.store import ProcessStore
 from padawan.training.compiler import TrainingCompiler
@@ -37,7 +37,8 @@ class PPRLApplication:
     def coordinator(
         self,
         *,
-        handler: ProcessWorkHandler,
+        planner: ProcessPlanner,
+        executor: ProcessActionExecutor,
         worker_id: str | None = None,
         lease_for: timedelta | None = None,
     ) -> ProcessCoordinator:
@@ -45,7 +46,8 @@ class PPRLApplication:
             database=self.database,
             store=self.processes,
             amber=self.amber,
-            handler=handler,
+            planner=planner,
+            executor=executor,
             worker_id=worker_id or self.default_worker_id,
             lease_for=lease_for or self.default_lease_for,
         )

@@ -298,14 +298,101 @@ No runtime identity or semantic-redaction attestation follows from this structur
   channels. Runtime/code identity attestation and matched-policy experimental interpretation remain
   later gates. Rollback disables consumers and preserves history/receipts instead of adding approval.
 
+Checkpoint 3, worker observation portion, 2026-09-05:
+
+Previous goal turn: verified progress, ending at `096e8af` with a clean worktree and 390 passing
+offline tests. The exact 24-file staged credential scan had no findings.
+
+The bounded slice implements an explicit worker-observation contract and broker service. Project only the
+allowlisted public state fields; keep state/event lineage, lease credentials, authorization details,
+content receipts, and forensic ownership in a separate privileged receipt. Retain the exact canonical
+UTF-8 bytes and digest delivered to the planner, bound to the source state, content/projection policies,
+declared lease owner, current Amber sequence, execution, and research/retention rights. Revalidate
+current scope and retention before delivery. Bind proposal admission/denial to its observation without
+changing historical Amber request hashes. Split planner input from trusted effect execution in the
+coordinator; a Python protocol is not an execution sandbox.
+
+Acceptance: deterministic public bytes across fresh workers, exact receipt reconstruction, no private
+headers or forensic identifiers in planner input, stale/wrong-owner/paused/expired scope rejection,
+unknown legacy/receipt/policy rejection, independent observation ownership, caught-error rollback,
+immutable/idempotent delivery and decision bindings, and planner mutations that cannot alter broker
+state or the retained observation. Preserve negative admission evidence. Record synthetic fixtures,
+schema/source/receipt identities, exact checks, failure cases, and limitations. Failure returns no
+observation and leaves authority/head/ownership intact. Rollback disables consumers, preserving prior
+records and receipts rather than restoring full-state prompts.
+
+Threat assumptions: trusted broker, database, backend, schema configuration, and adapter composition;
+malformed input, stale workers, and forged records/references are in scope. Non-goals: authenticated
+runtime identity, a complete action mask, actual prompt/provider-request binding, scheduler/worker
+launch, scientific proof of 100% replacement continuity, training permission, role-specific access
+policies, sandbox attestation, or coordinated GC. These remain required later work, not exclusions
+from the full goal. No real model test is needed for this slice.
+
+- `ProcessWorkerObservation` explicitly projects the eleven approved state fields; full broker
+  state, lease credentials, admission records, and forensic source identifiers stay in the privileged
+  plane. Five generated contracts, two immutable tables, and migration `b7f418d6a0c5` retain the
+  canonical observation bytes, policy/source/rights/lease-owner/Amber context, and proposal bindings.
+  There is no migration backfill or implicit admission of legacy records.
+- `ProcessObservationStore` revalidates active scope, exact source/content admission and policy,
+  rights, and independent observation ownership on delivery. Identical retries are idempotent;
+  fresh worker/lease receipts can carry identical public bytes. Planner mutation cannot change
+  retained bytes, source state, or the trusted executor's fresh observation.
+- The coordinator and application composition now take separate planner and trusted executor
+  interfaces. Initial observation failure rolls back the claim. Planning failure retains the
+  observation and releases the lease. Review found that binding failure could otherwise erase
+  Amber's decision in the same transaction: admission/denial now commits before binding, and an
+  unbound decision cannot reach this executor. Both dispositions have failure-injection coverage.
+- Initial coordinator/migration selection: **4 passed in 2.52 seconds**. The first new observation
+  test run had **35 failed in 4.60 seconds** because its helper incorrectly expected lease owner/
+  expiry on `ProcessRolloutRecord` and used an invalid event kind; these were fixture errors. After
+  correction, **34 passed, 1 failed in 4.65 seconds** exposed one remaining wrong fixture owner.
+  Correcting that and adding coordinator regressions gave **42 passed in 5.20 seconds**. A final
+  post-receipt retention-failure case is included in the full sweep below.
+- Full offline command: `PYTHONPATH=. .venv/bin/pytest -q
+  -m 'not postgres and not live and not lean and not gcs' --tb=short`.
+  Result: **431 passed, 6 deselected in 33.52 seconds**. Ruff passed; formatting checked 306 files;
+  all 137 schemas match; mypy passed for 163 source files; `git diff --check` passed. Disposable
+  migration schema matching and all-revision upgrade/downgrade are included. PostgreSQL, live,
+  Lean, and real GCS validation remain excluded. No real inference, cloud use, sibling source
+  edit, production migration, or external publication was used.
+- `pprl-worker-observation-boundary.md` retains the threat assumptions, read/write paths, public
+  versus privileged fields, failure behavior, acceptance evidence, and rollback. Canonical handoff
+  and operations instructions now reflect the planner/executor split. Observation receipts are not
+  actual provider-prompt/loaded-model attestation, role-specific action masks, live hydration,
+  complete replacement/recovery evidence, or permission to train.
+- The 24-file changed/new credential-pattern scan found two unchanged example-value matches in
+  `docs/operations.md`. Both were checked against exact documented placeholders and HEAD; neither
+  is a credential finding. No provider-token/private-key pattern, tracked `.env`/model-weight/key
+  candidate, or new credential was found; `.env` remains ignored. This is a change-scope scan,
+  not a new whole-history audit.
+
 ## Next executable step
 
-Continue checkpoint 3 with narrow worker observations and then checkpoint 4 training/Atlas
-projections. Source state/event records and their content receipts remain broker records, not a
-prompt interface. Preserve privileged historical parsing/digests; legacy records gain no automatic
-worker/training approval. The compiler still serializes complete events into trajectory rows.
-Exact observation receipts, projection use/rights, worker/control metadata separation, and coordinated
-GC remain unfinished. These local foundation changes require no model testing or cloud activation.
+Current goal turn: verified engineering progress; the worker-observation portion of checkpoint 3
+passes the full authorized offline checks. The full goal remains incomplete and active.
+
+Continue stage 1 with checkpoint 4: training/Atlas projection boundaries. Start with the existing
+PPRL training compiler in `padawan/training/pprl.py`, whose trajectory and verifiable products still
+serialize full source state/events/outcomes. Review the complete snapshot, artifact-retention,
+schema-version, source-rights, and eligibility paths before changing them. Separate allowlisted
+learning payloads from privileged lineage/evidence, and preserve historical source/bundle digests.
+No old record, outcome, restricted export flag, or successful compiler run grants worker/training
+admission. Missing classification, content admission, projection-use rights, or required observation
+lineage must exclude new use with a retained reason rather than silently backfill authority.
+
+Define the exact bounded projection policy and versioned formats first. Cover ordinary trajectories,
+verifiable products, fork preferences, nested/outcome/task fields, exclusions, reference resolution,
+independent retention, and rollback with synthetic adversarial cases. Retain original sources,
+projection policy/bytes/digests, rights/use decisions, exclusions, and private ownership separately.
+Fail before publishing a partially valid product; rollback disables consumers while retaining
+historical evidence. Atlas-specific imports/exports need their own traced paths under the same
+boundary, not an assumed generic permission.
+
+Non-goals for this next local slice: a trainer, parameter updates, permission to train, authentic
+behavior-policy attribution, action masks, proof of exact provider inputs, live workers, local model
+stress tests, or cloud activation. Conserved resources, authenticated execution, coordinated GC,
+executable recovery, full replacement, Atlas institutional subjects, and the 10M+ token milestone
+remain required later gates. No additional resource authority is needed for these local foundations.
 
 ## Completion audit
 

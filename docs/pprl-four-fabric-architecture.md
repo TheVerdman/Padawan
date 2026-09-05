@@ -29,8 +29,12 @@ control preserves outer rollback across savepoints. See
 [reference ingress boundary](pprl-reference-ingress-boundary.md). New content also has closed core
 shapes, registered extension schemas, admitted memory/evidence links, literal identifier checks,
 and immutable policy receipts. See [content admission](pprl-content-admission.md) for the structural
-proof boundary. Allowlisted worker hydration, legacy training/Atlas projections, semantic provenance,
-and coordinated GC remain unresolved parts of the information boundary.
+proof boundary. The 2026-09-05 observation portion adds an explicit worker DTO, exact canonical-byte
+receipts, current scope/rights checks, independent retention ownership, and admitted/denied proposal
+bindings. The coordinator now separates planner input from trusted effect execution. See
+[worker observations](pprl-worker-observation-boundary.md). Actual provider-prompt binding, executable
+hydration/recovery, safe legacy training/Atlas projections, semantic provenance, and coordinated GC
+remain unresolved; the offline observation property does not attest a live runtime.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
@@ -92,6 +96,10 @@ The PPRL data model has a real durable substrate:
 - `process_rollouts` stores the leased mutable head and terminal status;
 - `process_states` stores immutable full project-state versions;
 - `process_events` stores append-only transitions from one state to the next;
+- `process_content_admissions` pins the exact structural policy admitting each new state/event;
+- `process_observations` retains canonical public planner input separately from privileged source,
+  lease-owner, policy, rights, and Amber linkage; `process_observation_decisions` joins those receipts
+  to admitted/denied proposals without changing historical Amber request hashes;
 - `process_forks` and `process_fork_children` create paired continuations from an identical state;
 - `process_outcomes` retains typed outcome components and raw evidence authority;
 - `process_training_eligibility` separately records whether a completed rollout may enter learning;
@@ -111,12 +119,15 @@ in [`padawan/artifacts`](../padawan/artifacts).
    a project instance.
 2. `ProcessStore` registers the exact execution and creates a rollout with an immutable initial
    state.
-3. `ProcessCoordinator` claims one active rollout under a lease and hands the current state to an
-   injected `ProcessWorkHandler`.
-4. `propose` produces a side-effect-free `ProcessActionProposal`.
+3. `ProcessCoordinator` claims one active rollout and issues a current-scoped observation in the
+   same transaction. `ProcessObservationStore` retains its exact public bytes and private receipt.
+4. `ProcessPlanner.propose` receives only a detached `ProcessWorkerObservation` and produces a
+   side-effect-free `ProcessActionProposal`; it does not receive the broker claim or full state.
 5. Amber persists the complete action request and decision against the exact authorization,
    rollout sequence, state digest, role, model, tool, destination, budget, and lease-token digest.
-6. Only an admitted action reaches `execute`.
+6. The broker binds the decision to its observation. Only an admitted, successfully bound action
+   reaches the separately injected trusted `ProcessActionExecutor.execute`. Binding failure preserves
+   the earlier Amber decision and prevents execution.
 7. A model action uses `ProcessGenerationExecutor`, which validates the current lease and decision
    and calls the shared idempotent external-call executor. The request artifact is stored before
    provider I/O and the response artifact after it.
@@ -134,11 +145,12 @@ them; they are not a cross-node fabric.
 - `ProjectStatePayload.memory_refs` is a typed seam, not an implemented governed cross-project
   process-memory service.
 - Artifact references in state do not provide worker-specific capabilities or audited dereferences.
-- The state records what was available to a worker, not which fields or artifacts it actually read.
+- Observation receipts now record the exact canonical state projection supplied to an offline
+  planner. They do not attest the complete model prompt or which artifact bytes a worker read.
 - A running action has no incremental process checkpoint. Work after the last committed event can be
   lost with the worker.
-- PPRL has no hydration compiler that constructs and records the exact allowlisted context given to
-  a replacement worker.
+- PPRL has an offline allowlisted observation service, but no executable replacement lifecycle,
+  provider-request binding, role-specific view/action mask, or attested hydration transport.
 - Local-regret policy is declarative; no live estimator or epsilon-charitable action selector is
   connected to the coordinator.
 
@@ -147,7 +159,9 @@ them; they are not a cross-node fabric.
 The current system can preserve **committed macro-state** through 100 percent worker replacement if
 the replacement process shares the database and artifact backend. It cannot itself detect, launch,
 hydrate, or assign the replacements, preserve uncommitted internal work, or guarantee that a new
-worker received an exact and contamination-safe projection.
+worker received an exact and contamination-safe model prompt. Offline fixtures establish identical
+public observation bytes under fresh worker/lease receipts; they do not establish live replacement
+or recovery of interrupted external work.
 
 ## 2. Communication and coordination fabric
 
@@ -156,7 +170,8 @@ worker received an exact and contamination-safe projection.
 PPRL has asynchronous coordination through committed state:
 
 - a worker claims a rollout lease;
-- it receives the current `ProjectStateVersion`;
+- its planner receives a current-scoped `ProcessWorkerObservation`; the full `ProjectStateVersion`
+  stays in the trusted broker/executor;
 - its admitted result advances canonical state; and
 - future workers can read plans, claims, evidence, dependencies, assignments, risks, memory
   references, and artifact references stored there.

@@ -249,6 +249,59 @@ class ProcessContentAdmissionRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ProcessObservationRow(Base):
+    __tablename__ = "process_observations"
+    __table_args__ = (
+        UniqueConstraint(
+            "rollout_id",
+            "state_id",
+            "worker_id",
+            "lease_token_digest",
+            "authorization_sequence",
+            "policy_digest",
+            name="uq_process_observation_context",
+        ),
+    )
+
+    observation_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False
+    )
+    state_id: Mapped[str] = mapped_column(
+        ForeignKey("process_states.state_id", ondelete="RESTRICT"), nullable=False
+    )
+    execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_executions.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    content_receipt_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_content_admissions.record_digest", ondelete="RESTRICT"), nullable=False
+    )
+    worker_id: Mapped[str] = mapped_column(String(192), nullable=False)
+    lease_token_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    authorization_sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    policy_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    observation_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessObservationDecisionRow(Base):
+    __tablename__ = "process_observation_decisions"
+
+    decision_id: Mapped[str] = mapped_column(
+        ForeignKey("amber_admission_decisions.decision_id", ondelete="RESTRICT"), primary_key=True
+    )
+    observation_id: Mapped[str] = mapped_column(
+        ForeignKey("process_observations.observation_id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class ArtifactReferenceRow(Base):
     __tablename__ = "artifact_references"
     __table_args__ = (
@@ -2732,6 +2785,8 @@ for _immutable_type in (
     ArtifactInformationRow,
     ProcessEvidenceAdmissionRow,
     ProcessContentAdmissionRow,
+    ProcessObservationRow,
+    ProcessObservationDecisionRow,
     ProvenanceEventRow,
     TrainingSourceDocumentRow,
     TrainingSourceDecisionRow,
