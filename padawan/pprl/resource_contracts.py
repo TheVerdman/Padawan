@@ -163,7 +163,14 @@ class ProcessResourceEvent(StrictRecord):
     open_reservations: ResourceInteger
     stopped: bool
     source_digests: tuple[Sha256, ...] = ()
-    basis: Literal["grant", "reservation", "committed_ceiling", "provider_reported", "reviewed"]
+    basis: Literal[
+        "grant",
+        "reservation",
+        "committed_ceiling",
+        "provider_reported",
+        "container_evidence",
+        "reviewed",
+    ]
     actor_id: NonEmpty
     reason: NonEmpty
     created_at: datetime

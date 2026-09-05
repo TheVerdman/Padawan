@@ -79,6 +79,16 @@ permission to deliver output: a retained complete model result can be accounted 
 revocation or caller failure. Unknown effects cannot be retried or refunded through this interface.
 The generic settlement primitive is internal and cannot refund unmetered action allowances.
 
+The subsequent CPU container checkpoint adds `container_evidence` settlement through
+`ProcessContainerStore.reconcile`. It reconstructs owned intent, exact input, runtime/create/terminal/
+cleanup captures and the final receipt before charging the full reservation plus any retained-byte
+overage. It never refunds CPU/tool allowances based on elapsed time. Truncation, incomplete capture
+or unknown removal keeps the reservation unresolved. A complete terminal receipt can settle after
+pause or cancellation; that accounting grants no authority to deliver output or commit an event.
+`ProcessStore.append_event` rechecks independent container evidence and its ownership even after an
+earlier settlement. A generic event cannot release an unresolved container hold. These paths are
+explicit broker APIs, not a new automatic CLI execution path. See `pprl-container-execution-boundary.md`.
+
 ## Transactions, evidence, tests and rollback
 
 Lock order is rollout, Amber authorization head, resource account, reservation head. Funding and

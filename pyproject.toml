@@ -61,6 +61,7 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
   "postgres: requires PADAWAN_TEST_POSTGRES_URL",
+  "docker: opt-in CPU fixtures requiring PADAWAN_TEST_CONTAINER_PROFILE; no model execution",
   "live: requires a real model endpoint and credentials",
   "gcs: requires PADAWAN_TEST_GCS_BUCKET and Google Application Default Credentials",
   "lean: requires the workspace-local pinned Lean and Mathlib toolchain",

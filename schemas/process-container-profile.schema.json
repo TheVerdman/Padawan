@@ -1,0 +1,445 @@
+{
+  "$defs": {
+    "ContainerRuntimeIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "architecture": {
+          "minLength": 1,
+          "title": "Architecture",
+          "type": "string"
+        },
+        "engine_id": {
+          "minLength": 1,
+          "title": "Engine Id",
+          "type": "string"
+        },
+        "kernel_version": {
+          "minLength": 1,
+          "title": "Kernel Version",
+          "type": "string"
+        },
+        "operating_system": {
+          "const": "linux",
+          "default": "linux",
+          "title": "Operating System",
+          "type": "string"
+        },
+        "security_options": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Security Options",
+          "type": "array"
+        },
+        "server_version": {
+          "minLength": 1,
+          "title": "Server Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "engine_id",
+        "server_version",
+        "kernel_version",
+        "architecture",
+        "security_options"
+      ],
+      "title": "ContainerRuntimeIdentity",
+      "type": "object"
+    },
+    "DistributionScope": {
+      "enum": [
+        "internal_only",
+        "agreement_restricted",
+        "redistributable"
+      ],
+      "title": "DistributionScope",
+      "type": "string"
+    },
+    "RightsBasis": {
+      "enum": [
+        "project_authored",
+        "public_domain",
+        "open_license",
+        "contract_authorized",
+        "fair_use_reviewed",
+        "provider_terms",
+        "unknown"
+      ],
+      "title": "RightsBasis",
+      "type": "string"
+    },
+    "RightsReviewStatus": {
+      "enum": [
+        "confirmed",
+        "review_required",
+        "prohibited"
+      ],
+      "title": "RightsReviewStatus",
+      "type": "string"
+    },
+    "RightsUse": {
+      "enum": [
+        "evidence_retention",
+        "internal_research",
+        "evaluation",
+        "continued_pretraining",
+        "sft",
+        "preference",
+        "rlvr",
+        "process",
+        "redistribution"
+      ],
+      "title": "RightsUse",
+      "type": "string"
+    },
+    "SourceRights": {
+      "additionalProperties": false,
+      "description": "Versioned use authority; this is governance evidence, not a legal conclusion.",
+      "properties": {
+        "attribution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attribution"
+        },
+        "basis": {
+          "$ref": "#/$defs/RightsBasis"
+        },
+        "basis_detail": {
+          "minLength": 1,
+          "title": "Basis Detail",
+          "type": "string"
+        },
+        "distribution_scope": {
+          "$ref": "#/$defs/DistributionScope"
+        },
+        "license_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License Id"
+        },
+        "permitted_uses": {
+          "items": {
+            "$ref": "#/$defs/RightsUse"
+          },
+          "title": "Permitted Uses",
+          "type": "array"
+        },
+        "restrictions": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Restrictions",
+          "type": "array"
+        },
+        "review_status": {
+          "$ref": "#/$defs/RightsReviewStatus"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "reviewed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed By"
+        },
+        "rights_id": {
+          "minLength": 1,
+          "title": "Rights Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "terms_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Terms Digest"
+        },
+        "terms_uri": {
+          "anyOf": [
+            {
+              "pattern": "^https://[^\\s]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Terms Uri"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rights_id",
+        "version",
+        "basis",
+        "basis_detail",
+        "permitted_uses",
+        "distribution_scope",
+        "review_status"
+      ],
+      "title": "SourceRights",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-container-profile.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "argv": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Argv",
+      "type": "array"
+    },
+    "command_rights": {
+      "$ref": "#/$defs/SourceRights"
+    },
+    "cpu_millicores": {
+      "maximum": 64000,
+      "minimum": 1,
+      "title": "Cpu Millicores",
+      "type": "integer"
+    },
+    "docker_binary": {
+      "minLength": 1,
+      "title": "Docker Binary",
+      "type": "string"
+    },
+    "docker_binary_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Docker Binary Digest",
+      "type": "string"
+    },
+    "filesystem_scopes": {
+      "default": [
+        "/work"
+      ],
+      "items": {
+        "const": "/work",
+        "type": "string"
+      },
+      "title": "Filesystem Scopes",
+      "type": "array"
+    },
+    "image_architecture": {
+      "minLength": 1,
+      "title": "Image Architecture",
+      "type": "string"
+    },
+    "image_id": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Image Id",
+      "type": "string"
+    },
+    "input_projection": {
+      "const": "canonical_worker_observation",
+      "default": "canonical_worker_observation",
+      "title": "Input Projection",
+      "type": "string"
+    },
+    "maximum_control_bytes": {
+      "default": 262144,
+      "maximum": 16000000,
+      "minimum": 16384,
+      "title": "Maximum Control Bytes",
+      "type": "integer"
+    },
+    "maximum_input_bytes": {
+      "maximum": 7000000,
+      "minimum": 1,
+      "title": "Maximum Input Bytes",
+      "type": "integer"
+    },
+    "maximum_output_bytes": {
+      "maximum": 16000000,
+      "minimum": 1,
+      "title": "Maximum Output Bytes",
+      "type": "integer"
+    },
+    "maximum_wall_ms": {
+      "maximum": 86400000,
+      "minimum": 1,
+      "title": "Maximum Wall Ms",
+      "type": "integer"
+    },
+    "memory_bytes": {
+      "maximum": 68719476736,
+      "minimum": 16777216,
+      "title": "Memory Bytes",
+      "type": "integer"
+    },
+    "network": {
+      "const": "none",
+      "default": "none",
+      "title": "Network",
+      "type": "string"
+    },
+    "pids_limit": {
+      "maximum": 4096,
+      "minimum": 4,
+      "title": "Pids Limit",
+      "type": "integer"
+    },
+    "profile_id": {
+      "minLength": 1,
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "python_executable": {
+      "minLength": 1,
+      "title": "Python Executable",
+      "type": "string"
+    },
+    "reviewed_at": {
+      "format": "date-time",
+      "title": "Reviewed At",
+      "type": "string"
+    },
+    "reviewed_by": {
+      "minLength": 1,
+      "title": "Reviewed By",
+      "type": "string"
+    },
+    "role_id": {
+      "minLength": 1,
+      "title": "Role Id",
+      "type": "string"
+    },
+    "runtime": {
+      "$ref": "#/$defs/ContainerRuntimeIdentity"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "socket_uri": {
+      "minLength": 1,
+      "title": "Socket Uri",
+      "type": "string"
+    },
+    "supervisor_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Supervisor Digest",
+      "type": "string"
+    },
+    "tmpfs_bytes": {
+      "maximum": 1073741824,
+      "minimum": 4096,
+      "title": "Tmpfs Bytes",
+      "type": "integer"
+    },
+    "tool_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Tool Digest",
+      "type": "string"
+    },
+    "tool_id": {
+      "minLength": 1,
+      "title": "Tool Id",
+      "type": "string"
+    },
+    "tool_operation": {
+      "minLength": 1,
+      "title": "Tool Operation",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    },
+    "worker_model_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Worker Model Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "profile_id",
+    "version",
+    "role_id",
+    "worker_model_digest",
+    "tool_id",
+    "tool_digest",
+    "tool_operation",
+    "docker_binary",
+    "docker_binary_digest",
+    "socket_uri",
+    "runtime",
+    "image_id",
+    "image_architecture",
+    "python_executable",
+    "supervisor_digest",
+    "argv",
+    "cpu_millicores",
+    "memory_bytes",
+    "pids_limit",
+    "tmpfs_bytes",
+    "maximum_wall_ms",
+    "maximum_input_bytes",
+    "maximum_output_bytes",
+    "reviewed_by",
+    "reviewed_at",
+    "command_rights"
+  ],
+  "title": "ProcessContainerProfile",
+  "type": "object"
+}

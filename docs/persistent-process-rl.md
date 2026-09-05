@@ -72,8 +72,12 @@ Unbound decisions do not execute through the coordinator, and binding failure pr
 Amber decision. `pprl-generation-workload-boundary.md` adds a private exact-input receipt joining the
 observation to fixed reviewed instructions/sampling/schema, configured model/transport and prepared
 body/destination. Current admission is rechecked before dispatch and output admission. Completed
-replay preserves its original time and ownership. Authenticated workers, loaded-model identity,
-action masks, independently enforced execution and executable replacement hydration remain absent.
+replay preserves its original time and ownership. The explicit local CPU tool path described in
+`pprl-container-execution-boundary.md` additionally binds a reviewed Docker profile, exact workload,
+resource reservation and independent broker capture, with an unprivileged command and a separate
+container-local watchdog. Local fixture tests establish bounded enforcement inside the trusted
+Docker/host/kernel perimeter. Authenticated model workers, loaded-model attestation, action masks,
+model-serving containment and executable replacement hydration remain absent.
 
 ## Distributions and evidence
 
@@ -147,9 +151,11 @@ full declared context, horizon, workers, and tools inside Amber's boundary.
 
 Amber is the authorization and evidence plane; it does not by itself instantiate or attest an OS,
 container, VM, or accelerator sandbox. The repository therefore does not activate any real project
-environment by default. A later environment adapter must enforce and attest the envelope's pinned
-sandbox/tool identities, filesystem scopes, network policy, and resource ceilings before it can be
-treated as an execution boundary.
+environment by default. `PPRLApplication.container_executor(profile)` explicitly constructs the
+bounded CPU tool adapter; construction launches nothing. It observes and checks its pinned client,
+daemon, image, command and controls, and does not provide cryptographic attestation. Other environment
+adapters still need their own identity, enforcement and evidence contracts before execution. A
+container's stdout/trace remains forensic; domain result admission is a separate reviewed boundary.
 
 Padawan compiles restricted offline products and can register an externally trained descendant
 checkpoint against their bundle digest. It does not yet bundle a trainer or a parameter-update

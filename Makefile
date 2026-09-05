@@ -20,7 +20,7 @@ schemas:
 	PYTHONPATH=. .venv/bin/python scripts/generate_schemas.py --check
 
 test:
-	PYTHONPATH=. .venv/bin/pytest -m "not postgres and not live and not lean"
+	PYTHONPATH=. .venv/bin/pytest -m "not postgres and not live and not lean and not docker"
 
 test-lean:
 	PYTHONPATH=. .venv/bin/pytest -m lean

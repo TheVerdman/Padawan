@@ -25,6 +25,7 @@ from padawan.models.tables import (
     AmberAuthorizationRow,
     ArtifactRow,
     ExternalCallRow,
+    ProcessContainerWorkloadRow,
     ProcessEventRow,
     ProcessExecutionRow,
     ProcessRolloutRow,
@@ -222,6 +223,15 @@ class ProcessGenerationExecutor:
             )
             if consumed_event is not None:
                 raise PermissionError("process generation Amber decision is already consumed")
+            if (
+                await session.scalar(
+                    select(ProcessContainerWorkloadRow.invocation_id).where(
+                        ProcessContainerWorkloadRow.decision_id == amber_decision_id
+                    )
+                )
+                is not None
+            ):
+                raise PermissionError("process generation decision already owns a container effect")
             if (
                 decision.disposition != AmberAdmissionDisposition.ADMITTED
                 or decision.rollout_id != rollout_id

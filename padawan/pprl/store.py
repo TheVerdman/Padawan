@@ -4,7 +4,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import wraps
-from typing import Any, Concatenate, Literal
+from typing import TYPE_CHECKING, Any, Concatenate, Literal
 from uuid import uuid4
 
 from sqlalchemy import or_, select, update
@@ -31,6 +31,7 @@ from padawan.models.tables import (
     ArtifactInformationRow,
     ArtifactReferenceRow,
     ArtifactRow,
+    ProcessContainerWorkloadRow,
     ProcessDistributionRow,
     ProcessEventRow,
     ProcessExecutionRow,
@@ -73,6 +74,9 @@ from padawan.pprl.contracts import (
 from padawan.pprl.evidence import ProcessEvidenceStore
 from padawan.pprl.evidence_contracts import ProcessEvidenceUse
 from padawan.pprl.generation_contracts import generation_workload_from_row
+
+if TYPE_CHECKING:
+    from padawan.pprl.containers import ProcessContainerStore
 
 
 class ProcessInvariantError(RuntimeError):
@@ -126,10 +130,17 @@ class ProcessStore:
         *,
         evidence: ProcessEvidenceStore | None = None,
         content: ProcessContentBoundary | None = None,
+        container_evidence: ProcessContainerStore | None = None,
     ) -> None:
         self.amber = amber or AmberStore()
         self.evidence = evidence
         self.content = content or ProcessContentBoundary()
+        self.container_evidence = container_evidence
+        if (
+            container_evidence is not None
+            and container_evidence.resources is not self.amber.resources
+        ):
+            raise ValueError("process and container accounting must share their resource authority")
 
     async def register_execution(
         self,
@@ -732,6 +743,19 @@ class ProcessStore:
         await self.content.admit_event(
             session, event, execution_digest=row.execution_digest, now=timestamp
         )
+        container_id = await session.scalar(
+            select(ProcessContainerWorkloadRow.invocation_id).where(
+                ProcessContainerWorkloadRow.decision_id == amber_decision_id
+            )
+        )
+        if container_id is not None:
+            if self.container_evidence is None:
+                raise PermissionError(
+                    "container event commit requires its independent evidence boundary"
+                )
+            await self.container_evidence.reconcile(
+                session, invocation_id=container_id, now=timestamp
+            )
         await self.amber.resources.settle_event(
             session, decision_id=amber_decision_id, event_digest=event.event_digest, now=timestamp
         )

@@ -25,6 +25,8 @@ from padawan.models.hashing import canonical_json_bytes, sha256_digest
 from padawan.models.tables import (
     ArtifactInformationRow,
     ArtifactRow,
+    ProcessContainerReceiptRow,
+    ProcessContainerWorkloadRow,
     ProcessContentAdmissionRow,
     ProcessEventRow,
     ProcessResourceEventRow,
@@ -484,6 +486,8 @@ class ProcessContentBoundary:
     ) -> None:
         digests: set[str] = set()
         for value in strings:
+            if re.search(r"(?:process-container-|padawan-cpu-)[0-9a-f]{32}", value):
+                raise ValueError("process content references private container execution")
             links = set(re.findall(r"process-artifact-[0-9a-f]{32}", value))
             if not links.issubset(allowed):
                 raise ValueError("undeclared process link in content")
@@ -524,6 +528,8 @@ class ProcessContentBoundary:
             if raw is not None or classification is not None:
                 raise ValueError("process content references forensic or unclassified storage")
             for table in (
+                ProcessContainerWorkloadRow,
+                ProcessContainerReceiptRow,
                 ProcessResourceGrantRow,
                 ProcessResourceReservationRow,
                 ProcessResourceEventRow,

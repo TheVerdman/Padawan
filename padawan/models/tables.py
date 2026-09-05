@@ -327,6 +327,68 @@ class ProcessGenerationWorkloadRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ProcessContainerWorkloadRow(Base):
+    __tablename__ = "process_container_workloads"
+
+    invocation_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    decision_id: Mapped[str] = mapped_column(
+        String(192),
+        ForeignKey("amber_admission_decisions.decision_id", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+    )
+    rollout_id: Mapped[str] = mapped_column(
+        String(192),
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    observation_id: Mapped[str] = mapped_column(
+        String(192),
+        ForeignKey("process_observations.observation_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    container_name: Mapped[str] = mapped_column(String(192), nullable=False, unique=True)
+    input_artifact_id: Mapped[str] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
+class ProcessContainerHeadRow(Base):
+    __tablename__ = "process_container_heads"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('prepared', 'starting', 'finished', 'unknown')",
+            name="ck_process_container_status",
+        ),
+    )
+
+    invocation_id: Mapped[str] = mapped_column(
+        String(192),
+        ForeignKey("process_container_workloads.invocation_id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+
+
+class ProcessContainerReceiptRow(Base):
+    __tablename__ = "process_container_receipts"
+
+    invocation_id: Mapped[str] = mapped_column(
+        String(192),
+        ForeignKey("process_container_workloads.invocation_id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    evidence_artifact_id: Mapped[str] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
 class ProcessResourceGrantRow(Base):
     __tablename__ = "process_resource_grants"
 
@@ -2916,6 +2978,8 @@ for _immutable_type in (
     ProcessObservationRow,
     ProcessObservationDecisionRow,
     ProcessGenerationWorkloadRow,
+    ProcessContainerWorkloadRow,
+    ProcessContainerReceiptRow,
     ProcessResourceGrantRow,
     ProcessResourceReservationRow,
     ProcessResourceEventRow,

@@ -53,7 +53,7 @@ workload receipts are retained before I/O. Completed-response reuse rechecks ori
 unresolved process effects cannot automatically resend. Mock HTTP tests cover substituted inputs,
 ambient client state, configuration drift, pause and interruption. See
 [generation workload boundary](pprl-generation-workload-boundary.md). Authenticated runtime and
-loaded-model identity, independently enforced containment/capture, independent resource metering,
+loaded-model identity, model-serving containment/capture, independent resource metering,
 executable hydration/recovery, Atlas learning projections, semantic provenance, coordinated GC, and
 parameter-training readiness remain unresolved. These offline properties do not attest a live runtime.
 
@@ -62,6 +62,16 @@ reservations, original-result/rate reconciliation, conservative generic charges 
 holds. Workers, retries and forks share the account; an overage stops new admission. Private funding
 and accounting records remain outside process projections. See [resource boundary](pprl-resource-boundary.md)
 for units, stores, CLI/API paths, SQL concurrency evidence and the distinction from physical metering.
+
+The third stage-2 checkpoint adds an explicit local Linux CPU container tool runner. Before launch,
+it binds the current observation/admission, reviewed client/socket/daemon/image/supervisor/command
+profile and shared resource reservation. It checks effective Docker configuration, runs the command
+unprivileged with private bounded scratch space and no network or host mounts, retains private
+capture and cleanup evidence, and conservatively reconciles complete terminal results. The
+container-local watchdog survives broker loss in disposable fixture tests. See
+[container execution boundary](pprl-container-execution-boundary.md). This is observed local
+enforcement within a trusted Docker/host/kernel perimeter. It neither authenticates model workers
+nor attests model weights or a general execution sandbox, and it admits no raw tool trace to memory.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
@@ -136,6 +146,9 @@ The PPRL data model has a real durable substrate:
 - `process_resource_grants`, `process_resource_accounts`, `process_resource_reservations`,
   `process_resource_reservation_heads` and `process_resource_events` govern shared declared capacity
   and retained accounting; they are privileged control records, not worker hydration;
+- `process_container_workloads`, `process_container_heads` and `process_container_receipts` retain
+  exact CPU tool intent, dispatch phase and private terminal/capture lineage. Artifact owners for
+  workload, phase capture, result, receipt and accounting independently preserve those sources;
 - Amber authorization, lifecycle, head, and action-decision tables bind each admitted transition to
   exact authority and cumulative budget; and
 - `process_worker_invocations`, `process_generation_workloads`, `external_calls`, and the artifact
@@ -354,13 +367,13 @@ training use. Native source context and private origins remain researcher-only.
 | prompts and model context | exact observation/policy request and prepared body for new PPRL generation | legacy handler-local assembly, runtime tokenization and provider-side transforms |
 | model output and wire I/O | output plus raw provider request/response and available token data | non-streaming PPRL deltas and provider internals not exposed by the adapter |
 | private reasoning | retained when supplied by the runtime | unavailable provider reasoning and any unexposed internal computation |
-| tool calls and observations | optional event kind and handler-defined payload | no standard PPRL sequence, argument/result envelope, or generic tool trace |
+| tool calls and observations | optional event payload; exact private command/stdin and bounded stdout/stderr for the explicit CPU runner | general tool protocol, reviewed domain result admission, syscall trace and other runtimes |
 | state writes | immutable parent/event/successor chain | field-level causal explanation |
 | state and artifact reads | the available state head is known | actual read set, dereference decisions, and influence attribution |
-| environment actions | declared identity, target, destination, and budgets | filesystem, process, syscall, network, secret, package, and actual sandbox actions |
+| environment actions | declared identity/budgets; effective Docker configuration and terminal/removal captures for the CPU runner | full filesystem/syscall/network tracing, independent attestation and model-serving boundaries |
 | rewards | typed rollout-level outcome, evidence, return/rank, and eligibility | automatic per-action or per-invocation causal attribution |
 | peer interaction | none | messages, delegation, influence, and collective causal graph |
-| failures | status, class/message, provider error, operation transitions | stack, stdout/stderr, partial observations, host failure, and in-flight work |
+| failures | status/errors/transitions; bounded CPU output, truncation, cancellation and cleanup failures | complete stacks, model-worker output, host failure and recovery of unknown in-flight effects |
 | infrastructure | adapter telemetry and general operation spans | pod/host/process identity, GPU/kernel metrics, resource samples, and clock-correlated logs |
 
 Ordinary structured logs are emitted to process output; they are not a durable Padawan forensic
@@ -399,6 +412,13 @@ so a completed persisted provider response can be reused after a caller crash in
 duplicating external work. New PPRL generation forbids automatic redispatch of pending, cancelled or
 failed effects and preserves uncertainty. It still lacks an external-effect reconciler; conservative
 denial alone does not establish automatic recovery.
+
+The CPU tool runner additionally retains immutable intent before container creation, refuses any
+second launch for that decision and records inspected exit/removal separately from permission to
+commit a process event. Missing capture or ambiguous cleanup preserves the hold. A fully retained
+receipt can be reconciled after an accounting failure without rerunning the command. Broker-loss
+fixtures establish the container watchdog's stop behavior; this is not a restart reconciler,
+authenticated worker registration, executable assignment or whole-institution replacement.
 
 The separate developmental runtime has:
 

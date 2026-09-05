@@ -129,6 +129,12 @@ from padawan.models.research_contracts import (
     StudyManifest,
     StudyResultRecord,
 )
+from padawan.pprl.container_contracts import (
+    ContainerRuntimeIdentity,
+    ProcessContainerProfile,
+    ProcessContainerReceipt,
+    ProcessContainerWorkload,
+)
 from padawan.pprl.content_contracts import (
     ProcessContentAdmission,
     ProcessContentPolicy,
@@ -243,6 +249,10 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("prepared-generation", PreparedGeneration),
     ("process-generation-policy", ProcessGenerationPolicy),
     ("process-generation-workload", ProcessGenerationWorkload),
+    ("container-runtime-identity", ContainerRuntimeIdentity),
+    ("process-container-profile", ProcessContainerProfile),
+    ("process-container-workload", ProcessContainerWorkload),
+    ("process-container-receipt", ProcessContainerReceipt),
     ("process-resources", ProcessResources),
     ("process-model-rate", ProcessModelRate),
     ("process-resource-grant", ProcessResourceGrant),

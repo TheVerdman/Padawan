@@ -57,7 +57,7 @@ authorization; no new external authority was granted.
 | Requirement | Current state | Evidence needed for completion |
 | --- | --- | --- |
 | Information boundaries and retention | In progress, stage 1 below | Adversarial ingress/read/export/projection tests, authoritative classification, reviewed admission, transactional retention |
-| Containment, identity, causal tracing, budgets | Exact generation-workload binding and authorization-wide funding/reservation/reconciliation implemented offline | Authenticated runtime identity, independent enforcement/capture/metering and external-effect reconciliation |
+| Containment, identity, causal tracing, budgets | Exact generation binding and shared accounting; explicit CPU tool containment with local Docker fixture evidence | Authenticated model workers/loaded-model identity, model-serving containment, complete capture/metering and external-effect recovery |
 | Recovery and replacement | Committed state/leases exist; executable lifecycle absent | Crash/retry/fencing/reconciliation and exact hydration, including 100% roster replacement |
 | Communication, tracking, escalation | Declarative state and roles | Explicit delivery/read authority, causal replay, durable live views, bounded dispatch and escalation |
 | Atlas and mechanistic integration | Worker Atlas and separate runtime laboratories | Institutional subjects; versioned interchange; matched identities; protected forensic evidence and causal controls |
@@ -794,27 +794,101 @@ zero findings**. The exact staged snapshot must also pass before committing; its
 and redacted `staged.json` report are retained in that directory. No remote synchronization is part
 of this local checkpoint.
 
+## Stage 2: bound local CPU container checkpoint
+
+Started from clean `7f64f9b62ac14111fa922683361f269636b7031e`. The goal objective, root instructions
+and required documents were read in order. The pre-implementation audit found that the coordinator
+still invoked trusted in-process executors and worker identity was a declaration. The selected
+scope, invariants, evidence, threat model and rollback were written in
+`pprl-container-execution-boundary.md` before implementing the local CPU tool path. There was no
+delegation, model inference, training, cloud/GPU use, sibling edit, production migration or publication.
+
+The new runner binds original observation, admitted role/model/tool, reviewed client/socket/daemon/
+image/supervisor/command, funding and deadline before launch. Durable private intent precedes create;
+resource dispatch precedes start. The command runs as UID/GID 65534 with no supplementary groups
+or effective capabilities inside a fresh, bounded, network-disabled container. A container-local
+PID-1 supervisor retains only set-UID/set-GID capabilities and independently terminates descendants
+on deadline. Raw input, configuration, lifecycle, output, failure and cleanup records remain
+forensic. The broker returns a private receipt; no automatic domain result, process-memory or
+training admission was introduced.
+
+Three tables retain immutable workloads, mutable phases and immutable receipts. Original sources
+have separate workload/capture/result/receipt/accounting ownership. A fully retained terminal
+receipt supports conservative accounting, including after pause/cancellation or an accounting-only
+failure. Missing capture, truncation, unknown cleanup or receipt persistence failure preserves the
+hold; the decision cannot launch again. Event commit revalidates the independent source pins.
+PostgreSQL contenders execute once and reconciliation retries charge once.
+
+Adversarial observations and corrections:
+
+- The first real smoke probe failed closed before start because Docker 29 reports `CAP_SETUID` and
+  `CAP_SETGID` in inspect data. The strict serializer expectation was corrected; the owned container
+  was removed and the failed evidence retained.
+- An additional probe found that `--network=none` still inherited the host resolver file. The runner
+  now supplies loopback DNS, no search domain and fixed options, checks those effective settings,
+  and tests the actual file contents. This closes an observed ambient host-configuration channel.
+- Docker restart/init defaults are explicit and inspected. A bounded SIGKILL probe killed an owned
+  broker process group, including its Docker client, after observing the unprivileged child active.
+  The container subsequently exited with watchdog code 124 and was removed by the fixture observer.
+- Live pause and cancellation tests retained complete terminal evidence and charged once; output
+  overflow retained the truncated prefix and an unresolved reservation. No partial capture was
+  relabeled complete. PostgreSQL's first invocation selected unavailable `asyncpg` and failed before
+  tests; the recorded rerun used the repository's already installed `psycopg`, without installing
+  dependencies or changing network authority. One initial lint issue in a fixture was also corrected.
+
+Final validation, 2026-09-05:
+
+- `make check`: **690 passed, 18 deselected in 90.97s**; Ruff passed on 347 Python files; all 167
+  schemas match; mypy passed on 178 source files. The offline selection explicitly excludes Docker,
+  PostgreSQL, live and Lean execution. SQLite upgrades from every revision and drift checks passed.
+- `.venv/bin/mypy --no-incremental padawan`: passed on 178 source files.
+- Explicit opt-in CPU Docker tests: **6 passed in 18.63s** after the resolver/default corrections.
+  Checks include exact public stdin, UID/capabilities, denied privilege/supervisor signals, root
+  writes, owned host-canary access, Docker socket, external network, executable scratch files,
+  active peer scratch visibility, output bounds, pause, cancellation, broker death and cleanup.
+- PostgreSQL concurrency/migration suite: **10 passed in 11.19s**. The two container cases were
+  rerun after the last policy correction: **2 passed in 3.29s**. They cover four independent brokers
+  competing for one launch and four independent reconciliation retries. The eight existing SQL
+  resource/concurrency/migration cases were unchanged by that correction.
+- `git diff --check`: passed. Exact staged bytes and all local Git refs must pass redacted secret
+  scans before commit; scan reports, manifests and commit verification are retained with validation.
+
+The CPU probes used cached Linux ARM64 Python image
+`sha256:a3699f905b890636146817f204e73d9aa61329127b0c60e46310c44f9f0612b2`, Docker 29.7.2,
+LinuxKit 7.0.12, 250 millicores, 128 MiB memory with equal swap limit, 32 PIDs, 8 MiB scratch and
+5-second workload timers (6 seconds for the broker-death probe). Actual client hash, daemon identity,
+reviewed fixture profiles, inspect records, raw output, receipts and broker SQLite snapshots are
+retained under ignored `runs/pprl-container-validation-20260905/`; earlier/superseded probes and failed
+checks remain there. `docker-ambient-fixed/` and its XML/log contain final container evidence.
+
+PostgreSQL used the existing cached 17-alpine digest, one CPU, 512 MiB memory/equal swap limit,
+128 PIDs, tmpfs data, no host mounts and `--network=none`. A temporary localhost-only stdio relay
+provided test access. It exited with `POSTGRES_TEST_RELAY_STOPPED`; the exact owned PostgreSQL
+container was removed; both its label-filtered inventory and the runner-container inventory were
+empty. Docker Desktop and preexisting images remain available. This is local fixture validation,
+not a claim about Metal, CUDA, loaded model identity or an institution's scientific competence.
+
 ## Next executable step
 
-Continue stage 2 with the execution identity and enforcement boundary. Audit the trusted broker,
-runtime adapter, declared worker identity, provider destination, privileged storage/credentials,
-and stop path against actual consumers. Specify the smallest local boundary that can independently
-bind a launched effect to admitted workload authority and retain evidence outside worker control.
-Separate configured claims, authenticated identity and observed enforcement; a signed declaration,
-SQL receipt or disposable PostgreSQL container cannot stand in for an attested worker sandbox.
+Continue stage 2 with authenticated worker and broker-issued assignment ownership. First audit
+caller-declared worker IDs, lease possession, planner/executor APIs and privileged inspection paths;
+specify a minimal local identity and request boundary that supports later executable assignments.
+Separate actual caller authentication from declared model identity and from remote/loaded-model
+attestation. Define credential issuance/revocation, intended recipients, per-request scope, fencing,
+durable causal evidence, failure behavior and rollback before implementation. Use disposable local
+fixtures; do not start a live scheduler or broaden authority merely to exercise the interface.
 
-Before implementing that slice, record its exact runner/protocol scope, trust root, credential and
-filesystem/network interfaces, replay/fencing rules, capture guarantees, evidence retention, fail-
-closed stops and rollback. Use synthetic local fixtures first. Do not create a live scheduler or
-claim complete replacement before execution authority and external-effect handling are adequate.
-The shared resource ledger is complete for its declared scope and should not be restarted; physical
-metering, complete capture, authentic runtime identities and coordinated GC remain separate gaps.
+The CPU runner is complete for its stated local scope. Model-serving containment, independent
+forensic service credentials and full capture, actual model identity, physical metering, domain
+result admission and recovery of unknown effects remain gaps. SQL revocation and Docker start are
+not atomic; bounded polling/watchdog evidence is not an instantaneous revocation guarantee.
+Institutional continuity through 100% worker replacement is still unproven.
 
-This remains authorized local engineering. Model/GPU validation, Atlas institutional subjects and
-causal MI interchange, executable recovery, explicit communication, the 10M+ token milestone,
-preregistered learning, an actual trainer/update and independent candidate evaluation remain in the
-full roadmap. Keep Atlas training materialization gated. Prepare a concrete campaign before any
-required additional execution authority; no new authorization is needed for the next local audit.
+Model/GPU validation, Atlas institutional subjects and causal MI interchange, executable recovery,
+explicit communication/economics, the 10M+ token milestone, preregistered learning, an actual trainer/
+parameter candidate and independent evaluation remain in the full roadmap. Keep Atlas training
+materialization gated. Prepare the required concrete campaign before requesting any additional
+execution authority; no new user authorization is required for the next local engineering audit.
 
 ## Completion audit
 

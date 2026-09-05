@@ -1,0 +1,50 @@
+{
+  "$id": "https://schemas.padawan.local/v1/container-runtime-identity.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "architecture": {
+      "minLength": 1,
+      "title": "Architecture",
+      "type": "string"
+    },
+    "engine_id": {
+      "minLength": 1,
+      "title": "Engine Id",
+      "type": "string"
+    },
+    "kernel_version": {
+      "minLength": 1,
+      "title": "Kernel Version",
+      "type": "string"
+    },
+    "operating_system": {
+      "const": "linux",
+      "default": "linux",
+      "title": "Operating System",
+      "type": "string"
+    },
+    "security_options": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Security Options",
+      "type": "array"
+    },
+    "server_version": {
+      "minLength": 1,
+      "title": "Server Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "engine_id",
+    "server_version",
+    "kernel_version",
+    "architecture",
+    "security_options"
+  ],
+  "title": "ContainerRuntimeIdentity",
+  "type": "object"
+}

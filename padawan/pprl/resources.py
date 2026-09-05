@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from functools import wraps
-from typing import Concatenate
+from typing import Concatenate, Literal
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +21,7 @@ from padawan.models.tables import (
     AmberAdmissionDecisionRow,
     AmberAuthorizationHeadRow,
     AmberAuthorizationRow,
+    ProcessContainerWorkloadRow,
     ProcessEventRow,
     ProcessResourceAccountRow,
     ProcessResourceEventRow,
@@ -456,13 +457,20 @@ class ProcessResourceStore:
         source_digests: tuple[str, ...],
         provider_reported: bool,
         now: datetime,
+        container_evidence: bool = False,
     ) -> ProcessResourceEvent:
         """Internal broker primitive; callers must reconstruct evidence before this mutation."""
         reservation, _, _ = await self.reservation(session, decision_id)
         current = await self.inspect(session, reservation.authorization_digest, lock=True)
         reservation, head, prior = await self.reservation(session, decision_id)
         sources = tuple(sorted(set(source_digests)))
-        basis = "provider_reported" if provider_reported else "committed_ceiling"
+        if provider_reported and container_evidence:
+            raise ValueError("resource settlement must have one evidence basis")
+        basis = (
+            "container_evidence"
+            if container_evidence
+            else ("provider_reported" if provider_reported else "committed_ceiling")
+        )
         if head.status == "settled":
             if prior.amount != charged or prior.source_digests != sources or prior.basis != basis:
                 raise ValueError("resource settlement retry changes original accounting evidence")
@@ -474,7 +482,13 @@ class ProcessResourceStore:
             or charged.artifact_bytes < reservation.amount.artifact_bytes
         ):
             raise PermissionError("resource reconciliation cannot refund unmeasured allowances")
-        if not provider_reported and charged != reservation.amount:
+        if (
+            container_evidence
+            and charged.model_copy(update={"artifact_bytes": reservation.amount.artifact_bytes})
+            != reservation.amount
+        ):
+            raise PermissionError("container accounting cannot refund unmetered allowances")
+        if not provider_reported and not container_evidence and charged != reservation.amount:
             raise PermissionError("generic actions must charge their full unmetered allowance")
         event = self._next(
             current,
@@ -503,6 +517,7 @@ class ProcessResourceStore:
         decision_id: str,
         sources: tuple[str, ...],
         now: datetime,
+        basis: Literal["provider_reported", "container_evidence"] = "provider_reported",
     ) -> ProcessResourceEvent:
         reservation, _, _ = await self.reservation(session, decision_id)
         current = await self.inspect(session, reservation.authorization_digest, lock=True)
@@ -520,7 +535,7 @@ class ProcessResourceStore:
             amount=ProcessResources(),
             stopped=True,
             source_digests=sources,
-            basis="provider_reported",
+            basis=basis,
             reason="retained usage exceeds accounting arithmetic; hold remains unresolved",
             created_at=now,
         )
@@ -547,6 +562,13 @@ class ProcessResourceStore:
         reservation, head, _ = await self.reservation(session, decision_id)
         if head.status == "settled":
             return  # Model completion already charged this action, including artifact allowance.
+        container = await session.scalar(
+            select(ProcessContainerWorkloadRow.invocation_id).where(
+                ProcessContainerWorkloadRow.decision_id == decision_id
+            )
+        )
+        if container is not None:
+            raise PermissionError("container action has no completed resource reconciliation")
         invocation = await session.scalar(
             select(ProcessWorkerInvocationRow).where(
                 ProcessWorkerInvocationRow.amber_decision_id == decision_id

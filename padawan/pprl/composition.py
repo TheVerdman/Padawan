@@ -9,8 +9,12 @@ from padawan.artifacts.store import ArtifactBackend, ArtifactCatalog
 from padawan.config.settings import Settings
 from padawan.governance.amber_store import AmberStore
 from padawan.models.database import Database
+from padawan.pprl.container_contracts import ProcessContainerProfile
+from padawan.pprl.container_driver import DockerContainerDriver
+from padawan.pprl.containers import ProcessContainerExecutor, ProcessContainerStore
 from padawan.pprl.coordinator import ProcessActionExecutor, ProcessCoordinator, ProcessPlanner
 from padawan.pprl.distributions import ProcessDistributionRegistry
+from padawan.pprl.observations import ProcessObservationStore
 from padawan.pprl.store import ProcessStore
 from padawan.training.compiler import TrainingCompiler
 
@@ -33,6 +37,17 @@ class PPRLApplication:
     training: TrainingCompiler
     default_worker_id: str
     default_lease_for: timedelta
+
+    def container_executor(self, profile: ProcessContainerProfile) -> ProcessContainerExecutor:
+        """Explicit broker composition only; constructing this object launches nothing."""
+        if self.processes.container_evidence is None:
+            raise ValueError("application lacks a container evidence boundary")
+        return ProcessContainerExecutor(
+            database=self.database,
+            observations=ProcessObservationStore(self.processes),
+            store=self.processes.container_evidence,
+            driver=DockerContainerDriver(profile),
+        )
 
     def coordinator(
         self,
@@ -68,7 +83,9 @@ def build_pprl_application(settings: Settings) -> PPRLApplication:
     artifacts = build_artifact_backend(settings)
     catalog = ArtifactCatalog(artifacts)
     amber = AmberStore()
-    processes = ProcessStore(amber)
+    processes = ProcessStore(
+        amber, container_evidence=ProcessContainerStore(catalog, amber.resources)
+    )
     return PPRLApplication(
         database=database,
         artifacts=artifacts,

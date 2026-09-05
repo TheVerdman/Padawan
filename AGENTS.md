@@ -43,6 +43,11 @@ worker assignment lifecycle, PPRL launcher/scheduler/hydrator, complete forensic
 Inkling mechanistic telemetry, generic project sandbox, trainer, or parameter-update backend.
 `worker_assignments` are declarative state today.
 
+An explicit local CPU container tool runner now binds observation, admitted authority, reviewed
+profile, resource hold and privileged execution evidence. It is inert by default and is a narrow
+execution boundary inside the trusted Docker/host/kernel perimeter, not a model-serving sandbox,
+authenticated worker lifecycle or independent attestation. See `docs/pprl-container-execution-boundary.md`.
+
 Use **PPRL** for the general program and **PPRL-VR** only when the declared outcome is genuinely
 verifiable. RL evidence requires sampled task distributions and repeated stochastic rollouts; a
 single historical run may be evidence but is not a training or comparative distribution.
