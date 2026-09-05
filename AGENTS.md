@@ -64,6 +64,12 @@ are not hydration or permission to rerun work. See `docs/pprl-assignment-recover
 Automatic detection, placement, multi-action lifecycle and scientific replacement validation remain
 unfinished.
 
+A privileged terminal abandonment API now cancels a fenced unresolved rollout with an immutable
+review and independent source ownership. It preserves state/events, costs and unknown-effect holds;
+private replay and compiler exclusions retain the original attempt. It does not create a continuing
+successor, admit a domain outcome, prove cleanup, or authorize a new task. See
+`docs/pprl-effect-resolution-boundary.md`. Full task ownership and continuing recovery remain ahead.
+
 Use **PPRL** for the general program and **PPRL-VR** only when the declared outcome is genuinely
 verifiable. RL evidence requires sampled task distributions and repeated stochastic rollouts; a
 single historical run may be evidence but is not a training or comparative distribution.

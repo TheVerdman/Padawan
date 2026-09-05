@@ -389,6 +389,22 @@ class ProcessContainerReceiptRow(Base):
     record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
 
 
+class ProcessAbandonmentRow(Base):
+    __tablename__ = "process_abandonments"
+
+    abandonment_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False, unique=True
+    )
+    recovery_id: Mapped[str] = mapped_column(
+        ForeignKey("process_recoveries.recovery_id", ondelete="RESTRICT"), nullable=False
+    )
+    request_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class ProcessRecoveryRow(Base):
     __tablename__ = "process_recoveries"
 
@@ -2848,9 +2864,12 @@ class ProcessRolloutRow(Base):
         ),
         Index("ix_process_rollout_claim", "status", "lease_expires_at"),
         Index("ix_process_rollout_instance", "instance_id", "replication_index"),
+        Index("uq_process_terminal_abandonment", "terminal_abandonment_id", unique=True),
     )
 
     rollout_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    # Private checked terminal marker. No new worker-visible rollout/state field.
+    terminal_abandonment_id: Mapped[str | None] = mapped_column(String(192))
     execution_digest: Mapped[str] = mapped_column(
         ForeignKey("process_executions.execution_digest", ondelete="RESTRICT"), nullable=False
     )
@@ -3098,6 +3117,7 @@ for _immutable_type in (
     ProcessContainerWorkloadRow,
     ProcessContainerReceiptRow,
     ProcessWorkerScopeRow,
+    ProcessAbandonmentRow,
     ProcessRecoveryRow,
     ProcessWorkerRegistrationRow,
     ProcessWorkerRevocationRow,

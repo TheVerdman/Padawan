@@ -1,0 +1,174 @@
+{
+  "$defs": {
+    "ProcessAbandonmentRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "abandonment_id": {
+          "pattern": "^process-abandonment-[0-9a-f]{32}$",
+          "title": "Abandonment Id",
+          "type": "string"
+        },
+        "exclusion": {
+          "enum": [
+            "infrastructure_interruption",
+            "unresolved_external_effect"
+          ],
+          "title": "Exclusion",
+          "type": "string"
+        },
+        "expected_account_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Expected Account Digest",
+          "type": "string"
+        },
+        "expected_authorization_sequence": {
+          "minimum": 0,
+          "title": "Expected Authorization Sequence",
+          "type": "integer"
+        },
+        "expected_state_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Expected State Digest",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "recovery_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Recovery Digest",
+          "type": "string"
+        },
+        "recovery_id": {
+          "pattern": "^process-recovery-[0-9a-f]{32}$",
+          "title": "Recovery Id",
+          "type": "string"
+        },
+        "reviewed_at": {
+          "format": "date-time",
+          "title": "Reviewed At",
+          "type": "string"
+        },
+        "reviewer_id": {
+          "minLength": 1,
+          "title": "Reviewer Id",
+          "type": "string"
+        },
+        "rollout_id": {
+          "minLength": 1,
+          "title": "Rollout Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "abandonment_id",
+        "rollout_id",
+        "recovery_id",
+        "recovery_digest",
+        "expected_state_digest",
+        "expected_authorization_sequence",
+        "expected_account_digest",
+        "reviewer_id",
+        "reason",
+        "exclusion",
+        "reviewed_at",
+        "expires_at"
+      ],
+      "title": "ProcessAbandonmentRequest",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-abandonment-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authorization_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Digest",
+      "type": "string"
+    },
+    "authorization_event_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Event Digest",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Execution Digest",
+      "type": "string"
+    },
+    "parameter_training_eligible": {
+      "const": false,
+      "default": false,
+      "title": "Parameter Training Eligible",
+      "type": "boolean"
+    },
+    "request": {
+      "$ref": "#/$defs/ProcessAbandonmentRequest"
+    },
+    "request_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Request Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state_id": {
+      "minLength": 1,
+      "title": "State Id",
+      "type": "string"
+    },
+    "state_sequence": {
+      "minimum": 0,
+      "title": "State Sequence",
+      "type": "integer"
+    },
+    "status_after": {
+      "const": "cancelled",
+      "default": "cancelled",
+      "title": "Status After",
+      "type": "string"
+    },
+    "status_before": {
+      "const": "review_required",
+      "default": "review_required",
+      "title": "Status Before",
+      "type": "string"
+    }
+  },
+  "required": [
+    "request",
+    "request_digest",
+    "execution_digest",
+    "authorization_digest",
+    "authorization_event_digest",
+    "state_id",
+    "state_sequence",
+    "created_at"
+  ],
+  "title": "ProcessAbandonmentReceipt",
+  "type": "object"
+}

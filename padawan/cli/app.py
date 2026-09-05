@@ -467,6 +467,13 @@ def pprl_rollout_inspect(ctx: typer.Context, rollout_id: str) -> None:
                 row = await session.get(ProcessRolloutRow, rollout_id)
                 if row is None:
                     raise KeyError(rollout_id)
+                abandonment = (
+                    await process_app.abandonment().read(
+                        session, abandonment_id=row.terminal_abandonment_id
+                    )
+                    if row.terminal_abandonment_id
+                    else None
+                )
                 amber_status = await process_app.amber.status(
                     session, authorization_digest=row.authorization_digest
                 )
@@ -493,6 +500,9 @@ def pprl_rollout_inspect(ctx: typer.Context, rollout_id: str) -> None:
                 "amber_status": amber_status,
                 "outcomes": [item.record_json for item in outcomes],
                 "training_eligibility": [item.record_json for item in eligibility],
+                "terminal_abandonment": abandonment.model_dump(mode="json")
+                if abandonment
+                else None,
             }
         finally:
             await process_app.close()
@@ -508,6 +518,14 @@ def pprl_rollout_replay(ctx: typer.Context, rollout_id: str) -> None:
             async with process_app.database.transaction() as session:
                 initial_state, events = await process_app.processes.replay(
                     session, rollout_id=rollout_id
+                )
+                row = await session.get(ProcessRolloutRow, rollout_id)
+                abandonment = (
+                    await process_app.abandonment().read(
+                        session, abandonment_id=row.terminal_abandonment_id
+                    )
+                    if row is not None and row.terminal_abandonment_id
+                    else None
                 )
                 steps = []
                 for event in events:
@@ -525,6 +543,9 @@ def pprl_rollout_replay(ctx: typer.Context, rollout_id: str) -> None:
                 "initial_state": initial_state.model_dump(mode="json"),
                 "steps": steps,
                 "event_count": len(events),
+                "terminal_abandonment": abandonment.model_dump(mode="json")
+                if abandonment
+                else None,
             }
         finally:
             await process_app.close()

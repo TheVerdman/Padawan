@@ -10,6 +10,8 @@ from types import SimpleNamespace
 from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore
 from padawan.governance.amber_store import AmberStore
 from padawan.models.database import Database
+from padawan.pprl.abandonment import ProcessAbandonmentStore
+from padawan.pprl.abandonment_contracts import ProcessAbandonmentRequest
 from padawan.pprl.recovery import ProcessRecoveryStore
 from padawan.pprl.recovery_contracts import ProcessRecoveryRequest
 from padawan.pprl.store import ProcessStore
@@ -25,7 +27,19 @@ async def main() -> None:
     recovery = ProcessRecoveryStore(processes, catalog)
     try:
         async with database.transaction() as session:
-            if data["mode"] == "recover":
+            if data["mode"] in {"abandon", "inspect_abandonment"}:
+                dispositions = ProcessAbandonmentStore(recovery)
+                if data["mode"] == "abandon":
+                    request = ProcessAbandonmentRequest.model_validate(
+                        data["request"], strict=False
+                    )
+                    abandoned = await dispositions.abandon(session, request, now=datetime.now(UTC))
+                else:
+                    abandoned = await dispositions.read(
+                        session, abandonment_id=data["abandonment_id"]
+                    )
+                result = abandoned.model_dump(mode="json")
+            elif data["mode"] == "recover":
                 request = ProcessRecoveryRequest.model_validate(data["request"], strict=False)
                 receipt = await recovery.recover(session, request, now=datetime.now(UTC))
                 result = receipt.model_dump(mode="json")
@@ -45,7 +59,7 @@ async def main() -> None:
                     expires_at=datetime.now(UTC) + timedelta(minutes=20),
                     now=datetime.now(UTC),
                 )
-        if data["mode"] != "recover":
+        if data["mode"] == "replace":
             broker = ProcessWorkerBroker(
                 database=database, store=processes, broker_audience="fixture-broker"
             )

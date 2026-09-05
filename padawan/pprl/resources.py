@@ -280,6 +280,10 @@ class ProcessResourceStore:
         """Closed head fields alone cannot erase missing or corrupt recovery evidence."""
         from padawan.pprl.store import _event_from_row
 
+        rollout = await session.get(ProcessRolloutRow, rollout_id)
+        if rollout is not None and rollout.terminal_abandonment_id is not None:
+            raise PermissionError("terminally abandoned rollout cannot resume")
+
         decisions = set(
             await session.scalars(
                 select(ProcessResourceReservationRow.decision_id).where(

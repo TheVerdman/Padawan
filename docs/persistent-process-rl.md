@@ -101,8 +101,12 @@ reviewed source admission for complete model/container effects, including late r
 The private version-3 origin binds the full checked source set; only a separate process derivative
 is admitted. Ordinary sources with recovery ownership cannot bypass that origin, and training use
 is denied. Admission neither changes canonical state nor clears the effect barrier. Reviewed
-successor/abandonment, task disposition and training-exclusion dependencies remain unimplemented
-designs in `pprl-effect-resolution-boundary.md`.
+continuing successor and task ownership remain designs in `pprl-effect-resolution-boundary.md`.
+`ProcessAbandonmentStore` now supports an explicitly reviewed terminal branch: cancel the fenced
+rollout without rewriting its state/events, releasing unknown holds or changing recorded charges.
+The private immutable disposition independently retains recovery sources, survives broker restart,
+and enters privileged replay/compiler evidence at its own watermark with explicit learning
+exclusions. It is not a domain failure, physical-cleanup proof, or permission for a replacement task.
 
 ## Distributions and evidence
 

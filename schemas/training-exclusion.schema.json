@@ -31,6 +31,7 @@
         "source_document_contaminated",
         "duplicate_source_content",
         "process_rollout_not_complete",
+        "process_rollout_abandoned",
         "process_outcome_unresolved",
         "process_eligibility_missing",
         "process_replication_insufficient",

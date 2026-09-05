@@ -1,10 +1,10 @@
 # Reviewed resolution of completed effects
 
-Status: resolution design specified at `ebe1000`; exact historical recovery-source validation and
-explicit reviewed recovered-source admission are now implemented prerequisites. Successor,
-abandonment and task disposition remain unimplemented. This is a stage toward executable task/retry
-scheduling, not a reduction of PPRL or its long-horizon program. Further implementation is held for
-the user-requested complexity and roadmap review.
+Status: resolution design specified at `ebe1000`; exact historical recovery-source validation,
+reviewed recovered-source admission and terminal abandonment are implemented. Continuing reviewed
+successors and full logical-task ownership remain unimplemented. This is a stage toward executable task/retry
+scheduling, not a reduction of PPRL or its long-horizon program. The user resumed the finite
+checkpoint after that review on 2026-09-05. Optional consolidation follows the behavioral baseline.
 
 ## Revalidated dependencies
 
@@ -48,7 +48,28 @@ continue to stop unresolved effects. No resolution bypass exists in the bounded 
    attribution. Then add retry/task lifecycle and automatic replacement scheduling.
 
 Items 1 and 2 have offline implementation evidence. Items 3 and 4 are the remaining dependencies;
-they are proposals for the review, not authorization to continue past the current hold.
+their local implementation is now authorized within the finite foundation checkpoint.
+
+### First executable terminal disposition
+
+Implement terminal abandonment before continuing successors. A new private immutable receipt binds
+the exact checked recovery, current state, authority sequence, resource-account snapshot, reviewer,
+reason and infrastructure/unknown-effect exclusion. Atomically link that receipt from the rollout
+head and cancel the rollout without adding a worker event or changing state, reservations, charges
+or holds. All unknown effects remain financially and physically unresolved. Exact retries are
+read-only and cannot re-cancel a different head. Other review IDs cannot replace the disposition.
+
+The existing event replay retains its meaning. Privileged replay exposes the separate disposition;
+the compiler includes its original recovery and disposition in private evidence at the correct
+watermark, retains the rollout in the sampled population, and excludes it explicitly from learning.
+Eligible outcome/eligibility writes cannot override abandonment. Missing private lineage, source
+ownership, or a mismatched terminal head fails closed. Abandonment can record a stop after Amber
+pause/revocation/expiry because it grants no execution or disclosure authority.
+
+This terminal branch does not resume a completed-but-uncommitted task, release unknown capacity,
+authorize a fresh replica, infer cleanup, or implement a scheduler. Continuing successors still
+require explicit logical-task ownership and reviewed admitted domain evidence. Validation uses
+synthetic effects, disposable databases, and PostgreSQL races, never live models or cloud resources.
 
 ## Proposed resolution boundary and invariants
 
@@ -106,12 +127,12 @@ never undo a real external effect or erase its charge. Keep unknown effects stop
 disable new admission/resolution while preserving populated history, pins and claim barriers;
 do not downgrade to permissive legacy retry.
 
-Non-goals of the implemented prerequisites: successor or abandonment,
+Non-goals of the implemented terminal branch: continuing successor,
 clearing a barrier, physical cleanup of unknown effects, background scheduling, provider retries,
 authenticated reviewers, model/host attestation, semantic redaction proofs, scientific competence,
 training or actual model execution. The later steps above remain required and unfinished.
 
 Decision: source validation and the offline admission checkpoint can be retained for review;
 no-go for automatic continuation until task disposition, reviewed-transition lineage and compiler
-handling are implemented and validated. The user explicitly requested a hold after this checkpoint;
-resume local implementation only after that review and a new resume instruction.
+handling are implemented and validated. The user resumed the finite checkpoint after review;
+optional consolidation follows the baseline rather than preceding it.

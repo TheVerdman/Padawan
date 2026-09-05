@@ -102,10 +102,14 @@ one completed effect's full private source set to a separately reviewed process 
 version-3 private receipt. Public reads recheck current scope/authority, native provenance and all
 independent owners; training use stays denied. The ordinary admission path cannot omit the recovery
 origin of recovery-owned sources. See [recovered evidence](pprl-recovered-evidence-boundary.md).
-Admission leaves canonical state and the unresolved-effect barrier unchanged. Reviewed transition/
-task disposition and compiler treatment remain designs in
-[effect resolution boundary](pprl-effect-resolution-boundary.md). Further implementation is on the
-user's requested hold after this checkpoint; see [complexity review](pprl-complexity-review.md).
+Admission leaves canonical state and the unresolved-effect barrier unchanged. A separate private
+`ProcessAbandonmentStore` now terminates a fenced unresolved rollout under a fresh exact review.
+It preserves state/events, costs and unknown holds; the compiler retains the original recovery and
+terminal disposition with explicit learning exclusions at their historical watermark. New eligible
+outcomes cannot override the terminal marker. Privileged reads revalidate native sources and pins.
+This is terminal abandonment, not a continuing successor, physical cleanup or lost-worker intent.
+Continuing task disposition remains a design in [effect resolution boundary](pprl-effect-resolution-boundary.md).
+The user resumed the finite checkpoint after review; optional consolidation follows the baseline.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
@@ -191,6 +195,8 @@ The PPRL data model has a real durable substrate:
 - `process_recoveries` retains private reviewed state/lease expectations, fencing, effect assessments
   and accounting snapshots. Its `process_recovery_receipt` artifact owners preserve original sources
   independently; neither the record nor its identifiers enter process state or observations;
+- `process_abandonments` retains one immutable terminal review per rollout, linked from a private
+  terminal marker. Its independent source pins and compiler evidence remain researcher-only;
 - Amber authorization, lifecycle, head, and action-decision tables bind each admitted transition to
   exact authority and cumulative budget; and
 - `process_worker_invocations`, `process_generation_workloads`, `external_calls`, and the artifact

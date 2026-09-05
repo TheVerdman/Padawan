@@ -26,6 +26,7 @@ from padawan.models.tables import (
     AmberAdmissionDecisionRow,
     AmberAuthorizationEventRow,
     AmberAuthorizationRow,
+    ProcessAbandonmentRow,
     ProcessDistributionRow,
     ProcessEventRow,
     ProcessExecutionRow,
@@ -38,6 +39,8 @@ from padawan.models.tables import (
     ProcessTrainingEligibilityRow,
     ProjectInstanceRow,
 )
+from padawan.pprl.abandonment import read_abandonment
+from padawan.pprl.abandonment_contracts import ProcessAbandonmentReceipt
 from padawan.pprl.contracts import (
     ProcessDistributionManifest,
     ProcessEventRecord,
@@ -55,6 +58,7 @@ from padawan.pprl.contracts import (
     RewardAuthorityKind,
     RolloutStatus,
 )
+from padawan.pprl.recovery_contracts import ProcessRecoveryReceipt
 from padawan.training.contracts import (
     CompiledRow,
     EvidenceLedgerEntry,
@@ -297,6 +301,39 @@ async def compile_pprl_snapshot(
         for row in rollouts
     }
     rollout_authorizations = {row.rollout_id: row.authorization_digest for row in rollouts}
+    abandonment_records: dict[str, ProcessAbandonmentReceipt] = {}
+    recovery_records: dict[str, ProcessRecoveryReceipt] = {}
+    abandoned_rollouts: dict[str, ProcessAbandonmentReceipt] = {}
+    for row in rollouts:
+        disposition_row = await session.scalar(
+            select(ProcessAbandonmentRow).where(ProcessAbandonmentRow.rollout_id == row.rollout_id)
+        )
+        if row.terminal_abandonment_id is None and disposition_row is None:
+            continue
+        if disposition_row is None or disposition_row.abandonment_id != row.terminal_abandonment_id:
+            raise PPRLTrainingCompilationError("rollout lost its terminal abandonment marker")
+        receipt, recovery = await read_abandonment(
+            session, abandonment_id=disposition_row.abandonment_id
+        )
+        if receipt.created_at > as_of:
+            continue  # a later disposition does not rewrite an older evidence watermark
+        historical = rollout_records[row.rollout_id]
+        if (
+            historical.current_state_id != receipt.state_id
+            or historical.sequence != receipt.state_sequence
+        ):
+            raise PPRLTrainingCompilationError(
+                "abandonment differs from the retained event frontier"
+            )
+        rollout_records[row.rollout_id] = historical.model_copy(
+            update={
+                "status": RolloutStatus.CANCELLED,
+                "updated_at": receipt.created_at,
+            }
+        )
+        abandonment_records[receipt.request.abandonment_id] = receipt
+        recovery_records[recovery.request.recovery_id] = recovery
+        abandoned_rollouts[row.rollout_id] = receipt
     outcomes_by_rollout = _group(outcome_records.values(), "rollout_id", "assessment_id")
     decisions_by_rollout = _group(eligibility_records.values(), "rollout_id", "decision_id")
     for rollout_id, rollout in rollout_records.items():
@@ -327,6 +364,8 @@ async def compile_pprl_snapshot(
         outcome_records=outcome_records,
         eligibility_records=eligibility_records,
         fork_records=fork_records,
+        abandonment_records=abandonment_records,
+        recovery_records=recovery_records,
     )
     source_index = {(source.kind, source.source_id): source for source in sources}
     replication_ready = _replication_ready_distributions(
@@ -398,6 +437,23 @@ async def compile_pprl_snapshot(
             required_lane=ProcessLearningLane.TRAJECTORY,
             replication_ready=rollout.distribution_digest in replication_ready,
         )
+        if rollout_id in abandoned_rollouts:
+            receipt = abandoned_rollouts[rollout_id]
+            additions = [
+                source_index[(kind, identity)]
+                for kind, identity in (
+                    (EvidenceSourceKind.PROCESS_ABANDONMENT, receipt.request.abandonment_id),
+                    (EvidenceSourceKind.PROCESS_RECOVERY, receipt.request.recovery_id),
+                )
+            ]
+            lineage = (
+                tuple(sorted(set(lineage[0]) | {s.reference for s in additions})),
+                tuple(sorted(set(lineage[1]) | {s.digest for s in additions})),
+                lineage[2],
+            )
+            trajectory_reasons[TrainingExclusionReason.PROCESS_ROLLOUT_ABANDONED] = (
+                receipt.request.exclusion
+            )
         if trajectory_reasons:
             exclusions.append(
                 _exclusion(
@@ -454,6 +510,10 @@ async def compile_pprl_snapshot(
             required_lane=ProcessLearningLane.VERIFIABLE_REPLAY,
             replication_ready=rollout.distribution_digest in replication_ready,
         )
+        if rollout_id in abandoned_rollouts:
+            verifiable_reasons[TrainingExclusionReason.PROCESS_ROLLOUT_ABANDONED] = (
+                abandoned_rollouts[rollout_id].request.exclusion
+            )
         relevant_verifiable_decisions = tuple(
             decision
             for decision in rollout_decisions
@@ -709,6 +769,8 @@ def _sources(
     outcome_records: dict[str, ProcessOutcomeAssessment],
     eligibility_records: dict[str, ProcessTrainingEligibilityDecision],
     fork_records: dict[str, ProcessForkRecord],
+    abandonment_records: dict[str, ProcessAbandonmentReceipt],
+    recovery_records: dict[str, ProcessRecoveryReceipt],
 ) -> tuple[_Source, ...]:
     sources: list[_Source] = []
     for digest, distribution_record in distribution_records.items():
@@ -782,6 +844,14 @@ def _sources(
     sources.extend(
         _source(EvidenceSourceKind.PROCESS_FORK, key, record)
         for key, record in fork_records.items()
+    )
+    sources.extend(
+        _source(EvidenceSourceKind.PROCESS_ABANDONMENT, key, record)
+        for key, record in abandonment_records.items()
+    )
+    sources.extend(
+        _source(EvidenceSourceKind.PROCESS_RECOVERY, key, record)
+        for key, record in recovery_records.items()
     )
     return tuple(sorted(sources, key=lambda item: (item.kind.value, item.source_id)))
 
@@ -894,7 +964,7 @@ def _rollout_reasons(
     replication_ready: bool,
 ) -> dict[TrainingExclusionReason, str]:
     reasons: dict[TrainingExclusionReason, str] = {}
-    effective_status = events[-1].rollout_status if events else rollout.status
+    effective_status = rollout.status
     if effective_status != RolloutStatus.COMPLETE or not events:
         reasons[TrainingExclusionReason.PROCESS_ROLLOUT_NOT_COMPLETE] = (
             "macro-rollout is not durably complete with at least one process event"
@@ -952,7 +1022,7 @@ def _replication_ready_distributions(
     counts: dict[str, Counter[str]] = defaultdict(Counter)
     for rollout_id, rollout in rollouts.items():
         events = events_by_rollout.get(rollout_id, [])
-        complete = bool(events) and events[-1].rollout_status == RolloutStatus.COMPLETE
+        complete = bool(events) and rollout.status == RolloutStatus.COMPLETE
         eligible = any(
             decision.eligible and ProcessLearningLane.TRAJECTORY in decision.allowed_lanes
             for decision in decisions_by_rollout.get(rollout_id, [])

@@ -15,6 +15,7 @@ def pprl_now(monkeypatch: pytest.MonkeyPatch) -> Callable[[], datetime]:
     from padawan.governance import amber_store
     from padawan.orchestration import external_calls
     from padawan.pprl import (
+        abandonment,
         containers,
         coordinator,
         generation,
@@ -41,6 +42,7 @@ def pprl_now(monkeypatch: pytest.MonkeyPatch) -> Callable[[], datetime]:
             return value.astimezone(tz) if tz is not None else value.replace(tzinfo=None)
 
     for module in (
+        abandonment,
         amber_store,
         external_calls,
         containers,

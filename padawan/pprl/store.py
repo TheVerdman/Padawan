@@ -404,6 +404,10 @@ class ProcessStore:
         row = await session.get(ProcessRolloutRow, rollout_id)
         if row is None:
             raise KeyError(rollout_id)
+        if row.terminal_abandonment_id is not None:
+            from padawan.pprl.abandonment import read_abandonment
+
+            await read_abandonment(session, abandonment_id=row.terminal_abandonment_id)
         return _rollout_from_row(row)
 
     async def get_state(self, session: AsyncSession, *, state_id: str) -> ProjectStateVersion:
@@ -445,6 +449,7 @@ class ProcessStore:
             )
             .where(
                 ProcessRolloutRow.status == RolloutStatus.ACTIVE.value,
+                ProcessRolloutRow.terminal_abandonment_id.is_(None),
                 ProcessRolloutRow.paused.is_(False),
                 AmberAuthorizationHeadRow.status == AmberStatus.ACTIVE.value,
                 AmberAuthorizationRow.expires_at > timestamp,
@@ -910,6 +915,8 @@ class ProcessStore:
         rollout = await session.get(ProcessRolloutRow, assessment.rollout_id)
         if rollout is None:
             raise KeyError(assessment.rollout_id)
+        if rollout.terminal_abandonment_id is not None and assessment.eligible_for_learning:
+            raise PermissionError("abandoned rollout cannot receive a learning-eligible outcome")
         program_row = await session.get(ProcessProgramRow, rollout.program_digest)
         if program_row is None:
             raise ProcessInvariantError("rollout lost its process program")
@@ -949,6 +956,8 @@ class ProcessStore:
         rollout = await session.get(ProcessRolloutRow, decision.rollout_id)
         if rollout is None:
             raise KeyError(decision.rollout_id)
+        if rollout.terminal_abandonment_id is not None and decision.eligible:
+            raise PermissionError("abandoned rollout cannot become training eligible")
         distribution_row = await session.get(ProcessDistributionRow, rollout.distribution_digest)
         if distribution_row is None:
             raise ProcessInvariantError("rollout lost its process distribution")

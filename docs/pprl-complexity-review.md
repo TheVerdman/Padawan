@@ -2,10 +2,11 @@
 
 Review checkpoint: 2026-09-05, after reviewed recovered-source admission. Comparison base:
 `9d58ceb4ad5cb0ceac77c2ddf30e0ef83c5e69d0`, the verified clean goal-start HEAD.
-The user explicitly chose **finish this checkpoint, then hold for review**. No further implementation
-is authorized by the proposals below until the user resumes. This is an implementation hold;
-the app's goal Pause control remains user-operated. The research goal is unfinished, not completed
-or blocked to simulate a pause.
+The user initially chose **finish this checkpoint, then hold for review**, then resumed the finite
+checkpoint after discussion on 2026-09-05: **"Please proceed."** Complete the required foundation,
+freeze a reproducible version, and collect a repeated behavioral baseline before discretionary
+consolidation/pruning. The measured diff below remains the prior review snapshot. The research goal
+is unfinished; local engineering resumption does not authorize cloud, training or deployment.
 
 ## Assessment
 
@@ -119,7 +120,10 @@ No amount of generated text or passing fixture tests substitutes for those resul
    open-ended sequence of infrastructure slices.
 2. Select the first verifier-backed domain and minimum pilot comparisons, with local Nemotron as
    the initial worker candidate. Review its trust perimeter and intervention/credit exclusions.
-3. Agree how much consolidation is justified before that pilot and where to stop for another review.
+3. Resolved: defer discretionary consolidation until after a retained repeated behavioral baseline.
+   Fix correctness, authority and measurement blockers first. Assess later pruning against the
+   frozen reference, required invariants, adversarial probes and matched stochastic evaluations;
+   an unexercised failure guard is not evidence of redundant behavior.
 
 No new cloud/GPU authority is needed for this review. Any GCP campaign still requires a concrete
 manifest, budget ceiling, stop/cleanup evidence and the separately promised authorization question.

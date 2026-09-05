@@ -184,6 +184,16 @@
       "sha256": "3a13b60f39ceec9d28d2e24a56908906e4a6eb7c5947c616b0b239f629e0bb75"
     },
     {
+      "name": "process-abandonment-request",
+      "schema": "process-abandonment-request.schema.json",
+      "sha256": "6b38a647ff40e92cd96d3a894dc116b3c8cf729daaaef3892722bf4333677f9b"
+    },
+    {
+      "name": "process-abandonment-receipt",
+      "schema": "process-abandonment-receipt.schema.json",
+      "sha256": "9a66ec0bfff37931a17cc26068c540fd381574c7115a5ebbd0a3a34d9e2fd609"
+    },
+    {
       "name": "recovery-evidence-disclosure-policy",
       "schema": "recovery-evidence-disclosure-policy.schema.json",
       "sha256": "8c281e7564d14a20a4c3d74ebb95845e7ddeaba22a938cdb6fc3cba494b535b4"
@@ -586,7 +596,7 @@
     {
       "name": "evidence-ledger-entry",
       "schema": "evidence-ledger-entry.schema.json",
-      "sha256": "b10a089bdce3ed72d1a46e412b23f7bda0e8e7856936ab143e27ff99fd5cfdc3"
+      "sha256": "657a6759d5565e9cc6345e29e1f4443310357ba9d1ecf3b77d005f6b4b6c492a"
     },
     {
       "name": "evaluation-outcome",
@@ -896,7 +906,7 @@
     {
       "name": "training-bundle-manifest",
       "schema": "training-bundle-manifest.schema.json",
-      "sha256": "0f5c7ddbb3986f408a614c99a7d065438fa468d37fd254e2700794b9fd780b0c"
+      "sha256": "a36c6e18acfdfb369340f13c1f72ac391e43360e31214741d84fbfbcc02eff3a"
     },
     {
       "name": "training-bundle-verification",
@@ -906,7 +916,7 @@
     {
       "name": "training-exclusion",
       "schema": "training-exclusion.schema.json",
-      "sha256": "89cde5dba6f80abd7393adf35e6d63dc549afcde4136c0130e63698f2d01fa3b"
+      "sha256": "fc7b491c20644bd54df4cc37c9cf075e96bba1bc6f78a245b4fd244618f255c7"
     },
     {
       "name": "training-product-manifest",

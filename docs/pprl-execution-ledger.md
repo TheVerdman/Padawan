@@ -60,6 +60,14 @@ implementation. The earlier resumption does not override this newer hold. See
 This is a work hold; the goal tool still has no pause operation. Do not simulate pausing by marking
 the unfinished research objective complete or blocked. The app Pause control remains user-operated.
 
+Resumption decision, 2026-09-05: after the architecture/roadmap and complexity discussion, the user
+said "Noted, I think we're in agreement now. Please proceed." Resume the finite foundation
+checkpoint under the existing local engineering authority. Finish task/effect disposition and a
+bounded scripted continuity workflow, with review at those milestones. Fix prerequisites for valid
+measurement, then freeze and collect a repeated behavioral baseline before discretionary
+consolidation/pruning. GCP, live institutional campaigns, training and deployment retain their
+separate authority gates. Routine local Nemotron testing retains its earlier authorization.
+
 ## Requirements and status
 
 | Requirement | Current state | Evidence needed for completion |
@@ -1120,12 +1128,62 @@ cloud/GPU activation, sibling edit, delegation or publication was used. Final se
 cached network-disabled, resource-bounded CPU scanner. The current checkpoint ends the authorized
 work segment; further implementation is held for the user's complexity and roadmap review.
 
-## Next proposed step — on hold
+## Terminal abandonment checkpoint, 2026-09-05
 
-Discuss `pprl-complexity-review.md` and agree a finite foundation exit gate before implementation
-resumes. Recovered-source admission is implemented; it does not complete recovery or institutional
-continuity. The remaining dependency is executable task disposition and a distinct reviewed successor/terminal-abandonment
-transition together with replay/compiler treatment of interventions and infrastructure exclusions.
+Resumed from `1a75354` after the user's explicit instruction to proceed. Optional consolidation is
+deferred until after a frozen repeated behavioral baseline. This checkpoint implements the terminal
+branch of task/effect disposition; continuing reviewed successors and logical-task ownership remain
+required before the complete scripted continuity milestone or live institutional pilot.
+
+`ProcessAbandonmentStore` binds a fresh, at-most-five-minute review to the checked original recovery,
+current state, authority sequence and shared account frontier. One immutable SQL receipt per rollout
+and a private terminal marker cancel the fenced unresolved rollout. The state/event chain, original
+worker, provider/tool invocation, costs and unknown holds remain unchanged. The source set receives
+independent ownership; checked private reads reconstruct native evidence. Review names remain
+trusted declarations. The operation does not invoke a model/tool or establish physical cleanup.
+
+Exact retries remain historical reads. A different review cannot replace the disposition. Old-worker
+commits, new recovery/claim attempts and learning-eligible outcome/eligibility declarations cannot
+reopen it. Late retained model results may settle their original charge but cannot reopen the rollout
+or reach the worker. New migration `a7c82e41d906` adds the private ledger and head marker; downgrade
+refuses populated terminal history rather than removing its exclusion or reopening work.
+
+Privileged CLI inspection/replay now reports the separate terminal disposition. The compiler retains
+both original recovery and abandonment as private evidence, keeps the rollout in its population,
+and adds explicit infrastructure/unknown-effect learning exclusions. A later abandonment does not
+change an older source watermark. Worker state and event schemas are unchanged; private disposition
+IDs and digests are denied by the existing content boundary. These are engineering results, not a
+domain outcome, statistical independence claim, or parameter update.
+
+Retained validation: `runs/pprl-abandonment-validation-20260905/` (ignored).
+
+- Full offline suite: **896 passed, 33 deselected in 183.06 seconds**, excluding PostgreSQL, live,
+  Lean, Docker and GCS markers. Final focused suite: **31 passed in 22.24 seconds**, including one
+  additional outcome/eligibility-override test added after the full run; runtime source is unchanged.
+- Compatibility run: **157 passed in 73.93 seconds**, spanning recovery, ordinary/recovered evidence
+  and training projection. Fresh native broker subprocesses reconstruct the terminal receipt.
+- PostgreSQL races and Alembic schema check: **12 passed in 32.69 seconds**. A pinned cached PG17
+  container used 1 CPU/512 MiB, no network, no host data mounts, and a bounded loopback-to-Docker-exec
+  fixture transport. The owned container/network were removed. This is database concurrency
+  validation, not model-serving or application-container validation.
+- Ruff lint/format, generated-schema checks and mypy pass. Mypy checks **189 source files**.
+- Failed iterations remain retained: initial circular import during collection; three initial
+  fixture defects (deleting FK-protected recovery, treating a CAS URI as a filesystem path, using the
+  wrong evidence field); an integrity-exception expectation; Docker's missing internal-network
+  published port; and two PostgreSQL commit-race expectations. An already-fenced lease can reject
+  immediately without matching a row lock. Production rejection was preserved, not weakened.
+
+No live model inference, live institutional worker, trainer, GPU/cloud activation, sibling edit,
+delegation, deployment or remote publication was used. Secret/source manifests and final local
+commit identity are retained with the validation record. This is progress within the resumed
+checkpoint, not completion of the full foundation or research goal.
+
+## Next implementation dependency
+
+The finite foundation exit gate was accepted, with discretionary consolidation moved after the
+baseline. Recovered-source admission and terminal abandonment do not complete recovery or
+institutional continuity. The remaining dependency is logical-task ownership and a distinct reviewed
+continuing successor, together with replay/compiler treatment of interventions and credit exclusions.
 Select independent domain evidence for successor review; preserve original effects and costs and
 keep unknown effects stopped. A new lease or task ID cannot silently repeat an abandoned effect or
 hide an exclusion in scientific credit. Automatic replacement scheduling depends on these contracts.
@@ -1135,8 +1193,8 @@ and deterministic scheduling to the existing scoped credential and recovery boun
 delivery/isolation and child enrollment need explicit contracts. Retain byte-exact hydration and
 test complete roster churn, interrupted handoffs and lifecycle races with simulated workers first.
 The current clear-claim integrity check traverses rollout history; benchmark and bound its growth,
-and design checked incremental frontiers before long-horizon execution. These are review proposals;
-wait for the user to resume before implementing them.
+and design checked incremental frontiers before long-horizon execution. Keep the agreed review
+milestones and return for discussion before adding any substantial prerequisite outside this scope.
 
 The CPU runner is complete for its stated local scope. Model-serving containment, independent
 forensic service credentials and full capture, actual model identity, physical metering, domain

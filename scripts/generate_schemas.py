@@ -129,6 +129,7 @@ from padawan.models.research_contracts import (
     StudyManifest,
     StudyResultRecord,
 )
+from padawan.pprl.abandonment_contracts import ProcessAbandonmentReceipt, ProcessAbandonmentRequest
 from padawan.pprl.container_contracts import (
     ContainerRuntimeIdentity,
     ProcessContainerProfile,
@@ -284,6 +285,8 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("process-recovery-source", ProcessRecoverySource),
     ("process-recovery-effect", ProcessRecoveryEffect),
     ("process-recovery-receipt", ProcessRecoveryReceipt),
+    ("process-abandonment-request", ProcessAbandonmentRequest),
+    ("process-abandonment-receipt", ProcessAbandonmentReceipt),
     ("recovery-evidence-disclosure-policy", RecoveryEvidenceDisclosurePolicy),
     ("recovered-effect-source", RecoveredEffectSource),
     ("recovered-evidence-origin-review", RecoveredEvidenceOriginReview),

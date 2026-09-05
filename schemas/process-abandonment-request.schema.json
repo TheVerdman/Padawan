@@ -1,0 +1,93 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-abandonment-request.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "abandonment_id": {
+      "pattern": "^process-abandonment-[0-9a-f]{32}$",
+      "title": "Abandonment Id",
+      "type": "string"
+    },
+    "exclusion": {
+      "enum": [
+        "infrastructure_interruption",
+        "unresolved_external_effect"
+      ],
+      "title": "Exclusion",
+      "type": "string"
+    },
+    "expected_account_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Expected Account Digest",
+      "type": "string"
+    },
+    "expected_authorization_sequence": {
+      "minimum": 0,
+      "title": "Expected Authorization Sequence",
+      "type": "integer"
+    },
+    "expected_state_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Expected State Digest",
+      "type": "string"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "reason": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "recovery_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Recovery Digest",
+      "type": "string"
+    },
+    "recovery_id": {
+      "pattern": "^process-recovery-[0-9a-f]{32}$",
+      "title": "Recovery Id",
+      "type": "string"
+    },
+    "reviewed_at": {
+      "format": "date-time",
+      "title": "Reviewed At",
+      "type": "string"
+    },
+    "reviewer_id": {
+      "minLength": 1,
+      "title": "Reviewer Id",
+      "type": "string"
+    },
+    "rollout_id": {
+      "minLength": 1,
+      "title": "Rollout Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "abandonment_id",
+    "rollout_id",
+    "recovery_id",
+    "recovery_digest",
+    "expected_state_digest",
+    "expected_authorization_sequence",
+    "expected_account_digest",
+    "reviewer_id",
+    "reason",
+    "exclusion",
+    "reviewed_at",
+    "expires_at"
+  ],
+  "title": "ProcessAbandonmentRequest",
+  "type": "object"
+}

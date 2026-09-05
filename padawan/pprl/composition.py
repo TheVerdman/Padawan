@@ -9,6 +9,7 @@ from padawan.artifacts.store import ArtifactBackend, ArtifactCatalog
 from padawan.config.settings import Settings
 from padawan.governance.amber_store import AmberStore
 from padawan.models.database import Database
+from padawan.pprl.abandonment import ProcessAbandonmentStore
 from padawan.pprl.container_contracts import ProcessContainerProfile
 from padawan.pprl.container_driver import DockerContainerDriver
 from padawan.pprl.containers import ProcessContainerExecutor, ProcessContainerStore
@@ -46,6 +47,10 @@ class PPRLApplication:
     def recovery(self) -> ProcessRecoveryStore:
         """Explicit privileged recovery API. No listener, worker or retry is started."""
         return ProcessRecoveryStore(self.processes, self.catalog)
+
+    def abandonment(self) -> ProcessAbandonmentStore:
+        """Explicit privileged terminal-disposition API; construction launches nothing."""
+        return ProcessAbandonmentStore(self.recovery())
 
     def recovered_evidence(
         self,

@@ -25,6 +25,7 @@ from padawan.models.hashing import canonical_json_bytes, sha256_digest
 from padawan.models.tables import (
     ArtifactInformationRow,
     ArtifactRow,
+    ProcessAbandonmentRow,
     ProcessContainerReceiptRow,
     ProcessContainerWorkloadRow,
     ProcessContentAdmissionRow,
@@ -495,7 +496,7 @@ class ProcessContentBoundary:
         for value in strings:
             if re.search(
                 r"(?:process-container-|padawan-cpu-|process-worker-|worker-assignment-|"
-                r"worker-request-|process-recovery-)[0-9a-f]{32}",
+                r"worker-request-|process-recovery-|process-abandonment-)[0-9a-f]{32}",
                 value,
             ):
                 raise ValueError("process content references private runtime identity")
@@ -562,6 +563,7 @@ class ProcessContentBoundary:
                 ProcessWorkerLeaseAssignmentRow,
                 ProcessWorkerDecisionBindingRow,
                 ProcessWorkerRequestRow,
+                ProcessAbandonmentRow,
                 ProcessRecoveryRow,
             ):
                 if (
@@ -580,6 +582,15 @@ class ProcessContentBoundary:
                 is not None
             ):
                 raise ValueError("process content references private recovery review")
+            if (
+                await session.scalar(
+                    select(ProcessAbandonmentRow.abandonment_id)
+                    .where(ProcessAbandonmentRow.request_digest.in_(batch))
+                    .limit(1)
+                )
+                is not None
+            ):
+                raise ValueError("process content references private terminal review")
 
 
 async def _verify_source(
