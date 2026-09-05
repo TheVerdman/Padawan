@@ -18,11 +18,20 @@ Authorized: local Padawan code/documentation, proportional offline tests, dispos
 fixtures, isolated branches/worktrees, and reviewable local commits. Preserve unrelated work and
 check for secrets before commits. Sibling repositories are read-only context.
 
-Not authorized: delegation, sibling edits, actual model inference or training, live experimental
-workers, cloud/GPU activation, spending, deployment, publication, or broader network, tool, data, or
-credential authority. Prepare concrete manifests, budgets, evidence criteria, stop conditions, and
-cleanup before requesting any such authority. These boundaries are user decisions, not inferred
-restrictions. Continue independent authorized engineering when a later execution gate is unavailable.
+Not authorized: delegation, sibling source edits, model training, live experimental workers,
+cloud accelerator activation, spending, deployment, publication, or broader network, tool, data, or credential
+authority. Actual inference remains gated except for the local Nemotron testing authorized below.
+Prepare concrete manifests, budgets, evidence criteria, stop conditions, and cleanup before
+requesting additional authority. Continue independent authorized engineering when a later execution
+gate is unavailable.
+
+Additional user decision, 2026-09-04: local Nemotron 3.5 Lightning tests are authorized when needed,
+including staged stress testing with the requirement to avoid a kernel panic. Use the current
+Nemotron-Metal-Lab gates, conservative host-health bounds, and explicit stop conditions. This does
+not authorize training, cloud activation, or sibling source edits. At the point an `a2-ultragpu-4g`
+campaign is needed, stop before activation, present its concrete manifest and cost ceiling in a
+question box, and wait for the user's decision. If clearing swap requires a reboot, commit the work
+and retain a resume point before asking the user to reboot; never reboot automatically.
 
 ## Requirements and status
 
@@ -93,8 +102,10 @@ Implementation checkpoints (each is part of stage 1, not completion of the stage
 1. Completed offline: persist and enforce local artifact metadata; reject caller relabelling and
    raw-only default reads/exports; preserve classification across restarts, duplicate writes,
    failures, and GC. See `artifact-classification-boundary.md` for the trusted-broker assumption.
-2. Add explicit process/forensic classifications and reviewed evidence-admission contracts with
-   authoritative, durable provenance and separate worker references.
+2. Completed offline: explicit process/forensic classifications and reviewed
+   evidence admission with durable provenance, separate worker references, scoped reads, and
+   transactional admission ownership. The current forensic-origin adapter binds completed PPRL
+   model I/O in the exact execution. See `process-evidence-admission.md` for limits and non-goals.
 3. Enforce process ingress and retention ownership at initial state, transitions, forks, and reads;
    define a narrow model result and allowlisted worker projection.
 4. Project training and Atlas records through the same information boundary, preserving privileged
@@ -163,11 +174,41 @@ improvement claims. These remain required later work, not reductions in program 
   `.env`, model-weight, or private-key files are tracked, and `.env` remains ignored. This is a
   checkpoint change scan, not a new whole-history secret audit.
 
+Checkpoint 2, 2026-09-04:
+
+- Added `artifact_information` and `process_evidence_admissions`, six versioned contracts, and
+  trusted-broker classification/admission/read APIs. Review receipts retain the exact policy,
+  actual admission time, and Amber sequence. PPRL generation classifies its raw request/response.
+- Candidate classification alone grants no process use. A separate reviewed receipt binds exact
+  candidate bytes, scope, rights, and forensic sources. Worker references exclude privileged
+  source/review identifiers; reads revalidate current authority and ownership.
+- A first targeted selection passed 17 tests in 2.23 seconds. Additional rights/scope/retention
+  regressions and migration checks passed 24 tests in 4.45 seconds. After admission timestamps were
+  bound into receipts, that selection passed 24 tests in 4.48 seconds. These are intermediate
+  results; provenance-quota/time-boundary cases and the final full sweep follow.
+- New invariants are tested against synthetic model-call traces, without real inference. The
+  source adapter does not yet bind MI/tool/security/environment records. No source completeness,
+  authenticated reviewer identity, semantic-redaction guarantee, complete hydration firewall, or
+  coordinated concurrent-GC guarantee is claimed.
+- The first full offline sweep after provenance quotas passed 341 tests with 6 deselected in
+  23.50 seconds. Adversarial review then found that a malformed privileged receipt could echo
+  forensic values through a Pydantic validation exception. A new synthetic-marker regression
+  reproduced the leak (1 failed in 0.41 seconds). Worker-facing reads now return one denial class
+  and message, with no private exception cause or context; the 25 admission tests passed in
+  2.89 seconds after that fix.
+- Final full offline command: `PYTHONPATH=. .venv/bin/pytest -q
+  -m 'not postgres and not live and not lean and not gcs' --tb=short`.
+  Result: **342 passed, 6 deselected in 23.89 seconds**, including migration schema matching and
+  all-revision upgrade/downgrade. Ruff passed; formatting checked 292 files; all 128 schemas match;
+  mypy passed for 159 source files; `git diff --check` passed. Live, PostgreSQL, Lean, and real GCS
+  checks remain excluded. No real model inference was used.
+- A local credential-pattern scan of all 18 changed/new nonignored files found no findings before
+  staging. No credentials, model weights, or real restricted traces were added.
+
 ## Next executable step
 
-Stage-1 checkpoint 1 is verified offline. Continue checkpoint 2: explicit process/forensic
-classifications, separate worker references, and reviewed evidence admission with protected
-provenance. Existing `ProcessGenerationResult` still returns the complete generation and raw
+Checkpoints 1 and 2 are verified offline. Continue process ingress and worker/training projections.
+Existing `ProcessGenerationResult` still returns the complete generation and raw
 artifact references; `ProcessStore.append_event` requires those references in the event; the PPRL
 compiler serializes complete events into trajectory rows. Preserve their privileged forensic join
 while removing automatic worker/training visibility in the following checkpoints. Process ingress,

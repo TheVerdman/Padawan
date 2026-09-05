@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "InformationClass": {
+      "enum": [
+        "process_candidate",
+        "forensic"
+      ],
+      "title": "InformationClass",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/artifact-information.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Privileged classification evidence. Absence means unclassified, never process-safe.",
+  "properties": {
+    "artifact": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "classified_at": {
+      "format": "date-time",
+      "title": "Classified At",
+      "type": "string"
+    },
+    "classified_by": {
+      "minLength": 1,
+      "title": "Classified By",
+      "type": "string"
+    },
+    "information_class": {
+      "$ref": "#/$defs/InformationClass"
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifact",
+    "information_class",
+    "classified_by",
+    "reason",
+    "classified_at"
+  ],
+  "title": "ArtifactInformationRecord",
+  "type": "object"
+}

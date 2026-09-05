@@ -24,6 +24,36 @@
       "sha256": "12cee62aaffc52c4dc994c473de21f11d11c0031d3988612796b96d6fe99a392"
     },
     {
+      "name": "artifact-information",
+      "schema": "artifact-information.schema.json",
+      "sha256": "fbca1523e6730839d52221dd363927cb398cdca08eac9e974f4e70868f3dd3e8"
+    },
+    {
+      "name": "forensic-artifact-reference",
+      "schema": "forensic-artifact-reference.schema.json",
+      "sha256": "1eb6c5c030a951f71032b56ae8d25e3ff81cb6ebfdeb2dd11ab604c22bdc32ac"
+    },
+    {
+      "name": "process-artifact-reference",
+      "schema": "process-artifact-reference.schema.json",
+      "sha256": "edf3dc012212f8d0004873994ad7f5fcdd4bfcaae25e0a9754135a92a33969b3"
+    },
+    {
+      "name": "evidence-admission-policy",
+      "schema": "evidence-admission-policy.schema.json",
+      "sha256": "af30b9b67f9a5b35a9c38e34cf1f1bb3023268a6c769b31d3f81ad6bad1f1c95"
+    },
+    {
+      "name": "process-evidence-admission",
+      "schema": "process-evidence-admission.schema.json",
+      "sha256": "808ab69f024b05d94aafc9a306f1ce51493b01e6b4205b104dac59c2925cd7fe"
+    },
+    {
+      "name": "process-evidence-admission-record",
+      "schema": "process-evidence-admission-record.schema.json",
+      "sha256": "83be70b779171d2100961e33d5f18add47eca6fca14974c80599c4ae1ffef5ac"
+    },
+    {
       "name": "atlas-adapter-descriptor",
       "schema": "atlas-adapter-descriptor.schema.json",
       "sha256": "ff0fd24421e16425960236aadaa4f1a4b191e84174bd379770b225305a3ddc20"

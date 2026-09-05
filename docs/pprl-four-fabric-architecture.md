@@ -15,6 +15,13 @@ architecture. See [storage boundary](artifact-classification-boundary.md) and
 [execution ledger](pprl-execution-ledger.md) for exact scope and validation. The remaining audit gaps
 below retain their status unless explicitly updated.
 
+The same offline stage now also provides immutable process/forensic information classes, separate
+reference contracts, and a reviewed evidence-admission service with execution-scoped reads and
+transactional admission ownership. PPRL model I/O receives forensic classification. The service is
+not yet wired into every state/hydration/training path; the existing complete-generation result and
+raw event references remain gaps. See [reviewed evidence admission](process-evidence-admission.md)
+for exact source-binding limits, trusted-broker assumptions, and retained validation.
+
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
 who may use the record and for what purpose, not merely by whether it is stored.

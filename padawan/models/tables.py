@@ -196,6 +196,40 @@ class ArtifactRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ArtifactInformationRow(Base):
+    __tablename__ = "artifact_information"
+    __table_args__ = (
+        CheckConstraint(
+            "information_class IN ('process_candidate', 'forensic')",
+            name="ck_artifact_information_class",
+        ),
+    )
+
+    artifact_id: Mapped[str] = mapped_column(
+        ForeignKey("artifacts.artifact_id", ondelete="RESTRICT"), primary_key=True
+    )
+    information_class: Mapped[str] = mapped_column(String(32), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessEvidenceAdmissionRow(Base):
+    __tablename__ = "process_evidence_admissions"
+
+    process_artifact_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    execution_digest: Mapped[str] = mapped_column(
+        ForeignKey("process_executions.execution_digest", ondelete="RESTRICT"), nullable=False
+    )
+    candidate_classification_digest: Mapped[str] = mapped_column(
+        ForeignKey("artifact_information.record_digest", ondelete="RESTRICT"), nullable=False
+    )
+    policy_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class ArtifactReferenceRow(Base):
     __tablename__ = "artifact_references"
     __table_args__ = (
@@ -2676,6 +2710,8 @@ def _immutable(_mapper: Any, _connection: Any, target: Any) -> None:
 for _immutable_type in (
     StudentStateRow,
     ArtifactRow,
+    ArtifactInformationRow,
+    ProcessEvidenceAdmissionRow,
     ProvenanceEventRow,
     TrainingSourceDocumentRow,
     TrainingSourceDecisionRow,

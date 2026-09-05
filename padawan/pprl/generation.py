@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import func, select
 
 from padawan.adapters.base import GenerationRequest, GenerationResult
+from padawan.artifacts.information import ArtifactInformationStore, InformationClass
 from padawan.governance.amber import (
     AmberActionRequest,
     AmberAdmissionDecision,
@@ -337,6 +338,14 @@ class ProcessGenerationExecutor:
                 ):
                     raise PermissionError("process generation artifacts exceed their admission")
                 for reference in references:
+                    await ArtifactInformationStore(self.executor.catalog).classify(
+                        session,
+                        artifact=reference,
+                        information_class=InformationClass.FORENSIC,
+                        classified_by="padawan.pprl.generation",
+                        reason="raw request or response for a governed process invocation",
+                        classified_at=datetime.now(UTC),
+                    )
                     await self.executor.catalog.reference(
                         session,
                         reference,

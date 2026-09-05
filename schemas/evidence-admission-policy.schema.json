@@ -1,0 +1,58 @@
+{
+  "$id": "https://schemas.padawan.local/v1/evidence-admission-policy.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Pinned broker configuration, supplied at composition rather than by workers.",
+  "properties": {
+    "maximum_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Maximum Bytes",
+      "type": "integer"
+    },
+    "maximum_forensic_source_bytes": {
+      "minimum": 0,
+      "title": "Maximum Forensic Source Bytes",
+      "type": "integer"
+    },
+    "maximum_forensic_sources": {
+      "minimum": 0,
+      "title": "Maximum Forensic Sources",
+      "type": "integer"
+    },
+    "policy_id": {
+      "minLength": 1,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "reviewer_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Reviewer Ids",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy_id",
+    "version",
+    "reviewer_ids",
+    "maximum_bytes",
+    "maximum_forensic_sources",
+    "maximum_forensic_source_bytes"
+  ],
+  "title": "EvidenceAdmissionPolicy",
+  "type": "object"
+}

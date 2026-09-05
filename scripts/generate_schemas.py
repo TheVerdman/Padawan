@@ -11,6 +11,11 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from padawan.artifacts.information import (
+    ArtifactInformationRecord,
+    ForensicArtifactRef,
+    ProcessArtifactRef,
+)
 from padawan.atlas.contracts import (
     AdapterDescriptor,
     AtlasCampaignManifest,
@@ -128,6 +133,11 @@ from padawan.pprl.contracts import (
     ProjectInstance,
     ProjectStateVersion,
 )
+from padawan.pprl.evidence_contracts import (
+    EvidenceAdmissionPolicy,
+    ProcessEvidenceAdmission,
+    ProcessEvidenceAdmissionRecord,
+)
 from padawan.temporal.contracts import (
     DurationProfile,
     OperationSpanEventRecord,
@@ -166,6 +176,12 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("amber-admission-decision", AmberAdmissionDecision),
     ("amber-authorization-envelope", AmberAuthorizationEnvelope),
     ("amber-authorization-event", AmberAuthorizationEvent),
+    ("artifact-information", ArtifactInformationRecord),
+    ("forensic-artifact-reference", ForensicArtifactRef),
+    ("process-artifact-reference", ProcessArtifactRef),
+    ("evidence-admission-policy", EvidenceAdmissionPolicy),
+    ("process-evidence-admission", ProcessEvidenceAdmission),
+    ("process-evidence-admission-record", ProcessEvidenceAdmissionRecord),
     ("atlas-adapter-descriptor", AdapterDescriptor),
     ("atlas-campaign-manifest", AtlasCampaignManifest),
     ("atlas-campaign-execution-binding", CampaignExecutionBinding),
