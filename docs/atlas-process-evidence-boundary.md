@@ -115,9 +115,11 @@ gain an automatic Atlas-origin detector.
 
 Source context is reconstructed from trusted retained database records rather than independently
 attested execution. Complete forensic capture, authenticated readers, a separate forensic service,
-coordinated DB/GC fencing, conserved resources, executable hydration/recovery, full worker replacement,
+coordinated DB/GC fencing, independent resource metering, executable hydration/recovery, full worker replacement,
 institutional Atlas subjects, MI interchange, trainer integration, and the 10M+ token milestone
 remain required later gates of the full program.
+The later [resource boundary](pprl-resource-boundary.md) implements shared declared funding and
+reservations; it does not supply independent execution or measurement evidence for Atlas.
 
 `tests/integration/test_atlas_process_evidence.py` uses real disposable local storage with synthetic
 Atlas calls/verifiers and process authority. It covers exact scope/source/rights/origin joins,

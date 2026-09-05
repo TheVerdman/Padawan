@@ -44,6 +44,7 @@ from tests.pprl_helpers import (
     distribution,
     envelope,
     execution,
+    fund_resources,
     program,
     worker_model,
 )
@@ -92,6 +93,7 @@ async def test_process_generation_is_admission_bound_and_idempotent(
             reason="test authorization activated",
             occurred_at=NOW + timedelta(minutes=2),
         )
+        await fund_resources(session, amber, authorization)
         process_execution = execution(
             program_digest=program_digest,
             distribution_digest=distribution_digest,

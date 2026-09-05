@@ -1,6 +1,6 @@
 # PPRL execution plan and evidence ledger
 
-Status: checkpoint review hold requested by the user; no live institutional or parameter-learning result.
+Status: local implementation resumed by the user; no live institutional or parameter-learning result.
 
 ## Mission and source of authority
 
@@ -38,19 +38,26 @@ implementation, offline tests, and local commits, including the tested Atlas evi
 This resolves the staging-authorization block below. The separate resource and authority gates
 above still apply.
 
-Latest user instruction, 2026-09-05: finish the current generation checkpoint, then pause the goal
+Earlier user instruction, 2026-09-05: finish the current generation checkpoint, then pause the goal
 and explain all changes since goal activation against the audit and full roadmap. Do not start the
 next implementation slice until the user resumes. The current goal tool exposes no pause operation;
 Computer Use explicitly refused access to the Codex app. An app-level pause therefore requires its
 user-operated progress-row control. This ledger records the requested work hold, not a false claim
 that the scheduler was paused, the goal was blocked, or its objective was completed.
 
+Latest user decision, 2026-09-05: "No I un-paused manually, you may continue." This explicitly
+resumes local implementation. The preceding repeated holds were an incorrect interpretation of the
+manual unpause, not a withdrawal of the goal's engineering authority. The generation checkpoint is
+committed as `0452cba`; the checkout was clean on resumption. Docker Desktop is available for local
+validation if needed. Cloud/GPU campaigns still require the separately specified question-box
+authorization; no new external authority was granted.
+
 ## Requirements and status
 
 | Requirement | Current state | Evidence needed for completion |
 | --- | --- | --- |
 | Information boundaries and retention | In progress, stage 1 below | Adversarial ingress/read/export/projection tests, authoritative classification, reviewed admission, transactional retention |
-| Containment, identity, causal tracing, budgets | Exact observation/policy/prepared-request binding implemented offline; enforcement gaps remain | Authenticated runtime identity, independent enforcement/capture, conserved reservations and effect reconciliation |
+| Containment, identity, causal tracing, budgets | Exact generation-workload binding and authorization-wide funding/reservation/reconciliation implemented offline | Authenticated runtime identity, independent enforcement/capture/metering and external-effect reconciliation |
 | Recovery and replacement | Committed state/leases exist; executable lifecycle absent | Crash/retry/fencing/reconciliation and exact hydration, including 100% roster replacement |
 | Communication, tracking, escalation | Declarative state and roles | Explicit delivery/read authority, causal replay, durable live views, bounded dispatch and escalation |
 | Atlas and mechanistic integration | Worker Atlas and separate runtime laboratories | Institutional subjects; versioned interchange; matched identities; protected forensic evidence and causal controls |
@@ -718,41 +725,96 @@ private-key or model-weight filename candidate was found; `.env` remains ignored
 bytes then passed the same 33-file scan with no findings or working/staged mismatches;
 `git diff --cached --check` also passed. This is a change-scope check, not a new whole-history audit.
 
+## Stage 2: shared resource-accounting checkpoint
+
+Implemented after the user's explicit manual resume, starting from clean `0452cba` on the same
+branch. The ordered root reading list and actual admission, invocation, fork, retention and test
+paths were refreshed. `pprl-resource-boundary.md` defines the pre-implementation boundary, units,
+threat assumptions, invariants, tests, evidence, failure behavior and non-goals, now reconciled to
+the resulting implementation.
+
+- Five new tables retain explicit immutable funding, immutable reservations and hash-linked
+  accounting events, with checked mutable account/phase heads. Migration `f6a8c2d4e913` has no
+  implicit funding or legacy backfill. Rates, currency and named-review evidence are explicit.
+- `AmberStore.admit` reserves capacity in the same transaction as admission. Every rollout and fork
+  under an authorization competes for its account; alternate decision IDs, new worker identities
+  and replacement do not replenish it. Root declarations charge once, and inherited fork budgets
+  require the exact committed parent fork state.
+- Dispatch records a started phase under current authority, lease, state and original deadline.
+  Unknown effects retain capacity and the concurrent slot. Reviewed release is limited to unstarted
+  reservations and races safely with dispatch. Generic completion requires an actual committed
+  process event and charges its full allowance.
+- Completed generation accounting reopens the exact original private request, response and prepared
+  workload artifacts, verifies usage without coercion, applies the pinned rate, and independently
+  retains its sources. Only evidenced token/cost differences release capacity. Known overages stop
+  admission even when output fails; unrepresentable actual usage stops the account and preserves the
+  unresolved hold and raw source. This is provider-reported logical accounting, not physical metering.
+- Private operator commands fund, inspect/replay, release unstarted reservations and reconcile
+  retained model results. No model adapter is composed by these commands. Funding/accounting
+  references remain outside worker state and automatic learning projections.
+
+Adversarial review added retained-event checks against forged completion, raw JSON hash checks
+against coercive record substitution, no-refund behavior for malformed/coerced usage, independent
+source-pin checks on reconciliation replay, and explicit overflow stops. Early validation exposed
+SQLAlchemy multi-hop foreign-key type inference, a pytest duplicate module basename and formatting
+issues; these were corrected before the final checks. Tests instantiate synthetic brokers and fake
+model clients. Replacing every broker instance after lease expiry proves retained accounting only,
+not continuity of a live institution through complete worker replacement.
+
+Final validation on 2026-09-05:
+
+- `make lint schemas`: 336 Python files formatted; Ruff passed; 163 schemas match their contracts.
+- `.venv/bin/mypy --no-incremental padawan`: passed, 174 source files.
+- `PYTHONPATH=. .venv/bin/pytest -q -m 'not postgres and not live and not lean' --tb=short`:
+  **639 passed, 10 deselected in 84.58s**. Includes resource, CLI, migration, generation, coordinator,
+  content, training-projection and existing offline regressions.
+- `PADAWAN_TEST_POSTGRES_URL=<disposable-local-fixture> PYTHONPATH=. .venv/bin/pytest -q
+  tests/integration/test_postgres_process_resources.py tests/integration/test_postgres_concurrency.py
+  --tb=short`: **8 passed in 59.50s**. Four new cases cover competing admission at two capacities,
+  repeated settlement and dispatch/release races; four existing PostgreSQL cases also pass.
+- `git diff --check`: passed before the final documentation-only evidence update.
+
+The PostgreSQL fixture used cached ARM64 image
+`sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193`, with no image pull,
+one CPU, 512 MiB memory and equal memory/swap limit, 128 PID limit, read-only root, tmpfs data and no
+host mounts. The task-owned Docker network was internal-only. Its published port was unavailable,
+so the tests used a localhost-only TCP-to-`docker exec -i ... busybox nc` relay rather than opening
+external networking. These are fixture settings and SQL concurrency evidence, not sandbox attestation
+for a model worker. Docker Desktop was started because its daemon was initially unavailable.
+
+Cleanup verified: relay exited with `POSTGRES_TEST_RELAY_STOPPED`; the task-owned container and
+network `padawan-resource-validation-01a06e62` were removed, and label-filtered inventories were
+empty. Docker Desktop and preexisting images were left available. No model/worker launch, GPU use,
+training, cloud activation, sibling edit, production migration, publication or deployment occurred.
+Validation metadata, fixture relay source and secret-scan reports are retained locally under ignored
+`runs/pprl-resource-validation-20260905/`. The cached ARM64 Gitleaks image
+`sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f` ran with networking
+disabled and repository access read-only. All-local-ref history scan: **28 commits, 5,680,489 bytes,
+zero findings**. The exact staged snapshot must also pass before committing; its source manifest
+and redacted `staged.json` report are retained in that directory. No remote synchronization is part
+of this local checkpoint.
+
 ## Next executable step
 
-Finish the generation checkpoint's changed/new and exact staged-blob credential scans and reviewable
-local commit, then stop for the user-requested discussion. On an explicitly resumed continuation,
-re-read Git state and this ledger.
-The Atlas checkpoint is committed; the consumer audit and exact-input implementation above should
-not be restarted from scratch. The goal remains active and incomplete.
+Continue stage 2 with the execution identity and enforcement boundary. Audit the trusted broker,
+runtime adapter, declared worker identity, provider destination, privileged storage/credentials,
+and stop path against actual consumers. Specify the smallest local boundary that can independently
+bind a launched effect to admitted workload authority and retain evidence outside worker control.
+Separate configured claims, authenticated identity and observed enforcement; a signed declaration,
+SQL receipt or disposable PostgreSQL container cannot stand in for an attested worker sandbox.
 
-Next select and implement the conserved-resource boundary. Revalidate the existing per-action
-projected totals, authorization-wide concurrency, invocation failures, child execution creation and
-retained-byte accounting before defining the shared account and reservation schema. The proposed
-invariant is that workers, retries, forks and replacement consume one explicit funding scope;
-relabeling an invocation or creating a child cannot replenish capacity. Reserve before dispatch,
-reconcile at most once, and preserve unresolved external effects without an automatic refund.
-Separate historical state budget snapshots from authoritative resource balances.
+Before implementing that slice, record its exact runner/protocol scope, trust root, credential and
+filesystem/network interfaces, replay/fencing rules, capture guarantees, evidence retention, fail-
+closed stops and rollback. Use synthetic local fixtures first. Do not create a live scheduler or
+claim complete replacement before execution authority and external-effect handling are adequate.
+The shared resource ledger is complete for its declared scope and should not be restarted; physical
+metering, complete capture, authentic runtime identities and coordinated GC remain separate gaps.
 
-Before editing that slice, specify unit/rate identities, funding/transfer authority, idempotent
-reservation identity, lock order, numeric precision, actual-use evidence and overage handling.
-Input/output token ceilings and costs require honest upper-bound or measurement assumptions; a
-provider's returned count is not independently verified use. Missing evidence must not manufacture
-unused capacity. Tests should cover competing workers, duplicate attempts, forks, total replacement,
-pause/revocation, crash windows, concurrent reservation/reconciliation, arithmetic bounds, unknown
-effects and transaction rollback. Retain grant, reservation and reconciliation lineage separately
-from worker-visible status. Rollback stops new dispatch while preserving balances and held capacity.
-
-This remains authorized offline engineering. It must not be described as authenticated resource
-enforcement or a live scheduler. Independent containment/capture, runtime identities and physical
-resource validation remain required before live execution. Keep Atlas training materialization
-gated for its later attributable-learning path.
-
-Non-goals: live Atlas campaigns, sibling telemetry integration, a trainer, parameter updates,
-permission to train, live workers, model stress tests, or cloud activation. Atlas institutional
-subjects and causal MI interchange, conserved resources, authenticated execution, coordinated GC,
-executable recovery, full replacement, and the 10M+ token milestone remain required later gates.
-No additional resource authority is needed for this local implementation work.
+This remains authorized local engineering. Model/GPU validation, Atlas institutional subjects and
+causal MI interchange, executable recovery, explicit communication, the 10M+ token milestone,
+preregistered learning, an actual trainer/update and independent candidate evaluation remain in the
+full roadmap. Keep Atlas training materialization gated. Prepare a concrete campaign before any
+required additional execution authority; no new authorization is needed for the next local audit.
 
 ## Completion audit
 

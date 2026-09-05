@@ -47,8 +47,9 @@ failures, failed forensic persistence, and unavailable observations are not upgr
 capture claims. The scheduler still needs independent failure classification and reconciliation.
 
 The broker, adapter composition, database, and broker-owned storage are trusted for this checkpoint.
-These interfaces are not a service credential boundary or an OS sandbox. The current budget checks
-also do not establish fleet-wide conserved resource reservations or eliminate dispatch races.
+These interfaces are not a service credential boundary or an OS sandbox. The later
+`pprl-resource-boundary.md` adds conserved authorization-wide reservations and accounting;
+independent metering and enforcement of external execution remain separate requirements.
 
 Tests in `test_pprl_generation.py` retain synthetic private fields in the raw result while checking
 their absence from normalized output and newly committed event/state references. They reject raw

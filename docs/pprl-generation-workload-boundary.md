@@ -89,8 +89,9 @@ These statuses describe retained knowledge, not proof of every provider action o
 
 Provider HTTP/JSON/usage failures retain available response bytes; a response-storage failure can
 leave an external call pending with a failed invocation. There is no complete independent capture
-or stale-invocation reconciler. A pre-dispatch failure can conservatively remain unknown. No
-reconciliation or refund operation is implemented here.
+or stale-invocation reconciler. A pre-dispatch failure can conservatively remain unknown. The later
+[resource boundary](pprl-resource-boundary.md) reconciles retained complete results and permits
+reviewed release of unstarted reservations; started unknown effects remain held.
 
 Workload publication and new database pins roll back with the invocation intent, including caught
 errors and outer rollback. A backend object may remain unreferenced after transaction failure.
@@ -112,10 +113,11 @@ disclosing private references. Exact full-suite results are recorded in the exec
 
 ## Remaining dependency
 
-Next is conserved resource admission across attempts, workers, forks and replacement, with explicit
-reservation, reconciliation and unknown-effect handling. Existing per-action projected totals and
-concurrency checks are not a shared account ledger. This checkpoint creates attributable intent for
-that work, but does not complete stage 2.
+The subsequent [resource boundary](pprl-resource-boundary.md) adds explicit shared funding,
+reservation and evidence-based reconciliation across attempts, workers and forks. Existing
+per-action projected totals remain historical declarations alongside the shared account. Neither
+checkpoint completes stage 2: authenticated runtime identity, independently enforced containment,
+independent capture/metering and external-effect reconciliation still require their own evidence.
 
 Non-goals include authenticated assignments/runtime, an attested sandbox or forensic trust root,
 generic tools and their effects, executable scheduling/recovery, message transport, Atlas campaign

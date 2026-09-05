@@ -251,6 +251,9 @@ class ProcessCoordinator:
                         worker_id=self.worker_id,
                         now=datetime.now(UTC),
                     )
+                    await self.amber.resources.start(
+                        session, decision_id=decision.decision_id, now=datetime.now(UTC)
+                    )
                 async with asyncio.timeout(float(proposal.incremental_usage.wall_time_seconds)):
                     result = await self.executor.execute(claimed, proposal, decision, observation)
                 _validate_result_usage(claimed, proposal, result)

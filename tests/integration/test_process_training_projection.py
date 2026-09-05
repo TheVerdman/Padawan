@@ -62,6 +62,7 @@ from tests.pprl_helpers import (
     distribution,
     envelope,
     execution,
+    fund_resources,
     program,
 )
 
@@ -150,6 +151,7 @@ async def _campaign(
                 evidence_refs=("review:projection",),
                 occurred_at=clock(),
             )
+        await fund_resources(session, amber, authorization)
         for index in range(instance_count):
             instance = await registry.sample(
                 session,

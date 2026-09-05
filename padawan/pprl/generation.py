@@ -39,6 +39,7 @@ from padawan.pprl.contracts import (
     project_state_digest,
 )
 from padawan.pprl.generation_boundary import ProcessGenerationBoundary
+from padawan.pprl.resource_generation import ProcessGenerationResources
 from padawan.pprl.store import _invocation_forensic_bytes
 
 
@@ -67,6 +68,13 @@ class ProcessGenerationExecutor:
         self.database = database
         self.executor = executor
         self.boundary = boundary
+        self.resources = (
+            None
+            if boundary is None
+            else ProcessGenerationResources(
+                store=boundary.observations.store.amber.resources, catalog=executor.catalog
+            )
+        )
         if executor.database is not database or (
             boundary is not None
             and (
@@ -136,6 +144,7 @@ class ProcessGenerationExecutor:
         research_execution_digest: str | None = None,
     ) -> ProcessGenerationResult:
         assert self.boundary is not None
+        assert self.resources is not None
         timestamp = datetime.now(UTC)
         async with self.database.transaction() as session:
             rollout = await session.scalar(
@@ -379,6 +388,7 @@ class ProcessGenerationExecutor:
                 or workload.prepared.provider != provider
             ):
                 raise PermissionError("prepared transport differs from the admitted model identity")
+            await self.resources.validate(session, workload)
 
         async def before_dispatch() -> None:
             assert self.boundary is not None
@@ -390,6 +400,14 @@ class ProcessGenerationExecutor:
                 )
                 if datetime.now(UTC) >= action_deadline:
                     raise PermissionError("process action deadline expired before dispatch")
+                assert self.resources is not None
+                await self.resources.validate(session, workload)
+                await self.resources.store.start(
+                    session,
+                    decision_id=amber_decision_id,
+                    now=datetime.now(UTC),
+                    allow_started=True,
+                )
 
         try:
             remaining_seconds = (action_deadline - datetime.now(UTC)).total_seconds()
@@ -404,6 +422,13 @@ class ProcessGenerationExecutor:
                     prepared=workload.prepared,
                     before_dispatch=before_dispatch,
                 )
+                # Persist accounting even if later output admission fails or authority pauses.
+                async with self.database.transaction() as session:
+                    accounting = await self.resources.reconcile(
+                        session, invocation_id=invocation_id, now=datetime.now(UTC)
+                    )
+                if accounting.stopped:
+                    raise PermissionError("model accounting exceeded its conserved reservation")
                 if (
                     generation.request_id != request.request_id
                     or generation.provider != provider
@@ -550,6 +575,14 @@ class ProcessGenerationExecutor:
             if call is not None:
                 invocation.request_artifact_id = call.request_artifact_id
                 invocation.response_artifact_id = call.response_artifact_id
+            if self.resources is not None and call is not None and call.status == "completed":
+                try:
+                    await self.resources.reconcile(
+                        session, invocation_id=invocation_id, now=datetime.now(UTC)
+                    )
+                except Exception:
+                    # Missing or inconsistent source evidence never manufactures spare capacity.
+                    invocation.error = {**invocation.error, "resource_reconciliation": "unresolved"}
 
 
 def _artifact_reference(row: ArtifactRow) -> ArtifactRef:

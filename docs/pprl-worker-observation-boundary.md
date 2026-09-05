@@ -102,9 +102,10 @@ fallback. Data migration or a revised projection policy requires its own explici
 
 Offline training projections and explicit reviewed Atlas process evidence now have separate
 boundaries. New generation receipts bind exact observation/policy input and prepared transport as
-described in `pprl-generation-workload-boundary.md`. Remaining gates include Atlas learning
+described in `pprl-generation-workload-boundary.md`; shared declared funding and reservations are
+implemented in `pprl-resource-boundary.md`. Remaining gates include Atlas learning
 materialization and coordinated GC; authenticated identities, independent containment and forensic
-capture, full environment-effect attribution, and conserved resources;
+capture, full environment-effect attribution, and independent resource metering;
 role-specific observation/action authority; executable hydration/recovery and 100% roster replacement;
 and preregistered long-horizon training/evaluation. A held SQL lock does not fence an external process
 after commit, and this service does not claim to close that execution race.

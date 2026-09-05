@@ -53,9 +53,15 @@ workload receipts are retained before I/O. Completed-response reuse rechecks ori
 unresolved process effects cannot automatically resend. Mock HTTP tests cover substituted inputs,
 ambient client state, configuration drift, pause and interruption. See
 [generation workload boundary](pprl-generation-workload-boundary.md). Authenticated runtime and
-loaded-model identity, independently enforced containment/capture, conserved shared reservations,
+loaded-model identity, independently enforced containment/capture, independent resource metering,
 executable hydration/recovery, Atlas learning projections, semantic provenance, coordinated GC, and
 parameter-training readiness remain unresolved. These offline properties do not attest a live runtime.
+
+The second stage-2 checkpoint implements explicitly reviewed authorization-wide funding, atomic per-action
+reservations, original-result/rate reconciliation, conservative generic charges and retained unknown
+holds. Workers, retries and forks share the account; an overage stops new admission. Private funding
+and accounting records remain outside process projections. See [resource boundary](pprl-resource-boundary.md)
+for units, stores, CLI/API paths, SQL concurrency evidence and the distinction from physical metering.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
@@ -127,6 +133,9 @@ The PPRL data model has a real durable substrate:
 - `process_training_projections` holds privileged immutable receipts for explicitly projected
   institutional learning payloads, exact source/observation/rights joins, exclusions, and independent
   artifact ownership; this table is not worker memory or a parameter-training authorization;
+- `process_resource_grants`, `process_resource_accounts`, `process_resource_reservations`,
+  `process_resource_reservation_heads` and `process_resource_events` govern shared declared capacity
+  and retained accounting; they are privileged control records, not worker hydration;
 - Amber authorization, lifecycle, head, and action-decision tables bind each admitted transition to
   exact authority and cumulative budget; and
 - `process_worker_invocations`, `process_generation_workloads`, `external_calls`, and the artifact

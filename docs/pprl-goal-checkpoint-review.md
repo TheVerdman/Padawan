@@ -1,5 +1,10 @@
 # Padawan goal checkpoint review
 
+Historical snapshot through generation checkpoint `0452cba`. The user has since manually resumed
+the goal. Current authority, subsequent shared resource-accounting work and validation are recorded
+in [the execution ledger](pprl-execution-ledger.md) and [resource boundary](pprl-resource-boundary.md).
+The pause and remaining-work statements below describe this review's original checkpoint.
+
 Review date: 2026-09-05. Comparison base: clean goal-start HEAD `9d58ceb4ad5cb0ceac77c2ddf30e0ef83c5e69d0`.
 Branch: `codex/pprl-information-boundary`. This review includes the generation-workload checkpoint
 being committed with it, following nine earlier local commits. Detailed commands, failures, fixes,
@@ -10,8 +15,8 @@ state, worker observations, privileged forensic evidence and projected learning 
 exact generation-input checkpoint is also implemented. Padawan has not yet demonstrated a live
 persistent research institution, complete worker replacement, or parameter learning.
 
-The user requested a pause for discussion after this checkpoint. Further implementation is on hold
-until resumed. The goal API has no pause operation, and Computer Use denied access to the Codex
+The user requested a pause for discussion after this checkpoint. Implementation was held
+until the subsequent explicit resume. The goal API has no pause operation, and Computer Use denied access to the Codex
 app; its goal progress-row Pause control requires the user. No goal has been marked complete to
 simulate a pause.
 

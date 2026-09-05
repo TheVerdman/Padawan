@@ -17,6 +17,12 @@ from padawan.domains.legal.appellate import (
 )
 from padawan.models.contracts import ArtifactRef
 from padawan.models.hashing import sha256_digest
+from padawan.pprl.contracts import ProjectBudgetUsage
+from padawan.pprl.resource_contracts import (
+    ProcessModelRate,
+    ProcessResourceGrant,
+    resources_from_usage,
+)
 from tests.appellate_helpers import NOW, build_submission
 from tests.pprl_helpers import distribution, envelope, program
 
@@ -374,6 +380,37 @@ def test_cli_registers_and_audits_pprl_amber_control_plane(tmp_path, monkeypatch
         "authorized",
         "active",
     ]
+    grant = ProcessResourceGrant(
+        grant_id="test.cli-resource-grant",
+        authorization_digest=authorization_digest,
+        capacity=resources_from_usage(
+            ProjectBudgetUsage(**authorization.budgets.model_dump(exclude={"concurrent_workers"})),
+            ceiling=False,
+        ),
+        concurrent_reservations=1,
+        model_rates=(
+            ProcessModelRate(
+                rate_id="test.zero-rate",
+                worker_model_digest=authorization.allowed_worker_model_digests[0],
+                input_micro_usd_per_million_tokens=0,
+                output_micro_usd_per_million_tokens=0,
+                request_micro_usd=0,
+            ),
+        ),
+        reviewed_by="reviewer-a",
+        review_evidence="explicit offline CLI funding",
+        created_at=pprl_now(),
+    )
+    grant_file = tmp_path / "resource-grant.json"
+    grant_file.write_text(grant.model_dump_json(), encoding="utf-8")
+    funded = runner.invoke(
+        app, ["--json", "pprl", "resource", "fund", "--grant-file", str(grant_file)]
+    )
+    assert funded.exit_code == 0, funded.output
+    assert json.loads(funded.stdout)["grant_digest"] == grant.digest
+    accounting = runner.invoke(app, ["--json", "pprl", "resource", "inspect", authorization_digest])
+    assert accounting.exit_code == 0, accounting.output
+    assert [event["kind"] for event in json.loads(accounting.stdout)["journal"]] == ["grant"]
 
 
 def test_cli_lean_verification_emits_hard_gate(tmp_path, monkeypatch) -> None:

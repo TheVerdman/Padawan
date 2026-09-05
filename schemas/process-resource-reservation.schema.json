@@ -1,0 +1,145 @@
+{
+  "$defs": {
+    "ProcessResources": {
+      "additionalProperties": false,
+      "properties": {
+        "action_microseconds": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Action Microseconds",
+          "type": "integer"
+        },
+        "actions": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Actions",
+          "type": "integer"
+        },
+        "artifact_bytes": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Artifact Bytes",
+          "type": "integer"
+        },
+        "input_tokens": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "micro_usd": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Micro Usd",
+          "type": "integer"
+        },
+        "output_tokens": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Output Tokens",
+          "type": "integer"
+        }
+      },
+      "title": "ProcessResources",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-resource-reservation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "amount": {
+      "$ref": "#/$defs/ProcessResources"
+    },
+    "authorization_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Digest",
+      "type": "string"
+    },
+    "authorization_sequence": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "title": "Authorization Sequence",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "decision_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Decision Digest",
+      "type": "string"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "execution_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Execution Digest",
+      "type": "string"
+    },
+    "grant_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Grant Digest",
+      "type": "string"
+    },
+    "lease_token_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Lease Token Digest",
+      "type": "string"
+    },
+    "request_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Request Digest",
+      "type": "string"
+    },
+    "rollout_id": {
+      "minLength": 1,
+      "title": "Rollout Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "State Digest",
+      "type": "string"
+    },
+    "worker_model_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Worker Model Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "decision_id",
+    "decision_digest",
+    "request_digest",
+    "grant_digest",
+    "authorization_digest",
+    "authorization_sequence",
+    "rollout_id",
+    "execution_digest",
+    "state_digest",
+    "lease_token_digest",
+    "worker_model_digest",
+    "amount",
+    "created_at"
+  ],
+  "title": "ProcessResourceReservation",
+  "type": "object"
+}

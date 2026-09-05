@@ -31,6 +31,7 @@ from tests.pprl_helpers import (
     distribution,
     envelope,
     execution,
+    fund_resources,
     program,
     worker_model,
 )
@@ -86,6 +87,7 @@ async def test_compiler_emits_macro_trajectories_only_after_distribution_replica
             reason="PPRL training fixture activated",
             occurred_at=NOW + timedelta(minutes=2),
         )
+        await fund_resources(session, amber, authorization)
         for instance_index, instance in enumerate(instances):
             for replication_index in range(2):
                 rollout_id = f"training-rollout-{instance_index}-{replication_index}"

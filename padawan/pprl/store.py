@@ -303,6 +303,41 @@ class ProcessStore:
             payload=initial_state,
             created_at=timestamp,
         )
+        if parent_rollout_id is not None:
+            parent = await session.get(ProcessRolloutRow, parent_rollout_id)
+            parent_state = (
+                None
+                if parent is None
+                else await self.get_state(session, state_id=parent.current_state_id)
+            )
+            parent_event = (
+                None
+                if parent_state is None or parent_state.triggering_event_id is None
+                else await session.get(ProcessEventRow, parent_state.triggering_event_id)
+            )
+            if (
+                parent is None
+                or parent_state is None
+                or parent_event is None
+                or parent.authorization_digest != execution.amber_authorization_digest
+                or parent.instance_id != instance.instance_id
+                or parent_state.payload != initial_state
+                or _event_from_row(parent_event).kind != ProcessEventKind.ROLLOUT_FORKED
+                or _event_from_row(parent_event).payload.get("fork_id") != fork_id
+            ):
+                raise PermissionError(
+                    "resource inheritance requires the exact committed fork state"
+                )
+            await self.amber.resources.inspect(session, parent.authorization_digest)
+        else:
+            await self.amber.resources.charge_initial(
+                session,
+                rollout_id=assigned_id,
+                authorization_digest=execution.amber_authorization_digest,
+                usage=initial_state.budget_usage,
+                state_digest=state.state_digest,
+                now=timestamp,
+            )
         row = ProcessRolloutRow(
             rollout_id=assigned_id,
             execution_digest=execution_digest,
@@ -696,6 +731,9 @@ class ProcessStore:
         )
         await self.content.admit_event(
             session, event, execution_digest=row.execution_digest, now=timestamp
+        )
+        await self.amber.resources.settle_event(
+            session, decision_id=amber_decision_id, event_digest=event.event_digest, now=timestamp
         )
         return event, state
 

@@ -64,6 +64,7 @@ from tests.pprl_helpers import (
     distribution,
     envelope,
     execution,
+    fund_resources,
     program,
     worker_model,
 )
@@ -133,6 +134,7 @@ async def evidence_context(database, tmp_path, pprl_now, request) -> EvidenceCon
                 evidence_refs=("review:test",),
                 occurred_at=NOW + timedelta(minutes=minute),
             )
+        await fund_resources(session, amber, authorization)
         manifest = execution(
             program_digest=program_digest,
             distribution_digest=distribution_digest,

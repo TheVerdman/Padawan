@@ -25,6 +25,7 @@ from tests.pprl_helpers import (
     distribution,
     envelope,
     execution,
+    fund_resources,
     program,
     worker_model,
 )
@@ -109,6 +110,7 @@ async def test_process_event_requires_amber_decision_and_replays(database) -> No
             reason="test run activated",
             occurred_at=NOW + timedelta(minutes=2),
         )
+        await fund_resources(session, amber, authorization)
         process_execution = execution(
             program_digest=program_digest,
             distribution_digest=distribution_digest,
@@ -307,6 +309,7 @@ async def test_process_fork_inherits_identical_project_payload(database) -> None
             reason="test run activated",
             occurred_at=NOW + timedelta(minutes=2),
         )
+        await fund_resources(session, amber, authorization)
         parent_execution = execution(
             program_digest=program_digest,
             distribution_digest=distribution_digest,

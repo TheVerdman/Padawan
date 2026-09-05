@@ -1,0 +1,44 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-model-rate.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "input_micro_usd_per_million_tokens": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "title": "Input Micro Usd Per Million Tokens",
+      "type": "integer"
+    },
+    "output_micro_usd_per_million_tokens": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "title": "Output Micro Usd Per Million Tokens",
+      "type": "integer"
+    },
+    "rate_id": {
+      "minLength": 1,
+      "title": "Rate Id",
+      "type": "string"
+    },
+    "request_micro_usd": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "title": "Request Micro Usd",
+      "type": "integer"
+    },
+    "worker_model_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Worker Model Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "rate_id",
+    "worker_model_digest",
+    "input_micro_usd_per_million_tokens",
+    "output_micro_usd_per_million_tokens",
+    "request_micro_usd"
+  ],
+  "title": "ProcessModelRate",
+  "type": "object"
+}

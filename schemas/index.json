@@ -139,6 +139,31 @@
       "sha256": "858de79e68aaee3b56de445fad220559beca62086169c5a34103bd339728474e"
     },
     {
+      "name": "process-resources",
+      "schema": "process-resources.schema.json",
+      "sha256": "f2c680ee2503b24cbea44272553507830d770526231d0a540d2608b5528e23d0"
+    },
+    {
+      "name": "process-model-rate",
+      "schema": "process-model-rate.schema.json",
+      "sha256": "ff10b634f44fc6aafdb6293cbe54e9d851a2d35ac0765a7b33dc8a3ba63862c5"
+    },
+    {
+      "name": "process-resource-grant",
+      "schema": "process-resource-grant.schema.json",
+      "sha256": "ced3ff92d8cb4ad0584557e27e049f1e51cc4823ad69815ff013bd94dbcfcd0b"
+    },
+    {
+      "name": "process-resource-reservation",
+      "schema": "process-resource-reservation.schema.json",
+      "sha256": "876bf3ae02677d472b2042bb80f208be446d2ead98d6034ca791689aaa0099a8"
+    },
+    {
+      "name": "process-resource-event",
+      "schema": "process-resource-event.schema.json",
+      "sha256": "3673bb9e000f97a0ccdbb2f1237b2a72cd6f98ace7256ff65df8b51f2b55b121"
+    },
+    {
       "name": "process-learning-outcome-component",
       "schema": "process-learning-outcome-component.schema.json",
       "sha256": "45d201bc5225760e35b70a03ec834f7519c7a874678722b61cd8679f4a7f23e8"

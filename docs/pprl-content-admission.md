@@ -73,11 +73,12 @@ normalized public worker/tool path or explicit reviewed evidence admission. This
 make a privileged broker object or the full historical event record suitable for worker hydration.
 It also does not attest a filesystem, secret, network, GPU, or OS boundary.
 
-Worker observations now have a narrow projection and exact receipts; complete provider inputs and
-training/Atlas products remain unbound. The existing
-training compiler still includes full historical records; content receipts alone do not authorize
-their training use. Communication authorization, authenticated identities, conserved resources,
-forensic completeness, and concurrent GC are separate remaining requirements.
+Worker observations, exact generation workloads, training projections and reviewed Atlas process
+evidence now have separate boundaries; see their boundary documents and the execution ledger.
+Content receipts alone do not authorize training use. The later `pprl-resource-boundary.md` adds
+shared declared funding and reservations. Communication authorization, authenticated identities,
+independent metering, forensic completeness, Atlas learning materialization and coordinated GC
+remain separate requirements.
 
 On failure, retain committed history and deny the new operation. Before rollback, disable new
 consumers and preserve receipts, source records, and ownership; never replace missing receipts with

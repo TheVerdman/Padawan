@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -324,6 +325,95 @@ class ProcessGenerationWorkloadRow(Base):
     record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
     record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessResourceGrantRow(Base):
+    __tablename__ = "process_resource_grants"
+
+    authorization_digest: Mapped[str] = mapped_column(
+        String(71),
+        ForeignKey("amber_authorizations.authorization_digest", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    grant_id: Mapped[str] = mapped_column(String(192), nullable=False, unique=True)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
+class ProcessResourceAccountRow(Base):
+    __tablename__ = "process_resource_accounts"
+
+    authorization_digest: Mapped[str] = mapped_column(
+        String(71),
+        ForeignKey("process_resource_grants.authorization_digest", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    sequence: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+
+
+class ProcessResourceReservationRow(Base):
+    __tablename__ = "process_resource_reservations"
+    __table_args__ = (
+        UniqueConstraint(
+            "rollout_id",
+            "state_digest",
+            "lease_token_digest",
+            name="uq_process_resource_leased_action",
+        ),
+    )
+
+    decision_id: Mapped[str] = mapped_column(
+        String(192),
+        ForeignKey("amber_admission_decisions.decision_id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    authorization_digest: Mapped[str] = mapped_column(
+        String(71),
+        ForeignKey("process_resource_accounts.authorization_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    rollout_id: Mapped[str] = mapped_column(
+        ForeignKey("process_rollouts.rollout_id", ondelete="RESTRICT"), nullable=False
+    )
+    state_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    lease_token_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False, unique=True)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
+class ProcessResourceReservationHeadRow(Base):
+    __tablename__ = "process_resource_reservation_heads"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('reserved', 'started', 'settled', 'released')",
+            name="ck_process_resource_reservation_status",
+        ),
+    )
+
+    decision_id: Mapped[str] = mapped_column(
+        String(192),
+        ForeignKey("process_resource_reservations.decision_id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+    record_digest: Mapped[str] = mapped_column(String(71), nullable=False)
+
+
+class ProcessResourceEventRow(Base):
+    __tablename__ = "process_resource_events"
+    __table_args__ = (
+        UniqueConstraint("authorization_digest", "sequence", name="uq_process_resource_sequence"),
+    )
+
+    record_digest: Mapped[str] = mapped_column(String(71), primary_key=True)
+    authorization_digest: Mapped[str] = mapped_column(
+        String(71),
+        ForeignKey("process_resource_grants.authorization_digest", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    sequence: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    record_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
 
 
 class ProcessTrainingProjectionRow(Base):
@@ -2826,6 +2916,9 @@ for _immutable_type in (
     ProcessObservationRow,
     ProcessObservationDecisionRow,
     ProcessGenerationWorkloadRow,
+    ProcessResourceGrantRow,
+    ProcessResourceReservationRow,
+    ProcessResourceEventRow,
     ProcessTrainingProjectionRow,
     ProvenanceEventRow,
     TrainingSourceDocumentRow,

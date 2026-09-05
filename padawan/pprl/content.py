@@ -27,6 +27,9 @@ from padawan.models.tables import (
     ArtifactRow,
     ProcessContentAdmissionRow,
     ProcessEventRow,
+    ProcessResourceEventRow,
+    ProcessResourceGrantRow,
+    ProcessResourceReservationRow,
     ProcessRolloutRow,
     ProcessStateRow,
 )
@@ -520,6 +523,18 @@ class ProcessContentBoundary:
             )
             if raw is not None or classification is not None:
                 raise ValueError("process content references forensic or unclassified storage")
+            for table in (
+                ProcessResourceGrantRow,
+                ProcessResourceReservationRow,
+                ProcessResourceEventRow,
+            ):
+                if (
+                    await session.scalar(
+                        select(table.record_digest).where(table.record_digest.in_(batch)).limit(1)
+                    )
+                    is not None
+                ):
+                    raise ValueError("process content references private resource accounting")
 
 
 async def _verify_source(

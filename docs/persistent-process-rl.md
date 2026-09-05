@@ -43,8 +43,12 @@ local, and tool use crosses its own separately admitted action boundary. Each ad
 the next cumulative action, token,
 artifact-byte, wall-time, and cost totals. The committed state must equal that reservation, and the
 lease covers the reserved action wall time so a timeout cannot be mistaken for an unowned retry.
-These are per-action declarations, not conserved shared resource accounts. New PPRL dispatch does
-not automatically retry an unresolved external effect.
+Those state fields remain per-action declarations. A separate explicitly reviewed resource grant
+now funds one shared authorization-wide account; Amber reserves incremental allowances atomically,
+and retained model results or committed events reconcile them once. Forks and replacement workers
+do not replenish capacity. Unknown effects hold capacity and concurrency; known overages stop the
+account. See `pprl-resource-boundary.md` for exact units, rates, evidence and trust limits. New PPRL
+dispatch does not automatically retry an unresolved external effect.
 
 The PPRL model wrapper returns normalized public output and explicit token counts. Raw results,
 private channels, arbitrary provider metadata, and artifact references remain in privileged

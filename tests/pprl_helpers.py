@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from padawan.governance.amber import (
     AmberAuthorizationEnvelope,
     AmberBudgetCaps,
@@ -12,6 +14,7 @@ from padawan.governance.amber import (
     AmberReleaseClass,
     AmberToolGrant,
 )
+from padawan.governance.amber_store import AmberStore
 from padawan.models.contracts import ResearchRole, project_authored_internal_rights
 from padawan.models.hashing import sha256_digest
 from padawan.models.research_contracts import (
@@ -19,12 +22,14 @@ from padawan.models.research_contracts import (
     ModelServingIdentity,
     VersionedComponentIdentity,
 )
+from padawan.models.tables import AmberAuthorizationHeadRow
 from padawan.pprl.contracts import (
     DistributionPartition,
     PersistenceMode,
     ProcessDistributionManifest,
     ProcessExecutionManifest,
     ProcessProgram,
+    ProjectBudgetUsage,
     ProjectInstance,
     ProjectSplit,
     ReplicationPolicy,
@@ -33,8 +38,53 @@ from padawan.pprl.contracts import (
     WorkerRoleSpec,
 )
 from padawan.pprl.distributions import GeneratedProject
+from padawan.pprl.resource_contracts import (
+    ProcessModelRate,
+    ProcessResourceGrant,
+    resources_from_usage,
+)
 
 NOW = datetime(2026, 8, 23, 12, 0, tzinfo=UTC)
+
+
+async def fund_resources(
+    session: AsyncSession,
+    amber: AmberStore,
+    authorization: AmberAuthorizationEnvelope,
+    *,
+    rates: tuple[ProcessModelRate, ...] | None = None,
+) -> ProcessResourceGrant:
+    """Explicit zero-priced fake-model funding; not an inferred production grant."""
+    head = await session.get(AmberAuthorizationHeadRow, authorization.digest)
+    assert head is not None
+    timestamp = head.updated_at
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=UTC)
+    grant = ProcessResourceGrant(
+        grant_id="test-resource-" + authorization.digest[7:39],
+        authorization_digest=authorization.digest,
+        capacity=resources_from_usage(
+            ProjectBudgetUsage(**authorization.budgets.model_dump(exclude={"concurrent_workers"})),
+            ceiling=False,
+        ),
+        concurrent_reservations=authorization.budgets.concurrent_workers,
+        model_rates=rates
+        if rates is not None
+        else tuple(
+            ProcessModelRate(
+                rate_id="test.zero-cost-fake",
+                worker_model_digest=digest,
+                input_micro_usd_per_million_tokens=0,
+                output_micro_usd_per_million_tokens=0,
+                request_micro_usd=0,
+            )
+            for digest in authorization.allowed_worker_model_digests
+        ),
+        reviewed_by="reviewer-a",
+        review_evidence="Explicit synthetic offline fixture funding",
+        created_at=timestamp,
+    )
+    return await amber.resources.fund(session, grant)
 
 
 def component(component_id: str, *, digest_source: str | None = None) -> VersionedComponentIdentity:

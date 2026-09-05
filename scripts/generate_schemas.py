@@ -160,6 +160,13 @@ from padawan.pprl.observation_contracts import (
     ProcessWorkerObservation,
     ProcessWorkerState,
 )
+from padawan.pprl.resource_contracts import (
+    ProcessModelRate,
+    ProcessResourceEvent,
+    ProcessResourceGrant,
+    ProcessResourceReservation,
+    ProcessResources,
+)
 from padawan.temporal.contracts import (
     DurationProfile,
     OperationSpanEventRecord,
@@ -236,6 +243,11 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("prepared-generation", PreparedGeneration),
     ("process-generation-policy", ProcessGenerationPolicy),
     ("process-generation-workload", ProcessGenerationWorkload),
+    ("process-resources", ProcessResources),
+    ("process-model-rate", ProcessModelRate),
+    ("process-resource-grant", ProcessResourceGrant),
+    ("process-resource-reservation", ProcessResourceReservation),
+    ("process-resource-event", ProcessResourceEvent),
     ("process-learning-outcome-component", ProcessLearningOutcomeComponent),
     ("process-learning-outcome", ProcessLearningOutcome),
     ("process-learning-step", ProcessLearningStep),

@@ -1,0 +1,197 @@
+{
+  "$defs": {
+    "ProcessResources": {
+      "additionalProperties": false,
+      "properties": {
+        "action_microseconds": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Action Microseconds",
+          "type": "integer"
+        },
+        "actions": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Actions",
+          "type": "integer"
+        },
+        "artifact_bytes": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Artifact Bytes",
+          "type": "integer"
+        },
+        "input_tokens": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "micro_usd": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Micro Usd",
+          "type": "integer"
+        },
+        "output_tokens": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Output Tokens",
+          "type": "integer"
+        }
+      },
+      "title": "ProcessResources",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-resource-event.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Hash-linked accounting journal with a checked materialized balance.",
+  "properties": {
+    "actor_id": {
+      "minLength": 1,
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "amount": {
+      "$ref": "#/$defs/ProcessResources"
+    },
+    "authorization_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Authorization Digest",
+      "type": "string"
+    },
+    "basis": {
+      "enum": [
+        "grant",
+        "reservation",
+        "committed_ceiling",
+        "provider_reported",
+        "reviewed"
+      ],
+      "title": "Basis",
+      "type": "string"
+    },
+    "charged": {
+      "$ref": "#/$defs/ProcessResources"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "grant_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Grant Digest",
+      "type": "string"
+    },
+    "held": {
+      "$ref": "#/$defs/ProcessResources"
+    },
+    "kind": {
+      "enum": [
+        "grant",
+        "initial",
+        "reserve",
+        "start",
+        "settle",
+        "release",
+        "stop"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "open_reservations": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "title": "Open Reservations",
+      "type": "integer"
+    },
+    "previous_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Previous Digest"
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "reservation_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reservation Digest"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "source_digests": {
+      "default": [],
+      "items": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Source Digests",
+      "type": "array"
+    },
+    "stopped": {
+      "title": "Stopped",
+      "type": "boolean"
+    },
+    "subject_id": {
+      "minLength": 1,
+      "title": "Subject Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "authorization_digest",
+    "sequence",
+    "previous_digest",
+    "grant_digest",
+    "kind",
+    "subject_id",
+    "amount",
+    "held",
+    "charged",
+    "open_reservations",
+    "stopped",
+    "basis",
+    "actor_id",
+    "reason",
+    "created_at"
+  ],
+  "title": "ProcessResourceEvent",
+  "type": "object"
+}

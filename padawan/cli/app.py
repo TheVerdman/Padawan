@@ -6,7 +6,7 @@ import json
 import os
 from collections.abc import Awaitable, Callable
 from dataclasses import asdict, is_dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, cast
@@ -89,6 +89,8 @@ from padawan.pprl.contracts import (
     ProcessTrainingEligibilityDecision,
     ProjectStatePayload,
 )
+from padawan.pprl.resource_contracts import ProcessResourceGrant
+from padawan.pprl.resource_generation import ProcessGenerationResources
 from padawan.provenance.ledger import ProvenanceLedger
 from padawan.reporting.service import ReportingService
 from padawan.state.store import StateStore
@@ -127,6 +129,7 @@ pprl_app = typer.Typer(help="Governed persistent-process reinforcement learning.
 pprl_distribution_app = typer.Typer(help="Versioned project distributions.")
 pprl_program_app = typer.Typer(help="Persistent-process program definitions.")
 pprl_amber_app = typer.Typer(help="Amber authorization lifecycle and audit history.")
+pprl_resource_app = typer.Typer(help="Privileged conserved funding and accounting; no dispatch.")
 pprl_execution_app = typer.Typer(help="Exact process execution manifests.")
 pprl_rollout_app = typer.Typer(help="Durable project rollout state and replay.")
 pprl_outcome_app = typer.Typer(help="Outcome assessments with declared authority.")
@@ -154,6 +157,7 @@ app.add_typer(pprl_app, name="pprl")
 pprl_app.add_typer(pprl_distribution_app, name="distribution")
 pprl_app.add_typer(pprl_program_app, name="program")
 pprl_app.add_typer(pprl_amber_app, name="amber")
+pprl_app.add_typer(pprl_resource_app, name="resource")
 pprl_app.add_typer(pprl_execution_app, name="execution")
 pprl_app.add_typer(pprl_rollout_app, name="rollout")
 pprl_app.add_typer(pprl_outcome_app, name="outcome")
@@ -310,6 +314,91 @@ def pprl_amber_inspect(ctx: typer.Context, authorization_digest: str) -> None:
             await process_app.close()
 
     _run_command(ctx, "pprl amber inspect", operation)
+
+
+@pprl_resource_app.command("fund")
+def pprl_resource_fund(
+    ctx: typer.Context,
+    grant_file: Path = typer.Option(
+        ..., "--grant-file", exists=True, file_okay=True, dir_okay=False
+    ),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            grant = ProcessResourceGrant.model_validate_json(grant_file.read_bytes())
+            async with process_app.database.transaction() as session:
+                await process_app.amber.resources.fund(session, grant)
+            return {
+                "grant_digest": grant.digest,
+                "authorization_digest": grant.authorization_digest,
+            }
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl resource fund", operation)
+
+
+@pprl_resource_app.command("inspect")
+def pprl_resource_inspect(ctx: typer.Context, authorization_digest: str) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            async with process_app.database.transaction() as session:
+                grant = await process_app.amber.resources.grant(session, authorization_digest)
+                journal = await process_app.amber.resources.replay(session, authorization_digest)
+            return {
+                "grant": grant.model_dump(mode="json"),
+                "journal": [event.model_dump(mode="json") for event in journal],
+            }
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl resource inspect", operation)
+
+
+@pprl_resource_app.command("release-unstarted")
+def pprl_resource_release(
+    ctx: typer.Context,
+    decision_id: str,
+    reviewer_id: str = typer.Option(..., "--reviewer-id"),
+    evidence: str = typer.Option(..., "--evidence"),
+) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            async with process_app.database.transaction() as session:
+                event = await process_app.amber.resources.release_unstarted(
+                    session,
+                    decision_id=decision_id,
+                    reviewer_id=reviewer_id,
+                    evidence=evidence,
+                    now=datetime.now(UTC),
+                )
+            return event.model_dump(mode="json")
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl resource release-unstarted", operation)
+
+
+@pprl_resource_app.command("reconcile-model")
+def pprl_resource_reconcile(ctx: typer.Context, invocation_id: str) -> None:
+    async def operation() -> dict[str, Any]:
+        process_app = build_pprl_application(_settings(ctx))
+        try:
+            broker = ProcessGenerationResources(
+                store=process_app.amber.resources, catalog=process_app.catalog
+            )
+            async with process_app.database.transaction() as session:
+                event = await broker.reconcile(
+                    session, invocation_id=invocation_id, now=datetime.now(UTC)
+                )
+            return event.model_dump(mode="json")
+        finally:
+            await process_app.close()
+
+    _run_command(ctx, "pprl resource reconcile-model", operation)
 
 
 @pprl_execution_app.command("register")

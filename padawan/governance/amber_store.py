@@ -36,6 +36,7 @@ from padawan.pprl.contracts import (
     RolloutStatus,
     project_state_digest,
 )
+from padawan.pprl.resources import ProcessResourceStore, atomic_resource_write
 
 
 class AmberStore:
@@ -43,6 +44,7 @@ class AmberStore:
 
     def __init__(self, policy: AmberPolicy | None = None) -> None:
         self.policy = policy or AmberPolicy()
+        self.resources = ProcessResourceStore()
 
     async def prepare(
         self,
@@ -220,6 +222,7 @@ class AmberStore:
         await session.flush()
         return event
 
+    @atomic_resource_write
     async def admit(
         self,
         session: AsyncSession,
@@ -228,6 +231,18 @@ class AmberStore:
         active_workers: int,
         decision_id: str | None = None,
     ) -> AmberAdmissionDecision:
+        if decision_id is not None:
+            prior = await session.get(AmberAdmissionDecisionRow, decision_id)
+            if prior is not None:
+                stored = AmberAdmissionDecision.model_validate(prior.record_json, strict=False)
+                if (
+                    sha256_digest(stored) != prior.record_digest
+                    or stored.request_digest != sha256_digest(request)
+                    or prior.request_json != request.model_dump(mode="json")
+                ):
+                    raise ValueError("Amber decision ID reused with different content")
+                # Historical receipt reuse neither re-admits an effect nor reserves again.
+                return stored
         envelope = await self.get(session, authorization_digest=request.authorization_digest)
         rollout = await session.get(ProcessRolloutRow, request.rollout_id)
         if rollout is None:
@@ -274,6 +289,13 @@ class AmberStore:
         )
         if head is None:
             raise KeyError(request.authorization_digest)
+        if not boundary_reasons:
+            try:
+                boundary_reasons = await self.resources.admission_reasons(
+                    session, request=request, previous=state.payload.budget_usage
+                )
+            except ValueError:
+                boundary_reasons = ("resource_accounting_invalid",)
         observed_active_workers = int(
             await session.scalar(
                 select(func.count())
@@ -326,6 +348,10 @@ class AmberStore:
             )
         )
         await session.flush()
+        if decision.disposition.value == "admitted":
+            await self.resources.reserve(
+                session, decision=decision, request=request, previous=state.payload.budget_usage
+            )
         return decision
 
     async def history(
