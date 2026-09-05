@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any
+from datetime import UTC, datetime
+from functools import wraps
+from typing import Any, Concatenate
 
 from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from padawan.atlas.adapters import builtin_adapter_descriptors
+from padawan.atlas.artifacts import AtlasArtifactBoundary
 from padawan.atlas.boundary import (
     BoundaryCandidate,
     DifficultyBin,
@@ -112,6 +116,19 @@ class AtlasRegistryError(ValueError):
     """An immutable Atlas record failed provenance or admission checks."""
 
 
+def _atomic_atlas_write[**P, R](
+    operation: Callable[Concatenate[CapabilityAtlasRegistry, AsyncSession, P], Awaitable[R]],
+) -> Callable[Concatenate[CapabilityAtlasRegistry, AsyncSession, P], Awaitable[R]]:
+    @wraps(operation)
+    async def wrapped(
+        self: CapabilityAtlasRegistry, session: AsyncSession, /, *args: P.args, **kwargs: P.kwargs
+    ) -> R:
+        async with session.begin_nested():
+            return await operation(self, session, *args, **kwargs)
+
+    return wrapped
+
+
 def _expected_generation_provider(execution: ResearchExecutionManifest) -> str:
     provider = execution.student_model.runtime_parameters.get("provider")
     if provider is not None:
@@ -126,6 +143,91 @@ def _expected_generation_provider(execution: ResearchExecutionManifest) -> str:
 
 class CapabilityAtlasRegistry:
     """Persist Atlas evidence without creating a second research-control authority."""
+
+    def __init__(self, *, artifacts: AtlasArtifactBoundary | None = None) -> None:
+        self.artifacts = artifacts
+
+    def _artifact_boundary(self) -> AtlasArtifactBoundary:
+        if self.artifacts is None:
+            raise AtlasRegistryError(
+                "Atlas artifact evidence requires a configured forensic boundary"
+            )
+        return self.artifacts
+
+    async def validate_trial_artifacts(self, session: AsyncSession, *, result_id: str) -> None:
+        """Privileged evidence validation for downstream research; grants no model admission."""
+        row = await _require(session, AtlasTrialResultRow, result_id, "trial evidence")
+        result = _validated(AtlasTrialResult, row.record_json, "trial evidence")
+        if (
+            row.record_digest != sha256_digest(result)
+            or row.result_id != result.result_id
+            or row.result_digest != result.result_digest
+            or row.request_id != result.request_id
+            or row.research_execution_digest != result.research_execution_digest
+            or row.status != result.status.value
+            or row.success != result.success
+            or row.score != result.score
+            or row.response_artifact_id
+            != (result.response_artifact.artifact_id if result.response_artifact else None)
+            or not _same_timestamp(row.completed_at, result.completed_at)
+        ):
+            raise AtlasRegistryError("trial evidence has inconsistent source identity")
+        request = await self._validate_request_artifacts(session, result.request_id)
+        if (
+            request.request_digest != result.request_digest
+            or request.research_execution_digest != result.research_execution_digest
+            or result.completed_at < request.created_at
+            or result.retry_count != request.attempt_index
+        ):
+            raise AtlasRegistryError("trial evidence substitutes its request source")
+        refs = await _result_artifacts(session, result, request)
+        await self._artifact_boundary().validate(
+            session,
+            owner_type="atlas_trial_result",
+            owner_id=result.result_id,
+            references=refs,
+            recorded_at=result.completed_at,
+        )
+
+    async def _validate_request_artifacts(
+        self, session: AsyncSession, request_id: str
+    ) -> AtlasTrialRequest:
+        row = await _require(session, AtlasTrialRequestRow, request_id, "trial request evidence")
+        request = _validated(AtlasTrialRequest, row.record_json, "trial request evidence")
+        if (
+            row.record_digest != sha256_digest(request)
+            or row.request_id != request.request_id
+            or row.request_digest != request.request_digest
+            or row.research_execution_digest != request.research_execution_digest
+            or not _same_timestamp(row.created_at, request.created_at)
+            or any(
+                getattr(row, field) != getattr(request, field)
+                for field in (
+                    "allocation_id",
+                    "parent_request_id",
+                    "run_id",
+                    "campaign_digest",
+                    "condition_id",
+                    "suite_digest",
+                    "item_digest",
+                    "trial_index",
+                    "attempt_index",
+                    "prompt_digest",
+                    "tool_manifest_digest",
+                    "adapter_id",
+                    "adapter_version",
+                )
+            )
+        ):
+            raise AtlasRegistryError("trial request evidence has inconsistent source identity")
+        await self._artifact_boundary().validate(
+            session,
+            owner_type="atlas_trial_request",
+            owner_id=request.request_id,
+            references=await _request_artifacts(session, request),
+            recorded_at=request.created_at,
+        )
+        return request
 
     async def register_claim(
         self, session: AsyncSession, claim: BenchmarkClaim
@@ -878,6 +980,7 @@ class CapabilityAtlasRegistry:
         await session.flush()
         return row
 
+    @_atomic_atlas_write
     async def record_trial_request(
         self, session: AsyncSession, request: AtlasTrialRequest
     ) -> AtlasTrialRequestRow:
@@ -892,6 +995,7 @@ class CapabilityAtlasRegistry:
                 payload,
                 "trial request",
             )
+            await self._validate_request_artifacts(session, request.request_id)
             return existing
         digest_owner = await session.scalar(
             select(AtlasTrialRequestRow).where(
@@ -1133,6 +1237,13 @@ class CapabilityAtlasRegistry:
             if parent_call.status != "failed_retryable" or not parent_call.error:
                 raise AtlasRegistryError("trial retry lacks a captured retryable provider failure")
 
+        await self._artifact_boundary().retain(
+            session,
+            owner_type="atlas_trial_request",
+            owner_id=request.request_id,
+            references=await _request_artifacts(session, request),
+            recorded_at=request.created_at,
+        )
         row = AtlasTrialRequestRow(
             request_id=request.request_id,
             allocation_id=request.allocation_id,
@@ -1158,6 +1269,7 @@ class CapabilityAtlasRegistry:
         await session.flush()
         return row
 
+    @_atomic_atlas_write
     async def record_trial_result(
         self, session: AsyncSession, result: AtlasTrialResult
     ) -> AtlasTrialResultRow:
@@ -1172,6 +1284,7 @@ class CapabilityAtlasRegistry:
                 payload,
                 "trial result",
             )
+            await self.validate_trial_artifacts(session, result_id=result.result_id)
             return existing
         request_row = await _require(
             session, AtlasTrialRequestRow, result.request_id, "trial result request"
@@ -1349,6 +1462,14 @@ class CapabilityAtlasRegistry:
             for artifact in evidence.artifact_refs:
                 await _require_artifact(session, artifact)
 
+        await self._validate_request_artifacts(session, request.request_id)
+        await self._artifact_boundary().retain(
+            session,
+            owner_type="atlas_trial_result",
+            owner_id=result.result_id,
+            references=await _result_artifacts(session, result, request),
+            recorded_at=result.completed_at,
+        )
         row = AtlasTrialResultRow(
             result_id=result.result_id,
             request_id=result.request_id,
@@ -1887,6 +2008,7 @@ class CapabilityAtlasRegistry:
         await session.flush()
         return row
 
+    @_atomic_atlas_write
     async def register_exploratory_proposal(
         self, session: AsyncSession, proposal: ExploratoryFailureProposal
     ) -> AtlasExploratoryProposalRow:
@@ -1900,6 +2022,22 @@ class CapabilityAtlasRegistry:
                 existing.record_json,
                 payload,
                 "exploratory proposal",
+            )
+            if (
+                existing.deduplication_key != proposal.deduplication_key
+                or existing.consent_evidence_digest != proposal.consent_evidence_digest
+                or existing.source_trace_digest != proposal.source_trace_digest
+                or existing.source_trace_artifact_id != proposal.source_trace_artifact.artifact_id
+                or existing.raw_chat_promoted
+                or not _same_timestamp(existing.created_at, proposal.created_at)
+            ):
+                raise AtlasRegistryError("exploratory evidence has inconsistent source identity")
+            await self._artifact_boundary().validate(
+                session,
+                owner_type="atlas_exploratory_proposal",
+                owner_id=proposal.proposal_id,
+                references=(proposal.source_trace_artifact,),
+                recorded_at=proposal.created_at,
             )
             return existing
         duplicate = await session.scalar(
@@ -1916,6 +2054,13 @@ class CapabilityAtlasRegistry:
             raise AtlasRegistryError("consented raw traces must remain restricted raw artifacts")
         if proposal.redacted_excerpt_digest == proposal.source_trace_digest:
             raise AtlasRegistryError("redacted excerpt cannot alias the raw source trace")
+        await self._artifact_boundary().retain(
+            session,
+            owner_type="atlas_exploratory_proposal",
+            owner_id=proposal.proposal_id,
+            references=(proposal.source_trace_artifact,),
+            recorded_at=proposal.created_at,
+        )
         row = AtlasExploratoryProposalRow(
             proposal_id=proposal.proposal_id,
             deduplication_key=proposal.deduplication_key,
@@ -2326,6 +2471,155 @@ async def _require_artifact(session: AsyncSession, reference: ArtifactRef) -> Ar
     if actual != expected:
         raise AtlasRegistryError("artifact reference conflicts with the immutable catalog")
     return row
+
+
+def _catalog_reference(row: ArtifactRow) -> ArtifactRef:
+    return ArtifactRef(
+        artifact_id=row.artifact_id,
+        digest=row.digest,
+        uri=row.uri,
+        media_type=row.media_type,
+        size_bytes=row.size_bytes,
+        restricted=row.restricted,
+        raw_data=row.raw_data,
+    )
+
+
+def _same_timestamp(left: datetime, right: datetime) -> bool:
+    """Compare source columns across SQLite's timezone-naive round trip."""
+    return (left.replace(tzinfo=UTC) if left.tzinfo is None else left) == right
+
+
+async def _request_artifacts(
+    session: AsyncSession, request: AtlasTrialRequest
+) -> tuple[ArtifactRef, ...]:
+    execution_row = await _require_execution(session, request.research_execution_digest)
+    refs = []
+    for kind, digest in (
+        ("edge", request.edge_preflight_evidence_digest),
+        ("effort_mapping", request.effort_mapping_evidence_digest),
+        ("tool", request.tool_preflight_evidence_digest),
+    ):
+        if digest is not None:
+            refs.append(
+                _catalog_reference(
+                    await _require_preflight_evidence(
+                        session,
+                        digest=digest,
+                        kind=kind,
+                        request=request,
+                        execution_row=execution_row,
+                    )
+                )
+            )
+    return tuple(refs)
+
+
+async def _result_artifacts(
+    session: AsyncSession, result: AtlasTrialResult, request: AtlasTrialRequest
+) -> tuple[ArtifactRef, ...]:
+    refs = list(await _request_artifacts(session, request))
+    if result.response_artifact is not None:
+        refs.append(result.response_artifact)
+    if result.external_call_artifact is not None:
+        call = await _require(session, ExternalCallRow, request.request_id, "captured Atlas call")
+        if (
+            call.status != "completed"
+            or call.purpose != "capability_atlas"
+            or call.run_id != request.run_id
+            or call.request_hash != request.wire_request_digest
+            or call.response_artifact_id != result.external_call_artifact.artifact_id
+            or call.result_envelope_digest != result.external_call_artifact.digest
+            or call.provider != result.generation_provider
+            or call.result_model_id != result.generation_model_id
+            or call.result_protocol != result.generation_protocol
+            or call.result_raw_request_digest != result.raw_request_digest
+            or call.result_raw_response_digest != result.raw_response_digest
+            or call.result_capabilities_digest != result.capabilities_digest
+            or call.result_latency_ms != result.latency_ms
+            or _token_accounting_from_usage(call.result_usage) != result.tokens
+            or call.request_artifact_id is None
+            or call.result_output_text_digest is None
+            or any(
+                evidence.evaluated_output_digest != call.result_output_text_digest
+                for evidence in result.verifier_evidence
+            )
+        ):
+            raise AtlasRegistryError("Atlas retained call differs from its source trial")
+        refs.extend(
+            (
+                result.external_call_artifact,
+                _catalog_reference(
+                    await _require(
+                        session, ArtifactRow, call.request_artifact_id, "captured Atlas request"
+                    )
+                ),
+            )
+        )
+    elif result.status in {TrialStatus.TIMEOUT, TrialStatus.INFRASTRUCTURE_FAILURE}:
+        call = await _require(session, ExternalCallRow, request.request_id, "failed Atlas call")
+        if (
+            call.run_id != request.run_id
+            or call.purpose != "capability_atlas"
+            or call.request_hash != request.wire_request_digest
+            or call.status not in {"failed_retryable", "failed_terminal"}
+            or not call.error
+            or call.response_artifact_id is not None
+            or call.request_artifact_id is None
+            or (
+                result.status == TrialStatus.TIMEOUT
+                and call.error.get("classification") != "timeout"
+            )
+        ):
+            raise AtlasRegistryError("Atlas retained failure differs from its source trial")
+        refs.append(
+            _catalog_reference(
+                await _require(
+                    session, ArtifactRow, call.request_artifact_id, "failed Atlas request"
+                )
+            )
+        )
+        error_artifact_id = call.error.get("response_artifact_id")
+        if error_artifact_id is not None:
+            if not isinstance(error_artifact_id, str):
+                raise AtlasRegistryError("Atlas failed call has an invalid error artifact identity")
+            error_artifact = _catalog_reference(
+                await _require(session, ArtifactRow, error_artifact_id, "failed Atlas response")
+            )
+            if error_artifact.digest != call.error.get("response_digest"):
+                raise AtlasRegistryError("Atlas failed call error artifact differs from its digest")
+            refs.append(error_artifact)
+    elif result.status == TrialStatus.NOT_RUN:
+        if await session.get(ExternalCallRow, request.request_id) is not None or not any(
+            code.startswith("not_run:") for code in result.failure_codes
+        ):
+            raise AtlasRegistryError("Atlas not-run source disagrees with its no-dispatch record")
+    refs.extend(result.grader_artifacts)
+    for evidence in result.verifier_evidence:
+        verifier = await _require(
+            session, VerifierResultRow, evidence.evidence_id, "trial verifier evidence"
+        )
+        verifier_record = _validated(
+            VerifierResult, verifier.record_json, "trial verifier evidence"
+        )
+        if (
+            verifier.record_digest != sha256_digest(verifier.record_json)
+            or verifier.record_digest != evidence.evidence_digest
+            or verifier_record.result_id != evidence.evidence_id
+            or verifier_record.verifier_id != verifier.verifier_id
+            or verifier_record.verifier_version != verifier.verifier_version
+            or verifier_record.disposition.value != verifier.disposition
+            or verifier_record.deterministic != verifier.deterministic
+            or verifier.verifier_id != evidence.verifier_id
+            or verifier.verifier_version != evidence.verifier_version
+            or verifier.disposition != evidence.disposition
+            or verifier.deterministic != evidence.deterministic
+            or verifier_record.scope != verifier.scope
+            or not _same_timestamp(verifier.created_at, verifier_record.created_at)
+        ):
+            raise AtlasRegistryError("Atlas retained verifier differs from its source trial")
+        refs.extend(evidence.artifact_refs)
+    return tuple(refs)
 
 
 async def _require_preflight_evidence(

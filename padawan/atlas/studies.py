@@ -10,6 +10,7 @@ from pydantic import Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from padawan.atlas.artifacts import AtlasArtifactBoundary
 from padawan.atlas.contracts import (
     AtlasCampaignManifest,
     AtlasItemManifest,
@@ -23,6 +24,7 @@ from padawan.atlas.contracts import (
     TrialAllocation,
     TrialStatus,
 )
+from padawan.atlas.registry import CapabilityAtlasRegistry
 from padawan.models.contracts import ArtifactRef, NonEmpty, Sha256, StrictRecord
 from padawan.models.hashing import sha256_digest
 from padawan.models.research_contracts import (
@@ -165,6 +167,9 @@ class _PromotionContext:
 class AtlasFixedTrialStudyBridge:
     """Bridge frozen Atlas trial coordinates into the authoritative Study ledger."""
 
+    def __init__(self, *, artifacts: AtlasArtifactBoundary | None = None) -> None:
+        self._atlas = CapabilityAtlasRegistry(artifacts=artifacts)
+
     async def create_experiment(
         self,
         session: AsyncSession,
@@ -297,6 +302,7 @@ class AtlasFixedTrialStudyBridge:
         if result_row is None:
             raise KeyError(result_digest)
         result, request = await _validated_result_request(session, result_row)
+        await self._atlas.validate_trial_artifacts(session, result_id=result.result_id)
         _require_trial_matches_assignment(result, request, assignment)
         await _require_latest_attempt(session, request)
         outcome = _outcome(result)
@@ -322,6 +328,9 @@ class AtlasFixedTrialsStudyPolicy:
 
     policy_id = ATLAS_FIXED_TRIALS_POLICY_ID
     policy_version = ATLAS_FIXED_TRIALS_POLICY_VERSION
+
+    def __init__(self, *, artifacts: AtlasArtifactBoundary | None = None) -> None:
+        self._atlas = CapabilityAtlasRegistry(artifacts=artifacts)
 
     async def seal_results(
         self,
@@ -392,6 +401,7 @@ class AtlasFixedTrialsStudyPolicy:
                 if result_row is None:
                     raise ValueError("Atlas block cites a missing trial result")
                 result, request = await _validated_result_request(session, result_row)
+                await self._atlas.validate_trial_artifacts(session, result_id=result.result_id)
                 if (
                     outcome != _outcome(result)
                     or outcome.result_id != result_row.result_id

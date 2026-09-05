@@ -9,6 +9,7 @@ from typing import Any, Protocol, cast
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from padawan.artifacts.store import ArtifactCatalog
 from padawan.experiments.controls import ResearchControlRegistry
 from padawan.models.hashing import sha256_digest
 from padawan.models.research_contracts import (
@@ -100,14 +101,20 @@ class StudyEngine:
         controls: ResearchControlRegistry | None = None,
         *,
         aggregation_policies: Sequence[StudyAggregationPolicy] = (),
+        artifacts: ArtifactCatalog | None = None,
     ) -> None:
         self.controls = controls or ResearchControlRegistry()
         self._aggregation_policies: dict[tuple[str, str], StudyAggregationPolicy] = {}
         # Import lazily so Atlas can implement the protocol without making the
         # core Study module depend on Atlas at module-import time.
+        from padawan.atlas.artifacts import AtlasArtifactBoundary
         from padawan.atlas.studies import AtlasFixedTrialsStudyPolicy
 
-        self.register_aggregation_policy(AtlasFixedTrialsStudyPolicy())
+        self.register_aggregation_policy(
+            AtlasFixedTrialsStudyPolicy(
+                artifacts=AtlasArtifactBoundary(artifacts) if artifacts is not None else None,
+            )
+        )
         for policy in aggregation_policies:
             self.register_aggregation_policy(policy)
 

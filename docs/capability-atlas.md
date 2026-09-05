@@ -187,13 +187,31 @@ grader never outranks deterministic, kernel, environment, or declared human auth
 Interaction Lab owns human chat, consent lanes, exploratory sessions/turns, explicit-history
 interaction, trace inspection, and feedback. Atlas consumes only a governed proposal:
 
-1. consent evidence and a restricted raw trace produce a redacted `ExploratoryFailureProposal`;
+1. declared consent evidence and a restricted raw trace produce a privileged
+   `ExploratoryFailureProposal` carrying a separate redacted-excerpt digest;
 2. `raw_chat_promoted` remains false and the proposal is deduplicated;
 3. Atlas creates an independently generated reproduction item under an exact execution manifest;
 4. at least two result digests establish or reject reproduction/stability;
 5. human review may admit a new item digest to a challenge suite.
 
 Raw chat is never benchmark evidence and never enters promotion or training automatically.
+The registry checks declared provenance; it does not itself attest consent or perform/verify the
+excerpt's semantic redaction.
+
+## Forensic source retention
+
+New trial requests, results, and exploratory proposals require an explicitly configured
+`AtlasArtifactBoundary`. The broker verifies their explicit artifacts against actual backend bytes,
+classifies them as forensic, and pins them atomically under independent request/result/proposal
+owners. Failed calls include captured requests and available error responses. Exact retries validate
+existing evidence and ownership without repairing legacy records. New Study block admission and
+Atlas result sealing also revalidate source retention; configure `StudyEngine(artifacts=catalog)`.
+
+This is an offline storage and provenance check, not producer authentication or permission to use
+raw evidence in model inputs. Reports, upstream extraction artifacts, and other downstream Atlas
+paths still require their own use-boundary review. See
+[Atlas forensic retention](atlas-forensic-retention-boundary.md) for exact source fields, limits,
+trust assumptions, acceptance evidence, and rollback.
 
 ## Mechanistic-interpretability interchange
 
@@ -217,6 +235,9 @@ to the model after harness effects are ruled out; supported by authoritative ver
 for the target training lane; cleared of contamination; and excluded from adaptive, challenge, and
 promotion suites. Even eligible evidence cannot enter the compiler directly. It first requires
 governed corpus materialization under Padawan's existing training-product contracts.
+That Atlas materialization/learning-admission adapter is not implemented. The separate PPRL public
+learning projector does not admit Atlas records, and eligibility records have no direct compiler
+or memory consumer. Retention and eligibility cannot substitute for reviewed use authorization.
 
 ## External authorization plan
 

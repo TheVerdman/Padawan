@@ -6,11 +6,12 @@ from importlib import import_module
 from pathlib import Path
 
 import pytest
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from padawan.artifacts import ArtifactCatalog, LocalArtifactStore
 from padawan.atlas.adapters import StaticQAAdapter
+from padawan.atlas.artifacts import AtlasArtifactBoundary
 from padawan.atlas.contracts import (
     AccessClassification,
     AdapterKind,
@@ -67,7 +68,7 @@ from padawan.models.research_contracts import (
     StudyStatus,
 )
 from padawan.models.tables import (
-    ArtifactRow,
+    ArtifactReferenceRow,
     AtlasCampaignSuiteRow,
     CheckpointEvaluationRow,
     ExperimentBlockRow,
@@ -615,6 +616,11 @@ async def _result(
         )
     elif status in {TrialStatus.TIMEOUT, TrialStatus.INFRASTRUCTURE_FAILURE}:
         provider = execution_manifest.student_model.runtime_parameters["provider"]
+        artifact_store = LocalArtifactStore(tmp_path / "artifacts")
+        failed_request = artifact_store.put_text(
+            f"failed-request-{index}", restricted=True, raw_data=True
+        )
+        await ArtifactCatalog(artifact_store).register(session, failed_request)
         session.add(
             ExternalCallRow(
                 request_id=request.request_id,
@@ -622,7 +628,7 @@ async def _result(
                 purpose="capability_atlas",
                 provider=provider,
                 request_hash=request.wire_request_digest,
-                request_artifact_id=f"failed-request-{index}",
+                request_artifact_id=failed_request.artifact_id,
                 response_artifact_id=None,
                 provider_response_id=None,
                 status="failed_retryable",
@@ -762,11 +768,13 @@ async def _result(
 async def _seed_study(
     database: Database, tmp_path: Path, statuses: tuple[TrialStatus, ...]
 ) -> _SeededStudy:
-    atlas = CapabilityAtlasRegistry()
+    catalog = ArtifactCatalog(LocalArtifactStore(tmp_path / "artifacts"))
+    boundary = AtlasArtifactBoundary(catalog)
+    atlas = CapabilityAtlasRegistry(artifacts=boundary)
     controls = ResearchControlRegistry()
     checkpoints = CheckpointRegistry()
     states = StateStore()
-    bridge = AtlasFixedTrialStudyBridge()
+    bridge = AtlasFixedTrialStudyBridge(artifacts=boundary)
     items = (_item(0), _item(1))
     assert len(statuses) == 4
     async with database.transaction() as session:
@@ -920,27 +928,25 @@ async def _seed_study(
             ),
         ):
             assert digest is not None
-            session.add(
-                ArtifactRow(
-                    artifact_id=f"study-preflight-{kind}",
-                    digest=digest,
-                    uri=f"artifact://sha256/{digest[7:]}",
-                    media_type="application/vnd.padawan.atlas-preflight+json",
-                    size_bytes=1,
-                    restricted=True,
-                    raw_data=True,
-                    storage_backend="test",
-                    metadata_json={
-                        "kind": kind,
-                        "passed": True,
-                        "research_execution_digest": execution.execution_digest,
-                        "provider": execution_manifest.student_model.runtime_parameters["provider"],
-                        "model_id": execution_manifest.student_model.model_id,
-                        "protocol": execution_manifest.student_model.protocol,
-                        **extras,
-                    },
-                    created_at=_NOW,
-                )
+            preflight = catalog.backend.put_bytes(
+                ("study edge preflight" if kind == "edge" else "study effort mapping").encode(),
+                media_type="application/vnd.padawan.atlas-preflight+json",
+                restricted=True,
+                raw_data=True,
+            )
+            assert preflight.digest == digest
+            await catalog.register(
+                session,
+                preflight,
+                metadata={
+                    "kind": kind,
+                    "passed": True,
+                    "research_execution_digest": execution.execution_digest,
+                    "provider": execution_manifest.student_model.runtime_parameters["provider"],
+                    "model_id": execution_manifest.student_model.model_id,
+                    "protocol": execution_manifest.student_model.protocol,
+                    **extras,
+                },
             )
         await session.flush()
         await atlas.register_run_manifest(
@@ -1023,7 +1029,7 @@ async def test_fixed_trials_seal_ordinary_study_evidence_without_checkpoint_writ
             TrialStatus.VERIFIED_FAILURE,
         ),
     )
-    studies = StudyEngine()
+    studies = StudyEngine(artifacts=ArtifactCatalog(LocalArtifactStore(tmp_path / "artifacts")))
     async with database.transaction() as session:
         await studies.transition(
             session,
@@ -1067,7 +1073,7 @@ async def test_fixed_trials_preserve_infrastructure_and_contamination_missingnes
             TrialStatus.NOT_RUN,
         ),
     )
-    studies = StudyEngine()
+    studies = StudyEngine(artifacts=ArtifactCatalog(LocalArtifactStore(tmp_path / "artifacts")))
     async with database.transaction() as session:
         await studies.transition(
             session,
@@ -1100,7 +1106,7 @@ async def test_fixed_trials_reject_duplicate_result_inflation_and_suite_substitu
         tmp_path,
         (TrialStatus.VERIFIED_SUCCESS,) * 4,
     )
-    studies = StudyEngine()
+    studies = StudyEngine(artifacts=ArtifactCatalog(LocalArtifactStore(tmp_path / "artifacts")))
     async with database.transaction() as session:
         first = await session.get(ExperimentBlockRow, seeded.block_ids[0])
         second = await session.get(ExperimentBlockRow, seeded.block_ids[1])
@@ -1128,7 +1134,7 @@ async def test_fixed_trials_never_promote_partial_or_unaccounted_outcomes(
             TrialStatus.VERIFIED_SUCCESS,
         ),
     )
-    studies = StudyEngine()
+    studies = StudyEngine(artifacts=ArtifactCatalog(LocalArtifactStore(tmp_path / "artifacts")))
     async with database.transaction() as session:
         await studies.transition(
             session,
@@ -1156,7 +1162,7 @@ async def test_fixed_trials_reject_unaccounted_fixed_block(
         tmp_path,
         (TrialStatus.VERIFIED_SUCCESS,) * 4,
     )
-    studies = StudyEngine()
+    studies = StudyEngine(artifacts=ArtifactCatalog(LocalArtifactStore(tmp_path / "artifacts")))
     async with database.transaction() as session:
         await session.execute(
             update(ExperimentBlockRow)
@@ -1179,7 +1185,7 @@ async def test_fixed_trials_reject_adaptive_design_drift(
         tmp_path,
         (TrialStatus.VERIFIED_SUCCESS,) * 4,
     )
-    studies = StudyEngine()
+    studies = StudyEngine(artifacts=ArtifactCatalog(LocalArtifactStore(tmp_path / "artifacts")))
     async with database.transaction() as session:
         await session.execute(
             update(AtlasCampaignSuiteRow)
@@ -1195,3 +1201,31 @@ async def test_fixed_trials_reject_adaptive_design_drift(
                 study_id=seeded.study_id,
                 to_status=StudyStatus.COMPLETE,
             )
+
+
+@pytest.mark.parametrize("missing", ["backend", "ownership", "blob"])
+async def test_atlas_study_sealing_requires_retained_physical_evidence(database, tmp_path, missing):
+    seeded = await _seed_study(database, tmp_path, (TrialStatus.VERIFIED_SUCCESS,) * 4)
+    catalog = ArtifactCatalog(LocalArtifactStore(tmp_path / "artifacts"))
+    studies = StudyEngine(artifacts=None if missing == "backend" else catalog)
+    async with database.transaction() as session:
+        if missing == "ownership":
+            await session.execute(
+                delete(ArtifactReferenceRow).where(
+                    ArtifactReferenceRow.owner_type == "atlas_trial_result"
+                )
+            )
+        elif missing == "blob":
+            reference = catalog.backend.put_bytes(
+                b"response-0",
+                media_type="text/plain; charset=utf-8",
+                restricted=True,
+                raw_data=True,
+            )
+            catalog.backend._path_for_hex(reference.digest[7:]).unlink()
+    async with database.transaction() as session:
+        with pytest.raises((OSError, ValueError)):
+            await studies.transition(
+                session, study_id=seeded.study_id, to_status=StudyStatus.COMPLETE
+            )
+        assert await session.scalar(select(func.count()).select_from(StudyResultRow)) == 0

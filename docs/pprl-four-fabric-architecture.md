@@ -36,7 +36,12 @@ bindings. The coordinator now separates planner input from trusted effect execut
 projection now reconstructs privileged archives, requires admitted observations/content and
 training-use evidence, and retains bounded public JSONL separately from private sample lineage.
 Legacy archives receive no implicit projection admission. See
-[training projections](pprl-training-projection-boundary.md). Actual provider-prompt binding,
+[training projections](pprl-training-projection-boundary.md). Atlas trial request/result and
+exploratory-proposal writes now require physical source verification, forensic classification,
+and transactional independent ownership, including failed-call artifacts. New Atlas Study block
+admission and result sealing revalidate that retention. See
+[Atlas retention](atlas-forensic-retention-boundary.md); legacy records are not implicitly repaired,
+and other Atlas reporting/analysis paths still require use-boundary review. Actual provider-prompt binding,
 executable hydration/recovery, Atlas projections, semantic provenance, coordinated GC, and
 parameter-training readiness remain unresolved; these offline properties do not attest a live runtime.
 
@@ -304,6 +309,12 @@ Several Padawan subsystems define more complete records, but they are not unifie
 
 The generic `ProvenanceLedger` is append-only and hash-chained, but PPRL does not compose every
 process invocation and environment action into it.
+
+Atlas's new source-retention boundary uses `artifact_information` and `artifact_references` for
+explicit request/result/proposal dependencies. It checks real source bytes and exact owner sets
+before new records and Atlas Study admission/sealing. Preflight metadata, captured-call summaries,
+and verifier rows remain trusted declarations; this does not attest their producer or actual
+execution, provide full forensic capture, or admit an Atlas finding to worker memory or training.
 
 ### Coverage and losses
 

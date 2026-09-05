@@ -445,18 +445,91 @@ Validation and review, 2026-09-05:
   ignored. Exact staged-blob comparison and the same credential rules are required before the local
   commit. This is a change-scope check, not a new whole-history audit.
 
+### Checkpoint 4 continued: Atlas forensic retention prerequisite
+
+Continuation audit: prior turn was verified progress. Current HEAD is `b2f3628`, initially clean;
+its exact 27-file staged credential scan had no findings or working/staged byte mismatches.
+
+Atlas implementation decision, recorded before editing: close forensic classification and retention
+at trial request/result and exploratory-proposal writes before admitting any Atlas projection.
+At the prior HEAD, `record_trial_request` checked preflight catalog metadata, `record_trial_result`
+checked captured-call/verifier metadata, and `register_exploratory_proposal` checked protected trace
+flags; none established independent forensic ownership. Keep metadata-only registry operations
+available, but require an explicitly configured artifact boundary for these three source writes.
+Validate actual backend identity/bytes, classify explicit source references as forensic, and pin
+them atomically with the owning record. Retries
+validate existing classification and exact ownership without silently repairing legacy evidence.
+Retain source request/preflight dependencies with result ownership as well as their original owners.
+
+This portion assumes a trusted broker, database, and configured backend. Test missing backend/blob/
+classification/ownership, forged flags and nested explicit evidence references, idempotent retries,
+independent owners, and caught-error/outer rollback using real disposable local storage. Keep raw
+traffic and findings privileged; Atlas's existing `direct_compiler_ingestion_permitted: false` and
+`direct_memory_write_permitted: false` remain enforced. Retain original source formats and digests,
+classification records, exact owner sets, fixtures, and checks. Failure rejects the write or read;
+rollback disables consumers while preserving evidence. No model input, corpus materialization,
+training permission, live campaign, semantic redaction, runtime identity attestation, or coordinated
+GC is added by this retention prerequisite. Those remain subsequent gates of the full objective.
+
+Validation and review, 2026-09-05:
+
+- `AtlasArtifactBoundary` now verifies physical source bytes, immutable forensic classification, and
+  exact ownership. All three source writes have an outer savepoint, and retries validate rather
+  than repair. Result ownership independently retains request preflights, captured request/response
+  and envelope, grader artifacts, and nested explicit verifier artifact references. Reference count
+  and declared-byte bounds are 64 and 64 MiB. Native source schemas and digests are unchanged;
+  there is no migration, new table, or historical backfill.
+- Adversarial review found failed-call requests were initially omitted because pre-response results
+  have no generation envelope. Timeout/infrastructure results now retain their captured request and
+  any explicitly named provider-error response. Review also added source timestamp/column checks,
+  verifier identity, and the captured-output/verifier join on reuse. These are stored metadata and
+  byte checks, not provider, consent, preflight, or verifier-execution attestation.
+- New Atlas Study block admission and result sealing revalidate physical evidence through explicit
+  backend composition. Missing backend, owner, or file prevents new sealing. Existing reporting and
+  same-status completed-Study access are not fresh retention validation. Upstream extraction,
+  cluster/probe/reproduction/eligibility, and other analysis/reporting paths still need use-boundary
+  review before they can feed new consumers.
+- An early boundary selection passed **16 tests and failed 1 in 2.89 seconds** because its expected
+  exception families omitted the correct `FileNotFoundError` for a removed blob. The fixture was
+  corrected to include `OSError`; production rejection was preserved. Subsequent boundary and Study
+  selections passed **19 in 2.80 seconds** and **9 in 2.69 seconds**. The expanded combined Atlas
+  selection passed **42 tests in 7.10 seconds** before the final captured-output drift case.
+- Full offline command: `PYTHONPATH=. .venv/bin/pytest -q
+  -m 'not postgres and not live and not lean and not gcs' --tb=short`.
+  Result: **493 passed, 6 deselected in 50.14 seconds**. Ruff passed, formatting checked 314 files,
+  all 150 generated schemas match, mypy passed for 166 source files, and `git diff --check` passed.
+  Disposable migration schema matching and all-revision upgrade/downgrade are included. PostgreSQL,
+  live, Lean, and real GCS validation remain excluded. No actual inference, training, cloud/GPU use,
+  sibling edit, production migration, or publication occurred.
+- [Atlas forensic retention](atlas-forensic-retention-boundary.md) retains the exact stores, sources,
+  APIs, bounds, trust assumptions, acceptance evidence, failure behavior, rollback, and non-goals.
+  The tests use synthetic call/verifier/preflight bodies in real disposable local storage. GC was
+  checked with a captured reference snapshot, not against concurrent DB/GC races. Errors and
+  inspection objects remain privileged; authenticated readers and complete forensic capture are
+  not implemented by this checkpoint.
+- `AtlasTrainingEligibilityRow` and `AtlasMemoryEligibilityRow` have registry writers but no direct
+  compiler/memory consumers. Their fixed-false direct-ingestion/direct-write contracts remain.
+  No Atlas source/admission adapter or governed corpus materialization was added; the PPRL projector
+  cannot substitute for those boundaries. Scientific, long-horizon, and learning gates stay open.
+- The 11-file changed/new credential-pattern scan found no provider-token, private-key, or credential
+  literal matches. No tracked `.env`, key-file, or model-weight candidate was found; `.env` remains
+  ignored. Exact staged-blob scanning and working/staged byte comparison are required before commit.
+  This is a change-scope check, not a new whole-history audit.
+
 ## Next executable step
 
-Current goal turn: verified engineering progress on the PPRL training projection portion of
-checkpoint 4. The full goal remains incomplete and active. Preserve this verified checkpoint in a
-reviewable local commit before starting the next implementation portion; read current Git state
-and this ledger on every continuation rather than assuming a prior checkpoint is still pending.
+Current goal turn: verified engineering progress on Atlas source retention within checkpoint 4.
+The full goal remains incomplete and active. Preserve this checkpoint in a reviewable local commit
+after changed/new and exact staged-blob credential scans. Read current Git state and this ledger on
+every continuation rather than assuming a prior checkpoint is still pending.
 
-Continue stage 1 with the Atlas import/export and learning-admission paths. First trace
-`padawan/atlas/registry.py`, `orchestration.py`, `studies.py`, `reporting.py`, and their integration
-tests: trial capture/artifact ownership, verifier/outcome records, exploratory failure reproduction,
-challenge/promotion separation, `record_training_eligibility`, and the governed corpus-materialization
-boundary. Determine which payloads are privileged archives versus potential worker/training input;
+Continue stage 1 with the remaining Atlas import/export and reviewed-use paths. The source-retention
+prerequisite above is complete within its stated scope. Trace `registry.py`, `orchestration.py`,
+`studies.py`, `reporting.py`, and existing evidence-admission APIs for the smallest explicit reviewed
+Atlas-source adapter. Keep exploratory reproduction, challenge/promotion separation, training
+eligibility, and governed corpus materialization distinct. There is no current eligibility consumer
+to harden; do not invent one merely to turn a registry flag into learning authority. Determine which
+payloads remain privileged archives versus separately reviewed worker/training candidates;
 do not infer admission from raw/restricted flags, reports, benchmark rights, eligibility booleans,
 or the new PPRL projector. Retain historical IDs, native schemas, and digests.
 

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
 from sqlalchemy import select
 
+from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore
 from padawan.atlas.adapters import AlgebraAdapter
+from padawan.atlas.artifacts import AtlasArtifactBoundary
 from padawan.atlas.campaigns import build_first_inkling_campaign_bundle
 from padawan.atlas.contracts import (
     AccessClassification,
@@ -674,7 +677,7 @@ def _rehash_run_manifest(manifest: AtlasRunManifest, **updates: object) -> Atlas
 def _response_artifact() -> ArtifactRef:
     digest = sha256_digest("4")
     return ArtifactRef(
-        artifact_id="atlas-response",
+        artifact_id=f"art-{digest[7:]}",
         uri=f"artifact://sha256/{digest[7:]}",
         digest=digest,
         media_type="text/plain",
@@ -741,7 +744,7 @@ def _trial_result(
         raw_response_digest=artifact.digest,
         capabilities_digest=sha256_digest("registry capabilities"),
         external_call_artifact=ArtifactRef(
-            artifact_id="atlas-generation-envelope",
+            artifact_id=f"art-{sha256_digest('registry envelope')[7:]}",
             uri=f"artifact://sha256/{sha256_digest('registry envelope')[7:]}",
             digest=sha256_digest("registry envelope"),
             media_type="application/vnd.padawan.generation-result+json",
@@ -823,7 +826,9 @@ def _snapshot(
 
 
 async def _register_executable_chain(session):
-    registry = AtlasRegistry()
+    registry = AtlasRegistry(
+        artifacts=AtlasArtifactBoundary(ArtifactCatalog(_artifact_store(session)))
+    )
     profile, execution = await _seed_controls(session)
     governance = _governance()
     item = _item()
@@ -843,7 +848,7 @@ async def _register_executable_chain(session):
     allocation = _allocation(campaign, suite)
     await registry.record_allocation(session, allocation)
     request = _request(campaign, suite, item, execution)
-    _seed_preflight_artifacts(session, execution=execution, request=request)
+    await _seed_preflight_artifacts(session, execution=execution, request=request)
     session.add(_run_row(request.run_id, execution))
     await session.flush()
     run_manifest = _run_manifest(campaign, suite, binding, profile, execution, request)
@@ -851,7 +856,11 @@ async def _register_executable_chain(session):
     return registry, execution, campaign, suite, item, request, run_manifest
 
 
-def _seed_preflight_artifacts(
+def _artifact_store(session) -> LocalArtifactStore:
+    return LocalArtifactStore(Path(session.bind.url.database).parent / "atlas-artifacts")
+
+
+async def _seed_preflight_artifacts(
     session, *, execution: ResearchExecutionManifest, request: AtlasTrialRequest
 ) -> None:
     common = {
@@ -874,19 +883,15 @@ def _seed_preflight_artifacts(
     ):
         if digest is None:
             continue
-        session.add(
-            ArtifactRow(
-                artifact_id=f"preflight-{kind}",
-                digest=digest,
-                uri=f"artifact://sha256/{digest[7:]}",
-                media_type="application/vnd.padawan.atlas-preflight+json",
-                size_bytes=1,
-                restricted=True,
-                raw_data=True,
-                storage_backend="test",
-                metadata_json={"kind": kind, **common, **extras},
-                created_at=NOW,
-            )
+        artifact = _artifact_store(session).put_text(
+            "registry edge preflight" if kind == "edge" else "registry effort mapping",
+            media_type="application/vnd.padawan.atlas-preflight+json",
+            restricted=True,
+            raw_data=True,
+        )
+        assert artifact.digest == digest
+        await ArtifactCatalog(_artifact_store(session)).register(
+            session, artifact, metadata={"kind": kind, **common, **extras}
         )
 
 
@@ -1075,6 +1080,12 @@ async def test_trial_result_cannot_be_cherry_picked_or_replaced(database) -> Non
         ) = await _register_executable_chain(session)
         await registry.record_trial_request(session, request)
         artifact = _response_artifact()
+        assert (
+            _artifact_store(session).put_text(
+                "4", media_type="text/plain", restricted=True, raw_data=True
+            )
+            == artifact
+        )
         session.add(
             ArtifactRow(
                 artifact_id=artifact.artifact_id,
@@ -1084,7 +1095,7 @@ async def test_trial_result_cannot_be_cherry_picked_or_replaced(database) -> Non
                 size_bytes=artifact.size_bytes,
                 restricted=artifact.restricted,
                 raw_data=artifact.raw_data,
-                storage_backend="test",
+                storage_backend="local",
                 metadata_json={},
                 created_at=NOW,
             )
@@ -1112,6 +1123,15 @@ async def test_trial_result_cannot_be_cherry_picked_or_replaced(database) -> Non
         result = _trial_result(execution, request)
         envelope = result.external_call_artifact
         assert envelope is not None
+        assert (
+            _artifact_store(session).put_text(
+                "registry envelope",
+                media_type="application/vnd.padawan.generation-result+json",
+                restricted=True,
+                raw_data=True,
+            )
+            == envelope
+        )
         session.add(
             ArtifactRow(
                 artifact_id=envelope.artifact_id,
@@ -1121,7 +1141,7 @@ async def test_trial_result_cannot_be_cherry_picked_or_replaced(database) -> Non
                 size_bytes=envelope.size_bytes,
                 restricted=envelope.restricted,
                 raw_data=envelope.raw_data,
-                storage_backend="test",
+                storage_backend="local",
                 metadata_json={},
                 created_at=NOW,
             )
