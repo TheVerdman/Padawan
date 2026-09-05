@@ -366,33 +366,114 @@ from the full goal. No real model test is needed for this slice.
   candidate, or new credential was found; `.env` remains ignored. This is a change-scope scan,
   not a new whole-history audit.
 
-## Next executable step
+## Checkpoint 4: PPRL training projection
 
 Current goal turn: verified engineering progress; the worker-observation portion of checkpoint 3
 passes the full authorized offline checks. The full goal remains incomplete and active.
 
-Continue stage 1 with checkpoint 4: training/Atlas projection boundaries. Start with the existing
-PPRL training compiler in `padawan/training/pprl.py`, whose trajectory and verifiable products still
-serialize full source state/events/outcomes. Review the complete snapshot, artifact-retention,
-schema-version, source-rights, and eligibility paths before changing them. Separate allowlisted
-learning payloads from privileged lineage/evidence, and preserve historical source/bundle digests.
-No old record, outcome, restricted export flag, or successful compiler run grants worker/training
-admission. Missing classification, content admission, projection-use rights, or required observation
-lineage must exclude new use with a retained reason rather than silently backfill authority.
+The observation portion was committed as `0b54532` with a clean worktree. Its exact 24-file staged
+scan had no credential findings; two unchanged documentation placeholders were explicitly checked.
 
-Define the exact bounded projection policy and versioned formats first. Cover ordinary trajectories,
-verifiable products, fork preferences, nested/outcome/task fields, exclusions, reference resolution,
-independent retention, and rollback with synthetic adversarial cases. Retain original sources,
-projection policy/bytes/digests, rights/use decisions, exclusions, and private ownership separately.
-Fail before publishing a partially valid product; rollback disables consumers while retaining
-historical evidence. Atlas-specific imports/exports need their own traced paths under the same
-boundary, not an assumed generic permission.
+Checkpoint 4 implementation decision: preserve existing version-1 training bundles as privileged
+research archives. Their full state/event/outcome and lineage rows are not model input. Add an
+explicit PPRL projection step with separate public trajectory, verifiable, and fork-preference
+payload contracts and private immutable receipts. Public JSONL will omit source IDs, authorization,
+lease, forensic references, outcome evidence links, and archive metadata; private receipts will bind
+row offsets/digests to the original archive, observations, source content, rights, and decisions.
 
-Non-goals for this next local slice: a trainer, parameter updates, permission to train, authentic
-behavior-policy attribution, action masks, proof of exact provider inputs, live workers, local model
-stress tests, or cloud activation. Conserved resources, authenticated execution, coordinated GC,
-executable recovery, full replacement, Atlas institutional subjects, and the 10M+ token milestone
-remain required later gates. No additional resource authority is needed for these local foundations.
+The trusted broker will reconstruct the archive's PPRL products from its exact source snapshot,
+validate current research/training/retention authority, require admitted state/event content and
+observation bindings, and enforce training-use evidence admission. Task projection requires an
+explicit closed schema bound to the generator identity. Numeric outcome labels are separate from
+their privileged evidence. Apply replication minima again after projection exclusions, preserving
+duplicate public examples and their distinct private sample lineage. Old bundles remain readable
+for research but gain no implicit projection approval.
+
+Persist bounded canonical public bytes in a private projection receipt, with atomic ownership for
+the source archive and all admitted-evidence dependencies. Public reads return only those bytes
+after current-policy/authority/integrity/retention checks. Missing or conflicting evidence fails
+closed; empty/excluded results remain retained research evidence. These are institutional learning
+payloads, not yet attributable worker parameter-training examples: real prompt/policy identity,
+action masks, interference-aware credit, trainer integration, and execution authorization remain
+later gates. Atlas projection paths remain the next part of checkpoint 4.
+
+Validation and review, 2026-09-05:
+
+- `ProcessTrainingProjectionStore` now implements the explicit broker step. Thirteen generated
+  contracts and migration `c3e746d2a9f1` add bounded public payloads and one immutable private receipt
+  table. Existing version-1 archives and hashes are unchanged. Public reads reconstruct source rows
+  and require current authority, exact observations/content/bindings/rights, explicit task schemas,
+  training-use evidence, and original plus independent projection retention.
+- Review exposed a gap in the older archive verifier: its schema/hash/snapshot checks can accept a
+  PPRL row whose content differs from its retained source. The new path compares the exact rebuilt
+  source rows to archived bytes. A synthetic hash-valid/source-divergent archive test demonstrates
+  the old verifier's limitation and the new reader's rejection; the original verifier is not
+  described as a learning-admission API.
+- Review also corrected the draft's distribution-only replication filtering and use of
+  trajectory-lane labels in fork preferences. Minima now apply separately after every product's
+  exclusions, requiring enough replicates for every admitted instance; fork preferences carry
+  their exact selected outcomes. Equal public examples remain distinct privately attributable rows.
+- Independent ownership retains every archive product, reviewed derivatives and all forensic
+  sources, and direct completed-invocation traffic. Missing original or projection ownership denies
+  reads. Reviewed training-purpose reads can follow pause/release approval when Amber permits;
+  new admissions and process observations remain active-only. Authority-sequence changes require
+  fresh projection receipts. No receipt grants parameter-training readiness.
+- The early evidence/observation/migration selection had **68 passed, 1 failed in 9.92 seconds**:
+  migration schema matching found a 192/128-character foreign-key width mismatch, which was fixed.
+  Subsequent focused migration checks passed **2 tests in 1.96 seconds**.
+- New fixture setup initially failed on omitted policy bounds, wrong enum names, an invalid fork
+  intervention shape, releasing an already released fork lease, a protected receipt foreign key,
+  release approval without its required envelope/independent reviewer, and positional construction
+  of keyword-only simulated-call executors. These were corrected in the fixtures without weakening
+  production validation. Intermediate selections included **21 passed, 3 failed in 9.89 seconds**,
+  **24 passed in 10.44 seconds**, and **26 passed, 1 failed in 11.33 seconds**. Final projection
+  selection: **33 passed in 14.42 seconds**.
+- Full offline command: `PYTHONPATH=. .venv/bin/pytest -q
+  -m 'not postgres and not live and not lean and not gcs' --tb=short`.
+  Result: **464 passed, 6 deselected in 45.72 seconds**. Ruff passed; formatting checked 311 files;
+  all 150 schemas match; mypy passed for 165 source files; `git diff --check` passed. Disposable
+  migration schema matching and all-revision upgrade/downgrade are included. PostgreSQL, live,
+  Lean, and real GCS validation remain excluded. Calls in the new tests use synthetic callbacks;
+  no real inference, cloud/GPU use, sibling edit, production migration, or publication occurred.
+- `pprl-training-projection-boundary.md` retains the exact stores, paths, policies, payload fields,
+  limits, acceptance evidence, failures, rollback, threat assumptions, and non-goals. Fatal
+  compilation failures publish no partial result; a durable operational attempt/failure ledger,
+  semantic provenance, role-authenticated access, coordinated GC, actual prompt/behavior/action/credit
+  attribution, and a trainer remain unfinished. These engineering results are not scientific evidence.
+- The 27-file changed/new credential-pattern scan found no provider-token, private-key, or credential
+  literal matches. No tracked `.env`, model-weight, or key-file candidate was found; `.env` remains
+  ignored. Exact staged-blob comparison and the same credential rules are required before the local
+  commit. This is a change-scope check, not a new whole-history audit.
+
+## Next executable step
+
+Current goal turn: verified engineering progress on the PPRL training projection portion of
+checkpoint 4. The full goal remains incomplete and active. Preserve this verified checkpoint in a
+reviewable local commit before starting the next implementation portion; read current Git state
+and this ledger on every continuation rather than assuming a prior checkpoint is still pending.
+
+Continue stage 1 with the Atlas import/export and learning-admission paths. First trace
+`padawan/atlas/registry.py`, `orchestration.py`, `studies.py`, `reporting.py`, and their integration
+tests: trial capture/artifact ownership, verifier/outcome records, exploratory failure reproduction,
+challenge/promotion separation, `record_training_eligibility`, and the governed corpus-materialization
+boundary. Determine which payloads are privileged archives versus potential worker/training input;
+do not infer admission from raw/restricted flags, reports, benchmark rights, eligibility booleans,
+or the new PPRL projector. Retain historical IDs, native schemas, and digests.
+
+Before editing that next portion, define the smallest dependency-correct offline boundary and its
+exact source adapters, authority, exclusions, ownership, and public/private DTOs. Threat assumptions
+remain a trusted broker/store/configuration with malformed, stale, unclassified, and forged inputs
+in scope. Acceptance must cover nested and discoverable forensic references, sealed/challenge/
+adaptive/training separation, exact source/rights/projection-policy joins, independent retention,
+caught-error rollback, and unchanged historical reconstruction. Retain exact fixtures, policies,
+source/bytes/digests, exclusions, and check output. Failure withholds output; rollback disables new
+consumers and preserves source history rather than restoring unreviewed exports.
+
+Non-goals: live Atlas campaigns, sibling telemetry integration, a trainer, parameter updates,
+permission to train, live workers, model stress tests, or cloud activation. Atlas institutional
+subjects and causal MI interchange, conserved resources, authenticated execution, coordinated GC,
+executable recovery, full replacement, and the 10M+ token milestone remain required later gates.
+No additional resource authority is needed for this local boundary review.
 
 ## Completion audit
 

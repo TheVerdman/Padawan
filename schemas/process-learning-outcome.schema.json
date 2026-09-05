@@ -1,0 +1,106 @@
+{
+  "$defs": {
+    "OutcomeDisposition": {
+      "enum": [
+        "success",
+        "failure",
+        "unknown",
+        "infrastructure_failure"
+      ],
+      "title": "OutcomeDisposition",
+      "type": "string"
+    },
+    "ProcessLearningOutcomeComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "deterministic": {
+          "title": "Deterministic",
+          "type": "boolean"
+        },
+        "disposition": {
+          "$ref": "#/$defs/OutcomeDisposition"
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Uncertainty"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "component_id",
+        "disposition",
+        "deterministic",
+        "value",
+        "uncertainty"
+      ],
+      "title": "ProcessLearningOutcomeComponent",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-learning-outcome.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "components": {
+      "items": {
+        "$ref": "#/$defs/ProcessLearningOutcomeComponent"
+      },
+      "minItems": 1,
+      "title": "Components",
+      "type": "array"
+    },
+    "preference_rank": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Preference Rank"
+    },
+    "scalar_return": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Scalar Return"
+    }
+  },
+  "required": [
+    "components",
+    "scalar_return",
+    "preference_rank"
+  ],
+  "title": "ProcessLearningOutcome",
+  "type": "object"
+}

@@ -1,0 +1,39 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-projection-row-link.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "archive_row_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Archive Row Digest",
+      "type": "string"
+    },
+    "public_row_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Public Row Digest",
+      "type": "string"
+    },
+    "row_index": {
+      "minimum": 0,
+      "title": "Row Index",
+      "type": "integer"
+    },
+    "source_rollout_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Rollout Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "row_index",
+    "public_row_digest",
+    "source_rollout_ids",
+    "archive_row_digest"
+  ],
+  "title": "ProcessProjectionRowLink",
+  "type": "object"
+}

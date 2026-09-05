@@ -99,6 +99,71 @@
       "sha256": "33e2b8ff92632591a3b4d51c741aec42405ad5b1bcd4fe08bddb6ccd8df7f3de"
     },
     {
+      "name": "process-learning-outcome-component",
+      "schema": "process-learning-outcome-component.schema.json",
+      "sha256": "45d201bc5225760e35b70a03ec834f7519c7a874678722b61cd8679f4a7f23e8"
+    },
+    {
+      "name": "process-learning-outcome",
+      "schema": "process-learning-outcome.schema.json",
+      "sha256": "a6f9560c6da1561c08c1374ddd413b01fb0a06f1a6068f8a31992a7a9b73e771"
+    },
+    {
+      "name": "process-learning-step",
+      "schema": "process-learning-step.schema.json",
+      "sha256": "fa3b51014049c418925716b6caba2a55a8771bd76bf7b3fc7a15d94fd158bdcf"
+    },
+    {
+      "name": "process-trajectory-payload",
+      "schema": "process-trajectory-payload.schema.json",
+      "sha256": "d07539357be987c8112cffd94afc778c6dcbc600f5fb130e0c4832840213aa4b"
+    },
+    {
+      "name": "process-verifiable-payload",
+      "schema": "process-verifiable-payload.schema.json",
+      "sha256": "52f87ae23f67ef9ca8bd5f12bb6df811e20f4d702de5b0dc5341caddeef12cc8"
+    },
+    {
+      "name": "process-fork-preference-payload",
+      "schema": "process-fork-preference-payload.schema.json",
+      "sha256": "2d93e7da2c6d925e6b4fb4634f365847dfa27ccc2627e35d2f6d47ae3086137a"
+    },
+    {
+      "name": "process-training-task-schema",
+      "schema": "process-training-task-schema.schema.json",
+      "sha256": "08c7a1e3c8772cceb5e85ab15febf8b8c1f7f8008abdc2f84307dbcdb03a8079"
+    },
+    {
+      "name": "process-training-projection-policy",
+      "schema": "process-training-projection-policy.schema.json",
+      "sha256": "e9ef803538008b3e017161a9425fb1a62804fbf941ae8e4388c1f7139d6ecd91"
+    },
+    {
+      "name": "process-projection-source",
+      "schema": "process-projection-source.schema.json",
+      "sha256": "55562533bd7369b99ec2eb541212ef6f38af9e0d047e8550c011f7c0049ae8bf"
+    },
+    {
+      "name": "process-projection-row-link",
+      "schema": "process-projection-row-link.schema.json",
+      "sha256": "c3c09b9676b04d944fd76afe0663dd5bb80ce7bb14d991a3df94a22d7d9a9a87"
+    },
+    {
+      "name": "process-projection-product",
+      "schema": "process-projection-product.schema.json",
+      "sha256": "b149a6a271164290e3c782be37a907f119962c8bc9f3278cdc4e2f5968e4a2a3"
+    },
+    {
+      "name": "process-projection-exclusion",
+      "schema": "process-projection-exclusion.schema.json",
+      "sha256": "596a376a19e2ac896be00c2fe7b054c0509b937f5f987fc640fd3bbaefd0b22f"
+    },
+    {
+      "name": "process-training-projection-receipt",
+      "schema": "process-training-projection-receipt.schema.json",
+      "sha256": "067e0158eef6ecce804aa3d9d421fd9ca88ac1495ea7cdacd6a228af77fe81bf"
+    },
+    {
       "name": "atlas-adapter-descriptor",
       "schema": "atlas-adapter-descriptor.schema.json",
       "sha256": "ff0fd24421e16425960236aadaa4f1a4b191e84174bd379770b225305a3ddc20"

@@ -1,8 +1,9 @@
 # Reviewed process evidence at the broker boundary
 
-Status: offline information-boundary checkpoint. This service is usable by the trusted local
-composition; it is not yet the enforcement path for all PPRL state or training ingress. Those
-remaining paths are tracked in `pprl-execution-ledger.md`.
+Status: offline information-boundary checkpoint. The trusted local composition now uses this
+service for new state/event references, worker observations, and the explicit PPRL training
+projection. Legacy archives and Atlas paths do not gain implicit admission. Remaining paths are
+tracked in `pprl-execution-ledger.md`.
 
 ## Contracts and storage
 
@@ -49,11 +50,15 @@ queryable identity columns are checked against the receipt when read.
 7. `read` returns only admitted candidate bytes. It revalidates the reference, execution, use, policy,
    source bindings, current Amber authority, and ownership. Reads and retries cannot predate actual
    admission. Pause/expiry withholds worker use while privileged review history remains available.
+   Explicit `training_projection` reads may also use paused or release-approved Amber authority,
+   provided all existing training/split/rights checks still pass; expiry, quarantine, and revocation
+   deny use. New evidence admission still requires active authority. Training retention has its own
+   owner and explicit use; it cannot grant process/hydration access during pause.
    Every ordinary read failure is a uniform denial with no embedded privileged validation input,
    physical path, or chained exception. Privileged inspection is a separate broker operation.
    Cancellation keeps its control-flow meaning but discards any private exception payload.
 
-Process-training projection permission is one input to a future safe compiler; it does not grant
+Process-training projection permission is one input to the explicit projection broker; it does not grant
 training eligibility to a rollout, authorize a trainer, or imply that any parameters were updated.
 Execution-scoped references require explicit admission for another execution, including a fork with
 a different execution manifest. No cross-project memory disclosure is implicit.
@@ -71,8 +76,10 @@ Digest matching proves byte identity, not semantic safety, honest review, source
 causal influence. Literal-reference checks do not prove removal of encoded references or covert
 channels. No process-state hydration, arbitrary nested payload, public export, or existing training
 row is automatically safe because these new contracts exist. The PPRL model-result interface is
-now normalized separately; the remaining state and training interfaces still need validated
-projections. See `pprl-worker-output-boundary.md`.
+normalized separately; allowlisted worker and institutional learning projections now have their
+own policies and private receipts. See `pprl-worker-output-boundary.md`,
+`pprl-worker-observation-boundary.md`, and `pprl-training-projection-boundary.md`. These remain
+structural broker boundaries, not semantic provenance or execution isolation.
 
 New state/event content now also requires structural admission and exact policy receipts, described
 in `pprl-content-admission.md`. This does not change the explicit review requirement for evidence

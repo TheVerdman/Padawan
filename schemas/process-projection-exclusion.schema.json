@@ -1,0 +1,41 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-projection-exclusion.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Private failure evidence; no rejected content is returned to a learner.",
+  "properties": {
+    "candidate_id": {
+      "minLength": 1,
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "pprl_trajectory",
+        "pprl_verifiable",
+        "pprl_fork_preference"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "reason": {
+      "enum": [
+        "archive_ineligible",
+        "projection_not_admitted",
+        "task_schema_not_admitted",
+        "replication_insufficient",
+        "fork_pair_not_admitted",
+        "projection_bounds_exceeded"
+      ],
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "candidate_id",
+    "kind",
+    "reason"
+  ],
+  "title": "ProcessProjectionExclusion",
+  "type": "object"
+}

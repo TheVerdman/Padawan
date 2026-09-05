@@ -1,0 +1,63 @@
+{
+  "$defs": {
+    "OutcomeDisposition": {
+      "enum": [
+        "success",
+        "failure",
+        "unknown",
+        "infrastructure_failure"
+      ],
+      "title": "OutcomeDisposition",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-learning-outcome-component.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "component_id": {
+      "minLength": 1,
+      "title": "Component Id",
+      "type": "string"
+    },
+    "deterministic": {
+      "title": "Deterministic",
+      "type": "boolean"
+    },
+    "disposition": {
+      "$ref": "#/$defs/OutcomeDisposition"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Uncertainty"
+    },
+    "value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Value"
+    }
+  },
+  "required": [
+    "component_id",
+    "disposition",
+    "deterministic",
+    "value",
+    "uncertainty"
+  ],
+  "title": "ProcessLearningOutcomeComponent",
+  "type": "object"
+}

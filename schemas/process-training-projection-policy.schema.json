@@ -1,0 +1,126 @@
+{
+  "$defs": {
+    "ProcessTrainingTaskSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "generator_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Generator Digest",
+          "type": "string"
+        },
+        "json_schema": {
+          "additionalProperties": true,
+          "title": "Json Schema",
+          "type": "object"
+        },
+        "namespace": {
+          "minLength": 1,
+          "title": "Namespace",
+          "type": "string"
+        },
+        "schema_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Schema Digest",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "generator_digest",
+        "namespace",
+        "version",
+        "json_schema",
+        "schema_digest"
+      ],
+      "title": "ProcessTrainingTaskSchema",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-training-projection-policy.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "content_policy_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Policy Digest",
+      "type": "string"
+    },
+    "maximum_examples": {
+      "default": 4096,
+      "exclusiveMinimum": 0,
+      "title": "Maximum Examples",
+      "type": "integer"
+    },
+    "maximum_product_bytes": {
+      "default": 16777216,
+      "exclusiveMinimum": 0,
+      "title": "Maximum Product Bytes",
+      "type": "integer"
+    },
+    "maximum_rollout_steps": {
+      "default": 1024,
+      "exclusiveMinimum": 0,
+      "title": "Maximum Rollout Steps",
+      "type": "integer"
+    },
+    "maximum_source_artifact_bytes": {
+      "default": 268435456,
+      "exclusiveMinimum": 0,
+      "title": "Maximum Source Artifact Bytes",
+      "type": "integer"
+    },
+    "observation_policy_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Observation Policy Digest",
+      "type": "string"
+    },
+    "policy_id": {
+      "minLength": 1,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "public_schema_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Public Schema Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_schemas": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProcessTrainingTaskSchema"
+      },
+      "title": "Task Schemas",
+      "type": "array"
+    },
+    "use": {
+      "const": "institutional_training_projection",
+      "default": "institutional_training_projection",
+      "title": "Use",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy_id",
+    "version",
+    "content_policy_digest",
+    "observation_policy_digest",
+    "public_schema_digest"
+  ],
+  "title": "ProcessTrainingProjectionPolicy",
+  "type": "object"
+}

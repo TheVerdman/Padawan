@@ -32,9 +32,13 @@ and immutable policy receipts. See [content admission](pprl-content-admission.md
 proof boundary. The 2026-09-05 observation portion adds an explicit worker DTO, exact canonical-byte
 receipts, current scope/rights checks, independent retention ownership, and admitted/denied proposal
 bindings. The coordinator now separates planner input from trusted effect execution. See
-[worker observations](pprl-worker-observation-boundary.md). Actual provider-prompt binding, executable
-hydration/recovery, safe legacy training/Atlas projections, semantic provenance, and coordinated GC
-remain unresolved; the offline observation property does not attest a live runtime.
+[worker observations](pprl-worker-observation-boundary.md). A separate offline PPRL learning
+projection now reconstructs privileged archives, requires admitted observations/content and
+training-use evidence, and retains bounded public JSONL separately from private sample lineage.
+Legacy archives receive no implicit projection admission. See
+[training projections](pprl-training-projection-boundary.md). Actual provider-prompt binding,
+executable hydration/recovery, Atlas projections, semantic provenance, coordinated GC, and
+parameter-training readiness remain unresolved; these offline properties do not attest a live runtime.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
@@ -103,6 +107,9 @@ The PPRL data model has a real durable substrate:
 - `process_forks` and `process_fork_children` create paired continuations from an identical state;
 - `process_outcomes` retains typed outcome components and raw evidence authority;
 - `process_training_eligibility` separately records whether a completed rollout may enter learning;
+- `process_training_projections` holds privileged immutable receipts for explicitly projected
+  institutional learning payloads, exact source/observation/rights joins, exclusions, and independent
+  artifact ownership; this table is not worker memory or a parameter-training authorization;
 - Amber authorization, lifecycle, head, and action-decision tables bind each admitted transition to
   exact authority and cumulative budget; and
 - `process_worker_invocations`, `external_calls`, and the artifact catalog bind model I/O to the
@@ -134,6 +141,14 @@ in [`padawan/artifacts`](../padawan/artifacts).
 8. `append_event` atomically verifies the admission, records the event and artifact references,
    writes the successor immutable state, advances the rollout head, and releases the lease.
 9. A later worker can claim the rollout and read the new canonical state.
+
+Separately, `TrainingCompiler` retains version-1 privileged research archives. The trusted
+`ProcessTrainingProjectionStore.compile` reconstructs their PPRL rows and retains a new projection
+receipt plus archive/evidence/forensic ownership in one database transaction. Its `read_product`
+returns only canonical public JSONL after current-use revalidation; `inspect_receipt` is privileged.
+Per-product replication minima apply after exclusions, while private row offsets preserve sample
+multiplicity and fork relationships. These payloads explicitly declare `parameter_training_ready`
+false; exact prompt, behavior-policy, action-mask, credit, trainer, and execution gates remain.
 
 This supports meaningful continuity at committed action boundaries. With PostgreSQL and a shared
 artifact backend, a completely different worker node can resume from the current state head.
@@ -543,7 +558,8 @@ cloud resources.
 10. **Admit process trajectories to training last.** Training requires verified isolation,
     complete causal evidence, contamination checks, distribution-level replication, rights, and a
     demonstrated hydration firewall. External training and descendant checkpoint evaluation remain
-    separate authorities.
+    separate authorities. Offline projection-boundary engineering can precede these live gates;
+    a validated payload or restricted archive is not permission to update parameters.
 
 ## Minimum gates before a live swarm
 

@@ -180,6 +180,21 @@ from padawan.training.contracts import (
     TrainingSourceDecision,
     TrainingSourceDocument,
 )
+from padawan.training.process_projection_contracts import (
+    ProcessForkPreferencePayload,
+    ProcessLearningOutcome,
+    ProcessLearningOutcomeComponent,
+    ProcessLearningStep,
+    ProcessProjectionExclusion,
+    ProcessProjectionProduct,
+    ProcessProjectionRowLink,
+    ProcessProjectionSource,
+    ProcessTrainingProjectionPolicy,
+    ProcessTrainingProjectionReceipt,
+    ProcessTrainingTaskSchema,
+    ProcessTrajectoryPayload,
+    ProcessVerifiablePayload,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_ROOT = ROOT / "schemas"
@@ -204,6 +219,19 @@ PUBLIC_MODELS: tuple[tuple[str, type[BaseModel]], ...] = (
     ("process-observation-policy", ProcessObservationPolicy),
     ("process-observation-receipt", ProcessObservationReceipt),
     ("process-observation-decision-binding", ProcessObservationDecisionBinding),
+    ("process-learning-outcome-component", ProcessLearningOutcomeComponent),
+    ("process-learning-outcome", ProcessLearningOutcome),
+    ("process-learning-step", ProcessLearningStep),
+    ("process-trajectory-payload", ProcessTrajectoryPayload),
+    ("process-verifiable-payload", ProcessVerifiablePayload),
+    ("process-fork-preference-payload", ProcessForkPreferencePayload),
+    ("process-training-task-schema", ProcessTrainingTaskSchema),
+    ("process-training-projection-policy", ProcessTrainingProjectionPolicy),
+    ("process-projection-source", ProcessProjectionSource),
+    ("process-projection-row-link", ProcessProjectionRowLink),
+    ("process-projection-product", ProcessProjectionProduct),
+    ("process-projection-exclusion", ProcessProjectionExclusion),
+    ("process-training-projection-receipt", ProcessTrainingProjectionReceipt),
     ("atlas-adapter-descriptor", AdapterDescriptor),
     ("atlas-campaign-manifest", AtlasCampaignManifest),
     ("atlas-campaign-execution-binding", CampaignExecutionBinding),

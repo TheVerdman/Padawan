@@ -172,22 +172,38 @@ class ProcessEvidenceStore:
         *,
         reference: ProcessArtifactRef,
         execution_digest: str,
-        owner_type: Literal["process_state", "process_event", "process_observation"],
+        owner_type: Literal[
+            "process_state", "process_event", "process_observation", "process_training_projection"
+        ],
         owner_id: str,
         now: datetime,
+        use: ProcessEvidenceUse = ProcessEvidenceUse.PROCESS,
     ) -> None:
         """Broker-only ownership; do not expose the resolved dependencies to workers."""
         if (
-            owner_type not in {"process_state", "process_event", "process_observation"}
+            owner_type
+            not in {
+                "process_state",
+                "process_event",
+                "process_observation",
+                "process_training_projection",
+            }
             or not owner_id.strip()
         ):
             raise ValueError("process evidence requires a concrete process record owner")
+        expected_use = (
+            ProcessEvidenceUse.TRAINING_PROJECTION
+            if owner_type == "process_training_projection"
+            else ProcessEvidenceUse.PROCESS
+        )
+        if use != expected_use:
+            raise ValueError("process ownership purpose differs from its declared use")
         async with session.begin_nested():
             receipt, candidate = await self._resolve(
                 session,
                 reference=reference,
                 execution_digest=execution_digest,
-                use=ProcessEvidenceUse.PROCESS,
+                use=use,
                 now=now,
             )
             for artifact in (
@@ -204,18 +220,37 @@ class ProcessEvidenceStore:
         *,
         references: tuple[ProcessArtifactRef, ...],
         execution_digest: str,
-        owner_type: Literal["process_state", "process_event", "process_observation"],
+        owner_type: Literal[
+            "process_state", "process_event", "process_observation", "process_training_projection"
+        ],
         owner_id: str,
         now: datetime,
+        use: ProcessEvidenceUse = ProcessEvidenceUse.PROCESS,
     ) -> None:
         """Broker-only check of the full private dependency set for one process record."""
+        if (
+            owner_type
+            not in {
+                "process_state",
+                "process_event",
+                "process_observation",
+                "process_training_projection",
+            }
+            or not owner_id.strip()
+            or not isinstance(use, ProcessEvidenceUse)
+            or (
+                owner_type == "process_training_projection"
+                and use != ProcessEvidenceUse.TRAINING_PROJECTION
+            )
+        ):
+            raise ValueError("process ownership validation requires a concrete owner and use")
         expected = set()
         for reference in references:
             receipt, candidate = await self._resolve(
                 session,
                 reference=reference,
                 execution_digest=execution_digest,
-                use=ProcessEvidenceUse.PROCESS,
+                use=use,
                 now=now,
             )
             expected.add(candidate.artifact_id)
@@ -255,12 +290,17 @@ class ProcessEvidenceStore:
         review = receipt.review
         if review.process_reference != reference or use not in review.allowed_uses:
             raise PermissionError("process reference or requested use differs from admission")
-        candidate, _ = await self._validate(session, review=review, now=timestamp)
+        candidate, _ = await self._validate(session, review=review, now=timestamp, read_use=use)
         await _validate_pins(session, review)
         return receipt, candidate
 
     async def _validate(
-        self, session: AsyncSession, *, review: ProcessEvidenceAdmission, now: datetime
+        self,
+        session: AsyncSession,
+        *,
+        review: ProcessEvidenceAdmission,
+        now: datetime,
+        read_use: ProcessEvidenceUse | None = None,
     ) -> tuple[ArtifactRef, int]:
         if review.policy_digest != self.policy.digest:
             raise PermissionError("evidence review differs from the pinned admission policy")
@@ -302,10 +342,14 @@ class ProcessEvidenceStore:
                 == execution.amber_authorization_digest
             )
             .with_for_update()
+            .execution_options(populate_existing=True)
         )
+        allowed_statuses = {AmberStatus.ACTIVE.value}
+        if read_use == ProcessEvidenceUse.TRAINING_PROJECTION:
+            allowed_statuses.update({AmberStatus.PAUSED.value, AmberStatus.RELEASE_APPROVED.value})
         if (
             head is None
-            or head.status != AmberStatus.ACTIVE.value
+            or head.status not in allowed_statuses
             or not _utc(head.updated_at) <= now < envelope.expires_at
             or review.reviewed_at < envelope.created_at
             or review.reviewed_at < execution.created_at

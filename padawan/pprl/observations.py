@@ -473,22 +473,7 @@ class ProcessObservationStore:
         lease_token: str,
         now: datetime,
     ) -> ProcessObservationReceipt:
-        source = context.state.payload
-        public = ProcessWorkerObservation(
-            state=ProcessWorkerState(
-                objective=source.objective,
-                plan=source.plan,
-                hypotheses=source.hypotheses,
-                claims=source.claims,
-                artifact_refs=_public_references(context.state),
-                dependencies=source.dependencies,
-                budget_usage=source.budget_usage,
-                worker_assignments=source.worker_assignments,
-                unresolved_risks=source.unresolved_risks,
-                memory_refs=source.memory_refs,
-                extension_state=source.extension_state,
-            )
-        )
+        public = _public_observation(context.state)
         encoded = canonical_json_bytes(public)
         if len(encoded) > self._policy.maximum_bytes:
             raise ValueError("observation exceeds its byte bound")
@@ -548,6 +533,26 @@ class ProcessObservationStore:
             is not None
         ):
             raise ValueError("observation retention has no configured evidence boundary")
+
+
+def _public_observation(state: ProjectStateVersion) -> ProcessWorkerObservation:
+    """Pure allowlist shared by brokers *after* source/use admission; grants no authority."""
+    source = state.payload
+    return ProcessWorkerObservation(
+        state=ProcessWorkerState(
+            objective=source.objective,
+            plan=source.plan,
+            hypotheses=source.hypotheses,
+            claims=source.claims,
+            artifact_refs=_public_references(state),
+            dependencies=source.dependencies,
+            budget_usage=source.budget_usage,
+            worker_assignments=source.worker_assignments,
+            unresolved_risks=source.unresolved_risks,
+            memory_refs=source.memory_refs,
+            extension_state=source.extension_state,
+        )
+    )
 
 
 def _public_references(state: ProjectStateVersion) -> tuple[ProcessArtifactRef, ...]:

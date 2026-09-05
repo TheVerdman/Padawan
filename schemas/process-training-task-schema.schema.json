@@ -1,0 +1,41 @@
+{
+  "$id": "https://schemas.padawan.local/v1/process-training-task-schema.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "generator_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Generator Digest",
+      "type": "string"
+    },
+    "json_schema": {
+      "additionalProperties": true,
+      "title": "Json Schema",
+      "type": "object"
+    },
+    "namespace": {
+      "minLength": 1,
+      "title": "Namespace",
+      "type": "string"
+    },
+    "schema_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Schema Digest",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "generator_digest",
+    "namespace",
+    "version",
+    "json_schema",
+    "schema_digest"
+  ],
+  "title": "ProcessTrainingTaskSchema",
+  "type": "object"
+}

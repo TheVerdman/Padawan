@@ -56,7 +56,8 @@ admission failure rolls back the whole fork. Claims refuse legacy or unretained 
 privileged replay preserves their historical representation. See `pprl-reference-ingress-boundary.md`
 for scope and SQLite rollback validation. `pprl-content-admission.md` describes the subsequent closed
 content shapes, extension registry, admitted memory/evidence links, and policy receipts. Narrow
-training projections and semantic provenance remain unfinished. `pprl-worker-observation-boundary.md`
+training projections are now explicit as described below; semantic provenance remains unfinished.
+`pprl-worker-observation-boundary.md`
 describes the allowlisted public planner DTO, exact canonical observation receipts, independent
 retention, scope/rights validation, and admitted/denied proposal linkage. The planner receives a
 detached observation; the effect executor is a separately configured trusted broker adapter.
@@ -97,6 +98,23 @@ repeated-rollout minima. An eligibility decision is accepted only while Amber pe
 later quarantine, revocation, or explicit expiry excludes the rollout from newer snapshots while
 the append-only history keeps older point-in-time bundles reproducible. One historical rollout may
 be retained as evidence, but it is not treated as a reinforcement-learning distribution.
+
+The version-1 compiler products remain privileged research archives containing source state,
+events, outcomes, and lineage. They are not model inputs. `ProcessTrainingProjectionStore` adds a
+separate explicit projection: public trajectory, verifiable, and fork-preference JSONL is separated
+from immutable private source/observation/decision/rights receipts. It reconstructs exact archive
+rows, checks current Amber training authority, requires existing content/observation receipts and
+training-use evidence admission, validates task content through an explicitly registered closed
+generator schema, and reapplies replication minima after each product's exclusions. Equal public
+examples remain separate samples with private lineage. No legacy admission is backfilled.
+
+Archive and evidence dependencies receive independent transactional ownership. Public reads
+revalidate source integrity, current policy/authority, and retention. An authority-sequence change
+requires a new projection receipt, even when training remains permitted during pause or release
+approval. `parameter_training_ready` is always false: attributable parameter learning still needs
+actual observation-to-provider binding, action masks, behavior-policy and credit evidence, trainer
+integration, and execution authorization. See `pprl-training-projection-boundary.md` for the exact
+read/write paths, bounds, retained evidence, failure cases, and rollback.
 
 ## Persistence
 

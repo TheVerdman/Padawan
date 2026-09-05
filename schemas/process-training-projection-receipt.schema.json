@@ -1,0 +1,607 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "raw_data": {
+          "default": false,
+          "title": "Raw Data",
+          "type": "boolean"
+        },
+        "restricted": {
+          "default": false,
+          "title": "Restricted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^artifact://sha256/[0-9a-f]{64}$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "uri",
+        "digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "ForensicArtifactRef": {
+      "additionalProperties": false,
+      "description": "Researcher-only reference; never part of a worker projection.",
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "classification_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Classification Digest",
+          "type": "string"
+        },
+        "domain": {
+          "const": "forensic",
+          "default": "forensic",
+          "title": "Domain",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact",
+        "classification_digest"
+      ],
+      "title": "ForensicArtifactRef",
+      "type": "object"
+    },
+    "ProcessArtifactRef": {
+      "additionalProperties": false,
+      "description": "Worker-facing reference without forensic lineage or physical storage authority.",
+      "properties": {
+        "content_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Digest",
+          "type": "string"
+        },
+        "domain": {
+          "const": "process",
+          "default": "process",
+          "title": "Domain",
+          "type": "string"
+        },
+        "execution_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Execution Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "process_artifact_id": {
+          "pattern": "^process-artifact-[0-9a-f]{32}$",
+          "title": "Process Artifact Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "process_artifact_id",
+        "execution_digest",
+        "content_digest",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "ProcessArtifactRef",
+      "type": "object"
+    },
+    "ProcessProjectionExclusion": {
+      "additionalProperties": false,
+      "description": "Private failure evidence; no rejected content is returned to a learner.",
+      "properties": {
+        "candidate_id": {
+          "minLength": 1,
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "pprl_trajectory",
+            "pprl_verifiable",
+            "pprl_fork_preference"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "archive_ineligible",
+            "projection_not_admitted",
+            "task_schema_not_admitted",
+            "replication_insufficient",
+            "fork_pair_not_admitted",
+            "projection_bounds_exceeded"
+          ],
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "kind",
+        "reason"
+      ],
+      "title": "ProcessProjectionExclusion",
+      "type": "object"
+    },
+    "ProcessProjectionProduct": {
+      "additionalProperties": false,
+      "properties": {
+        "content_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Digest",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "pprl_trajectory",
+            "pprl_verifiable",
+            "pprl_fork_preference"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "public_jsonl": {
+          "title": "Public Jsonl",
+          "type": "string"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/ProcessProjectionRowLink"
+          },
+          "title": "Rows",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "public_jsonl",
+        "content_digest",
+        "rows"
+      ],
+      "title": "ProcessProjectionProduct",
+      "type": "object"
+    },
+    "ProcessProjectionRowLink": {
+      "additionalProperties": false,
+      "properties": {
+        "archive_row_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Archive Row Digest",
+          "type": "string"
+        },
+        "public_row_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Public Row Digest",
+          "type": "string"
+        },
+        "row_index": {
+          "minimum": 0,
+          "title": "Row Index",
+          "type": "integer"
+        },
+        "source_rollout_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Source Rollout Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "row_index",
+        "public_row_digest",
+        "source_rollout_ids",
+        "archive_row_digest"
+      ],
+      "title": "ProcessProjectionRowLink",
+      "type": "object"
+    },
+    "ProcessProjectionSource": {
+      "additionalProperties": false,
+      "description": "Private source and authority joins, never part of public JSONL.",
+      "properties": {
+        "archive_row_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Archive Row Digest",
+          "type": "string"
+        },
+        "artifact_refs": {
+          "items": {
+            "$ref": "#/$defs/ProcessArtifactRef"
+          },
+          "title": "Artifact Refs",
+          "type": "array"
+        },
+        "authorization_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Authorization Digest",
+          "type": "string"
+        },
+        "authorization_sequence": {
+          "minimum": 0,
+          "title": "Authorization Sequence",
+          "type": "integer"
+        },
+        "content_receipt_digests": {
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Content Receipt Digests",
+          "type": "array"
+        },
+        "distribution_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Distribution Digest",
+          "type": "string"
+        },
+        "evidence_admission_digests": {
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Evidence Admission Digests",
+          "type": "array"
+        },
+        "execution_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Execution Digest",
+          "type": "string"
+        },
+        "forensic_artifacts": {
+          "items": {
+            "$ref": "#/$defs/ForensicArtifactRef"
+          },
+          "title": "Forensic Artifacts",
+          "type": "array"
+        },
+        "instance_id": {
+          "minLength": 1,
+          "title": "Instance Id",
+          "type": "string"
+        },
+        "observation_binding_digests": {
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Observation Binding Digests",
+          "type": "array"
+        },
+        "observation_receipt_digests": {
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Observation Receipt Digests",
+          "type": "array"
+        },
+        "rights_digests": {
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Rights Digests",
+          "type": "array"
+        },
+        "rollout_id": {
+          "minLength": 1,
+          "title": "Rollout Id",
+          "type": "string"
+        },
+        "source_record_digests": {
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Source Record Digests",
+          "type": "array"
+        }
+      },
+      "required": [
+        "rollout_id",
+        "execution_digest",
+        "distribution_digest",
+        "instance_id",
+        "authorization_digest",
+        "authorization_sequence",
+        "archive_row_digest",
+        "source_record_digests",
+        "content_receipt_digests",
+        "observation_receipt_digests",
+        "observation_binding_digests",
+        "rights_digests",
+        "evidence_admission_digests",
+        "artifact_refs",
+        "forensic_artifacts"
+      ],
+      "title": "ProcessProjectionSource",
+      "type": "object"
+    },
+    "ProcessTrainingProjectionPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "content_policy_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Policy Digest",
+          "type": "string"
+        },
+        "maximum_examples": {
+          "default": 4096,
+          "exclusiveMinimum": 0,
+          "title": "Maximum Examples",
+          "type": "integer"
+        },
+        "maximum_product_bytes": {
+          "default": 16777216,
+          "exclusiveMinimum": 0,
+          "title": "Maximum Product Bytes",
+          "type": "integer"
+        },
+        "maximum_rollout_steps": {
+          "default": 1024,
+          "exclusiveMinimum": 0,
+          "title": "Maximum Rollout Steps",
+          "type": "integer"
+        },
+        "maximum_source_artifact_bytes": {
+          "default": 268435456,
+          "exclusiveMinimum": 0,
+          "title": "Maximum Source Artifact Bytes",
+          "type": "integer"
+        },
+        "observation_policy_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Observation Policy Digest",
+          "type": "string"
+        },
+        "policy_id": {
+          "minLength": 1,
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "public_schema_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Public Schema Digest",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_schemas": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProcessTrainingTaskSchema"
+          },
+          "title": "Task Schemas",
+          "type": "array"
+        },
+        "use": {
+          "const": "institutional_training_projection",
+          "default": "institutional_training_projection",
+          "title": "Use",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "version",
+        "content_policy_digest",
+        "observation_policy_digest",
+        "public_schema_digest"
+      ],
+      "title": "ProcessTrainingProjectionPolicy",
+      "type": "object"
+    },
+    "ProcessTrainingTaskSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "generator_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Generator Digest",
+          "type": "string"
+        },
+        "json_schema": {
+          "additionalProperties": true,
+          "title": "Json Schema",
+          "type": "object"
+        },
+        "namespace": {
+          "minLength": 1,
+          "title": "Namespace",
+          "type": "string"
+        },
+        "schema_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Schema Digest",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "generator_digest",
+        "namespace",
+        "version",
+        "json_schema",
+        "schema_digest"
+      ],
+      "title": "ProcessTrainingTaskSchema",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.padawan.local/v1/process-training-projection-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "archive_artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Archive Artifacts",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "exclusions": {
+      "items": {
+        "$ref": "#/$defs/ProcessProjectionExclusion"
+      },
+      "title": "Exclusions",
+      "type": "array"
+    },
+    "parameter_training_ready": {
+      "const": false,
+      "default": false,
+      "title": "Parameter Training Ready",
+      "type": "boolean"
+    },
+    "policy": {
+      "$ref": "#/$defs/ProcessTrainingProjectionPolicy"
+    },
+    "policy_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Policy Digest",
+      "type": "string"
+    },
+    "products": {
+      "items": {
+        "$ref": "#/$defs/ProcessProjectionProduct"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "title": "Products",
+      "type": "array"
+    },
+    "projection_id": {
+      "minLength": 1,
+      "title": "Projection Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_as_of": {
+      "format": "date-time",
+      "title": "Source As Of",
+      "type": "string"
+    },
+    "source_bundle_id": {
+      "minLength": 1,
+      "title": "Source Bundle Id",
+      "type": "string"
+    },
+    "source_manifest_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Source Manifest Digest",
+      "type": "string"
+    },
+    "source_snapshot_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Source Snapshot Digest",
+      "type": "string"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/ProcessProjectionSource"
+      },
+      "title": "Sources",
+      "type": "array"
+    }
+  },
+  "required": [
+    "projection_id",
+    "source_bundle_id",
+    "source_manifest_digest",
+    "source_snapshot_digest",
+    "source_as_of",
+    "created_at",
+    "policy",
+    "policy_digest",
+    "sources",
+    "products",
+    "exclusions",
+    "archive_artifacts"
+  ],
+  "title": "ProcessTrainingProjectionReceipt",
+  "type": "object"
+}
