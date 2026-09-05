@@ -204,6 +204,32 @@ def test_gcs_interrupted_upload_never_returns_or_caches_a_false_success() -> Non
     assert store.read_bytes(reference) == b"retry-safe"
 
 
+def test_gcs_raw_only_content_requires_explicit_restricted_access() -> None:
+    store, _ = _store()
+    reference = store.put_text("raw capture", raw_data=True)
+    with pytest.raises(ArtifactAccessDeniedError):
+        store.read_bytes(reference)
+    assert store.read_text(reference, allow_restricted=True) == "raw capture"
+
+
+def test_gcs_cached_metadata_cannot_authorize_a_relabelled_reference() -> None:
+    store, _ = _store()
+    reference = store.put_text("protected capture", restricted=True, raw_data=True)
+    assert store.storage_metadata(reference)
+    forged = reference.model_copy(update={"restricted": False, "raw_data": False})
+    with pytest.raises(ArtifactIntegrityError):
+        store.storage_metadata(forged)
+
+
+def test_gcs_storage_metadata_rechecks_the_stored_classification() -> None:
+    store, client = _store()
+    reference = store.put_text("protected capture", restricted=True, raw_data=True)
+    record = next(iter(client.bucket_instance.objects.values()))
+    record.metadata["padawan-restricted"] = "false"
+    with pytest.raises(ArtifactIntegrityError):
+        store.storage_metadata(reference)
+
+
 def test_gcs_garbage_collection_is_dry_run_by_default() -> None:
     store, client = _store()
     reference = store.put_bytes(b"orphan", media_type="text/plain")

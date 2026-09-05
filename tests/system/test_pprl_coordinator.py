@@ -86,7 +86,7 @@ class OneActionHandler:
 
 
 @pytest.mark.asyncio
-async def test_coordinator_executes_only_after_amber_admission(database) -> None:
+async def test_coordinator_executes_only_after_amber_admission(database, pprl_now) -> None:
     store, amber = await _bootstrap_rollout(database, rollout_id="coordinator-rollout")
     handler = OneActionHandler()
     coordinator = ProcessCoordinator(
@@ -109,7 +109,7 @@ async def test_coordinator_executes_only_after_amber_admission(database) -> None
 
 
 @pytest.mark.asyncio
-async def test_coordinator_never_executes_denied_boundary_action(database) -> None:
+async def test_coordinator_never_executes_denied_boundary_action(database, pprl_now) -> None:
     store, amber = await _bootstrap_rollout(database, rollout_id="denied-rollout")
     handler = OneActionHandler(target_class="undeclared-target")
     coordinator = ProcessCoordinator(

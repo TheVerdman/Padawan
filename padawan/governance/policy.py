@@ -76,7 +76,7 @@ class ExportPolicy:
             return ExportDecision(
                 False, "private reasoning export is not authorized", classification
             )
-        if reference.restricted and not (
+        if (reference.restricted or reference.raw_data) and not (
             self.allow_restricted and "restricted-artifact-export" in context.roles
         ):
             return ExportDecision(

@@ -145,7 +145,7 @@ class GCSArtifactStore:
         )
 
     def read_bytes(self, reference: ArtifactRef, *, allow_restricted: bool = False) -> bytes:
-        if reference.restricted and not allow_restricted:
+        if (reference.restricted or reference.raw_data) and not allow_restricted:
             raise ArtifactAccessDeniedError(reference.artifact_id)
         hex_digest = self._validate_reference(reference)
         name = self._object_name(hex_digest)
@@ -178,10 +178,8 @@ class GCSArtifactStore:
         return True
 
     def storage_metadata(self, reference: ArtifactRef) -> dict[str, object]:
-        with self._metadata_lock:
-            cached = self._metadata.get(reference.digest)
-            if cached is not None:
-                return dict(cached)
+        # A cached digest is not authority for a new caller's classification.
+        # Revalidate against the stored object before catalog admission.
         hex_digest = self._validate_reference(reference)
         blob = self.bucket.get_blob(
             self._object_name(hex_digest),
@@ -247,8 +245,11 @@ class GCSArtifactStore:
         match = _URI_RE.fullmatch(reference.uri)
         if match is None:
             raise ArtifactIntegrityError("invalid artifact URI")
-        if reference.digest != f"sha256:{match.group(1)}":
-            raise ArtifactIntegrityError("URI and digest disagree")
+        if (
+            reference.digest != f"sha256:{match.group(1)}"
+            or reference.artifact_id != f"art-{match.group(1)}"
+        ):
+            raise ArtifactIntegrityError("artifact identity, URI, and digest disagree")
         return match.group(1)
 
     def _object_name(self, hex_digest: str) -> str:

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import fcntl
 import os
 import re
 import tempfile
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -15,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from padawan.models.contracts import ArtifactRef
-from padawan.models.hashing import sha256_digest
+from padawan.models.hashing import canonical_json_bytes, sha256_digest
 from padawan.models.tables import ArtifactReferenceRow, ArtifactRow
 
 _URI_RE = re.compile(r"^artifact://sha256/([0-9a-f]{64})$")
@@ -74,7 +76,11 @@ class GarbageCollectionResult:
 
 
 class LocalArtifactStore:
-    """Immutable local SHA-256 store with atomic writes and verified reads."""
+    """Broker-owned CAS with immutable metadata and serialized publication/GC.
+
+    Metadata is authoritative within the trusted broker filesystem. This interface
+    does not isolate a worker that can access that filesystem directly.
+    """
 
     backend_name = "local"
     networked = False
@@ -83,6 +89,8 @@ class LocalArtifactStore:
         self.root = Path(root).resolve()
         self.blob_root = self.root / "blobs" / "sha256"
         self.blob_root.mkdir(parents=True, exist_ok=True)
+        self.metadata_root = self.root / "metadata" / "sha256"
+        self.metadata_root.mkdir(parents=True, exist_ok=True)
 
     def put_bytes(
         self,
@@ -96,29 +104,7 @@ class LocalArtifactStore:
             raise ValueError("media_type must be non-empty")
         digest = sha256_digest(content)
         hex_digest = digest.removeprefix("sha256:")
-        target = self._path_for_hex(hex_digest)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if target.exists():
-            self._verify_path(target, digest, len(content))
-        else:
-            descriptor, temporary_name = tempfile.mkstemp(prefix=".write-", dir=target.parent)
-            temporary = Path(temporary_name)
-            try:
-                with os.fdopen(descriptor, "wb") as handle:
-                    handle.write(content)
-                    handle.flush()
-                    os.fsync(handle.fileno())
-                temporary.chmod(0o600 if restricted else 0o644)
-                try:
-                    os.replace(temporary, target)
-                except OSError:
-                    if not target.exists():
-                        raise
-                self._fsync_directory(target.parent)
-                self._verify_path(target, digest, len(content))
-            finally:
-                temporary.unlink(missing_ok=True)
-        return ArtifactRef(
+        reference = ArtifactRef(
             artifact_id=f"art-{hex_digest}",
             uri=f"artifact://sha256/{hex_digest}",
             digest=digest,
@@ -127,6 +113,23 @@ class LocalArtifactStore:
             restricted=restricted,
             raw_data=raw_data,
         )
+        with self._lock(exclusive=True):
+            target = self._path_for_hex(hex_digest)
+            metadata_path = self._metadata_path(hex_digest)
+            if target.exists() or metadata_path.exists():
+                # Never infer classification from a legacy blob or a new caller.
+                stored = self._read_metadata(hex_digest)
+                self._match_reference(stored, reference)
+            else:
+                # Publish classification first. A crash leaves a non-readable
+                # reservation whose retry must retain the same classification.
+                self._atomic_write(metadata_path, canonical_json_bytes(reference), mode=0o600)
+            if target.exists():
+                self._verify_path(target, digest, len(content))
+            else:
+                self._atomic_write(target, content, mode=0o600 if restricted or raw_data else 0o644)
+                self._verify_path(target, digest, len(content))
+        return reference
 
     def put_text(
         self,
@@ -147,20 +150,16 @@ class LocalArtifactStore:
         )
 
     def read_bytes(self, reference: ArtifactRef, *, allow_restricted: bool = False) -> bytes:
-        if reference.restricted and not allow_restricted:
-            raise ArtifactAccessDeniedError(reference.artifact_id)
-        match = _URI_RE.fullmatch(reference.uri)
-        if match is None:
-            raise ArtifactIntegrityError("invalid artifact URI")
-        if reference.digest != f"sha256:{match.group(1)}":
-            raise ArtifactIntegrityError("URI and digest disagree")
-        path = self._path_for_hex(match.group(1))
-        content = path.read_bytes()
-        if len(content) != reference.size_bytes or sha256_digest(content) != reference.digest:
-            raise ArtifactIntegrityError(
-                f"artifact failed integrity check: {reference.artifact_id}"
-            )
-        return content
+        hex_digest = self._validate_reference(reference)
+        with self._lock(exclusive=False):
+            stored = self._read_metadata(hex_digest)
+            if (stored.restricted or stored.raw_data) and not allow_restricted:
+                raise ArtifactAccessDeniedError("restricted artifact read is not authorized")
+            self._match_reference(stored, reference)
+            content = self._path_for_hex(hex_digest).read_bytes()
+            if len(content) != stored.size_bytes or sha256_digest(content) != stored.digest:
+                raise ArtifactIntegrityError("artifact failed integrity check")
+            return content
 
     def read_text(self, reference: ArtifactRef, *, allow_restricted: bool = False) -> str:
         return self.read_bytes(reference, allow_restricted=allow_restricted).decode("utf-8")
@@ -171,7 +170,11 @@ class LocalArtifactStore:
 
     def storage_metadata(self, reference: ArtifactRef) -> dict[str, object]:
         self.verify(reference)
-        return {"layout": "blobs/sha256/{prefix}/{digest}"}
+        return {
+            "layout": "blobs/sha256/{prefix}/{digest}",
+            "classification_schema": "1.0.0",
+            "classification_digest": sha256_digest(reference),
+        }
 
     def collect_garbage(
         self,
@@ -188,20 +191,91 @@ class LocalArtifactStore:
         eligible: list[str] = []
         deleted: list[str] = []
         scanned = 0
-        for path in sorted(self.blob_root.glob("*/*")):
-            if not path.is_file():
-                continue
-            scanned += 1
-            hex_digest = path.parent.name + path.name
-            if hex_digest in reference_hex or path.stat().st_mtime > cutoff:
-                continue
-            if not re.fullmatch(r"[0-9a-f]{64}", hex_digest):
-                continue
-            eligible.append(f"sha256:{hex_digest}")
-            if not dry_run:
-                path.unlink()
-                deleted.append(f"sha256:{hex_digest}")
+        with self._lock(exclusive=True):
+            for path in sorted(self.blob_root.glob("*/*")):
+                if not path.is_file():
+                    continue
+                scanned += 1
+                hex_digest = path.parent.name + path.name
+                if hex_digest in reference_hex or path.stat().st_mtime > cutoff:
+                    continue
+                if not re.fullmatch(r"[0-9a-f]{64}", hex_digest):
+                    continue
+                eligible.append(f"sha256:{hex_digest}")
+                if not dry_run:
+                    path.unlink()
+                    self._fsync_directory(path.parent)
+                    deleted.append(f"sha256:{hex_digest}")
+                    # Keep immutable metadata as a classification tombstone.
+                    # Re-creating identical bytes must not downgrade authority.
         return GarbageCollectionResult(scanned, tuple(eligible), tuple(deleted), dry_run)
+
+    @contextmanager
+    def _lock(self, *, exclusive: bool) -> Iterator[None]:
+        with (self.root / ".store.lock").open("a+b") as handle:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
+            try:
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+    def _metadata_path(self, hex_digest: str) -> Path:
+        path = (self.metadata_root / hex_digest[:2] / hex_digest[2:]).resolve()
+        if self.metadata_root not in path.parents:
+            raise ArtifactIntegrityError("unsafe artifact metadata path")
+        return path
+
+    def _read_metadata(self, hex_digest: str) -> ArtifactRef:
+        try:
+            content = self._metadata_path(hex_digest).read_bytes()
+        except FileNotFoundError:
+            raise ArtifactAccessDeniedError("artifact classification is unavailable") from None
+        try:
+            stored = ArtifactRef.model_validate_json(content)
+        except ValueError:
+            raise ArtifactIntegrityError("invalid stored artifact metadata") from None
+        if (
+            self._validate_reference(stored) != hex_digest
+            or canonical_json_bytes(stored) != content
+        ):
+            # This also rejects omitted classification fields filled by schema defaults.
+            raise ArtifactIntegrityError("stored artifact metadata is not complete and canonical")
+        return stored
+
+    @staticmethod
+    def _validate_reference(reference: ArtifactRef) -> str:
+        match = _URI_RE.fullmatch(reference.uri)
+        if match is None:
+            raise ArtifactIntegrityError("invalid artifact URI")
+        hex_digest = match.group(1)
+        if (
+            reference.digest != f"sha256:{hex_digest}"
+            or reference.artifact_id != f"art-{hex_digest}"
+        ):
+            raise ArtifactIntegrityError("artifact identity, URI, and digest disagree")
+        return hex_digest
+
+    @staticmethod
+    def _match_reference(stored: ArtifactRef, supplied: ArtifactRef) -> None:
+        if stored != supplied:
+            raise ArtifactIntegrityError("stored metadata conflicts with artifact reference")
+
+    @classmethod
+    def _atomic_write(cls, target: Path, content: bytes, *, mode: int) -> None:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        cls._fsync_directory(target.parent.parent)
+        descriptor, temporary_name = tempfile.mkstemp(prefix=".write-", dir=target.parent)
+        temporary = Path(temporary_name)
+        try:
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+            temporary.chmod(mode)
+            os.replace(temporary, target)
+            cls._fsync_directory(target.parent)
+        finally:
+            temporary.unlink(missing_ok=True)
 
     def _path_for_hex(self, hex_digest: str) -> Path:
         if re.fullmatch(r"[0-9a-f]{64}", hex_digest) is None:
@@ -239,12 +313,14 @@ class ArtifactCatalog:
         *,
         metadata: dict[str, object] | None = None,
     ) -> ArtifactRow:
+        storage_metadata = await artifact_storage_metadata(self.backend, reference)
         existing = await session.scalar(
             select(ArtifactRow).where(ArtifactRow.artifact_id == reference.artifact_id)
         )
         if existing is not None:
             if (
                 existing.digest != reference.digest
+                or existing.uri != reference.uri
                 or existing.size_bytes != reference.size_bytes
                 or existing.media_type != reference.media_type
                 or existing.restricted != reference.restricted
@@ -253,7 +329,6 @@ class ArtifactCatalog:
             ):
                 raise ArtifactIntegrityError("catalog record conflicts with artifact reference")
             return existing
-        storage_metadata = await artifact_storage_metadata(self.backend, reference)
         row = ArtifactRow(
             artifact_id=reference.artifact_id,
             digest=reference.digest,
@@ -263,7 +338,7 @@ class ArtifactCatalog:
             restricted=reference.restricted,
             raw_data=reference.raw_data,
             storage_backend=self.backend.backend_name,
-            metadata_json={**storage_metadata, **(metadata or {})},
+            metadata_json={**(metadata or {}), **storage_metadata},
             created_at=datetime.now(UTC),
         )
         session.add(row)

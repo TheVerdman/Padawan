@@ -8,6 +8,13 @@ Audit snapshot:
 - Inkling-Small-Ampere `33eae75` (`Add Responses serving performance tooling`)
 - source review completed 2026-09-03
 
+2026-09-04 engineering update: the local artifact backend now persists and enforces complete
+classification metadata; raw-only default reads/exports and cached GCS metadata relabelling are
+denied. This is one offline information-boundary checkpoint, not the completion of the four-fabric
+architecture. See [storage boundary](artifact-classification-boundary.md) and
+[execution ledger](pprl-execution-ledger.md) for exact scope and validation. The remaining audit gaps
+below retain their status unless explicitly updated.
+
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
 who may use the record and for what purpose, not merely by whether it is stored.
@@ -273,9 +280,10 @@ capture contract for every worker action.
 
 ### Access-control gap
 
-`ExportPolicy` is role- and purpose-aware, but the artifact backend's ordinary read boundary is an
-`allow_restricted` boolean. It does not authenticate a principal or purpose and does not append a
-read audit. The idempotent generation executor can also return the complete persisted
+`ExportPolicy` is role- and purpose-aware. Local backend reads now validate broker-owned immutable
+metadata, and both local and GCS reads deny raw/restricted data unless `allow_restricted` is explicit.
+That boolean still does not authenticate a principal or purpose and does not append a read audit.
+The idempotent generation executor can also return the complete persisted
 `GenerationResult`, including private reasoning, to its in-process caller.
 
 Consequently, the current separation is a strong semantic policy but not yet a hard service and

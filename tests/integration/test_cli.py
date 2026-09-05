@@ -270,7 +270,7 @@ def test_cli_compiles_and_verifies_internal_training_bundle(tmp_path, monkeypatc
     assert json.loads(inspected.stdout)["bundle_id"] == bundle_id
 
 
-def test_cli_registers_and_audits_pprl_amber_control_plane(tmp_path, monkeypatch) -> None:
+def test_cli_registers_and_audits_pprl_amber_control_plane(tmp_path, monkeypatch, pprl_now) -> None:
     database_path = tmp_path / "pprl.sqlite3"
     artifact_root = tmp_path / "artifacts"
     monkeypatch.setenv("PADAWAN_DATABASE_URL", f"sqlite+aiosqlite:///{database_path}")

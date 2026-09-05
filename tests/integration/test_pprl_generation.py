@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 import pytest
 
@@ -33,7 +33,9 @@ from tests.pprl_helpers import (
 )
 
 
-async def test_process_generation_is_admission_bound_and_idempotent(database, tmp_path) -> None:
+async def test_process_generation_is_admission_bound_and_idempotent(
+    database, tmp_path, pprl_now
+) -> None:
     registry = ProcessDistributionRegistry()
     amber = AmberStore()
     store = ProcessStore(amber)
@@ -92,7 +94,7 @@ async def test_process_generation_is_admission_bound_and_idempotent(database, tm
             created_at=NOW + timedelta(minutes=3),
         )
 
-    action_time = datetime.now(UTC)
+    action_time = pprl_now()
     async with database.transaction() as session:
         claimed = await store.claim_next(
             session,
@@ -219,7 +221,7 @@ async def test_process_generation_is_admission_bound_and_idempotent(database, tm
             ),
             artifact_refs=first.artifact_refs,
             worker_invocation_id=first.invocation_id,
-            occurred_at=datetime.now(UTC),
+            occurred_at=pprl_now(),
         )
 
     async with database.transaction() as session:
@@ -227,7 +229,7 @@ async def test_process_generation_is_admission_bound_and_idempotent(database, tm
             session,
             worker_id="process-worker-next",
             lease_for=timedelta(minutes=5),
-            now=datetime.now(UTC),
+            now=pprl_now(),
         )
         assert next_claim is not None
     with pytest.raises(PermissionError, match="already consumed"):
