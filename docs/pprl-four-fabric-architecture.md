@@ -120,6 +120,16 @@ plan as private source evidence. The accepted first workflow uses terminal aband
 effects; general continuing successors remain later work. Legacy authorizations gain no implicit
 enrollment or semantic deduplication guarantee. See [finite task ownership](pprl-task-ownership-boundary.md).
 
+The 2026-09-06 scripted continuity checkpoint composes those existing stores and worker streams in
+a bounded test harness. An actual native broker and two native scripted workers execute an ordered
+hypothesis search. Complete roster loss/replacement, broker restart, four commit-boundary crashes,
+pause/resume and stopped-effect probes preserve the original task and accounting. Delivered bytes
+are compared with independently reconstructed historical receipts. This is engineering continuity
+for one trusted deterministic workflow, not scientific evidence about model institutions. The
+fixture adds no production runtime/schema and does not provide general scheduling, OS isolation,
+live worker messaging, a hierarchy or a fleet kill-switch. See
+[scripted continuity boundary](pprl-scripted-continuity-boundary.md) and the execution ledger.
+
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
 who may use the record and for what purpose, not merely by whether it is stored.
@@ -502,6 +512,13 @@ registration, revocation and one-action ownership. The recovery checkpoint adds 
 assessment and simulated replacement with identical observations. It does not reconstruct an
 unfinished computation, resolve an unknown physical effect or establish whole-institution competence.
 
+The separate scripted continuity harness now executes a complete fixed task across native broker
+loss and replacement of both workers. Workers receive only their own credential/control envelopes
+and allowlisted observations. Its trusted test supervisor owns every subprocess, detects exit/EOF
+and bounded timeouts, reviews recovery and alternates the two workers. Rejected hypotheses and
+original charges survive; unknown and unadmitted completed effects terminate under the existing
+abandonment policy. This is an executable fixture, not a production health/placement scheduler.
+
 The separate developmental runtime has:
 
 - `WorkerRow` registration and heartbeat;
@@ -516,14 +533,15 @@ These mechanisms demonstrate useful patterns but do not operate on PPRL rollouts
 ### What PPRL lacks
 
 - a live process-worker health/placement registry and heartbeat (private credential registrations exist);
-- worker launch, shutdown, placement, or accelerator scheduling;
+- production worker launch/shutdown/placement or accelerator scheduling; the finite test harness
+  owns and reaps native scripted workers only;
 - capability-to-role matching;
 - a full executable task-assignment lifecycle beyond one-action lease ownership;
 - autonomous classification/resolution of every interrupted invocation; reviewed assessment and
   complete retained-result accounting now exist, while unknown effects remain stopped;
 - partial-action checkpoints;
-- executable replacement hydration and attested context delivery; offline observation and exact
-  configured generation receipts now exist;
+- general executable replacement hydration and attested context delivery; the scripted fixture
+  delivers exact allowlisted bytes, and configured generation receipts exist;
 - automatic retry scheduling and domain admission for completed-but-uncommitted actions; only
   reviewed no-intent release permits a new action through the current recovery API;
 - intentional handoff and acknowledgement;

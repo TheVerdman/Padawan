@@ -74,7 +74,7 @@ separate authority gates. Routine local Nemotron testing retains its earlier aut
 | --- | --- | --- |
 | Information boundaries and retention | In progress, stage 1 below | Adversarial ingress/read/export/projection tests, authoritative classification, reviewed admission, transactional retention |
 | Containment, identity, causal tracing, budgets | Exact generation binding, shared accounting, local CPU tool containment, scoped worker credentials and one-action ownership | Credential delivery/isolation, loaded-model attestation, model-serving containment, complete capture/metering and external-effect recovery |
-| Recovery and replacement | Reviewed lease fencing, unresolved-effect barriers and retained-result accounting; native simulated replacement preserves admitted observations | Domain resolution of uncommitted results, heartbeat/task/retry scheduling and scientific continuity through 100% roster replacement |
+| Recovery and replacement | Reviewed fencing, stopped-effect accounting and a complete scripted task through native broker loss and 100% roster replacement | General lifecycle/heartbeat scheduling, domain resolution of uncommitted results and scientific evidence with actual models |
 | Communication, tracking, escalation | Declarative state and roles | Explicit delivery/read authority, causal replay, durable live views, bounded dispatch and escalation |
 | Atlas and mechanistic integration | Worker Atlas and separate runtime laboratories | Institutional subjects; versioned interchange; matched identities; protected forensic evidence and causal controls |
 | Long-horizon institutional science | Declared distributions and outcomes | Preregistered independent replicates, bounded-regret estimators, matched baselines, resumable 10M+ token validation |
@@ -1225,29 +1225,80 @@ Retained evidence: `runs/pprl-task-ownership-validation-20260905/` (ignored).
 This satisfies the first finite foundation review milestone using the terminal option. It does not
 establish complete institutional continuity, a scientific persistence benefit or training evidence.
 
+## Scripted continuity review milestone, 2026-09-06
+
+Selection: the accepted second foundation milestone uses the existing stores and addressed worker
+API. `tests/continuity_fixture.py` composes the original Amber grant, scoped credentials, finite task
+plan, public state and reviewed recovery. `continuity_broker.py`, `continuity_worker.py` and
+`continuity_supervisor.py` provide bounded native fixture processes and inherited socket pairs.
+No production module, table, schema, migration or worker wire protocol was added or changed.
+
+One task tests the ordered candidates 2, 3, 5, 7, 11 and 13 against 221 and retains five rejected
+hypotheses before completing. Two separate persistent scripted workers alternate proposals. A
+trusted executor checks the fixed action mask and computes public mathematical updates. No raw
+tool result or private record identifier supplies a state transition. The model-serving contract
+explicitly names a script with no inference; Amber's schema-minimum token capacities remain unused.
+
+`tests/integration/test_process_continuity.py` compares an uninterrupted reference against four
+actual SIGKILL boundaries: after claim, after admission, inside the event's outer SQL transaction,
+and after commit before acknowledgement. It also exercises two consecutive complete roster
+replacements, authority pause/resume, premature completion refusal and two stopped-effect cases.
+Every broker is a new process with newly constructed stores; all workers start with empty local
+observation/counter state and new credentials. The supervisor directly owns and reaps every child.
+
+Acceptance checks independently verify mathematical rejections, exact per-transition progress,
+final public-state equivalence, original task/rollout/grant identity, historical worker revocation,
+charges and reservation release, and byte-exact equality of delivered frames with reconstructed
+private receipts. A classified forensic canary and its locators are absent from worker observations;
+plaintext credentials are absent from retained fixtures. Started unknown effects keep their hold;
+synthetically completed unadmitted results keep their charge. Both require terminal abandonment,
+remain excluded by compilation and stay terminal through another native broker restart.
+
+Validation and retained evidence: `runs/pprl-scripted-continuity-validation-20260906/` (ignored).
+
+- Eight new tests plus an uninterrupted reference run within **198 passing continuity and related
+  regression tests in 98.97 seconds**. The targeted set covers worker RPC/identity/effects, recovery
+  and source/barrier checks, native restart, terminal abandonment and finite task ownership.
+- The new fixtures create **20 native broker incarnations and 32 native scripted workers**.
+  All 52 owned children were reaped and all isolated worker scratch directories removed. Restricted
+  fixture manifests retain 1,202 files / 436,552,220 bytes across the entire regression set.
+- Ruff lint/format pass (**395 files**); **189 generated schemas** match; mypy passes on **191
+  production source files**. No PostgreSQL, live, Docker execution, GPU or GCS test was run.
+  No production SQL changed, so prior PostgreSQL race evidence was not re-run for this fixture slice.
+- The first schema invocation omitted the repository's documented `PYTHONPATH=.` and selected a
+  stale installed package. Re-running with the Makefile's explicit source root passes without a
+  source change. Both logs are retained; the failed invocation is not reported as a passing check.
+- Exact source/history secret scans, source/staged/committed hashes and the final local commit are
+  retained with the validation record. No fixture evidence or ephemeral credential is tracked.
+
+This is bounded engineering continuity, not a model behavioral baseline, scientific success,
+training evidence, general recovery runtime or an attested filesystem/secret sandbox. The host,
+reviewer, fixture code, broker and storage remain trusted. Worker-local caches/stacks/unfinished
+execution are discarded; they are not institutionally persistent state. No new communication,
+delegation, model hierarchy, general continuing successor or fleet kill-switch is implied.
+
 ## Next implementation dependency
 
-The finite foundation exit gate was accepted, with discretionary consolidation moved after the
-baseline. The task/effect review milestone now uses terminal abandonment and finite ownership.
-Next is one bounded scripted institutional workflow over these existing stores: assign, observe,
-act, commit, stop, recover and resume when no unresolved effect exists. Restart every broker and
-replace 100% of disposable workers, preserving admitted state, task ownership and original costs.
-Repeat churn and named crash boundaries. Keep interrupted unresolved samples stopped and excluded;
-do not add a general continuing successor or new replica as an implicit recovery mechanism.
+The first two finite foundation milestones now have scoped engineering evidence: task/effect
+disposition via terminal abandonment and finite ownership, then the scripted continuity workflow.
+Stop at this review milestone. Next define the pilot's explicit host/broker/database/reviewer/model
+server trust and credential/tool/retention bounds, measure history-sensitive action and restart
+costs, and prepare a concrete preregistered local Nemotron campaign with an independent verifier
+and matched baselines. No actual model campaign has run. Discretionary consolidation remains after
+the frozen repeated behavioral baseline. General continuing successors and planned forks stay
+outside the first workflow; new task/replica names cannot bypass stopped effects.
 
-Connect bounded heartbeat/stale-worker detection, role-specific action masks and deterministic
-scheduling only as needed for that workflow. Credential delivery/isolation needs an explicit trusted
-fixture contract; planned forks remain denied until child enrollment is separately defined. Retain
-byte-exact hydration and test interrupted handoffs and lifecycle races with simulated workers first.
-The current clear-claim integrity check traverses rollout history; benchmark and bound its growth,
-and design checked incremental frontiers before long-horizon execution. Keep the agreed review
-milestones and return for discussion before adding any substantial prerequisite outside this scope.
+The current clear-claim integrity check traverses rollout history. Benchmark its growth before
+choosing any incremental verification design; do not add or remove integrity infrastructure on
+speculation. Return to review before adding another substantial prerequisite outside the finite
+exit gate. The fixture's deterministic control/exit detector is not a production scheduler.
 
 The CPU runner is complete for its stated local scope. Model-serving containment, independent
 forensic service credentials and full capture, actual model identity, physical metering, domain
 result admission and recovery of unknown effects remain gaps. SQL revocation and Docker start are
 not atomic; bounded polling/watchdog evidence is not an instantaneous revocation guarantee.
-Institutional continuity through 100% worker replacement is still unproven.
+Continuity for the fixed scripted task is now checked through 100% roster replacement. Useful
+scientific continuity with model workers and general institutional workloads remains unproven.
 
 Model/GPU validation, Atlas institutional subjects and causal MI interchange, automatic recovery,
 explicit communication/economics, the 10M+ token milestone, preregistered learning, an actual trainer/

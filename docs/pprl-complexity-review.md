@@ -112,7 +112,14 @@ Finite task plans fix rollout ownership before dispatch and preserve stopped sam
 funding. General reviewed continuing successors remain required for that broader capability; they
 are not silently added as a prerequisite for the first pilot. This keeps the exit gate finite while
 retaining explicit exclusions for completed-but-uncommitted or unknown effects. The scripted
-continuity workflow and behavioral baseline remain separate subsequent validation milestones.
+continuity workflow and behavioral baseline remain separate validation milestones.
+
+2026-09-06 milestone update: item 2 now has a bounded native scripted workflow over the existing
+production interfaces. See [scripted continuity boundary](pprl-scripted-continuity-boundary.md) and
+the execution ledger for crash/replacement evidence and limitations. This adds fixture code and
+tests, with no production schema/runtime expansion. Pause at this review checkpoint before item 3:
+pilot trust assumptions, measured history-growth costs and a concrete local Nemotron campaign.
+The scientific behavioral baseline and discretionary consolidation have not occurred.
 
 This is proposed sequencing, not reduced program scope or permission to claim the goal complete.
 Capability Atlas still needs distinct worker/institution subjects and protected behavioral/MI
