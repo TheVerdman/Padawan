@@ -130,6 +130,15 @@ fixture adds no production runtime/schema and does not provide general schedulin
 live worker messaging, a hierarchy or a fleet kill-switch. See
 [scripted continuity boundary](pprl-scripted-continuity-boundary.md) and the execution ledger.
 
+The subsequent third foundation milestone measures enrolled pure-update histories at 0, 8, 32 and
+64 events in 24 fresh local fixtures and prepares a 96-main/eight-calibration-rollout Nemotron
+proposal. The isolated integrity walk used 30 × history length + 17 SQL statements; the proposed
+pilot is capped at 13 actions per main rollout. See [history measurements](pprl-history-growth.md)
+and [pilot preregistration/readiness](pprl-nemotron-pilot-preregistration.md). These are fixture and
+offline preparation results, with no production runtime/schema change, actual model campaign,
+HTTP integration, attestation, training or scientific efficacy result. The new review gate names
+the exact trusted-host assumptions and remaining integration/authorization requirements.
+
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
 who may use the record and for what purpose, not merely by whether it is stored.

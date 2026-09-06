@@ -117,9 +117,16 @@ continuity workflow and behavioral baseline remain separate validation milestone
 2026-09-06 milestone update: item 2 now has a bounded native scripted workflow over the existing
 production interfaces. See [scripted continuity boundary](pprl-scripted-continuity-boundary.md) and
 the execution ledger for crash/replacement evidence and limitations. This adds fixture code and
-tests, with no production schema/runtime expansion. Pause at this review checkpoint before item 3:
-pilot trust assumptions, measured history-growth costs and a concrete local Nemotron campaign.
-The scientific behavioral baseline and discretionary consolidation have not occurred.
+tests, with no production schema/runtime expansion. The user subsequently resumed item 3 in a new
+task using the same checkout. That continuation supersedes the scripted-milestone hold.
+
+Item 3 now has a bounded 24-fixture history measurement and a concrete local Nemotron preregistered
+proposal. See [history-growth report](pprl-history-growth.md) and
+[pilot readiness review](pprl-nemotron-pilot-preregistration.md). The isolated history walk used
+30 × prior events + 17 SQL statements; whole actions at 64 prior events took medians 1.467–1.488 s.
+The proposed pilot caps main rollouts at 13 actions, with no integrity optimization or production
+runtime/schema expansion. Stop at its trust/design and executable-integration review. The scientific
+behavioral baseline and discretionary consolidation have not occurred.
 
 This is proposed sequencing, not reduced program scope or permission to claim the goal complete.
 Capability Atlas still needs distinct worker/institution subjects and protected behavioral/MI
@@ -130,10 +137,10 @@ No amount of generated text or passing fixture tests substitutes for those resul
 
 ## Decisions for discussion
 
-1. Accept the finite foundation gate above, or revise its boundary before resuming; avoid another
-   open-ended sequence of infrastructure slices.
-2. Select the first verifier-backed domain and minimum pilot comparisons, with local Nemotron as
-   the initial worker candidate. Review its trust perimeter and intervention/credit exclusions.
+1. Resolved: the accepted finite foundation has reached its third preparation milestone. Keep the
+   next integration work bounded by the concrete pilot rather than another general infrastructure sequence.
+2. Review the proposed algebra domain, four matched-budget conditions, 96 main/eight calibration
+   rollouts and explicit trusted-host limits. HTTP integration and campaign execution remain gated.
 3. Resolved: defer discretionary consolidation until after a retained repeated behavioral baseline.
    Fix correctness, authority and measurement blockers first. Assess later pruning against the
    frozen reference, required invariants, adversarial probes and matched stochastic evaluations;

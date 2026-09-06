@@ -1,6 +1,7 @@
 # PPRL execution plan and evidence ledger
 
-Status: local implementation resumed by the user; no live institutional or parameter-learning result.
+Status: third finite foundation milestone prepared and measured; hold at campaign readiness review.
+No live institutional or parameter-learning result.
 
 ## Mission and source of authority
 
@@ -68,6 +69,13 @@ measurement, then freeze and collect a repeated behavioral baseline before discr
 consolidation/pruning. GCP, live institutional campaigns, training and deployment retain their
 separate authority gates. Routine local Nemotron testing retains its earlier authorization.
 
+Continuation decision, 2026-09-06: the user requested a context handoff and a new task in the same
+checkout, then instructed the continuation to finish foundation milestone 3 now. This supersedes
+the preceding scripted-milestone hold. Work stays on the existing branch without delegation,
+worktree changes, sibling edits or publication. The handoff reported no active goal object; this
+task does not claim one was transferred or create a replacement. The resulting campaign/readiness
+review is the next hold; later execution/resource gates remain in force.
+
 ## Requirements and status
 
 | Requirement | Current state | Evidence needed for completion |
@@ -77,7 +85,7 @@ separate authority gates. Routine local Nemotron testing retains its earlier aut
 | Recovery and replacement | Reviewed fencing, stopped-effect accounting and a complete scripted task through native broker loss and 100% roster replacement | General lifecycle/heartbeat scheduling, domain resolution of uncommitted results and scientific evidence with actual models |
 | Communication, tracking, escalation | Declarative state and roles | Explicit delivery/read authority, causal replay, durable live views, bounded dispatch and escalation |
 | Atlas and mechanistic integration | Worker Atlas and separate runtime laboratories | Institutional subjects; versioned interchange; matched identities; protected forensic evidence and causal controls |
-| Long-horizon institutional science | Declared distributions and outcomes | Preregistered independent replicates, bounded-regret estimators, matched baselines, resumable 10M+ token validation |
+| Long-horizon institutional science | Declared distributions/outcomes; 0/8/32/64-event engineering measurements and a prepared local Nemotron pilot | Authorized repeated behavioral baseline, bounded-regret estimators, larger-history evidence and resumable 10M+ token validation |
 | Parameter learning and promotion | Offline compiler and external-checkpoint registry | Admitted worker-decision projection, selected trainer, real update, exported-runtime validation and independent evaluation |
 | First research cycle | Not executed or authorized | Completed preregistered institutional cycle and actual candidate evaluation, with negative/null outcomes preserved |
 
@@ -1277,21 +1285,85 @@ reviewer, fixture code, broker and storage remain trusted. Worker-local caches/s
 execution are discarded; they are not institutionally persistent state. No new communication,
 delegation, model hierarchy, general continuing successor or fleet kill-switch is implied.
 
+## Third foundation milestone: measured history and preregistered pilot, 2026-09-06
+
+Continued in the same clean checkout at `92e346a38d18cb97ffbf4dd777db4d9439324fce`, after reading
+the canonical instructions and required documents in order. No production runtime, SQL schema,
+migration or existing scientific verifier changed. Three opt-in preparation/measurement scripts,
+their focused verifier tests, one inert campaign proposal and documentation provide this milestone.
+
+`pprl-history-growth.md` fixes the fixture design and reports exact results. Separate funded/enrolled
+histories of 0, 8, 32 and 64 pure updates, constant/growing state and three fresh databases each
+completed **648 actions across 24 fixtures**. All **48 builder/restart processes** were reaped.
+The ladder took **551.691 seconds** and retained **72,951,106 bytes / 267 files**. Peak observed
+child RSS was **150,274,048 bytes**. A separate read-only audit checked actual SQLite integrity,
+foreign keys, counts, state progression, revoked credentials, empty leases and conserved accounting.
+Fresh interpreters reconstructed the same state/account/task/grant and exact observation bytes.
+
+The isolated integrity traversal executed **30 × history length + 17 SQL statements** at every
+measured rung. Median whole-action time grew from **0.186–0.189 s** at zero history to
+**1.467–1.488 s** at 64 prior events. This supports a short pilot cap, not a generalized serving,
+endurance or 10M-token claim. Host/cache conditions and parent monitor-polling delay are explicit in
+the report. Integrity checks are unchanged; no speculative pruning/frontier cache was added.
+
+`pprl-nemotron-pilot-preregistration.md` and `configs/pprl/nemotron-local-pilot-v1.json` specify a
+trusted-host, single-server baseline using the existing algebra generator. Twelve six-question
+projects × four conditions × two stochastic replicates give **96 main rollouts**, plus eight
+calibration rollouts, all within the 128-entry finite ownership cap. Frozen preparation produced
+**84 unique questions/groups**, with **84/84** independent integer-oracle comparisons matching the
+generator. The strict response reader never evaluates model-authored expressions. The declared
+outcome is final solution-set correctness; the older public-step grader is not represented as a
+proof anchored to the original problem. Conditions compare persistent model-selected work,
+scripted coordination, withheld history and a stable single worker. Analysis clusters at project
+level, retains missing outcomes and explicitly separates context/compute differences.
+
+The proposed caps are 12 model calls plus one final control action per main rollout, one outstanding
+request, 1,168 calls/1,272 actions across the campaign including calibration, four elapsed hours,
+2 GiB retained evidence and **$0 external spending**. Worker clients turn over after committed calls
+4 and 8; the shared model server is not replaced by that intervention. Actual server containment,
+HTTP/seed/channel/context behavior, watchdog/capture, domain admission and executable policy/rights/
+task-plan binding remain the finite integration gate. The proposal has no execution authority and
+its unimplemented integration digest is explicitly null. No generic scheduler or learning backend
+is implied.
+
+Read-only sibling inspection found clean lab/vLLM-Metal/MLX-LM sources at the pinned revisions and
+all ten local Nemotron files (17,792,581,692 bytes) matching the retained capsule. Installed versions
+were read without importing the inference runtime. No current model-health preflight, model load,
+HTTP endpoint, inference, training, GPU/cloud job, sibling edit, delegation, push or deployment ran.
+Existing Gate 5 evidence is a historical component result, not new Padawan integration validation.
+
+Retained evidence: `runs/pprl-history-growth-20260906/` and
+`runs/pprl-foundation-pilot-20260906/`, including failed smoke attempts separately, exact source/runtime
+manifests, fixture DBs, audit hashes, private samples and schedule. Focused preparation and existing
+algebra checks passed **32 tests in 1.20 seconds**. Final static/regression and secret-scan results
+are recorded below before the local commit. This is completion of the agreed preparation milestone,
+not a behavioral result or completion of the full research program.
+
+Final validation: **40 targeted tests passed in 32.35 seconds**, including 21 new preparation/
+verifier cases, 11 existing algebra cases and eight native continuity cases. Ruff lint/format passed
+for 401 files, all 189 schemas match, and mypy passed on 191 production files. No whole-repository or
+PostgreSQL suite was rerun. Postflight verified all 48 history children and the regression's 20
+brokers/32 scripted workers reaped, worker scratch removed and no recorded PID still present.
+The capsule/inventory native schema, self-digest and linked-hash checks also passed without inference.
+
+The cached, network-disabled, bounded CPU scanner inspected all 37 reachable commits and 1,208
+complete historical blobs (18,707,967 object bytes), plus object paths, with zero findings. The
+ten-file source scan flagged one `generic-api-key` match: the declared tokenizer SHA-256, independently
+verified against the local tokenizer bytes. This is a documented hash false positive, not a secret;
+no scanner rule was disabled. Exact staged scans and byte/commit comparisons are retained with the
+validation record. Credential/runtime/evidence paths remain ignored and untracked. No push is authorized.
+
 ## Next implementation dependency
 
-The first two finite foundation milestones now have scoped engineering evidence: task/effect
-disposition via terminal abandonment and finite ownership, then the scripted continuity workflow.
-Stop at this review milestone. Next define the pilot's explicit host/broker/database/reviewer/model
-server trust and credential/tool/retention bounds, measure history-sensitive action and restart
-costs, and prepare a concrete preregistered local Nemotron campaign with an independent verifier
-and matched baselines. No actual model campaign has run. Discretionary consolidation remains after
-the frozen repeated behavioral baseline. General continuing successors and planned forks stay
-outside the first workflow; new task/replica names cannot bypass stopped effects.
-
-The current clear-claim integrity check traverses rollout history. Benchmark its growth before
-choosing any incremental verification design; do not add or remove integrity infrastructure on
-speculation. Return to review before adding another substantial prerequisite outside the finite
-exit gate. The fixture's deterministic control/exit detector is not a production scheduler.
+The three finite milestones now have scoped evidence: terminal disposition/finite ownership,
+scripted native continuity, and explicit trust/resource assumptions with measured history costs and
+a concrete preregistered pilot proposal. **Hold at campaign readiness review.** First review the
+proposed trusted-host scope and design, then freeze and validate the minimal HTTP/admission
+composition and its executable identities before requesting exact campaign execution authority.
+The canonical live-swarm attestation gates are not silently waived by this narrower proposal.
+No actual model campaign has run. Discretionary consolidation follows the frozen repeated behavioral
+baseline. General continuing successors/forks remain outside the first workflow; new task/replica
+names cannot bypass stopped effects. Return to review before any substantial prerequisite expansion.
 
 The CPU runner is complete for its stated local scope. Model-serving containment, independent
 forensic service credentials and full capture, actual model identity, physical metering, domain
