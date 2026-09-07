@@ -38,6 +38,30 @@ from padawan.atlas.contracts import (
 from padawan.atlas.dependencies import coding_dependency
 from padawan.atlas.dispatch import drain_dispatch
 from padawan.atlas.orchestration import FixedRunConfiguration
+from padawan.atlas.preparation import (
+    code_identity as code_identity,
+)
+from padawan.atlas.preparation import (
+    component as component,
+)
+from padawan.atlas.preparation import (
+    limit as limit,
+)
+from padawan.atlas.preparation import (
+    load as load,
+)
+from padawan.atlas.preparation import (
+    record as record,
+)
+from padawan.atlas.preparation import (
+    save as save,
+)
+from padawan.atlas.vertex_control import (
+    await_guard_admission as await_guard_admission,
+)
+from padawan.atlas.vertex_control import (
+    retain_guard_refusal as retain_guard_refusal,
+)
 from padawan.models.contracts import ArtifactRef
 from padawan.models.database import Database
 from padawan.models.hashing import sha256_digest
@@ -48,76 +72,6 @@ from padawan.models.research_contracts import (
     VersionedComponentIdentity,
 )
 from padawan.orchestration.external_calls import IdempotentGenerationExecutor
-
-
-def load(path: Path) -> dict:
-    return json.loads(path.read_text())
-
-
-def record(model, value):
-    return model.model_validate_json(json.dumps(value))
-
-
-def save(path: Path, value: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    with path.open("x") as stream:
-        os.chmod(path, 0o600)
-        stream.write(json.dumps(value, indent=2) + "\n")
-
-
-def retain_guard_refusal(control, error):
-    from control_atlas_vertex import retain_guard_refusal as retain
-
-    return retain(control, error)
-
-
-async def await_guard_admission(admission, stop, deadline):
-    """Wait before any native call intent; never replay a dispatched request."""
-    from control_atlas_vertex import GuardHealthError
-
-    while not stop.is_set():
-        try:
-            if datetime.now(UTC) >= deadline:
-                raise GuardHealthError({"reasons": ["dispatch_deadline_reached"]})
-            if admission.check():
-                return True
-        except Exception as error:
-            stop.set()
-            retain_guard_refusal(admission.control, error)
-            return False
-        with contextlib.suppress(TimeoutError):
-            await asyncio.wait_for(stop.wait(), timeout=1)
-    return False
-
-
-def code_identity() -> dict:
-    # Bind the current code, including reviewed uncommitted implementation, without credentials.
-    paths = sorted(Path("padawan").rglob("*.py")) + [
-        Path("scripts") / name
-        for name in (
-            "run_atlas_coding.py",
-            "prepare_atlas_coding.py",
-            "prepare_atlas_vertex.py",
-            "preflight_atlas_vertex.py",
-            "control_atlas_vertex.py",
-            "launch_atlas_campaign.py",
-        )
-    ]
-    return {str(p): file_sha256(p) for p in paths}
-
-
-def component(name: str, version: str, value, evidence: str) -> dict:
-    return {
-        "component_id": name,
-        "version": version,
-        "digest": sha256_digest(value),
-        "evidence_status": "pinned",
-        "evidence": evidence,
-    }
-
-
-def limit(unit: str, value: float) -> dict:
-    return {"disposition": "capped", "scope": "request", "unit": unit, "value": value}
 
 
 def prepare(args) -> None:
@@ -456,7 +410,7 @@ async def execute(args) -> None:
         raise ValueError("dataset changed after preparation")
     try:
         if args.command == "run" and launch.get("independent_guard_required"):
-            from control_atlas_vertex import Control, GuardAdmission, atomic_save
+            from padawan.atlas.vertex_control import Control, GuardAdmission, atomic_save
 
             if not args.control_directory:
                 raise ValueError("this paid campaign requires its live independent cloud guard")

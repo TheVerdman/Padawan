@@ -7,7 +7,7 @@ import sys
 
 import pytest
 
-from padawan.atlas.local_host import owned_group_members, process_identity, stop_owned
+from padawan.orchestration.local_host import owned_group_members, process_identity, stop_owned
 
 
 def test_cleanup_terminates_descendants_after_group_leader_exits():

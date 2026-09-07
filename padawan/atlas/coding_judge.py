@@ -25,6 +25,7 @@ from uuid import uuid4
 from zipfile import ZipFile
 
 from padawan.atlas.dependencies import coding_dependency
+from padawan.models.hashing import file_sha256 as file_sha256
 
 
 class JudgeInfrastructureError(RuntimeError):
@@ -63,14 +64,6 @@ class JudgeResult:
     @property
     def success(self) -> bool:
         return self.verdict == "Accepted"
-
-
-def file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def _relative(value: object) -> str:

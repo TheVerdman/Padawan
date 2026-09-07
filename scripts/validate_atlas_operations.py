@@ -13,18 +13,29 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
-import run_atlas_coding as entry
 from sqlalchemy import update
 
-from padawan.artifacts.store import ArtifactCatalog
+from padawan.adapters.openai_compatible.vertex import VertexRawPredictClient
+from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore
+from padawan.atlas.adapters import AdapterReadinessContext
+from padawan.atlas.coding_judge import DockerBatchJudge, unpack_package
+from padawan.atlas.coding_runner import run_coding_trials
+from padawan.atlas.contracts import AtlasItemManifest, AtlasTrialRequest
 from padawan.atlas.dispatch import drain_dispatch
+from padawan.atlas.orchestration import FixedRunConfiguration
+from padawan.atlas.preparation import load, record
+from padawan.models.contracts import ArtifactRef
+from padawan.models.database import Database
+from padawan.models.hashing import file_sha256
+from padawan.models.research_contracts import HarnessProfile, ResearchExecutionManifest
 from padawan.models.tables import RunRow
+from padawan.orchestration.external_calls import IdempotentGenerationExecutor
 
 
 async def validate(prior, output):
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     source = prior / "continuation"
-    original_sha = entry.file_sha256(source / "atlas.sqlite3")
+    original_sha = file_sha256(source / "atlas.sqlite3")
     connection = sqlite3.connect(f"file:{source / 'atlas.sqlite3'}?mode=ro", uri=True)
     target = sqlite3.connect(output / "atlas.sqlite3")
     connection.backup(target)
@@ -52,21 +63,19 @@ async def validate(prior, output):
     ).fetchone()[0]
     connection.close()
     shutil.copytree(source / "artifacts", output / "artifacts")
-    inputs = entry.load(prior / "inputs-authorized.json")
+    inputs = load(prior / "inputs-authorized.json")
     launch = inputs["launch"]
-    dataset = entry.load(Path(inputs["dataset"]) / "prepared-dataset.json")
+    dataset = load(Path(inputs["dataset"]) / "prepared-dataset.json")
     package_index = {row["problem_id"]: row for row in dataset["packages"]}
-    database = entry.Database.sqlite(output / "atlas.sqlite3")
-    artifacts = entry.LocalArtifactStore(output / "artifacts")
-    client = entry.VertexRawPredictClient(
-        raw_predict_url=entry.load(prior / "preflight/preflight.json")["destination"],
+    database = Database.sqlite(output / "atlas.sqlite3")
+    artifacts = LocalArtifactStore(output / "artifacts")
+    client = VertexRawPredictClient(
+        raw_predict_url=load(prior / "preflight/preflight.json")["destination"],
         model=launch["model_id"],
         timeout_seconds=launch["request_timeout_seconds"],
     )
-    executor = entry.IdempotentGenerationExecutor(
-        database=database, artifacts=artifacts, client=client
-    )
-    judge = entry.DockerBatchJudge(
+    executor = IdempotentGenerationExecutor(database=database, artifacts=artifacts, client=client)
+    judge = DockerBatchJudge(
         image=launch["judge_image"],
         scratch=output / "scratch",
         testlib=Path(inputs["testlib"]),
@@ -91,15 +100,12 @@ async def validate(prior, output):
             for rid in ids:
                 request = requests[rid]
                 group = request["run_id"].removeprefix("continuation-")
-                bundle = entry.load(source / f"{group}.json")
-                items = {
-                    v["item_digest"]: entry.record(entry.AtlasItemManifest, v)
-                    for v in bundle["items"]
-                }
+                bundle = load(source / f"{group}.json")
+                items = {v["item_digest"]: record(AtlasItemManifest, v) for v in bundle["items"]}
                 item_digest = request["item_digest"]
                 pid = items[item_digest].metadata["problem_id"]
                 if item_digest not in packages:
-                    packages[item_digest] = entry.unpack_package(
+                    packages[item_digest] = unpack_package(
                         Path(inputs["dataset"]) / "archives" / f"{pid}.zip",
                         Path(tmp) / pid,
                         problem_id=pid,
@@ -110,18 +116,16 @@ async def validate(prior, output):
 
             async def replay(rid):
                 request, bundle, items = cases[rid]
-                return await entry.run_coding_trials(
+                return await run_coding_trials(
                     executor=executor,
                     client=client,
-                    activation_ref=entry.record(entry.ArtifactRef, bundle["activation"]),
-                    requests=(entry.record(entry.AtlasTrialRequest, request),),
+                    activation_ref=record(ArtifactRef, bundle["activation"]),
+                    requests=(record(AtlasTrialRequest, request),),
                     items=items,
-                    profile=entry.record(entry.HarnessProfile, bundle["profile"]),
-                    execution=entry.record(entry.ResearchExecutionManifest, bundle["execution"]),
-                    configuration=entry.record(
-                        entry.FixedRunConfiguration, bundle["configuration"]
-                    ),
-                    readiness=entry.record(entry.AdapterReadinessContext, bundle["readiness"]),
+                    profile=record(HarnessProfile, bundle["profile"]),
+                    execution=record(ResearchExecutionManifest, bundle["execution"]),
+                    configuration=record(FixedRunConfiguration, bundle["configuration"]),
+                    readiness=record(AdapterReadinessContext, bundle["readiness"]),
                     packages=packages,
                     judge=judge,
                 )
@@ -238,7 +242,7 @@ async def validate(prior, output):
         assert connection.execute("PRAGMA quick_check").fetchone()[0] == "ok"
         assert not connection.execute("PRAGMA foreign_key_check").fetchall()
         connection.close()
-        assert entry.file_sha256(source / "atlas.sqlite3") == original_sha
+        assert file_sha256(source / "atlas.sqlite3") == original_sha
         assert not forbidden_calls
         report.update(
             passed=True,

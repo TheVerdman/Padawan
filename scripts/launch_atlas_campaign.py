@@ -12,7 +12,9 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from control_atlas_vertex import (
+from padawan.atlas.coding_manifests import validate_prepared_problem_lock
+from padawan.atlas.preparation import code_identity
+from padawan.atlas.vertex_control import (
     Control,
     GuardAdmission,
     atomic_save,
@@ -20,9 +22,6 @@ from control_atlas_vertex import (
     now,
     transient_cloud_error,
 )
-from run_atlas_coding import code_identity
-
-from padawan.atlas.coding_manifests import validate_prepared_problem_lock
 
 
 def main():
@@ -36,7 +35,12 @@ def main():
     root = args.root.resolve()
     if code_identity() != inputs["sources"]:
         raise ValueError("prepared source identity differs before any cloud action")
-    control = Control(inputs["config_file"], root, args.gcloud)
+    control = Control(
+        inputs["config_file"],
+        root,
+        args.gcloud,
+        entrypoint=Path(__file__).with_name("control_atlas_vertex.py"),
+    )
     if control.config != inputs["launch"]:
         raise ValueError("prepared launch configuration differs before any cloud action")
     readiness = json.loads((root / "ready-to-deploy.json").read_text())

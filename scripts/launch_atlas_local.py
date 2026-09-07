@@ -21,9 +21,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from prepare_atlas_local import REPO, source_identity
-
-from padawan.atlas.local_host import (
+from padawan.models.hashing import sha256_digest
+from padawan.orchestration.local_host import (
     GIB,
     append_event,
     atomic_save,
@@ -38,7 +37,9 @@ from padawan.atlas.local_host import (
     process_matches,
     stop_owned,
 )
-from padawan.models.hashing import sha256_digest
+from padawan.orchestration.source_identity import source_identity
+
+REPO = Path(__file__).resolve().parents[1]
 
 
 def storage_usage(root: Path) -> dict[str, int]:
@@ -176,7 +177,7 @@ def supervisor(root: Path) -> int:
     inputs = load(root / "inputs.json")
     config = inputs["config"]
     if (
-        source_identity() != inputs["sources"]
+        source_identity(REPO) != inputs["sources"]
         or sha256_digest(load(root / "configuration.json")) != inputs["config_digest"]
     ):
         raise ValueError("local launch differs from frozen source or configuration")
@@ -215,7 +216,7 @@ def supervisor(root: Path) -> int:
         state.update(phase="failed", stop_reason="host_preflight_failed", finished_at=now())
         atomic_save(root / "state.json", state)
         cleanup_owned(root, state)
-        from run_atlas_local import write_report
+        from padawan.atlas.local_campaign import write_report
 
         write_report(root)
         raise RuntimeError("fresh local host preflight did not pass")
@@ -461,7 +462,7 @@ def main() -> None:
     else:
         if (root / "state.json").exists():
             raise FileExistsError("this run already has an execution record")
-        if source_identity() != load(root / "inputs.json")["sources"]:
+        if source_identity(REPO) != load(root / "inputs.json")["sources"]:
             raise ValueError("source changed after preparation")
         process = start_child(
             [sys.executable, str(Path(__file__).resolve()), "supervisor", "--root", str(root)],

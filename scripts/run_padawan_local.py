@@ -24,20 +24,6 @@ from sqlalchemy import select
 
 from padawan.adapters.openai_compatible.local_developmental import LocalDevelopmentalClient
 from padawan.artifacts.store import ArtifactCatalog, LocalArtifactStore
-from padawan.atlas.coding_judge import file_sha256
-from padawan.atlas.local_host import (
-    append_event,
-    atomic_save,
-    clean_environment,
-    command,
-    health_reasons,
-    host_snapshot,
-    load,
-    now,
-    process_identity,
-    process_matches,
-    stop_owned,
-)
 from padawan.corpus.registry import CorpusRegistry
 from padawan.domains.developmental.workflow import DomainDevelopmentalWorkflowHandler
 from padawan.domains.graduate_algebra import (
@@ -62,7 +48,7 @@ from padawan.experiments.local_developmental import local_developmental_control
 from padawan.memory.lessons import LessonMemory
 from padawan.models.contracts import ResearchRole, RunState
 from padawan.models.database import Database
-from padawan.models.hashing import sha256_digest
+from padawan.models.hashing import file_sha256, sha256_digest
 from padawan.models.tables import (
     CorpusItemRow,
     EpisodeRow,
@@ -72,6 +58,20 @@ from padawan.models.tables import (
     StudentStateRow,
 )
 from padawan.orchestration.external_calls import IdempotentGenerationExecutor
+from padawan.orchestration.local_host import (
+    append_event,
+    atomic_save,
+    clean_environment,
+    command,
+    health_reasons,
+    host_snapshot,
+    load,
+    now,
+    process_identity,
+    process_matches,
+    stop_owned,
+)
+from padawan.orchestration.source_identity import source_identity as repository_source_identity
 from padawan.orchestration.state_machine import RunStore
 from padawan.orchestration.supervisor import AutonomousSupervisor
 from padawan.provenance.ledger import ProvenanceLedger
@@ -84,14 +84,13 @@ FAMILIES = ("nonnormal_galois_base_change",)
 
 
 def source_identity() -> dict[str, str]:
-    paths = sorted((REPO / "padawan").rglob("*.py")) + sorted((REPO / "scripts").glob("*.py"))
-    return {str(path.relative_to(REPO)): file_sha256(path) for path in paths}
+    return repository_source_identity(REPO)
 
 
 async def prepare(
     root: Path, runtime_manifest: Path, *, duration_seconds: int = 16200, episode_limit: int = 1
 ) -> None:
-    from prepare_atlas_local import runtime_inventory
+    from padawan.adapters.openai_compatible.local_runtime import runtime_inventory
 
     if root.exists():
         raise FileExistsError("prepare a fresh pilot directory")

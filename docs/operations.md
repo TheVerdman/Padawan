@@ -481,7 +481,10 @@ private reasoning remain excluded by default.
 
 ## Quality gates
 
-`make check` runs formatting/lint, schema drift, strict mypy, and the hermetic local suite.
+`make check` runs formatting/lint, schema drift, strict mypy, and the ordinary offline suite.
+The full development installation is `.[dev,gcs,coding]`: GCS fake-backend tests and coding
+contract tests require those libraries even though the suite makes no live GCS or model calls.
+The shared local/CI selector excludes `postgres`, `live`, `lean`, `docker`, and `gcs`.
 `make test-lean` exercises the installed real kernel and sandbox separately. `make test-postgres`
 requires a dedicated URL whose database name contains `test`:
 
@@ -492,3 +495,38 @@ make test-postgres
 
 Credentialed live tests are never counted as passed when unavailable. Schema drift is checked with
 `python scripts/generate_schemas.py --check`.
+
+`make test-docker`, `make test-gcs`, and `make test-live` select their named runtime-dependent
+cases. Check their fixture requirements before invoking them. CI keeps PostgreSQL separate and
+also checks a fresh base-only installation with `scripts/validate_base_install.py`, using its
+isolated interpreter outside the checkout. The full-development job must collect coding tests;
+missing optional test dependencies are failures rather than a reason to omit expected coverage.
+
+## Historical campaign entry points and prerequisites
+
+The Atlas and graduate-algebra scripts are preserved campaign recipes. Their fixed problem sets,
+budgets, model/runtime pins, and historical input paths describe their recorded conditions.
+Ordinary setup and `--help` do not reproduce those campaigns or create the required evidence.
+
+| Recipe | Required inputs and package owners |
+| --- | --- |
+| Vertex coding | `prepare_atlas_coding.py` prepares the pinned statement/judge population; its download step requires the declared dataset access. `prepare_atlas_vertex.py` writes the launch plan. `run_atlas_coding.py`, provider preflight, and `launch_atlas_campaign.py` require frozen inputs and the retained readiness/operational records. Shared manifest helpers live in `padawan.atlas.preparation`; finite cloud control and admission live in `padawan.atlas.vertex_control`; the model adapter remains separate. |
+| Local coding endurance | `prepare_atlas_local.py` requires the sibling lab/runtime/model paths declared in `configs/atlas/nemotron-metal-endurance-v1.json`, its exact reviewed reference capsule, and `runs/atlas-compiler-20260907/inputs.json` with the frozen dataset and judge archives. Runtime inventory belongs to `adapters.openai_compatible.local_runtime`; registration and reporting to `atlas.local_campaign`; host ownership and cleanup to `orchestration.local_host`. |
+| Graduate algebra | `run_padawan_local.py` requires an explicitly supplied local runtime manifest and authored teaching/review files. It composes the shared developmental workflow through `experiments.local_developmental` and the graduate-algebra authority, while reusing the same pinned runtime inventory and host controls. It does not resume a prior campaign's task or permission state. |
+| Operational validators | `validate_atlas_operations.py` requires retained prior database/artifact results for replay. `validate_atlas_local.py` requires prepared local inputs and the pinned Docker judge environment; its CPU/container checks are separate from the ordinary offline suite. Neither validator supplies missing model evidence. |
+
+The historic prerequisite files remain private and ignored. Missing datasets, runtime checkouts,
+capsules, or receipts must be supplied through their documented preparation process; no synthetic
+replacement, automatic download fallback, or rewritten historical receipt is introduced here.
+
+Source inventories retain their original selections: the local recipes hash all package Python
+and script files; Vertex coding hashes all package Python plus its six named entry scripts.
+Changes invalidate prepared execution bindings. Existing frozen inputs and policy-v1/v2 evidence
+remain unchanged and readable; they do not authorize executing changed code.
+
+The Vertex `controller_sha256` readiness field now pins the canonical controller implementation,
+`padawan/atlas/vertex_control.py`. The guard still launches through
+`scripts/control_atlas_vertex.py` with the original arguments. An old readiness record that pins
+the former script implementation is refused; a new run needs fresh readiness evidence for the
+current implementation, rather than edits to an old record. The complete prepared source inventory
+continues to bind the surrounding package and command files.

@@ -55,11 +55,11 @@ that every possible correctness or security defect has been excluded.
 | --- | --- | --- | --- | --- |
 | C01 | P1: `.github/workflows/ci.yml` installs `.[dev]`; Make/README install `.[dev,gcs]`; `test_gcs_artifacts.py` imports GCS dependencies during collection. CI/Make/offline selectors differ. | Align full-development extras and ordinary offline selection, retain gated jobs, and validate a fresh installation. | Clean development install, collection, full offline suite, base installed CLI. | Fixed; clean-install checks below |
 | C02 | P2: `test_coding_judge.py:12` silently skips all cases without YAML; coding entry points import optional libraries without a feature-specific error. | Require expected test dependencies; load optional coding dependencies at the selected feature boundary with an actionable installation error. | Missing-extra probes, coding tests, base-package CLI smoke. | Fixed; clean-install checks below |
-| C03 | P2: `prepare_atlas_local.py:14`, `run_atlas_local.py:24`, `run_padawan_local.py:94`, and launch/validation scripts import shared implementation from other scripts. `atlas/local_host.py` is used by both Atlas and developmental work. | Extract reused identity, inventory, harness, control, and reporting code into package owners; preserve command and compatibility entry points. | Strict typing, import/help checks, request/digest equivalence, dispatch/guard/accounting/cleanup regressions. | Open |
+| C03 | P2: `prepare_atlas_local.py:14`, `run_atlas_local.py:24`, `run_padawan_local.py:94`, and launch/validation scripts import shared implementation from other scripts. `atlas/local_host.py` is used by both Atlas and developmental work. | Extract reused identity, inventory, harness, control, and reporting code into package owners; preserve command and compatibility entry points. | Strict typing, import/help checks, request/digest equivalence, dispatch/guard/accounting/cleanup regressions. | Fixed; package ownership and relocation checks below |
 | C04 | P2: Atlas, PPRL, checkpoint, Interaction Lab, and PostgreSQL tests import helpers and fixtures from test-case modules. | Move reused setup into shared subsystem helpers and fixture modules without changing assertions, clocks, or isolation. | Full collection, unchanged original test identities, affected tests and full offline suite. | Open |
 | C05 | P2: `test_atlas_local_host.py` inspects the child identity before entering `try/finally`. | Guarantee cleanup if setup or process inspection fails while preserving production ownership checks. | Injected setup failure and real disposable-process cleanup cases. | Open |
 | C06 | P2: README and architecture navigation repeat dated status; the complexity review still describes an earlier consolidation hold and retired pilot sequencing. | Put the current subsystem map and navigation in architecture/README; label dated proposals and link their successors without rewriting evidence. | Link checks, source-backed capability review, preserved historical report/configuration bytes. | Open |
-| C07 | P2: `prepare_atlas_local.py:87` reads a specific ignored prior campaign input; local preparation also depends on pinned sibling runtime/model/capsule paths. | Document exact prerequisites and distinguish historical recipes from generally reproducible offline setup. Preserve the original frozen inputs and refusal behavior. | Entry-point help/import checks and source/configuration-drift regressions; no dataset fallback or campaign launch. | Open |
+| C07 | P2: `prepare_atlas_local.py:87` reads a specific ignored prior campaign input; local preparation also depends on pinned sibling runtime/model/capsule paths. | Document exact prerequisites and distinguish historical recipes from generally reproducible offline setup. Preserve the original frozen inputs and refusal behavior. | Entry-point help/import checks and source/configuration-drift regressions; no dataset fallback or campaign launch. | Documented; historical inputs remain required |
 
 ## Deferred capabilities and protected distinctions
 
@@ -88,6 +88,33 @@ holds, grading, and experiment settings retain their existing meaning.
 - Ruff passed for changed Python files. Strict mypy passed for 213 package modules.
 - No dependency version constraint changed. Optional coding libraries now load when their feature
   is selected, so importing a command or asking for help does not require those extras.
+
+### Shared implementation ownership
+
+- Runtime inventory now belongs to the local adapter package; source-file inventory and local
+  process controls belong to orchestration. Atlas owns common manifest construction, local
+  registration/reporting, and the finite Vertex controller. Script commands and arguments remain;
+  compatibility exports preserve the moved helpers where applicable. Package and script consumers
+  no longer import implementation from sibling script modules.
+- The source-body comparison checked 41 moved definitions after removing type annotations.
+  Thirty-nine remained identical. The local report's two empty-list declarations were separated
+  for typing; its behavior is covered by the native-ledger report test. The controller's only
+  changed methods are construction and guard launch: it accepts the original script entry point
+  explicitly, and its existing readiness hash now pins the canonical implementation module.
+  All other controller methods retain their normalized bodies. The old readiness hash is refused;
+  the new hash still launches the original guard command. No historical receipt was edited.
+- The 107 targeted guard, request-preparation, compiler, problem-lock, developmental-adapter, and
+  support cases passed. Added checks exercise stale source/configuration refusal before client
+  construction, separate unresolved/unrun results, and controller identity/launch binding.
+- All 13 retained campaign/preparation/validation commands returned successful `--help` using
+  base dependencies without coding extras. An initial probe accidentally resolved the venv
+  interpreter symlink to its base executable; using the venv executable path corrected that
+  validation-command error. No application change was needed for it.
+- All three real disposable process-ownership cases passed with the required host inspection
+  permission. Strict mypy passed for 219 package modules; Ruff and all 189 schemas passed.
+- The operations guide records the precise historical dataset/runtime/capsule/receipt dependencies
+  and the source-pin behavior. These recipes remain evidence-bound; ordinary offline setup does
+  not invent or recreate their unavailable private inputs.
 
 Further corrections and final validation are pending. No GitHub push, new model campaign,
 external trainer, or cloud/GPU resource activation is included in this stage.

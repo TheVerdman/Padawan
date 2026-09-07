@@ -6,7 +6,6 @@ import json
 import os
 import time
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import httpx
 import pytest
@@ -14,8 +13,7 @@ import pytest
 
 @pytest.fixture
 def guard(tmp_path, monkeypatch):
-    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[2] / "scripts"))
-    module = importlib.import_module("control_atlas_vertex")
+    module = importlib.import_module("padawan.atlas.vertex_control")
     control = module.Control.__new__(module.Control)
     control.root = tmp_path
     control.config_digest = "sha256:" + "a" * 64
@@ -139,7 +137,7 @@ def test_recovery_window_is_bounded_and_first_stop_receipt_is_recoverable(guard)
 @pytest.mark.asyncio
 async def test_waiting_file_operations_resume_once_each_and_never_write_during_pause(guard):
     module, control, heartbeat = guard
-    runner = importlib.import_module("run_atlas_coding")
+    runner = importlib.import_module("padawan.atlas.vertex_control")
     gate = module.GuardAdmission(control)
     stop = asyncio.Event()
     heartbeat(healthy=False)
@@ -165,7 +163,7 @@ async def test_waiting_file_operations_resume_once_each_and_never_write_during_p
 @pytest.mark.asyncio
 async def test_dispatch_deadline_ends_pause_without_admission(guard):
     module, control, heartbeat = guard
-    runner = importlib.import_module("run_atlas_coding")
+    runner = importlib.import_module("padawan.atlas.vertex_control")
     heartbeat(healthy=False)
     stop = asyncio.Event()
     assert not await runner.await_guard_admission(

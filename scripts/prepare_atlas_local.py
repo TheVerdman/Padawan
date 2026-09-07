@@ -6,15 +6,12 @@ import argparse
 import json
 import random
 import shutil
-import subprocess
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
-from run_atlas_coding import component, limit
-
 from padawan.adapters.base import GenerationRequest
-from padawan.atlas.coding_judge import file_sha256
+from padawan.adapters.openai_compatible.local_runtime import runtime_inventory as runtime_inventory
 from padawan.atlas.coding_tool_contracts import (
     CompilerPolicyV2,
     compiler_tools,
@@ -22,43 +19,18 @@ from padawan.atlas.coding_tool_contracts import (
 )
 from padawan.atlas.coding_tools import count_tool_input
 from padawan.atlas.dependencies import coding_dependency
-from padawan.atlas.local_host import atomic_save, load
+from padawan.atlas.preparation import component, limit
 from padawan.models.contracts import SamplingConfiguration
-from padawan.models.hashing import sha256_digest
+from padawan.models.hashing import file_sha256, sha256_digest
 from padawan.models.research_contracts import HarnessProfile, ModelServingIdentity
+from padawan.orchestration.local_host import atomic_save, load
+from padawan.orchestration.source_identity import source_identity as repository_source_identity
 
 REPO = Path(__file__).resolve().parents[1]
 
 
 def source_identity() -> dict[str, str]:
-    paths = sorted((REPO / "padawan").rglob("*.py")) + sorted((REPO / "scripts").glob("*.py"))
-    return {str(path.relative_to(REPO)): file_sha256(path) for path in paths}
-
-
-def runtime_inventory(config: dict) -> dict:
-    lab = Path(config["lab_path"])
-    upstream = lab / ".upstreams/vllm-metal"
-    python = upstream / ".venv-vllm-metal/bin/python"
-    head = subprocess.check_output(
-        ["git", "-C", str(upstream), "rev-parse", "HEAD"], text=True
-    ).strip()
-    dirty = subprocess.check_output(
-        ["git", "-C", str(upstream), "status", "--porcelain", "--untracked-files=no"], text=True
-    ).strip()
-    if head != config["vllm_metal_revision"] or dirty:
-        raise ValueError("local serving source is not the pinned clean runtime")
-    expression = (
-        "import importlib.metadata as m,json; "
-        "names=" + repr(list(config["runtime_packages"])) + "; "
-        "print(json.dumps({'packages':{n:m.version(n) for n in names},"
-        "'mlx_lm_origin':json.loads(m.distribution('mlx-lm').read_text('direct_url.json'))}))"
-    )
-    inventory = json.loads(subprocess.check_output([str(python), "-c", expression], text=True))
-    if inventory["packages"] != config["runtime_packages"]:
-        raise ValueError("installed runtime packages differ from the frozen local condition")
-    if inventory["mlx_lm_origin"].get("vcs_info", {}).get("commit_id") != config["mlx_lm_revision"]:
-        raise ValueError("MLX-LM source revision differs")
-    return {"python": str(python), "upstream": str(upstream), "head": head, **inventory}
+    return repository_source_identity(REPO)
 
 
 def prepare(config_path: Path, root: Path) -> dict:

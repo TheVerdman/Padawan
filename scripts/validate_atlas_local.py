@@ -12,8 +12,6 @@ import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from run_atlas_local import make_judge, native_counts, record, register, write_report
-
 from padawan.adapters.base import GenerationRequest
 from padawan.adapters.openai_compatible.local_metal import LocalMetalClient
 from padawan.artifacts.store import LocalArtifactStore
@@ -26,7 +24,15 @@ from padawan.atlas.coding_tool_contracts import (
 from padawan.atlas.coding_tools import CompilerTool, count_tool_input
 from padawan.atlas.contracts import AtlasItemManifest, AtlasTrialRequest
 from padawan.atlas.dependencies import coding_dependency
-from padawan.atlas.local_host import (
+from padawan.atlas.local_campaign import make_judge, native_counts, register, write_report
+from padawan.atlas.orchestration import FixedRunConfiguration, generation_request_for
+from padawan.atlas.preparation import record
+from padawan.models.contracts import ArtifactRef, SamplingConfiguration
+from padawan.models.database import Database
+from padawan.models.hashing import sha256_digest
+from padawan.models.research_contracts import HarnessProfile
+from padawan.orchestration.external_calls import IdempotentGenerationExecutor
+from padawan.orchestration.local_host import (
     atomic_save,
     cleanup_containers,
     container_inventory,
@@ -37,12 +43,6 @@ from padawan.atlas.local_host import (
     process_identity,
     stop_owned,
 )
-from padawan.atlas.orchestration import FixedRunConfiguration, generation_request_for
-from padawan.models.contracts import ArtifactRef, SamplingConfiguration
-from padawan.models.database import Database
-from padawan.models.hashing import sha256_digest
-from padawan.models.research_contracts import HarnessProfile
-from padawan.orchestration.external_calls import IdempotentGenerationExecutor
 
 
 async def native_control(root: Path, inputs: dict) -> dict:
