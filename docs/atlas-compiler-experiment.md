@@ -1,5 +1,8 @@
 # Fixed-problem compiler experiment
 
+Record status: completed historical attempt with retained negative results and cleanup evidence.
+The [local coding condition](atlas-local-endurance.md) is a separate subsequent configuration.
+
 The user authorized compiler upgrades and a GPU launch on 7 September 2026. This attempt gives
 each of the [eight locked problems](atlas-fixed-comparison.md) one compiler-assisted trajectory
 with seed 20260916 and a cumulative allowance of 65,536 generated tokens. The exact statements,

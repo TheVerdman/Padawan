@@ -1,5 +1,11 @@
 # Padawan complexity and roadmap review
 
+Status: historical review and sequencing advice. The user authorized the
+[2026-09-07 repository consolidation](../reports/verification/2026-09-07-stage-2-consolidation-audit.md),
+superseding the earlier consolidation hold and next-campaign recommendations below. The measured
+diff and checkpoint claims remain a dated snapshot. Use the [architecture map](architecture.md)
+for current subsystem ownership and gaps.
+
 Review checkpoint: 2026-09-05, after reviewed recovered-source admission. Comparison base:
 `9d58ceb4ad5cb0ceac77c2ddf30e0ef83c5e69d0`, the verified clean goal-start HEAD.
 The user initially chose **finish this checkpoint, then hold for review**, then resumed the finite

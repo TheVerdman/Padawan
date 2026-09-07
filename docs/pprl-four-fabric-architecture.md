@@ -2,149 +2,10 @@
 
 Status: canonical architecture handoff and dependency plan.
 
-Audit snapshot:
-
-- Padawan `86b6140` (`feat: add persistent-process RL and Amber protocol`)
-- Inkling-Small-Ampere `33eae75` (`Add Responses serving performance tooling`)
-- source review completed 2026-09-03
-
-2026-09-04 engineering update: the local artifact backend now persists and enforces complete
-classification metadata; raw-only default reads/exports and cached GCS metadata relabelling are
-denied. This is one offline information-boundary checkpoint, not the completion of the four-fabric
-architecture. See [storage boundary](artifact-classification-boundary.md) and
-[execution ledger](pprl-execution-ledger.md) for exact scope and validation. The remaining audit gaps
-below retain their status unless explicitly updated.
-
-The same offline stage now also provides immutable process/forensic information classes, separate
-reference contracts, and a reviewed evidence-admission service with execution-scoped reads and
-transactional admission ownership. Successfully finalized PPRL model I/O receives forensic
-classification. PPRL generation now returns normalized public output, and event commits verify
-privileged invocation artifacts without inserting their references into shared events. See
-[worker output boundary](pprl-worker-output-boundary.md) and
-[reviewed evidence admission](process-evidence-admission.md)
-for exact source-binding limits, trusted-broker assumptions, and retained validation.
-New initial-state/event references require reviewed admission; state/event ownership and multi-child
-forks are transactional, and claims refuse legacy or unretained references. SQLite transaction
-control preserves outer rollback across savepoints. See
-[reference ingress boundary](pprl-reference-ingress-boundary.md). New content also has closed core
-shapes, registered extension schemas, admitted memory/evidence links, literal identifier checks,
-and immutable policy receipts. See [content admission](pprl-content-admission.md) for the structural
-proof boundary. The 2026-09-05 observation portion adds an explicit worker DTO, exact canonical-byte
-receipts, current scope/rights checks, independent retention ownership, and admitted/denied proposal
-bindings. The coordinator now separates planner input from trusted effect execution. See
-[worker observations](pprl-worker-observation-boundary.md). A separate offline PPRL learning
-projection now reconstructs privileged archives, requires admitted observations/content and
-training-use evidence, and retains bounded public JSONL separately from private sample lineage.
-Legacy archives receive no implicit projection admission. See
-[training projections](pprl-training-projection-boundary.md). Atlas trial request/result and
-exploratory-proposal writes now require physical source verification, forensic classification,
-and transactional independent ownership, including failed-call artifacts. New Atlas Study block
-admission and result sealing revalidate that retention. See
-[Atlas retention](atlas-forensic-retention-boundary.md); legacy records are not implicitly repaired,
-and other Atlas reporting/analysis paths still require use-boundary review. Explicit reviewed
-Atlas-to-process admission now binds native source/context identities, source/output rights,
-target scope, and a pinned disclosure policy in a version-2 private receipt. Only the separate
-reviewed derivative reaches process consumers; Atlas training use remains denied. See
-[Atlas process evidence](atlas-process-evidence-boundary.md).
-
-The first stage-2 checkpoint now binds new PPRL calls to an exact current observation, fixed reviewed
-prompt policy, canonical normalized request and prepared HTTP body/destination. Private immutable
-workload receipts are retained before I/O. Completed-response reuse rechecks original lineage;
-unresolved process effects cannot automatically resend. Mock HTTP tests cover substituted inputs,
-ambient client state, configuration drift, pause and interruption. See
-[generation workload boundary](pprl-generation-workload-boundary.md). Attested runtime and
-loaded-model identity, model-serving containment/capture, independent resource metering,
-automatic hydration/recovery, Atlas learning projections, semantic provenance, coordinated GC, and
-parameter-training readiness remain unresolved. These offline properties do not attest a live runtime.
-
-The second stage-2 checkpoint implements explicitly reviewed authorization-wide funding, atomic per-action
-reservations, original-result/rate reconciliation, conservative generic charges and retained unknown
-holds. Workers, retries and forks share the account; an overage stops new admission. Private funding
-and accounting records remain outside process projections. See [resource boundary](pprl-resource-boundary.md)
-for units, stores, CLI/API paths, SQL concurrency evidence and the distinction from physical metering.
-
-The third stage-2 checkpoint adds an explicit local Linux CPU container tool runner. Before launch,
-it binds the current observation/admission, reviewed client/socket/daemon/image/supervisor/command
-profile and shared resource reservation. It checks effective Docker configuration, runs the command
-unprivileged with private bounded scratch space and no network or host mounts, retains private
-capture and cleanup evidence, and conservatively reconciles complete terminal results. The
-container-local watchdog survives broker loss in disposable fixture tests. See
-[container execution boundary](pprl-container-execution-boundary.md). This is observed local
-enforcement within a trusted Docker/host/kernel perimeter. It neither authenticates model workers
-nor attests model weights or a general execution sandbox, and it admits no raw tool trace to memory.
-
-The fourth stage-2 checkpoint adds explicit enrollment before an execution's first rollout,
-reviewed issuance of expiring broker-scoped capabilities, immutable revocation and checked heads,
-and private ownership of one leased action. Protected observation/admission/dispatch/commit/release
-paths require that capability and its exact worker/role/model/state/lease binding. New event actors
-must match their lease owners. A bounded claim/observe/propose adapter operates over already
-connected streams without opening a listener. Exact retries reconstruct retained observations and
-proposal lineage under current authority. See [worker identity boundary](pprl-worker-identity-boundary.md)
-for SQL stores, native disposable-client tests, PostgreSQL races and a local CPU container test.
-This authenticates capability possession, not the loaded model, OS process, host or reviewer.
-Credentials and private record references stay outside model observations and training content;
-assignment IDs appear only in explicitly addressed runtime control envelopes.
-
-The first stage-3 checkpoint adds an explicit reviewed recovery API and per-rollout claim/admission
-barriers. Uncommitted effects block progress independently of spare global capacity. Recovery fences
-the expected lease, optionally retires its credential, releases only reservations with no effect
-intent and reconciles complete retained results. Unknown effects retain holds; completed results
-without an admitted successor remain review-required. Private immutable assessments independently
-retain source evidence. Native broker/client restart and PostgreSQL race fixtures cover this
-boundary; it neither launches replacements automatically nor proves scientific process continuity.
-See [assignment recovery boundary](pprl-assignment-recovery-boundary.md).
-
-A follow-up source audit hardens checked historical recovery reads: native workload/request/result
-joins, exact source ownership, recorded phases and original settlement sources are reconstructed.
-Initial recovery publication uses the same reader. Older partial snapshots remain valid after later
-results without becoming new execution authority. Explicit recovered-source admission now binds
-one completed effect's full private source set to a separately reviewed process derivative in a
-version-3 private receipt. Public reads recheck current scope/authority, native provenance and all
-independent owners; training use stays denied. The ordinary admission path cannot omit the recovery
-origin of recovery-owned sources. See [recovered evidence](pprl-recovered-evidence-boundary.md).
-Admission leaves canonical state and the unresolved-effect barrier unchanged. A separate private
-`ProcessAbandonmentStore` now terminates a fenced unresolved rollout under a fresh exact review.
-It preserves state/events, costs and unknown holds; the compiler retains the original recovery and
-terminal disposition with explicit learning exclusions at their historical watermark. New eligible
-outcomes cannot override the terminal marker. Privileged reads revalidate native sources and pins.
-This is terminal abandonment, not a continuing successor, physical cleanup or lost-worker intent.
-Continuing task disposition remains a design in [effect resolution boundary](pprl-effect-resolution-boundary.md).
-The user resumed the finite checkpoint after review; optional consolidation follows the baseline.
-
-`ProcessTaskStore` now binds a finite reviewed task namespace to the original authorization and
-resource grant before its first rollout. Each instance/condition/replication coordinate has one exact
-execution, rollout and initial-payload identity. New names, undeclared replicas and forks cannot
-replace an enrolled task owner. Checked creation, claim, observation, accounting and replay retain
-this boundary through ordinary state advancement and worker replacement. The compiler retains the
-plan as private source evidence. The accepted first workflow uses terminal abandonment for unresolved
-effects; general continuing successors remain later work. Legacy authorizations gain no implicit
-enrollment or semantic deduplication guarantee. See [finite task ownership](pprl-task-ownership-boundary.md).
-
-The 2026-09-06 scripted continuity checkpoint composes those existing stores and worker streams in
-a bounded test harness. An actual native broker and two native scripted workers execute an ordered
-hypothesis search. Complete roster loss/replacement, broker restart, four commit-boundary crashes,
-pause/resume and stopped-effect probes preserve the original task and accounting. Delivered bytes
-are compared with independently reconstructed historical receipts. This is engineering continuity
-for one trusted deterministic workflow, not scientific evidence about model institutions. The
-fixture adds no production runtime/schema and does not provide general scheduling, OS isolation,
-live worker messaging, a hierarchy or a fleet kill-switch. See
-[scripted continuity boundary](pprl-scripted-continuity-boundary.md) and the execution ledger.
-
-The subsequent third foundation milestone measures enrolled pure-update histories at 0, 8, 32 and
-64 events in 24 fresh local fixtures and prepares a 96-main/eight-calibration-rollout Nemotron
-proposal. The isolated integrity walk used 30 × history length + 17 SQL statements; the proposed
-pilot is capped at 13 actions per main rollout. See [history measurements](pprl-history-growth.md)
-and [pilot preregistration/readiness](pprl-nemotron-pilot-preregistration.md). These are fixture and
-offline preparation results, with no production runtime/schema change, actual model campaign,
-HTTP integration, attestation, training or scientific efficacy result. The new review gate names
-the exact trusted-host assumptions and remaining integration/authorization requirements.
-
-The user subsequently rejected that fixed algebra campaign as insufficiently challenging and
-unnecessarily sequential. Its preparation remains historical evidence; it is no longer the next
-scientific recommendation. The [capability frontier experiment](atlas-frontier-experiment.md)
-uses measured difficulty, meaningful reasoning/search budgets and parallel GPU capacity. The
-13-action proposal cap and current 128-entry task-plan shape do not set scientific difficulty,
-horizon or sample size. Resolve concrete execution constraints without weakening the question.
+Use the [repository architecture](architecture.md) for the whole-system map and the sections below
+for PPRL fabric contracts and remaining gaps. [Historical implementation checkpoints](#historical-implementation-checkpoints)
+preserve the dated audit and engineering updates. Their stage numbers refer to the PPRL foundation
+program, separately from the repository preservation/consolidation/publication stages.
 
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
@@ -791,3 +652,154 @@ by retained evidence:
 The scientific motivation, hypotheses, baselines, and measurements are maintained separately in
 [Persistent-process RL and epsilon-charity](pprl-epsilon-charity-program.md). This document remains
 the source of truth for present architecture, gaps, information flow, and dependency order.
+
+## Historical implementation checkpoints
+
+These notes retain their original chronology, measurements, and links. Their recommendations and
+execution checkpoints are historical; current subsystem ownership is in [architecture](architecture.md)
+and repository consolidation outcomes are in the
+[Stage 2 audit](../reports/verification/2026-09-07-stage-2-consolidation-audit.md).
+
+Audit snapshot:
+
+- Padawan `86b6140` (`feat: add persistent-process RL and Amber protocol`)
+- Inkling-Small-Ampere `33eae75` (`Add Responses serving performance tooling`)
+- source review completed 2026-09-03
+
+2026-09-04 engineering update: the local artifact backend now persists and enforces complete
+classification metadata; raw-only default reads/exports and cached GCS metadata relabelling are
+denied. This is one offline information-boundary checkpoint, not the completion of the four-fabric
+architecture. See [storage boundary](artifact-classification-boundary.md) and
+[execution ledger](pprl-execution-ledger.md) for exact scope and validation. The remaining audit gaps
+below retain their status unless explicitly updated.
+
+The same offline stage now also provides immutable process/forensic information classes, separate
+reference contracts, and a reviewed evidence-admission service with execution-scoped reads and
+transactional admission ownership. Successfully finalized PPRL model I/O receives forensic
+classification. PPRL generation now returns normalized public output, and event commits verify
+privileged invocation artifacts without inserting their references into shared events. See
+[worker output boundary](pprl-worker-output-boundary.md) and
+[reviewed evidence admission](process-evidence-admission.md)
+for exact source-binding limits, trusted-broker assumptions, and retained validation.
+New initial-state/event references require reviewed admission; state/event ownership and multi-child
+forks are transactional, and claims refuse legacy or unretained references. SQLite transaction
+control preserves outer rollback across savepoints. See
+[reference ingress boundary](pprl-reference-ingress-boundary.md). New content also has closed core
+shapes, registered extension schemas, admitted memory/evidence links, literal identifier checks,
+and immutable policy receipts. See [content admission](pprl-content-admission.md) for the structural
+proof boundary. The 2026-09-05 observation portion adds an explicit worker DTO, exact canonical-byte
+receipts, current scope/rights checks, independent retention ownership, and admitted/denied proposal
+bindings. The coordinator now separates planner input from trusted effect execution. See
+[worker observations](pprl-worker-observation-boundary.md). A separate offline PPRL learning
+projection now reconstructs privileged archives, requires admitted observations/content and
+training-use evidence, and retains bounded public JSONL separately from private sample lineage.
+Legacy archives receive no implicit projection admission. See
+[training projections](pprl-training-projection-boundary.md). Atlas trial request/result and
+exploratory-proposal writes now require physical source verification, forensic classification,
+and transactional independent ownership, including failed-call artifacts. New Atlas Study block
+admission and result sealing revalidate that retention. See
+[Atlas retention](atlas-forensic-retention-boundary.md); legacy records are not implicitly repaired,
+and other Atlas reporting/analysis paths still require use-boundary review. Explicit reviewed
+Atlas-to-process admission now binds native source/context identities, source/output rights,
+target scope, and a pinned disclosure policy in a version-2 private receipt. Only the separate
+reviewed derivative reaches process consumers; Atlas training use remains denied. See
+[Atlas process evidence](atlas-process-evidence-boundary.md).
+
+The first stage-2 checkpoint now binds new PPRL calls to an exact current observation, fixed reviewed
+prompt policy, canonical normalized request and prepared HTTP body/destination. Private immutable
+workload receipts are retained before I/O. Completed-response reuse rechecks original lineage;
+unresolved process effects cannot automatically resend. Mock HTTP tests cover substituted inputs,
+ambient client state, configuration drift, pause and interruption. See
+[generation workload boundary](pprl-generation-workload-boundary.md). Attested runtime and
+loaded-model identity, model-serving containment/capture, independent resource metering,
+automatic hydration/recovery, Atlas learning projections, semantic provenance, coordinated GC, and
+parameter-training readiness remain unresolved. These offline properties do not attest a live runtime.
+
+The second stage-2 checkpoint implements explicitly reviewed authorization-wide funding, atomic per-action
+reservations, original-result/rate reconciliation, conservative generic charges and retained unknown
+holds. Workers, retries and forks share the account; an overage stops new admission. Private funding
+and accounting records remain outside process projections. See [resource boundary](pprl-resource-boundary.md)
+for units, stores, CLI/API paths, SQL concurrency evidence and the distinction from physical metering.
+
+The third stage-2 checkpoint adds an explicit local Linux CPU container tool runner. Before launch,
+it binds the current observation/admission, reviewed client/socket/daemon/image/supervisor/command
+profile and shared resource reservation. It checks effective Docker configuration, runs the command
+unprivileged with private bounded scratch space and no network or host mounts, retains private
+capture and cleanup evidence, and conservatively reconciles complete terminal results. The
+container-local watchdog survives broker loss in disposable fixture tests. See
+[container execution boundary](pprl-container-execution-boundary.md). This is observed local
+enforcement within a trusted Docker/host/kernel perimeter. It neither authenticates model workers
+nor attests model weights or a general execution sandbox, and it admits no raw tool trace to memory.
+
+The fourth stage-2 checkpoint adds explicit enrollment before an execution's first rollout,
+reviewed issuance of expiring broker-scoped capabilities, immutable revocation and checked heads,
+and private ownership of one leased action. Protected observation/admission/dispatch/commit/release
+paths require that capability and its exact worker/role/model/state/lease binding. New event actors
+must match their lease owners. A bounded claim/observe/propose adapter operates over already
+connected streams without opening a listener. Exact retries reconstruct retained observations and
+proposal lineage under current authority. See [worker identity boundary](pprl-worker-identity-boundary.md)
+for SQL stores, native disposable-client tests, PostgreSQL races and a local CPU container test.
+This authenticates capability possession, not the loaded model, OS process, host or reviewer.
+Credentials and private record references stay outside model observations and training content;
+assignment IDs appear only in explicitly addressed runtime control envelopes.
+
+The first stage-3 checkpoint adds an explicit reviewed recovery API and per-rollout claim/admission
+barriers. Uncommitted effects block progress independently of spare global capacity. Recovery fences
+the expected lease, optionally retires its credential, releases only reservations with no effect
+intent and reconciles complete retained results. Unknown effects retain holds; completed results
+without an admitted successor remain review-required. Private immutable assessments independently
+retain source evidence. Native broker/client restart and PostgreSQL race fixtures cover this
+boundary; it neither launches replacements automatically nor proves scientific process continuity.
+See [assignment recovery boundary](pprl-assignment-recovery-boundary.md).
+
+A follow-up source audit hardens checked historical recovery reads: native workload/request/result
+joins, exact source ownership, recorded phases and original settlement sources are reconstructed.
+Initial recovery publication uses the same reader. Older partial snapshots remain valid after later
+results without becoming new execution authority. Explicit recovered-source admission now binds
+one completed effect's full private source set to a separately reviewed process derivative in a
+version-3 private receipt. Public reads recheck current scope/authority, native provenance and all
+independent owners; training use stays denied. The ordinary admission path cannot omit the recovery
+origin of recovery-owned sources. See [recovered evidence](pprl-recovered-evidence-boundary.md).
+Admission leaves canonical state and the unresolved-effect barrier unchanged. A separate private
+`ProcessAbandonmentStore` now terminates a fenced unresolved rollout under a fresh exact review.
+It preserves state/events, costs and unknown holds; the compiler retains the original recovery and
+terminal disposition with explicit learning exclusions at their historical watermark. New eligible
+outcomes cannot override the terminal marker. Privileged reads revalidate native sources and pins.
+This is terminal abandonment, not a continuing successor, physical cleanup or lost-worker intent.
+Continuing task disposition remains a design in [effect resolution boundary](pprl-effect-resolution-boundary.md).
+The user resumed the finite checkpoint after review; optional consolidation follows the baseline.
+
+`ProcessTaskStore` now binds a finite reviewed task namespace to the original authorization and
+resource grant before its first rollout. Each instance/condition/replication coordinate has one exact
+execution, rollout and initial-payload identity. New names, undeclared replicas and forks cannot
+replace an enrolled task owner. Checked creation, claim, observation, accounting and replay retain
+this boundary through ordinary state advancement and worker replacement. The compiler retains the
+plan as private source evidence. The accepted first workflow uses terminal abandonment for unresolved
+effects; general continuing successors remain later work. Legacy authorizations gain no implicit
+enrollment or semantic deduplication guarantee. See [finite task ownership](pprl-task-ownership-boundary.md).
+
+The 2026-09-06 scripted continuity checkpoint composes those existing stores and worker streams in
+a bounded test harness. An actual native broker and two native scripted workers execute an ordered
+hypothesis search. Complete roster loss/replacement, broker restart, four commit-boundary crashes,
+pause/resume and stopped-effect probes preserve the original task and accounting. Delivered bytes
+are compared with independently reconstructed historical receipts. This is engineering continuity
+for one trusted deterministic workflow, not scientific evidence about model institutions. The
+fixture adds no production runtime/schema and does not provide general scheduling, OS isolation,
+live worker messaging, a hierarchy or a fleet kill-switch. See
+[scripted continuity boundary](pprl-scripted-continuity-boundary.md) and the execution ledger.
+
+The subsequent third foundation milestone measures enrolled pure-update histories at 0, 8, 32 and
+64 events in 24 fresh local fixtures and prepares a 96-main/eight-calibration-rollout Nemotron
+proposal. The isolated integrity walk used 30 × history length + 17 SQL statements; the proposed
+pilot is capped at 13 actions per main rollout. See [history measurements](pprl-history-growth.md)
+and [pilot preregistration/readiness](pprl-nemotron-pilot-preregistration.md). These are fixture and
+offline preparation results, with no production runtime/schema change, actual model campaign,
+HTTP integration, attestation, training or scientific efficacy result. The new review gate names
+the exact trusted-host assumptions and remaining integration/authorization requirements.
+
+The user subsequently rejected that fixed algebra campaign as insufficiently challenging and
+unnecessarily sequential. Its preparation remains historical evidence; it is no longer the next
+scientific recommendation. The [capability frontier experiment](atlas-frontier-experiment.md)
+uses measured difficulty, meaningful reasoning/search budgets and parallel GPU capacity. The
+13-action proposal cap and current 128-entry task-plan shape do not set scientific difficulty,
+horizon or sample size. Resolve concrete execution constraints without weakening the question.

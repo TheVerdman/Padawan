@@ -1,6 +1,7 @@
 # Padawan Round 2 Plan: Domain-General Offline Development
 
-**Status:** In progress
+**Status:** Historical roadmap and implementation chronology
+**Current navigation:** [Architecture](architecture.md) and [operations](operations.md)
 **Baseline:** `main` at `6a16db8`
 **Prepared:** 2026-08-01
 

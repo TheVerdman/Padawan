@@ -1,5 +1,9 @@
 # Fixed Nemotron coding comparison
 
+Record status: historical comparison design. The [compiler attempt](atlas-compiler-experiment.md)
+and [local condition](atlas-local-endurance.md) record the subsequent work. The original design
+and frozen problem lock below remain unchanged.
+
 The next comparison keeps the eight problems from the latest 64K/128K experiment. The user
 selected this population on 6 September 2026. The checked-in
 [problem lock](../configs/atlas/nemotron-64k128k-problems-v1.json) binds the complete statements,

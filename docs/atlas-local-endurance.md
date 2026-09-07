@@ -1,5 +1,10 @@
 # Local coding endurance condition
 
+Record status: historical local condition and launch recipe. Its exact prerequisites and source
+binding rules are in [operations](operations.md); the original configuration and limits below are
+preserved. The [Stage 1 report](../reports/verification/2026-09-07-stage-1-preservation-checkpoint.md)
+records the retained local-run inventory.
+
 The September 7 local condition runs the already cached affine 4-bit Nemotron checkpoint
 through the pinned vLLM-Metal runtime on this Mac. The user authorized the compiler upgrades
 and local launch after requesting an unattended local run without further cloud spending.

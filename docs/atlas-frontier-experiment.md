@@ -1,5 +1,8 @@
 # Capability frontier experiment
 
+Record status: historical design and partial execution record. Later fixed-problem work is linked
+below; the [architecture map](architecture.md) identifies current scope and retained campaign records.
+
 Design revision: 2026-09-06. This replaces the recommendation to run the fixed 96-rollout
 elementary-algebra pilot. Its frozen files remain historical preparation evidence. This document
 selects the scientific direction and records the first scout. The authorized configuration is

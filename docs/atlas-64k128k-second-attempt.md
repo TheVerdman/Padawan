@@ -1,5 +1,8 @@
 # Nemotron 64K versus 128K: second finite attempt
 
+Record status: closed partial campaign. The [fixed comparison](atlas-fixed-comparison.md) and
+[compiler attempt](atlas-compiler-experiment.md) are its historical successors.
+
 Status: the repaired deployment on 6 September 2026 retained **eight scored trials out of 32**:
 **0/4 accepted at 64K and 0/4 at 128K**. A guard-health refusal stopped new admissions;
 all eight started requests drained, and 24 trials remained unrun. Four real serving probes passed,

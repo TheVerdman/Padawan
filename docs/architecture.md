@@ -1,17 +1,45 @@
 # Architecture
 
-Padawan is an independent process and database. It coordinates model runtimes; it is not embedded
-in a checkpoint server, a teacher provider, Heirloom, or VECL-QB. Symbolic algebra keeps its
-original complete research path. Lean mathematics and appellate briefing use a shared complete
-developmental path with domain-owned execution and verification authorities. Magellan Improvement
-remains a corpus/verifier package behind explicit external execution gates. State, evidence,
-orchestration, and adapter boundaries remain model-neutral.
+Status: current subsystem map, reviewed during the 2026-09-07 repository consolidation.
+Dated validation and the consolidation findings are in the
+[audit report](../reports/verification/2026-09-07-stage-2-consolidation-audit.md).
 
-The long-horizon research thesis, including epsilon-charity and distribution-level evaluation, is
-preserved in [Persistent-process RL and epsilon-charity](pprl-epsilon-charity-program.md). The
-[PPRL four-fabric architecture](pprl-four-fabric-architecture.md) is the current source of truth for
-the boundary among institutional process memory, live coordination, privileged forensic and
-mechanistic records, and worker recovery/scheduling, including what remains unimplemented.
+Padawan coordinates research on improving smaller open-weight models across developmental
+learning, capability measurement, and persistent institutions. Domain difficulty and outcome
+authority are distinct from the learning method and the scale of the process being studied.
+The system owns orchestration, evidence, state, memory, and evaluation; model serving and parameter
+training remain external integrations.
+
+The [PPRL and epsilon-charity program](pprl-epsilon-charity-program.md) preserves the scientific
+thesis and distribution-level evaluation requirements. The
+[four-fabric architecture](pprl-four-fabric-architecture.md#architectural-layers) owns the boundary
+among process memory, live coordination, privileged forensics, and recovery/scheduling.
+
+## Subsystem map
+
+Each row identifies current code, its input/output connection, and executable evidence. Tests
+establish bounded software behavior; live execution and scientific conclusions require their own
+evidence. Paths under `padawan/` are implementation owners, not claims that every planned feature exists.
+
+| Subsystem and purpose | Owner, inputs, outputs, and consumers | Validation and remaining boundary |
+| --- | --- | --- |
+| Developmental learning | [Composition](../padawan/config/composition.py), [shared workflow](../padawan/domains/developmental/workflow.py), and [algebra workflow](../padawan/domains/algebra/workflow.py) consume governed tasks, parent states, model calls, and feedback; emit episodes, matched transfer, and lesson decisions for experiments and compilation. [Local composition](../padawan/experiments/local_developmental.py) binds the graduate-algebra pilot to these native stores. | [Algebra system test](../tests/system/test_algebra_workflow.py) and [domain workflow test](../tests/system/test_domain_developmental_workflow.py) cover restart, failures, transfer, and memory. An episode or memory update does not change weights. |
+| Corpus, teaching, and lesson memory | [Corpus registry](../padawan/corpus/registry.py), [teacher service](../padawan/teaching/service.py), [comment validation](../padawan/teaching/validator.py), [lessons](../padawan/memory/lessons.py), and [update backends](../padawan/updates/backends.py) turn lineage, exposure, cited feedback, and matched outcomes into admitted branch memory, retrieval decisions, and rollback. The developmental loop consumes those lessons. | [Teaching](../tests/unit/test_teaching.py) and [memory](../tests/integration/test_memory.py) tests cover their gates. Teacher-influenced attempts retain separate training exclusions. |
+| Mathematics | [Builtin domains](../padawan/domains/builtin.py) register algebra and Lean. SymPy and the pinned Lean kernel own correctness; [graduate algebra](../padawan/domains/graduate_algebra.py) is a separate reviewed local pilot authority. | [Algebra tests](../tests/unit/test_algebra.py), system fixtures, and separately gated Lean execution. Graduate-algebra rubric reviews are not kernel proofs; see the [dated 64K result](graduate-algebra-64k-results.md). |
+| Appellate briefing | [Appellate domain](../padawan/domains/legal/appellate) binds a closed record and typed claims to deterministic integrity gates, then an evidence-bound semantic adjudicator. Qualified verifier evidence feeds rewards and compilation. | [Verifier tests](../tests/unit/test_appellate_verifier.py) and the [contract](appellate-briefing.md) preserve hard-gate precedence. [Citator-backed currentness](adr/0011-citator-currentness-boundary.md) remains unconfigured. |
+| Temporal grounding | [Temporal contracts](../padawan/temporal), [telemetry](../padawan/temporal/telemetry.py), and [domain](../padawan/domains/temporal_grounding) turn authoritative event frames and operation durations into matched tasks, freshness decisions, and authored demonstrations for the developmental/compiler paths. | [Temporal workflow tests](../tests/system/test_temporal_grounding_workflow.py) and the [contract](temporal-grounding.md) distinguish real and virtual clocks. Authored rows do not establish learned competence. |
+| Magellan | [Domain package](../padawan/domains/magellan_improvement) defines scenario, environment handshake, trace, authorization, and verifier contracts. The registry deliberately installs no autonomous workflow. | [Verifier tests](../tests/unit/test_magellan_verifier.py) exercise refusals and evidence interpretation. [External execution acceptance](magellan-improvement.md) remains blocked. |
+| Capability Atlas | [Registry](../padawan/atlas/registry.py), [orchestration](../padawan/atlas/orchestration.py), and campaign/adapter modules consume pinned suites and model/harness conditions; retain trial outcomes and failures. [Study binding](../padawan/atlas/studies.py) supplies exact comparisons; [reviewed derivatives](../padawan/atlas/evidence.py) may feed process evidence. | [Registry](../tests/integration/test_atlas_registry.py) and [study-bridge](../tests/integration/test_atlas_study_bridge.py) tests; [Atlas contract](capability-atlas.md). Training materialization and institutional subjects remain incomplete; eligibility flags alone admit no training data. |
+| PPRL and Amber | [Composition](../padawan/pprl/composition.py), coordinator/store, observation, identity, resource, recovery, and task modules bind distributions and reviewed actions to persistent state, accounting, replay, and addressed worker views. [Amber](../padawan/governance/amber_store.py) admits control-plane actions. | [Observation tests](../tests/integration/test_process_observations.py) and [scripted continuity](pprl-scripted-continuity-boundary.md) cover bounded contracts. [Four-fabric gaps](pprl-four-fabric-architecture.md) include generic scheduling, live coordination, and physical attestation. |
+| Training compilation | [Developmental compiler](../padawan/training/compiler.py), [PPRL compiler](../padawan/training/pprl.py), source rights, and reviewed projections emit immutable products and reason-coded exclusions from admitted snapshots. External checkpoints may cite those bundles. | [Compiler tests](../tests/integration/test_training_compiler.py), [product contract](training-products.md), and [PPRL projection boundary](pprl-training-projection-boundary.md). No external trainer or working parameter-update backend is bundled. |
+| Studies and checkpoint evaluation | [Experiments](../padawan/experiments), [study engine](../padawan/studies/engine.py), evaluation scheduling, and [checkpoint registry](../padawan/checkpoints/registry.py) bind exact conditions and sealed results to retention, comparison, promotion, and revocation. | [Research-control tests](../tests/integration/test_research_controls.py) and the [measurement contract](research-controls.md) cover lineage and comparability. Checkpoint registration does not execute training. |
+| Interaction Lab | [Composition](../padawan/interaction/composition.py), service/store, and web routes consume explicit history and target descriptors; emit exploratory conversations and restricted traces using shared evidence infrastructure. | [Interaction tests](../tests/integration/test_interaction_lab.py) and the [contract](interaction-lab.md). Chat creates no developmental episode or automatic memory/training admission. |
+| Adapters and shared evidence | [Adapters](../padawan/adapters), [artifact stores](../padawan/artifacts), provenance, SQL stores, and [external calls](../padawan/orchestration/external_calls.py) retain prepared requests/results and expose outputs only to admitted consumers. Heirloom is a governed export boundary. | Provider mock-HTTP, prepared-request, storage, governance, and admission fixtures. Recorded authority does not attest a provider, host, or physical sandbox; see [private reasoning](private-reasoning-policy.md). |
+
+The main connections are task → verified episode → memory decision; Atlas trial → fixed study
+result → sealed checkpoint evidence; separately reviewed Atlas derivative → process evidence;
+and admitted developmental/PPRL snapshot → training product. Raw forensics, exploratory chat,
+and Atlas eligibility flags have no automatic path into worker memory or training.
 
 ## Runtime composition
 
@@ -19,42 +47,8 @@ Padawan has separate composition roots for developmental research, exploratory i
 persistent-process research. `padawan.config.composition.build_live_application` creates the
 developmental engine: one async database engine, the configured artifact backend, registered
 domain authorities, external-call executors, a domain-selected workflow handler, and a supervisor.
-A verifier-only domain cannot masquerade as a complete autonomous workflow. The authorities remain
-separate:
-
-| Authority | Implemented owner | Role |
-| --- | --- | --- |
-| student runtime | `adapters.*` | real async generation and capability reporting |
-| corpus | `CorpusRegistry` | lineage, leasing, exposure, retirement, quarantine |
-| domain registry | `DomainRegistry` | versioned domain packages and workflow capability boundary |
-| shared developmental control | `DomainDevelopmentalWorkflowHandler` | matched leasing, state forks, teacher validation, transfer, memory decision, retirement, and episode commit for non-algebra domains |
-| algebra verifier | `AlgebraGrader` | deterministic SymPy outcome and first-invalid-step evidence |
-| Lean verifier | `LeanVerifier` | pinned, sandboxed Lean-kernel proof authority |
-| appellate verifier | `AppellateBriefVerifier` | closed-pack rule, record, citation, quotation, leakage, and separately adjudicated semantic evidence |
-| appellate adjudicator | `AppellateAdjudicationService` | strict-schema, claim-scoped semantic judgment from admitted evidence only |
-| citator | provider adapter plus admitted court-pack source | independent currentness evidence; intentionally unconfigured in the first pack |
-| Magellan verifier | `MagellanScenarioVerifier` | isolated-world, authorization, trace, and replay authority |
-| temporal frame | `padawan.temporal` | authoritative event time, activity, freshness, active-operation, and duration contracts |
-| temporal verifier | `TemporalPolicyVerifier` | deterministic continuity, honesty, action, duration, and next-check authority |
-| operation telemetry | `OperationTelemetryStore` | append-only operation transitions and reproducible duration profiles |
-| teacher | `TeacherService` plus provider adapter | structured intervention generation |
-| comment validation | `CommentValidator` | evidence, contradiction, span, and leakage checks |
-| state | `StateStore` | immutable lineage, symmetric forks, canonical promotion |
-| episode | `EpisodeStore` | typed attempts, grades, interventions, trials, final episodes |
-| memory | `LessonMemory` | versioned lessons, retrieval decisions, conflicts, rollback |
-| experiment | `ExperimentEngine` | deterministic blocks, counterbalancing, paired analysis |
-| research control | `ResearchControlRegistry` | immutable harness/execution identity and fail-closed comparability |
-| study | `StudyEngine` and `EvaluationScheduler` | versioned aggregation, retention/interference due work |
-| reward | `RewardEngine` | immutable verifier evidence, policies, utility recomputation |
-| checkpoint | `CheckpointRegistry` | external lineage, sealed-suite comparison, lifecycle decisions |
-| governance | `governance.*` | access, retention, export, and command-manifest policy |
-| process distribution | `ProcessDistributionRegistry` | immutable partitions, generator identity, sampling, and replication plans |
-| persistent process | `ProcessStore` and `ProcessCoordinator` | leased macro-actions, immutable project state/events, forks, outcomes, and replay |
-| process authorization | `AmberStore` and `AmberPolicy` | actor-neutral envelope lifecycle and fail-closed per-action admission |
-| process model I/O | `ProcessGenerationExecutor` | admission- and lease-bound use of the shared idempotent call ledger |
-| consolidation | `MemoryConsolidationBackend` | evidence-gated lesson consolidation and rollback |
-| exploratory interaction | `InteractionService` and `InteractionStore` | explicit-history chat, immutable branches, consent snapshots, and non-benchmark traces |
-| student target selection | `StudentTargetRegistry` | model-neutral target descriptors, batch-one leases, and explicit readiness preflight |
+A verifier-only domain cannot masquerade as a complete autonomous workflow. The subsystem map above
+identifies their separate authorities.
 
 `padawan.interaction.composition.build_interaction_application` is the separate local Interaction
 Lab composition root. It reuses the artifact catalog, external-call ledger, operation telemetry,
@@ -70,6 +64,16 @@ or Interaction Lab trace. A concrete process environment injects a typed handler
 does not expose an arbitrary command executor. Provider clients may be wrapped by
 `ProcessGenerationExecutor`, which requires the current rollout lease and the exact admitted Amber
 decision before it can cross the model-I/O boundary.
+
+Atlas has a distinct finite campaign path: preparation registers exact suites and execution
+bindings; dispatch uses the shared external-call ledger; reporting reads native trial and accounting
+records. Reusable manifest construction, local registration/reporting, and Vertex control belong to
+`atlas.preparation`, `atlas.local_campaign`, and `atlas.vertex_control`. Local runtime inventory lives
+with `adapters.openai_compatible.local_runtime`; source identity and process ownership live in
+`orchestration.source_identity` and `orchestration.local_host`. Historical script names remain entry
+points. Their exact prerequisites and controller/source pin rules are in [operations](operations.md).
+Cloud-control recovery, one-attempt model transport, unresolved-call holds, and owned-process cleanup
+remain distinct contracts.
 
 The official OpenAI adapter is fixed to `POST /v1/responses` and has no legacy fallback. The
 validated Inkling client is likewise Responses-only: it negotiates the exact
@@ -256,19 +260,34 @@ component identities and digests, not raw prompts, responses, credentials, or pr
 
 ## Present boundaries
 
-Algebra, Lean mathematics, and appellate briefing have complete software workflows. Their real
-target studies still depend on the Inkling endpoint; no live result is claimed by software tests.
-The first appellate pack has no admitted citator, so currentness remains `unknown` and cannot be
-self-attested by its adjudicator. The audited Magellan tree lacks the required world isolation,
-durable idempotency, identity enforcement, protected approvals, and Responses endpoint, so it has
-no live workflow. GCS is implemented; S3 is intentionally absent. There is no parameter update
-implementation. `UnsupportedParameterUpdateBackend` fails explicitly because no backend can yet
-isolate, evaluate, commit, and restore a real weight update. Retention and interference are durably
-scheduled, leased, completed, and recovered, but no instrumented Inkling extension currently
-supplies router/expert or activation telemetry. The research-control contracts expose typed seams
-for that later instrumentation, capability-atlas ingestion, interactive trajectories, the
-retention × compaction factorial, and checkpoint N+1 evaluation; absent seams are not results.
-The PPRL control plane and offline products are implemented, but Padawan intentionally ships no
-default unrestricted project environment or generic execution command. A concrete scientific or
-mathematical handler must supply its own typed environment semantics under an active Amber
-envelope, and trained weights still arrive through the external checkpoint registry.
+The subsystem map states the current gaps; [operations](operations.md) defines runtime prerequisites.
+Developmental software workflows do not imply a currently deployed target, a successful live study,
+or a learned improvement. The local graduate-algebra pilot is separately composed and reported.
+Magellan execution, admitted appellate currentness, Atlas training materialization, and generic PPRL
+scheduling/coordination remain incomplete. `UnsupportedParameterUpdateBackend` explicitly refuses
+weight updates. No fixture or small pilot establishes an RL advantage across a sampled distribution.
+
+Amber records authority at the control-plane boundary; it does not attest an OS, container, VM,
+network, accelerator, filesystem, secret sandbox, or loaded model. Private reasoning, raw traffic,
+security telemetry, environment traces, and mechanistic records remain researcher-only. Any
+institutional use requires a separately reviewed, provenance-bearing derivative through the
+applicable admission boundary. These invariants are specified in the
+[four-fabric architecture](pprl-four-fabric-architecture.md) and [private-reasoning policy](private-reasoning-policy.md).
+
+## Retained evidence and plans
+
+Active contracts are linked above. Dated reports record what a particular checkpoint or campaign
+actually established; historical launch instructions and budgets do not authorize a new run.
+Their original files and evidence links remain intact.
+
+| Record | Status and use |
+| --- | --- |
+| [Stage 1 preservation](../reports/verification/2026-09-07-stage-1-preservation-checkpoint.md), [Stage 2 consolidation](../reports/verification/2026-09-07-stage-2-consolidation-audit.md) | Repository checkpoints with exact validation and limits. |
+| [Round 2 plan](round-2-plan.md) | Historical roadmap and implementation chronology; use this architecture map for current navigation. |
+| [First slice](../reports/verification/2026-08-01-round-2-slice.md), [R2.3](../reports/verification/2026-08-01-r2-3.md), [Magellan protocol](../reports/verification/2026-08-01-r2-5-magellan-protocol.md), [compiler](../reports/verification/2026-08-01-r2-7a-training-compiler.md), [appellate](../reports/verification/2026-08-02-r2-6-appellate-briefing.md) | Dated software acceptance and their remaining execution gates. |
+| [First provider attempt](../reports/live/2026-08-01-pilot-attempt.md) | Historical blocked attempt; not a live success. |
+| [PPRL execution ledger](pprl-execution-ledger.md), [complexity review](pprl-complexity-review.md) | Foundation evidence and dated roadmap decisions. The earlier consolidation hold is superseded by this authorized consolidation. |
+| [Fixed-algebra preregistration](pprl-nemotron-pilot-preregistration.md) | Withdrawn proposal; prepared files remain evidence. |
+| [Frontier scout](atlas-frontier-experiment.md), [64K/128K attempt](atlas-64k128k-second-attempt.md), [fixed comparison](atlas-fixed-comparison.md), [compiler experiment](atlas-compiler-experiment.md) | Closed or superseded campaign designs with retained partial outcomes and cleanup evidence. |
+| [Local coding endurance](atlas-local-endurance.md) | Historical local condition; its configuration and receipt dependencies remain frozen. |
+| [Graduate-algebra pilot](graduate-algebra-local-pilot.md), [64K results](graduate-algebra-64k-results.md) | Completed exploratory episode with reviewed scores, no transfer advantage, and no admitted lesson; not an independent proof or efficacy study. |
