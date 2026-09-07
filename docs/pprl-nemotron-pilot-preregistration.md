@@ -1,6 +1,11 @@
 # Local Nemotron persistence pilot: preregistered proposal v1
 
-Status: design and offline preparation only, 2026-09-06. **NO-GO for campaign execution.**
+Status: **withdrawn as the next scientific campaign**, 2026-09-06. No model trial was run.
+The user rejected the near-ceiling task risk, sequential Mac-only design and continued emphasis on
+scaffolding. The [capability frontier experiment](atlas-frontier-experiment.md) replaces this
+recommendation. This v1 design and its frozen files remain historical offline preparation evidence;
+its algebra can serve as a small integration smoke test, not an Atlas capability-boundary study.
+
 This completes the preparation portion of finite foundation milestone 3. The user's continuation
 supersedes the earlier scripted-milestone hold and authorizes this local work and a local commit.
 It does not authorize a listener, live institutional campaign, sibling edits, training or cloud use.
@@ -9,8 +14,8 @@ independent verifier companion is `scripts/prepare_pprl_pilot.py`. Neither can l
 
 ## Decision and falsifiable scope
 
-Recommendation: review this small **trusted-host, single-model-server behavioral baseline** before
-building its narrowly bounded HTTP composition. Keep the first campaign below 13 committed actions
+Historical v1 recommendation, now withdrawn: review this small **trusted-host, single-model-server
+behavioral baseline** before building its narrowly bounded HTTP composition. Keep the first campaign below 13 committed actions
 per rollout and one outstanding model request. Do not add a generic scheduler, messaging system,
 model hierarchy, continuing-successor mechanism or integrity cache to reach this baseline.
 

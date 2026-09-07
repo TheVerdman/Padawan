@@ -45,6 +45,12 @@ gcs = [
   "google-cloud-storage>=3.13,<4",
   "google-crc32c>=1.7,<2",
 ]
+coding = [
+  "pyarrow==21.0.0",
+    "PyYAML==6.0.2",
+    "transformers==5.12.1",
+    "jinja2==3.1.6",
+]
 
 [project.scripts]
 padawan = "padawan.cli.app:main"
@@ -87,6 +93,10 @@ packages = ["padawan"]
 
 [[tool.mypy.overrides]]
 module = ["sympy", "sympy.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["pyarrow", "pyarrow.*", "yaml", "yaml.*"]
 ignore_missing_imports = true
 
 [tool.coverage.run]

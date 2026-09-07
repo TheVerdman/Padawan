@@ -6,6 +6,12 @@ searches for uncertain boundaries; and preserves the evidence needed to compare 
 artifacts, and later checkpoints. Inkling-Small-Ampere is the first campaign target, not Padawan's
 product identity.
 
+Current research priority (2026-09-06): the [capability frontier experiment](atlas-frontier-experiment.md)
+replaces the proposed fixed elementary-algebra pilot. Start with a serious challenge, use available
+parallel compute, and adapt difficulty until meaningful successes and failures are plausible under
+the actual model/harness. Engineering minimalism applies to the supporting machinery. Near-ceiling
+fixtures are integration checks and do not satisfy Atlas's scientific objective.
+
 The executable catalog and first campaign live in:
 
 - `padawan.atlas.catalog`: upstream claims and dataset governance;
@@ -274,8 +280,11 @@ partition, requires every supplied ceiling to equal the selected frozen allocati
 placeholder authorization references. It emits a content-addressed activation envelope and the
 future evidence-artifact plan. It performs no network call, database write, artifact write, provider
 request, GPU action, or spend. The authorization reference is not verified and
-`execution_permitted` is always false. `padawan atlas campaign run` is a fail-closed sentinel until
-a governed authorization/execution gateway is implemented.
+`execution_permitted` is always false. `padawan atlas campaign run` remains a fail-closed sentinel
+for this original campaign. The separately prepared [Nemotron coding scout](atlas-frontier-experiment.md)
+now has a finite registration/dispatch script and a private, exact-run activation gateway. It does
+not activate this original campaign, and requires its own actual serving preflight and user-approved
+GPU envelope. No Nemotron GPU trial has yet run.
 
 See `reports/verification/2026-08-12-capability-atlas-v0.md` for the generated verification
 handoff.

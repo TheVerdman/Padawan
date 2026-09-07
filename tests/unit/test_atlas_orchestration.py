@@ -357,7 +357,10 @@ def test_adaptive_run_freezes_policy_and_materializes_one_disclosed_decision() -
         )
 
 
-def test_captured_generation_becomes_immutable_authoritative_trial_evidence() -> None:
+@pytest.mark.parametrize("disposition", list(VerifierDisposition))
+def test_captured_generation_becomes_immutable_authoritative_trial_evidence(
+    disposition: VerifierDisposition,
+) -> None:
     campaign, condition, suite, profile, execution, binding = _coordinates()
     plan = plan_fixed_suite_run(
         campaign=campaign,
@@ -377,7 +380,7 @@ def test_captured_generation_becomes_immutable_authoritative_trial_evidence() ->
         verifier_id="symbolic_algebra",
         verifier_version="1.0.0",
         scope=request.item_id,
-        disposition=VerifierDisposition.VERIFIED,
+        disposition=disposition,
         deterministic=True,
         summary="deterministic oracle accepted the response",
         evidence={"accepted": True},
@@ -386,13 +389,17 @@ def test_captured_generation_becomes_immutable_authoritative_trial_evidence() ->
     adapter_evidence = (
         AdapterVerifierEvidence(authority=AuthorityKind.DETERMINISTIC, result=verifier),
     )
+    terminal = disposition in {VerifierDisposition.VERIFIED, VerifierDisposition.REJECTED}
+    success = (disposition == VerifierDisposition.VERIFIED) if terminal else None
+    score = float(success) if success is not None else None
+    authority = AuthorityKind.DETERMINISTIC if terminal else None
     evaluation_identity = {
         "adapter_id": request.adapter_id,
         "adapter_version": request.adapter_version,
-        "disposition": VerifierDisposition.VERIFIED,
-        "score": 1.0,
-        "success": True,
-        "primary_authority": AuthorityKind.DETERMINISTIC,
+        "disposition": disposition,
+        "score": score,
+        "success": success,
+        "primary_authority": authority,
         "evidence": adapter_evidence,
         "failure_codes": (),
     }
@@ -400,10 +407,10 @@ def test_captured_generation_becomes_immutable_authoritative_trial_evidence() ->
         evaluation_id=content_id("atlas-evaluation", evaluation_identity),
         adapter_id=request.adapter_id,
         adapter_version=request.adapter_version,
-        disposition=VerifierDisposition.VERIFIED,
-        score=1.0,
-        success=True,
-        primary_authority=AuthorityKind.DETERMINISTIC,
+        disposition=disposition,
+        score=score,
+        success=success,
+        primary_authority=authority,
         evidence=adapter_evidence,
         evidence_digest=sha256_digest(evaluation_identity),
     )
@@ -466,8 +473,16 @@ def test_captured_generation_becomes_immutable_authoritative_trial_evidence() ->
         cost_usd=None,
     )
 
-    assert result.status == TrialStatus.VERIFIED_SUCCESS
-    assert result.primary_authority == AuthorityKind.DETERMINISTIC
+    assert result.status == (
+        TrialStatus.VERIFIED_SUCCESS
+        if success is True
+        else TrialStatus.VERIFIED_FAILURE
+        if success is False
+        else TrialStatus.VERIFIER_FAILURE
+    )
+    assert result.primary_authority == authority
+    assert result.success is success
+    assert (result.verifier_evidence[0].evaluated_output_digest is not None) == terminal
     assert result.tokens.total_tokens == 15
     assert result.generation_model_id == execution.student_model.model_id
     assert result.raw_response_digest == response.digest

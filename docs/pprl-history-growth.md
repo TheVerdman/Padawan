@@ -127,12 +127,17 @@ is separate from the fixture timing/caps; ordinary host activity can affect abso
 ran, and the exact SQL counts and retained-state identities do not depend on those timings. The
 small observed ranges do not establish an isolated-hardware capacity or endurance result.
 
-**Recommendation:** keep the proposed pilot at at most 12 model calls plus one terminal control
-action per rollout, between the 8- and 32-event measured rungs. Add its actual model/derivative bytes
+**Historical recommendation for the now-withdrawn algebra pilot:** at most 12 model calls plus one
+terminal control action per rollout, between the 8- and 32-event measured rungs. Add its actual model/derivative bytes
 and 104-task shared-account topology in the bounded integration gate; this single-task pure-update
 measurement does not validate that topology. There is no demonstrated need for an incremental
 verification design to prepare this pilot. Longer histories and large source graphs still require
 fresh measured gates; discretionary consolidation remains after the repeated behavioral baseline.
+
+The user subsequently rejected the proposed campaign's scientific weakness. These measurements
+remain engineering evidence; the 13-action cap is not a limit on the successor research question.
+The [capability frontier experiment](atlas-frontier-experiment.md) determines meaningful difficulty
+and horizon first, then measures and addresses actual implementation costs.
 
 ## Evidence and code map
 

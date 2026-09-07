@@ -70,7 +70,11 @@ def build_atlas_harness_profile(
     tool_access = _tool_access_enabled(factor_levels)
     reasoning_effort = factor_levels.get("effort", "unspecified")
     continuation = ContinuationPolicy(
-        continuation_mode="explicit_history" if retention or compaction else "none",
+        continuation_mode=(
+            "explicit_history"
+            if retention or compaction or factor_levels.get("tool_access") == "compiler"
+            else "none"
+        ),
         response_storage_enabled=False,
         previous_response_id_enabled=False,
         reasoning_retention_enabled=retention,

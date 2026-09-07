@@ -182,10 +182,17 @@ def plan_fixed_suite_run(
     context_limit = profile.context.effective_input_limit_tokens
     if context_limit is None:
         raise ValueError("Atlas requests require an evidence-backed effective context limit")
+    input_allocation = context_limit
+    if any(
+        tool.component_id == "tool.compile_and_run" and tool.version == "2"
+        for tool in profile.tools
+    ):
+        # A v2 root owns a multi-turn episode; per-turn context remains separately bound.
+        input_allocation = int(profile.budgets.input_tokens.value or context_limit)
     request_capacity = planned_requests + configuration.max_retry_requests
     if request_capacity > condition.max_requests:
         raise ValueError("fixed run including retries exceeds the condition request ceiling")
-    if request_capacity * context_limit > condition.max_input_tokens:
+    if request_capacity * input_allocation > condition.max_input_tokens:
         raise ValueError("fixed trial plan exceeds the condition input-token ceiling")
     if request_capacity * configuration.max_output_tokens_per_request > condition.max_output_tokens:
         raise ValueError("fixed trial plan exceeds the condition output-token ceiling")
@@ -255,7 +262,7 @@ def plan_fixed_suite_run(
         planned_request_count=planned_requests,
         max_retry_requests=configuration.max_retry_requests,
         predeclared_request_digests=request_digests,
-        max_input_tokens=request_capacity * context_limit,
+        max_input_tokens=request_capacity * input_allocation,
         max_output_tokens=request_capacity * configuration.max_output_tokens_per_request,
         max_actions=request_capacity * configuration.action_budget_per_request,
         max_cost_usd=request_capacity * configuration.max_cost_usd_per_request,
@@ -629,7 +636,12 @@ def build_trial_result(
             disposition=item.result.disposition.value,
             score=evaluation.score,
             success=evaluation.success,
-            evaluated_output_digest=sha256_digest(generation.output_text),
+            evaluated_output_digest=(
+                sha256_digest(generation.output_text)
+                if item.result.disposition
+                in {VerifierDisposition.VERIFIED, VerifierDisposition.REJECTED}
+                else None
+            ),
             deterministic=item.result.deterministic,
             evidence_digest=sha256_digest(item.result.model_dump(mode="json")),
         )
@@ -900,6 +912,17 @@ def _generation_request(
     trial_index: int,
     configuration: FixedRunConfiguration,
 ) -> GenerationRequest:
+    from padawan.atlas.coding_tool_contracts import (
+        COMPILER_TOOL_V2,
+        SUBMIT_TOOL,
+        V2_PER_TURN_TOKENS,
+    )
+
+    output_allowance = configuration.max_output_tokens_per_request
+    if configuration.tools == (COMPILER_TOOL_V2, SUBMIT_TOOL):
+        # The native allocation holds the whole episode. Its first prepared
+        # model effect spends only the versioned per-turn allowance.
+        output_allowance = min(output_allowance, V2_PER_TURN_TOKENS)
     return GenerationRequest(
         request_id=request_id,
         instructions=configuration.instructions,
@@ -907,7 +930,7 @@ def _generation_request(
         sampling=SamplingConfiguration(
             temperature=configuration.temperature,
             top_p=configuration.top_p,
-            max_output_tokens=configuration.max_output_tokens_per_request,
+            max_output_tokens=output_allowance,
             seed=configuration.base_seed + trial_index,
             reasoning_effort=configuration.reasoning_effort_wire_value,
         ),
@@ -933,6 +956,10 @@ def _rendered_input(
     if item.prompt is None:
         raise ValueError("Atlas model execution requires materialized prompt content")
     if profile.continuation.continuation_mode == "none":
+        return item.prompt
+    if tuple(tool.component_id for tool in profile.tools) == ("tool.compile_and_run",):
+        # A compiler trajectory begins with this exact independent statement. Later
+        # public/tool turns are reconstructed by its separate finite admission boundary.
         return item.prompt
     parameters = item.verifier_payload.get("parameters")
     scenario = parameters.get("scenario") if isinstance(parameters, dict) else None

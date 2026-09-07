@@ -290,6 +290,19 @@ class ResearchControlRegistry:
         if control is None:
             raise ValueError("controlled run cites unavailable research controls")
         execution, profile = control
+        if execution.harness_parameters.get("workflow") == "padawan.capability_atlas":
+            for key in (
+                "workflow",
+                "atlas_campaign_digest",
+                "atlas_condition_id",
+                "atlas_suite_digest",
+            ):
+                expected = execution.harness_parameters.get(key)
+                if expected is None or payload.get(key) != expected:
+                    raise ValueError(f"Atlas run {key} differs from its research execution")
+            if retry_budget != 0:
+                raise ValueError("Atlas controller does not permit automatic run retries")
+            return
         for key in (
             "domain_id",
             "pool",

@@ -139,6 +139,13 @@ offline preparation results, with no production runtime/schema change, actual mo
 HTTP integration, attestation, training or scientific efficacy result. The new review gate names
 the exact trusted-host assumptions and remaining integration/authorization requirements.
 
+The user subsequently rejected that fixed algebra campaign as insufficiently challenging and
+unnecessarily sequential. Its preparation remains historical evidence; it is no longer the next
+scientific recommendation. The [capability frontier experiment](atlas-frontier-experiment.md)
+uses measured difficulty, meaningful reasoning/search budgets and parallel GPU capacity. The
+13-action proposal cap and current 128-entry task-plan shape do not set scientific difficulty,
+horizon or sample size. Resolve concrete execution constraints without weakening the question.
+
 This document separates four substrates that are easy to conflate in a long-lived multi-agent
 system. A record may be durable without becoming process memory: layer membership is determined by
 who may use the record and for what purpose, not merely by whether it is stored.

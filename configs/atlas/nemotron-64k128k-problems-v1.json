@@ -1,0 +1,93 @@
+{
+  "schema_version": "1",
+  "suite_id": "nemotron-64k128k-fixed-problems-v1",
+  "purpose": "Same eight problems from the latest 64K/128K attempt, selected by the user on 2026-09-06; this is task identity, not launch authorization.",
+  "statement_repository": "QAQAQAQAQ/LiveCodeBench-Pro",
+  "statement_revision": "adebffce047dddb7768a86bace6aea4f7425e3bc",
+  "test_repository": "QAQAQAQAQ/LiveCodeBench-Pro-Testcase",
+  "test_revision": "5257736c0a4e30ba0949d41c56a257c323d9c600",
+  "problem_order": [
+    "2061H1",
+    "2107F2",
+    "2097F",
+    "2090B",
+    "2023F",
+    "2002D1",
+    "2035H",
+    "2071D2"
+  ],
+  "problems": [
+    {
+      "problem_id": "2061H1",
+      "title": "H1. Kevin and Stones (Easy Version)",
+      "difficulty": "hard",
+      "statement_sha256": "7ba42098a91ec14a6be7e244085eea30b86e785dcaf6c6b1681c2c2017562b21",
+      "archive_sha256": "7e699a05ca32918352a5447716f54a8c836883fb00d14ed47470c1e074d66ad3",
+      "declared_cases": 59,
+      "retained_cases": 59
+    },
+    {
+      "problem_id": "2107F2",
+      "title": "F2. Cycling (Hard Version)",
+      "difficulty": "medium",
+      "statement_sha256": "f6a5d52172c535cc032c758ef17f0e0f2dd9799c3222c02e2488ec08982118e9",
+      "archive_sha256": "11bd24750d8a6ce7eaa418c51957aee21e0f3f1fcf15528de38cfb362f2e5452",
+      "declared_cases": 60,
+      "retained_cases": 60
+    },
+    {
+      "problem_id": "2097F",
+      "title": "F. Lost Luggage",
+      "difficulty": "hard",
+      "statement_sha256": "be3027b8cda920b1f2ad90f2d603101a463a945f24213c74bb32ca74eec8d4e5",
+      "archive_sha256": "3d7e03d921489d1adb145889acd7f7c067321efc2d778635f5930aed3d31f2e0",
+      "declared_cases": 58,
+      "retained_cases": 60
+    },
+    {
+      "problem_id": "2090B",
+      "title": "B. Pushing Balls",
+      "difficulty": "easy",
+      "statement_sha256": "bd15e078f92b3ee93469b8a07289b0e5f52f7895b09726e41501907e00f47ddd",
+      "archive_sha256": "b9c9a396f53d030720b771a0b98a74228591481518113ba5d45066b24b2318a6",
+      "declared_cases": 59,
+      "retained_cases": 60
+    },
+    {
+      "problem_id": "2023F",
+      "title": "F. Hills and Pits",
+      "difficulty": "hard",
+      "statement_sha256": "17c65b99a78c5136e03adb9872676175c4cdab72e0af3a033fdcb0be9da15f7b",
+      "archive_sha256": "463c3a4c6ad23888d46a1a8afacbdffa06e92992cd40e8373fc8e3378c105312",
+      "declared_cases": 59,
+      "retained_cases": 59
+    },
+    {
+      "problem_id": "2002D1",
+      "title": "D1. DFS Checker (Easy Version)",
+      "difficulty": "medium",
+      "statement_sha256": "5f3d5bbe60710498ecad11e0e11bfde3d3b2b837c7160f6c1f4b512268779973",
+      "archive_sha256": "3bf75d2d5140bb49c2307edb87fdefb93f7428982fe40b59308f123c1a4aef1e",
+      "declared_cases": 58,
+      "retained_cases": 60
+    },
+    {
+      "problem_id": "2035H",
+      "title": "H. Peak Productivity Forces",
+      "difficulty": "hard",
+      "statement_sha256": "c8343acbc8de46b27eee1857ac81ac5b5690cecf6b0a9743925efcac6cc08a76",
+      "archive_sha256": "08914de5880b28bbb2ccce07c0b7d915f7308551fa32a979d4cb06e0aa6aadff",
+      "declared_cases": 59,
+      "retained_cases": 60
+    },
+    {
+      "problem_id": "2071D2",
+      "title": "D2. Infinite Sequence (Hard Version)",
+      "difficulty": "medium",
+      "statement_sha256": "f8b705cd946bd1913a0c0e1ac912f5185059bd18fac3af8522ba52b7db54f9e6",
+      "archive_sha256": "d3204f59b9bce4266bd5a4f8ffbe69ecc1e5643ba5fedb7a108e070016ee70c1",
+      "declared_cases": 58,
+      "retained_cases": 58
+    }
+  ]
+}

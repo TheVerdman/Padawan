@@ -1397,6 +1397,7 @@ class CapabilityAtlasRegistry:
             if output_digest is None or any(
                 evidence.evaluated_output_digest != output_digest
                 for evidence in result.verifier_evidence
+                if evidence.disposition in {"verified", "rejected"}
             ):
                 raise AtlasRegistryError(
                     "verifier evidence was not evaluated against the captured model output"
@@ -2546,6 +2547,7 @@ async def _result_artifacts(
             or any(
                 evidence.evaluated_output_digest != call.result_output_text_digest
                 for evidence in result.verifier_evidence
+                if evidence.disposition in {"verified", "rejected"}
             )
         ):
             raise AtlasRegistryError("Atlas retained call differs from its source trial")

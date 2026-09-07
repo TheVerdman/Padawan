@@ -8,7 +8,7 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Protocol, cast
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from padawan.adapters.base import (
     GenerationRequest,
@@ -67,12 +67,22 @@ class IdempotentGenerationExecutor:
         request: GenerationRequest,
         prepared: PreparedGeneration | None = None,
         before_dispatch: Callable[[], Awaitable[None]] | None = None,
+        atlas_activation: ArtifactRef | None = None,
+        atlas_tool_trajectory: ArtifactRef | None = None,
     ) -> GenerationResult:
         if (run_id is None) == (process_rollout_id is None):
             raise ValueError("generation call requires exactly one run or process rollout owner")
         # Detach every nested input before the first await. A frozen Pydantic envelope
         # alone does not freeze its dictionaries, lists or caller-owned references.
         request = GenerationRequest.model_validate_json(request.model_dump_json())
+        if atlas_tool_trajectory is not None:
+            if purpose != "capability_atlas" or atlas_activation is None:
+                raise PermissionError("compiler trajectory requires the Atlas activation gateway")
+            atlas_tool_trajectory = ArtifactRef.model_validate_json(
+                atlas_tool_trajectory.model_dump_json()
+            )
+        if purpose == "capability_atlas" and run_id is None:
+            raise PermissionError("Atlas activation gateway requires an Atlas run owner")
         if process_rollout_id is not None:
             if prepared is None or before_dispatch is None:
                 raise PermissionError(
@@ -86,13 +96,20 @@ class IdempotentGenerationExecutor:
                 or not callable(getattr(self.client, "generate_prepared", None))
             ):
                 raise PermissionError("process I/O differs from its prepared input")
+        elif purpose == "capability_atlas":
+            if atlas_activation is None or prepared is None or before_dispatch is not None:
+                raise PermissionError("Atlas execution requires the governed activation gateway")
+            atlas_activation = ArtifactRef.model_validate_json(atlas_activation.model_dump_json())
+            prepared = PreparedGeneration.model_validate_json(prepared.model_dump_json())
+            if not callable(getattr(self.client, "generate_prepared", None)):
+                raise PermissionError("Atlas activation requires an exact prepared transport")
+            prepare = getattr(self.client, "prepare_generation", None)
+            if not callable(prepare) or prepare(request) != prepared:
+                raise PermissionError("Atlas activation differs from the exact prepared transport")
         elif prepared is not None or before_dispatch is not None:
             raise ValueError("prepared transport is scoped to an admitted process owner")
-        if purpose == "capability_atlas":
-            raise PermissionError(
-                "Capability Atlas execution requires the governed activation gateway; "
-                "that gateway is unavailable and fails closed in v0"
-            )
+        if atlas_activation is not None and (purpose != "capability_atlas" or run_id is None):
+            raise PermissionError("Atlas activation cannot authorize another generation purpose")
         request_hash = sha256_digest(request.model_dump(mode="json"))
         operation_id = _operation_id(request.request_id)
         environment_fingerprint = sha256_digest(
@@ -102,6 +119,30 @@ class IdempotentGenerationExecutor:
             }
         )
         async with self.database.transaction() as session:
+            if self.database.dialect_name == "sqlite":
+                # A deferred read transaction cannot always upgrade under concurrent WAL
+                # writers. Reserve this writer before catalog reads, including a new intent
+                # whose request row does not exist yet. No provider I/O occurs in this scope.
+                await session.execute(
+                    update(ExternalCallRow)
+                    .where(ExternalCallRow.request_id == request.request_id)
+                    .values(request_id=request.request_id)
+                )
+            if atlas_activation is not None:
+                from padawan.atlas.activation import admit_atlas_generation
+
+                assert run_id is not None and prepared is not None
+                await admit_atlas_generation(
+                    session,
+                    catalog=self.catalog,
+                    activation_ref=atlas_activation,
+                    run_id=run_id,
+                    request=request,
+                    prepared=prepared,
+                    provider=provider,
+                    before_dispatch=False,
+                    tool_trajectory_ref=atlas_tool_trajectory,
+                )
             existing = await session.get(ExternalCallRow, request.request_id)
             if existing is not None:
                 if (
@@ -125,6 +166,10 @@ class IdempotentGenerationExecutor:
                 if process_rollout_id is not None:
                     raise PermissionError(
                         "unresolved process effects cannot be automatically retried"
+                    )
+                if atlas_activation is not None:
+                    raise PermissionError(
+                        "unresolved Atlas effects cannot be automatically retried"
                     )
                 if existing.status not in {"pending", "failed_retryable"}:
                     raise RuntimeError(f"cannot resume terminal external call: {existing.status}")
@@ -153,6 +198,21 @@ class IdempotentGenerationExecutor:
                         )
             else:
                 timestamp = datetime.now(UTC)
+                if atlas_activation is not None:
+                    assert prepared is not None
+                    prepared_ref = await artifact_put_text(
+                        self.artifacts,
+                        prepared.model_dump_json(),
+                        media_type="application/vnd.padawan.prepared-generation+json",
+                        restricted=True,
+                        raw_data=True,
+                    )
+                    await self.catalog.reference(
+                        session,
+                        prepared_ref,
+                        owner_type="external_call_prepared",
+                        owner_id=request.request_id,
+                    )
                 request_ref = await artifact_put_text(
                     self.artifacts,
                     request.model_dump_json(),
@@ -200,15 +260,39 @@ class IdempotentGenerationExecutor:
 
         try:
             if prepared is not None:
-                assert before_dispatch is not None
-                await before_dispatch()
-                result = await cast(PreparedGenerationClient, self.client).generate_prepared(
-                    request, prepared
-                )
+                if atlas_activation is not None:
+                    assert run_id is not None
+                    async with self.database.transaction() as session:
+                        deadline = await admit_atlas_generation(
+                            session,
+                            catalog=self.catalog,
+                            activation_ref=atlas_activation,
+                            run_id=run_id,
+                            request=request,
+                            prepared=prepared,
+                            provider=provider,
+                            before_dispatch=True,
+                            tool_trajectory_ref=atlas_tool_trajectory,
+                        )
+                    result = await _atlas_generate_until(
+                        cast(PreparedGenerationClient, self.client), request, prepared, deadline
+                    )
+                else:
+                    assert before_dispatch is not None
+                    await before_dispatch()
+                    result = await cast(PreparedGenerationClient, self.client).generate_prepared(
+                        request, prepared
+                    )
             else:
                 result = await self.client.generate(request)
         except asyncio.CancelledError:
             async with self.database.transaction() as session:
+                if atlas_activation is not None or self.database.dialect_name == "sqlite":
+                    await session.execute(
+                        update(ExternalCallRow)
+                        .where(ExternalCallRow.request_id == request.request_id)
+                        .values(request_id=request.request_id)
+                    )
                 row = await session.get(ExternalCallRow, request.request_id)
                 if row is not None and row.status != "completed":
                     row.status = "cancelled"
@@ -238,6 +322,12 @@ class IdempotentGenerationExecutor:
                     raw_data=True,
                 )
             async with self.database.transaction() as session:
+                if atlas_activation is not None or self.database.dialect_name == "sqlite":
+                    await session.execute(
+                        update(ExternalCallRow)
+                        .where(ExternalCallRow.request_id == request.request_id)
+                        .values(request_id=request.request_id)
+                    )
                 row = await session.get(ExternalCallRow, request.request_id)
                 if row is not None:
                     if error_response_ref is not None:
@@ -292,6 +382,12 @@ class IdempotentGenerationExecutor:
             raw_data=True,
         )
         async with self.database.transaction() as session:
+            if atlas_activation is not None or self.database.dialect_name == "sqlite":
+                await session.execute(
+                    update(ExternalCallRow)
+                    .where(ExternalCallRow.request_id == request.request_id)
+                    .values(request_id=request.request_id)
+                )
             row = await session.scalar(
                 select(ExternalCallRow)
                 .where(ExternalCallRow.request_id == request.request_id)
@@ -360,6 +456,8 @@ class IdempotentGenerationExecutor:
         event carrying the already persisted result.
         """
 
+        if purpose == "capability_atlas":
+            raise PermissionError("Atlas streaming requires an unavailable activation gateway")
         stream_method = getattr(self.client, "stream", None)
         if stream_method is None:
             raise TypeError("streaming executor requires a client event iterator")
@@ -697,6 +795,23 @@ def _artifact_row_to_reference(row: ArtifactRow) -> ArtifactRef:
         },
         strict=False,
     )
+
+
+async def _atlas_generate_until(
+    client: PreparedGenerationClient,
+    request: GenerationRequest,
+    prepared: PreparedGeneration,
+    deadline: datetime,
+) -> GenerationResult:
+    try:
+        async with asyncio.timeout(max(0.0, (deadline - datetime.now(UTC)).total_seconds())):
+            return await client.generate_prepared(request, prepared)
+    except TimeoutError as exc:
+        raise ModelProviderError(
+            "Atlas activation deadline timeout; external effect is unresolved",
+            provider=prepared.provider,
+            retryable=False,
+        ) from exc
 
 
 def _operation_id(request_id: str) -> str:

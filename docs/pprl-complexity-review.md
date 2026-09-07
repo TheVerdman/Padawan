@@ -20,6 +20,15 @@ checkpoint documentation. Those checks address real defects, but continuing that
 a finite foundation exit gate risks building infrastructure faster than we can validate its value.
 The next plan should be organized around observable institutional behavior and bounded complexity.
 
+2026-09-06 research-direction correction: choose the strongest feasible, valid and controlled
+experiment. Minimalism reduces unnecessary implementation, not task difficulty or scientific
+ambition. The user rejected the fixed elementary-algebra campaign. The current successor is the
+[capability frontier experiment](atlas-frontier-experiment.md): parallel inference within the verified
+four-A100 serving quota, with the separate four-A100 training quota reserved for training,
+empirical difficulty selection, substantial reasoning/search budgets, and persistence comparisons
+on meaningful problems near the measured worker boundary. A weaker target requires a concrete
+feasibility, validity or control reason. An existing easy verifier is not such a reason.
+
 ## Measured goal diff
 
 These are gross added/deleted lines against the goal-start tree, including this checkpoint; they
@@ -85,9 +94,9 @@ one current gate table and linked historical evidence. Do not start a generic pl
 a repository-wide rewrite to solve this. Benchmark history-sensitive paths before choosing an
 incremental verification design; do not remove integrity checks to improve a benchmark.
 
-## Proposed foundation exit gate
+## Historical foundation exit gate
 
-The next implementation agreement should have a finite boundary:
+The completed foundation agreement had the following boundary:
 
 1. One logical task/effect lifecycle: completed-result review or terminal abandonment, immutable
    intervention lineage, explicit unknown-effect stops and replay/compiler exclusions. New leases,
@@ -102,10 +111,11 @@ The next implementation agreement should have a finite boundary:
    forensic access. Measure action/restart cost as history grows. Prepare a concrete small local
    Nemotron campaign with an independent verifier, preregistered samples and matched baselines.
 
-Each item needs an agreed review checkpoint; discovery of another substantial prerequisite returns
-to the review before expanding scope. Prefer one existing verifier-backed domain over inventing a
-new benchmark family. The first pilot should test persistence and replacement with simple routing;
-three-tier hierarchy and frontier escalation value need later controlled comparisons.
+The agreement kept implementation finite. Its preference for an existing verifier was subsequently
+over-applied to scientific task selection. Reusing code remains useful; selecting an elementary
+domain without measuring model difficulty does not. The new frontier experiment supersedes that
+pilot recommendation. Additional substantial prerequisites need a demonstrated connection to the
+actual experiment, rather than another general infrastructure sequence.
 
 Implementation selection after resumption: item 1 uses its **terminal abandonment** alternative.
 Finite task plans fix rollout ownership before dispatch and preserve stopped samples and original
@@ -124,9 +134,9 @@ Item 3 now has a bounded 24-fixture history measurement and a concrete local Nem
 proposal. See [history-growth report](pprl-history-growth.md) and
 [pilot readiness review](pprl-nemotron-pilot-preregistration.md). The isolated history walk used
 30 × prior events + 17 SQL statements; whole actions at 64 prior events took medians 1.467–1.488 s.
-The proposed pilot caps main rollouts at 13 actions, with no integrity optimization or production
-runtime/schema expansion. Stop at its trust/design and executable-integration review. The scientific
-behavioral baseline and discretionary consolidation have not occurred.
+The withdrawn pilot capped main rollouts at 13 actions, with no integrity optimization or production
+runtime/schema expansion. That implementation convenience is not a scientific horizon ceiling.
+The scientific behavioral baseline and discretionary consolidation have not occurred.
 
 This is proposed sequencing, not reduced program scope or permission to claim the goal complete.
 Capability Atlas still needs distinct worker/institution subjects and protected behavioral/MI
@@ -137,10 +147,11 @@ No amount of generated text or passing fixture tests substitutes for those resul
 
 ## Decisions for discussion
 
-1. Resolved: the accepted finite foundation has reached its third preparation milestone. Keep the
-   next integration work bounded by the concrete pilot rather than another general infrastructure sequence.
-2. Review the proposed algebra domain, four matched-budget conditions, 96 main/eight calibration
-   rollouts and explicit trusted-host limits. HTTP integration and campaign execution remain gated.
+1. Resolved: the accepted finite foundation reached its third preparation milestone. Extra foundation
+   work is not the default next step; implement only concrete connections needed by the experiment.
+2. Superseded: the algebra 96-main/eight-calibration proposal is withdrawn. Measure a meaningful
+   capability boundary with the [stronger design](atlas-frontier-experiment.md), then size and freeze
+   the comparison from empirical difficulty and uncertainty. Use the available hardware in parallel.
 3. Resolved: defer discretionary consolidation until after a retained repeated behavioral baseline.
    Fix correctness, authority and measurement blockers first. Assess later pruning against the
    frozen reference, required invariants, adversarial probes and matched stochastic evaluations;
