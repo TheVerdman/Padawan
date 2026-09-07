@@ -35,6 +35,7 @@ from padawan.atlas.contracts import (
     DatasetGovernance,
     ModalityValidationEvidence,
 )
+from padawan.atlas.dependencies import coding_dependency
 from padawan.atlas.dispatch import drain_dispatch
 from padawan.atlas.orchestration import FixedRunConfiguration
 from padawan.models.contracts import ArtifactRef
@@ -120,7 +121,6 @@ def limit(unit: str, value: float) -> dict:
 
 
 def prepare(args) -> None:
-    from transformers import AutoTokenizer
 
     launch = load(args.config)
     dataset = load(args.dataset / "prepared-dataset.json")
@@ -140,7 +140,7 @@ def prepare(args) -> None:
             raise ValueError("compiler tool policy must use the pinned CPU environment")
     if context_tokens < launch["input_token_limit"] + largest_output:
         raise ValueError("serving context must fit the full input and largest output allowance")
-    tokenizer = AutoTokenizer.from_pretrained(
+    tokenizer = coding_dependency("transformers").AutoTokenizer.from_pretrained(
         args.tokenizer, local_files_only=True, trust_remote_code=False
     )
     now = datetime.now(UTC).isoformat()
@@ -612,12 +612,10 @@ async def execute(args) -> None:
             tokenizer = None
             compiler_policy = None
             if launch.get("compiler_tool_policy"):
-                from transformers import AutoTokenizer
-
                 compiler_policy = CompilerPolicy.model_validate_json(
                     json.dumps(launch["compiler_tool_policy"])
                 )
-                tokenizer = AutoTokenizer.from_pretrained(
+                tokenizer = coding_dependency("transformers").AutoTokenizer.from_pretrained(
                     inputs["tokenizer_directory"], local_files_only=True, trust_remote_code=False
                 )
 

@@ -7,7 +7,7 @@ single local process and the non-PostgreSQL test suite.
 
 ```text
 python3.12 -m venv .venv
-.venv/bin/python -m pip install -e ".[dev,gcs]"
+.venv/bin/python -m pip install -e ".[dev,gcs,coding]"
 cp .env.example .env
 .venv/bin/padawan db migrate
 ```

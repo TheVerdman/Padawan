@@ -12,7 +12,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from run_atlas_coding import component, limit
-from transformers import AutoTokenizer
 
 from padawan.adapters.base import GenerationRequest
 from padawan.atlas.coding_judge import file_sha256
@@ -22,6 +21,7 @@ from padawan.atlas.coding_tool_contracts import (
     compiler_wire_identity,
 )
 from padawan.atlas.coding_tools import count_tool_input
+from padawan.atlas.dependencies import coding_dependency
 from padawan.atlas.local_host import atomic_save, load
 from padawan.models.contracts import SamplingConfiguration
 from padawan.models.hashing import sha256_digest
@@ -115,7 +115,7 @@ def prepare(config_path: Path, root: Path) -> dict:
         pid = row["problem_id"]
         if file_sha256(dataset_path / "archives" / f"{pid}.zip") != packages[pid]["archive_sha256"]:
             raise ValueError("frozen judge archive changed")
-    tokenizer = AutoTokenizer.from_pretrained(
+    tokenizer = coding_dependency("transformers").AutoTokenizer.from_pretrained(
         model_path, local_files_only=True, trust_remote_code=False
     )
     counts = {}

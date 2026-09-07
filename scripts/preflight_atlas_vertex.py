@@ -23,6 +23,7 @@ from padawan.adapters.openai_compatible.vertex import VertexRawPredictClient
 from padawan.artifacts.store import LocalArtifactStore
 from padawan.atlas.coding_judge import DockerBatchJudge
 from padawan.atlas.coding_runner import extract_cpp, judge_with_deadline
+from padawan.atlas.dependencies import coding_dependency
 from padawan.atlas.preflight_fixtures import SCC_TASK, scc_probe_package
 from padawan.models.contracts import SamplingConfiguration
 from padawan.models.database import Database
@@ -129,14 +130,12 @@ async def preflight(args) -> None:
         probe_inputs = [SCC_TASK] * launch["maximum_preflight_requests"]
         long_prompt_tokens = None
         if launch.get("preflight_long_prompt_tokens"):
-            from transformers import AutoTokenizer
-
             tokenizer_root = inputs["tokenizer_audit"]["tokenizer_identity"].get("path")
             if not tokenizer_root:
                 tokenizer_root = inputs.get("tokenizer_directory")
             if not tokenizer_root:
                 raise ValueError("long-context preflight requires the frozen local tokenizer path")
-            tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer = coding_dependency("transformers").AutoTokenizer.from_pretrained(
                 tokenizer_root, local_files_only=True, trust_remote_code=False
             )
             target = launch["preflight_long_prompt_tokens"]

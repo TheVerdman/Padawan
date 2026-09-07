@@ -13,7 +13,6 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from run_atlas_local import make_judge, native_counts, record, register, write_report
-from transformers import AutoTokenizer
 
 from padawan.adapters.base import GenerationRequest
 from padawan.adapters.openai_compatible.local_metal import LocalMetalClient
@@ -26,6 +25,7 @@ from padawan.atlas.coding_tool_contracts import (
 )
 from padawan.atlas.coding_tools import CompilerTool, count_tool_input
 from padawan.atlas.contracts import AtlasItemManifest, AtlasTrialRequest
+from padawan.atlas.dependencies import coding_dependency
 from padawan.atlas.local_host import (
     atomic_save,
     cleanup_containers,
@@ -116,7 +116,7 @@ async def native_control(root: Path, inputs: dict) -> dict:
         executor = IdempotentGenerationExecutor(
             database=db, artifacts=LocalArtifactStore(root / "artifacts"), client=client
         )
-        tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer = coding_dependency("transformers").AutoTokenizer.from_pretrained(
             config["model_path"], local_files_only=True, trust_remote_code=False
         )
         request = record(AtlasTrialRequest, bundle["requests"][0])

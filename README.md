@@ -102,7 +102,7 @@ Python 3.12 or 3.13 is required.
 
 ```text
 python3.12 -m venv .venv
-.venv/bin/python -m pip install -e ".[dev,gcs]"
+.venv/bin/python -m pip install -e ".[dev,gcs,coding]"
 .venv/bin/alembic upgrade head
 make check
 ```

@@ -9,8 +9,6 @@ import pytest
 from padawan.atlas.coding_judge import DockerBatchJudge, file_sha256, unpack_package
 from padawan.atlas.coding_runner import extract_cpp
 
-pytest.importorskip("yaml")
-
 
 def archive(tmp_path, *, additions=None, count=1):
     target = tmp_path / "cases.zip"

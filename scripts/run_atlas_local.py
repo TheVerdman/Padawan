@@ -22,7 +22,6 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from prepare_atlas_local import source_identity
-from transformers import AutoTokenizer
 
 from padawan.adapters.base import GenerationRequest
 from padawan.adapters.openai_compatible.local_metal import LocalMetalClient
@@ -47,6 +46,7 @@ from padawan.atlas.contracts import (
     DatasetGovernance,
     ModalityValidationEvidence,
 )
+from padawan.atlas.dependencies import coding_dependency
 from padawan.atlas.local_host import append_event, atomic_save, container_inventory, load, now
 from padawan.atlas.orchestration import FixedRunConfiguration, generation_request_for
 from padawan.models.contracts import ArtifactRef, SamplingConfiguration
@@ -417,7 +417,7 @@ async def worker(root: Path, resume: bool) -> int:
     inputs = checked_inputs(root)
     config = inputs["config"]
     policy = record(CompilerPolicyV2, config["compiler_policy"])
-    tokenizer = AutoTokenizer.from_pretrained(
+    tokenizer = coding_dependency("transformers").AutoTokenizer.from_pretrained(
         config["model_path"], local_files_only=True, trust_remote_code=False
     )
     client = LocalMetalClient(

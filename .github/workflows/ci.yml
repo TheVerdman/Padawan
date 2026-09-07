@@ -8,6 +8,20 @@ permissions:
   contents: read
 
 jobs:
+  base-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: |
+          python -m venv "$RUNNER_TEMP/padawan-base"
+          "$RUNNER_TEMP/padawan-base/bin/python" -m pip install .
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/padawan-base/bin/python" -I "$GITHUB_WORKSPACE/scripts/validate_base_install.py"
+
   quality:
     runs-on: ubuntu-latest
     steps:
@@ -16,12 +30,12 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: python -m pip install ".[dev]"
+      - run: python -m pip install ".[dev,gcs,coding]"
       - run: ruff format --check .
       - run: ruff check .
       - run: mypy padawan
       - run: python scripts/generate_schemas.py --check
-      - run: pytest -m "not postgres and not live"
+      - run: pytest -m "not postgres and not live and not lean and not docker and not gcs"
       - run: padawan --help
 
   postgres:
@@ -48,5 +62,5 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: python -m pip install ".[dev]"
+      - run: python -m pip install ".[dev,gcs,coding]"
       - run: pytest -m postgres

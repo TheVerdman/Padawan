@@ -24,6 +24,8 @@ from typing import Any
 from uuid import uuid4
 from zipfile import ZipFile
 
+from padawan.atlas.dependencies import coding_dependency
+
 
 class JudgeInfrastructureError(RuntimeError):
     """A judge defect or incomplete package must not count as a model failure."""
@@ -102,7 +104,7 @@ def unpack_package(
     include_extra_cases: bool = False,
 ) -> JudgePackage:
     """Check the complete archive before extracting; never execute an upstream launcher."""
-    import yaml
+    yaml = coding_dependency("yaml")
 
     if not re.fullmatch(r"[A-Za-z0-9_-]+", problem_id):
         raise ValueError("invalid problem ID")
@@ -543,7 +545,7 @@ class DockerBatchJudge:
 
 def read_statement_shards(paths: list[Path]) -> dict[str, dict[str, Any]]:
     """Load already authorized Parquet files; never silently replace conflicting duplicates."""
-    import pyarrow.parquet as parquet
+    parquet = coding_dependency("pyarrow.parquet")
 
     rows: dict[str, dict[str, Any]] = {}
     required = {"problem_id", "problem_title", "problem_statement", "difficulty", "platform"}
