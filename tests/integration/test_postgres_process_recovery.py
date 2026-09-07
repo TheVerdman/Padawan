@@ -8,8 +8,8 @@ from padawan.models.tables import ProcessEventRow, ProcessRecoveryRow, ProcessRo
 from padawan.pprl.contracts import RolloutStatus
 from padawan.pprl.store import ProcessInvariantError
 from tests.container_helpers import commit_container_action, container_context
-from tests.integration.test_postgres_concurrency import postgres_database as postgres_database
-from tests.integration.test_process_recovery import expire, recover, recovery, reviewed
+from tests.support.postgres import postgres_database as postgres_database
+from tests.support.process_recovery import expire, recover, recovery, reviewed
 
 pytestmark = pytest.mark.postgres
 

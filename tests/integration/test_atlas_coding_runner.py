@@ -16,7 +16,7 @@ from padawan.atlas.coding_manifests import coding_item
 from padawan.atlas.coding_runner import run_coding_trials
 from padawan.atlas.contracts import Modality
 from padawan.models.tables import AtlasTrialResultRow, ExternalCallRow, VerifierResultRow
-from tests.integration.test_atlas_activation import fixture
+from tests.support.atlas_activation import fixture
 
 
 @pytest.mark.docker

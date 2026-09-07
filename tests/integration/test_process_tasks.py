@@ -17,43 +17,13 @@ from padawan.pprl.tasks import ProcessTaskStore
 from padawan.training.contracts import EvidenceSourceKind
 from padawan.training.pprl import compile_pprl_snapshot
 from tests.container_helpers import container_context
-from tests.integration.test_process_abandonment import review as abandonment_review
-from tests.integration.test_process_recovery import expire, recover, recovery, reviewed
-from tests.pprl_resource_helpers import resource_context
-from tests.pprl_task_helpers import task_plan
-
-
-async def planned_context(database, tmp_path, clock, *, enroll=True, count=1):
-    ctx = await resource_context(database, tmp_path, clock, rollouts=0)
-    ctx.initial = ProjectStatePayload(objective="one stable synthetic task")
-    ctx.tasks = ProcessTaskStore()
-    async with database.transaction() as session:
-        ctx.plan = await task_plan(
-            session, ctx.amber, ctx.execution, ctx.initial, clock(), count=count
-        )
-        if enroll:
-            await ctx.tasks.enroll(session, ctx.plan, now=clock())
-    return ctx
-
-
-async def create(ctx, session, index=0, **changes):
-    task = ctx.plan.tasks[index]
-    return await ctx.process.create_rollout(
-        session,
-        **{
-            "execution_digest": task.execution_digest,
-            "replication_index": task.replication_index,
-            "initial_state": ctx.initial,
-            "rollout_id": task.rollout_id,
-            "created_at": ctx.clock(),
-            **changes,
-        },
-    )
-
-
-async def account(ctx):
-    async with ctx.database.transaction() as session:
-        return await ctx.amber.resources.inspect(session, ctx.authorization.digest)
+from tests.support.process_abandonment import review as abandonment_review
+from tests.support.process_recovery import expire, recover, recovery, reviewed
+from tests.support.process_tasks import (
+    account,
+    create,
+    planned_context,
+)
 
 
 async def test_plan_keeps_one_owner_and_one_budget_without_creating_workers(
@@ -350,7 +320,7 @@ async def test_historical_plan_read_and_retry_survive_revocation_without_grantin
 async def test_fresh_native_broker_reconstructs_task_without_old_objects(
     database, tmp_path, pprl_now
 ):
-    from tests.integration.test_process_recovery_restart import run_broker
+    from tests.support.process_restart import run_broker
 
     ctx = await planned_context(database, tmp_path, pprl_now)
     async with database.transaction() as session:

@@ -14,10 +14,10 @@ from padawan.models.tables import ArtifactReferenceRow, ExternalCallRow, Process
 from padawan.pprl.recovery import ProcessRecoveryStore
 from padawan.pprl.recovery_evidence import RecoveryEvidenceReader
 from tests.container_helpers import container_context
-from tests.integration.test_process_generation_workloads import _ready
-from tests.integration.test_process_recovery import expire, recover, recovery, snapshot
-from tests.integration.test_process_recovery_effects import model_context
 from tests.pprl_evidence_helpers import evidence_context as evidence_context
+from tests.support.process_effects import model_context
+from tests.support.process_generation import _ready
+from tests.support.process_recovery import expire, recover, recovery, snapshot
 
 
 async def replace_effect(ctx, receipt, effect, *, match_pins=False):

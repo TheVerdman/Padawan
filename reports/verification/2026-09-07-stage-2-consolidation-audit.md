@@ -56,8 +56,8 @@ that every possible correctness or security defect has been excluded.
 | C01 | P1: `.github/workflows/ci.yml` installs `.[dev]`; Make/README install `.[dev,gcs]`; `test_gcs_artifacts.py` imports GCS dependencies during collection. CI/Make/offline selectors differ. | Align full-development extras and ordinary offline selection, retain gated jobs, and validate a fresh installation. | Clean development install, collection, full offline suite, base installed CLI. | Fixed; clean-install checks below |
 | C02 | P2: `test_coding_judge.py:12` silently skips all cases without YAML; coding entry points import optional libraries without a feature-specific error. | Require expected test dependencies; load optional coding dependencies at the selected feature boundary with an actionable installation error. | Missing-extra probes, coding tests, base-package CLI smoke. | Fixed; clean-install checks below |
 | C03 | P2: `prepare_atlas_local.py:14`, `run_atlas_local.py:24`, `run_padawan_local.py:94`, and launch/validation scripts import shared implementation from other scripts. `atlas/local_host.py` is used by both Atlas and developmental work. | Extract reused identity, inventory, harness, control, and reporting code into package owners; preserve command and compatibility entry points. | Strict typing, import/help checks, request/digest equivalence, dispatch/guard/accounting/cleanup regressions. | Fixed; package ownership and relocation checks below |
-| C04 | P2: Atlas, PPRL, checkpoint, Interaction Lab, and PostgreSQL tests import helpers and fixtures from test-case modules. | Move reused setup into shared subsystem helpers and fixture modules without changing assertions, clocks, or isolation. | Full collection, unchanged original test identities, affected tests and full offline suite. | Open |
-| C05 | P2: `test_atlas_local_host.py` inspects the child identity before entering `try/finally`. | Guarantee cleanup if setup or process inspection fails while preserving production ownership checks. | Injected setup failure and real disposable-process cleanup cases. | Open |
+| C04 | P2: Atlas, PPRL, checkpoint, Interaction Lab, and PostgreSQL tests import helpers and fixtures from test-case modules. | Move reused setup into shared subsystem helpers and fixture modules without changing assertions, clocks, or isolation. | Full collection, unchanged original test identities, affected tests and full offline suite. | Fixed; fixture preservation checks below |
+| C05 | P2: `test_atlas_local_host.py` inspects the child identity before entering `try/finally`. | Guarantee cleanup if setup or process inspection fails while preserving production ownership checks. | Injected setup failure and real disposable-process cleanup cases. | Fixed; both failure paths pass |
 | C06 | P2: README and architecture navigation repeat dated status; the complexity review still describes an earlier consolidation hold and retired pilot sequencing. | Put the current subsystem map and navigation in architecture/README; label dated proposals and link their successors without rewriting evidence. | Link checks, source-backed capability review, preserved historical report/configuration bytes. | Open |
 | C07 | P2: `prepare_atlas_local.py:87` reads a specific ignored prior campaign input; local preparation also depends on pinned sibling runtime/model/capsule paths. | Document exact prerequisites and distinguish historical recipes from generally reproducible offline setup. Preserve the original frozen inputs and refusal behavior. | Entry-point help/import checks and source/configuration-drift regressions; no dataset fallback or campaign launch. | Documented; historical inputs remain required |
 
@@ -116,5 +116,28 @@ holds, grading, and experiment settings retain their existing meaning.
   and the source-pin behavior. These recipes remain evidence-bound; ordinary offline setup does
   not invent or recreate their unavailable private inputs.
 
-Further corrections and final validation are pending. No GitHub push, new model campaign,
+### Shared fixtures and setup failure
+
+- Thirteen subsystem modules under `tests/support` now own reused Atlas, research-control,
+  Interaction Lab, process, and PostgreSQL setup. Test-case modules no longer import each other.
+  Existing shared helpers remain in place; the fixed process clock and isolated database fixtures
+  are unchanged. The PostgreSQL fixture retains its dedicated-test-database check and cleanup.
+- The move preserves 74 helper function/class bodies and decorators plus 12 constant assignments.
+  Of 666 original test definitions, only the two process cases that needed cleanup protection
+  changed beyond imports. Their existing assertions remain. Collection retains all 1,075 original
+  selected cases and adds exactly two process-fixture regression cases.
+- The fixture's `Popen` session now has cleanup protection before identity inspection. Its fallback
+  terminates only the disposable group it directly created and reaps its child without relying on
+  `ps`. Production ownership and refusal rules are unchanged. All five real process cases pass,
+  including injected identity-inspection failure before yield and injected failure after the leader
+  exits while a descendant remains. These cases require host process inspection permission.
+- Collection initially exposed two incorrect prefix substitutions in helper imports. They were
+  corrected before execution; the final collection and source-body comparison pass.
+- The complete selected suite passed in the fresh Python 3.12.14 development environment:
+  **1,077 passed, 39 deselected, no skips**, in 236.59 seconds. This includes prepared dispatch,
+  interrupted/unknown effects, guard pause/resume, accounting, deterministic compiler products,
+  private-data admission/projection, and the moved fixture families. PostgreSQL tests were collected
+  but not executed; their runtime validation remains separate. Ruff passed for all 140 test files.
+
+Documentation corrections and final packaging/static validation are pending. No GitHub push, new model campaign,
 external trainer, or cloud/GPU resource activation is included in this stage.

@@ -131,7 +131,7 @@ async def test_spare_global_capacity_does_not_admit_a_second_uncommitted_effect(
 async def test_missing_accounting_record_cannot_erase_admitted_effect(
     database, tmp_path, pprl_now, missing
 ):
-    from tests.integration.test_process_recovery import expire, recover, snapshot
+    from tests.support.process_recovery import expire, recover, snapshot
 
     ctx = await container_context(database, tmp_path, pprl_now)
     await expire(ctx)

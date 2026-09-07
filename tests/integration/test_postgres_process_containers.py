@@ -4,7 +4,7 @@ import pytest
 
 from padawan.pprl.containers import ProcessContainerExecutor, ProcessContainerUnavailableError
 from tests.container_helpers import SyntheticContainerDriver, container_context
-from tests.integration.test_postgres_concurrency import postgres_database as postgres_database
+from tests.support.postgres import postgres_database as postgres_database
 
 pytestmark = pytest.mark.postgres
 

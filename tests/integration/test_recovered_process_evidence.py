@@ -29,11 +29,11 @@ from padawan.pprl.recovery import ProcessRecoveryStore
 from padawan.pprl.store import ProcessStore
 from tests.container_helpers import container_context
 from tests.helpers import CallbackGenerationClient
-from tests.integration.test_process_generation_workloads import _ready
-from tests.integration.test_process_recovery import expire, recover, reviewed, snapshot
-from tests.integration.test_process_recovery_effects import model_context
 from tests.pprl_evidence_helpers import _review
 from tests.pprl_evidence_helpers import evidence_context as evidence_context
+from tests.support.process_effects import model_context
+from tests.support.process_generation import _ready
+from tests.support.process_recovery import expire, recover, reviewed, snapshot
 
 
 async def configured(base, *, kind="model", execute=True, ready=None, receipt=None):

@@ -10,7 +10,7 @@ import pytest
 from padawan.interaction.composition import InteractionApplication
 from padawan.interaction.web import create_interaction_web_app
 from padawan.models.tables import InteractionSessionRow, InteractionTraceRow
-from tests.integration.test_interaction_lab import _count, _lab
+from tests.support.interaction import _count, _lab
 
 
 def _sse_events(payload: str) -> list[tuple[str, dict[str, Any]]]:

@@ -15,7 +15,7 @@ from padawan.models.tables import (
 from padawan.pprl.containers import ProcessContainerUnavailableError
 from padawan.pprl.contracts import ProjectStatePayload
 from padawan.pprl.worker_broker import ProcessWorkerBroker, ProcessWorkerRequestDeniedError
-from tests.integration.test_postgres_concurrency import postgres_database as postgres_database
+from tests.support.postgres import postgres_database as postgres_database
 from tests.worker_helpers import (
     broker_context,
     prepare_broker_action,

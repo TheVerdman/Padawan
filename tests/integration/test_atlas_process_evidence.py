@@ -37,9 +37,11 @@ from padawan.pprl.contracts import ProjectBudgetUsage, ProjectSplit, ProjectStat
 from padawan.pprl.evidence import ProcessEvidenceReadDeniedError, ProcessEvidenceStore
 from padawan.pprl.evidence_contracts import ProcessEvidenceAdmissionRecord, ProcessEvidenceUse
 from padawan.pprl.store import ProcessStore
-from tests.integration.test_atlas_artifact_boundary import _atlas_evidence
-from tests.integration.test_atlas_registry import NOW as ATLAS_NOW
-from tests.integration.test_atlas_registry import (
+from tests.pprl_evidence_helpers import _review
+from tests.pprl_evidence_helpers import evidence_context as evidence_context
+from tests.support.atlas_artifacts import _atlas_evidence
+from tests.support.atlas_registry import NOW as ATLAS_NOW
+from tests.support.atlas_registry import (
     _allocation,
     _binding,
     _governance,
@@ -50,8 +52,6 @@ from tests.integration.test_atlas_registry import (
     _run_row,
     _trial_result,
 )
-from tests.pprl_evidence_helpers import _review
-from tests.pprl_evidence_helpers import evidence_context as evidence_context
 
 
 @pytest_asyncio.fixture

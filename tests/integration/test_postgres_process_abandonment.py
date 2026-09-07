@@ -9,9 +9,9 @@ from padawan.governance.amber import AmberStatus
 from padawan.models.tables import ProcessAbandonmentRow, ProcessRolloutRow
 from padawan.pprl.store import ProcessInvariantError
 from tests.container_helpers import commit_container_action
-from tests.integration.test_postgres_concurrency import postgres_database as postgres_database
-from tests.integration.test_process_abandonment import abandon, review, snapshot, stopped
-from tests.integration.test_process_recovery import recover, reviewed
+from tests.support.postgres import postgres_database as postgres_database
+from tests.support.process_abandonment import abandon, review, snapshot, stopped
+from tests.support.process_recovery import recover, reviewed
 
 pytestmark = pytest.mark.postgres
 

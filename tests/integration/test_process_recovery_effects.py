@@ -1,5 +1,4 @@
 import asyncio
-from types import SimpleNamespace
 
 import pytest
 from sqlalchemy import func, select
@@ -10,9 +9,12 @@ from padawan.pprl.generation import ProcessGenerationUnavailableError
 from padawan.pprl.recovery import ProcessRecoveryStore
 from tests.container_helpers import container_context
 from tests.helpers import CallbackGenerationClient
-from tests.integration.test_process_generation_workloads import _ready
-from tests.integration.test_process_recovery import expire, recover, recovery, reviewed, snapshot
 from tests.pprl_evidence_helpers import evidence_context as evidence_context
+from tests.support.process_effects import (
+    model_context,
+)
+from tests.support.process_generation import _ready
+from tests.support.process_recovery import expire, recover, recovery, reviewed, snapshot
 
 
 @pytest.mark.parametrize("capture", ["runtime", "created", "terminal", "cleanup"])
@@ -83,23 +85,6 @@ async def test_fresh_recovery_reconciles_container_after_broker_died_before_acco
         assert await recovery(ctx).read(session, recovery_id=receipt.request.recovery_id) == receipt
         assert await session.scalar(select(func.count()).select_from(ProcessEventRow)) == 0
     assert len(ctx.driver.calls) == 1
-
-
-async def model_context(ready):
-    ctx = ready.ctx
-    async with ctx.database.transaction() as session:
-        authorization = await ctx.amber.get(
-            session, authorization_digest=ctx.execution.amber_authorization_digest
-        )
-    return SimpleNamespace(
-        database=ctx.database,
-        process=ctx.process,
-        amber=ctx.amber,
-        authorization=authorization,
-        claim=ready.claimed,
-        clock=ctx.clock,
-        records=SimpleNamespace(catalog=ready.external.catalog),
-    )
 
 
 @pytest.mark.parametrize("lost_accounting", [False, True])

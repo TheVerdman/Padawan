@@ -27,9 +27,9 @@ from padawan.pprl.contracts import (
 from padawan.pprl.generation import ProcessGenerationUnavailableError
 from padawan.pprl.store import ProcessForkChildPlan, ProcessStore
 from tests.helpers import CallbackGenerationClient
-from tests.integration.test_process_generation_workloads import _ready
 from tests.pprl_helpers import NOW, fund_resources
 from tests.pprl_resource_helpers import commit_resource_action, resource_action, resource_context
+from tests.support.process_generation import _ready
 
 
 async def _admit(ctx, action, *, decision_id=None):

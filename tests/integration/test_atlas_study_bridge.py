@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from importlib import import_module
 from pathlib import Path
 
 import pytest
@@ -79,11 +78,7 @@ from padawan.orchestration.state_machine import RunStore
 from padawan.rewards import RewardEngine
 from padawan.state.store import StateStore
 from padawan.studies import StudyEngine
-
-_research_helpers = import_module("tests.integration.test_research_controls")
-_execution = _research_helpers._execution
-_parent_state = _research_helpers._parent_state
-_profile = _research_helpers._profile
+from tests.support.research_controls import _execution, _parent_state, _profile
 
 _NOW = datetime(2026, 8, 12, 18, 0, tzinfo=UTC)
 _CONDITION = "promotion-standardized"

@@ -45,7 +45,7 @@ from padawan.models.contracts import (
 from padawan.models.hashing import sha256_digest
 from padawan.models.research_contracts import ParentStateIdentity, ResearchAxis
 from padawan.orchestration.external_calls import _serialize_result
-from tests.unit.test_atlas_harness import NOW, _base_control, _condition, _suite
+from tests.support.atlas_harness import NOW, _base_control, _condition, _suite
 
 
 def _factor(factor_id: str, axis: ResearchAxis, selected: str) -> Factor:

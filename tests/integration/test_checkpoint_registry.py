@@ -30,10 +30,10 @@ from padawan.reporting import ReportingService
 from padawan.rewards import RewardEngine
 from padawan.state.store import StateStore
 from padawan.studies import StudyEngine
-from tests.integration.test_research_controls import (
+from tests.support.research_controls import (
     _ENVIRONMENT as _CONTROL_ENVIRONMENT,
 )
-from tests.integration.test_research_controls import (
+from tests.support.research_controls import (
     _TASK_MANIFEST,
     _execution,
     _parent_state,

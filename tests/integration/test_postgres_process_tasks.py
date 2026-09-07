@@ -7,8 +7,8 @@ import pytest
 from sqlalchemy import func, select
 
 from padawan.models.tables import ProcessRolloutRow, ProcessTaskPlanRow
-from tests.integration.test_postgres_concurrency import postgres_database as postgres_database
-from tests.integration.test_process_tasks import create, planned_context
+from tests.support.postgres import postgres_database as postgres_database
+from tests.support.process_tasks import create, planned_context
 
 pytestmark = pytest.mark.postgres
 

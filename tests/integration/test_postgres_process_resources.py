@@ -3,9 +3,9 @@ import asyncio
 import pytest
 
 from padawan.governance.amber import AmberAdmissionDisposition
-from tests.integration.test_postgres_concurrency import postgres_database as postgres_database
-from tests.integration.test_process_generation_workloads import _ready
 from tests.pprl_resource_helpers import resource_action, resource_context
+from tests.support.postgres import postgres_database as postgres_database
+from tests.support.process_generation import _ready
 
 pytestmark = pytest.mark.postgres
 
