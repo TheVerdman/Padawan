@@ -7,10 +7,15 @@ genuinely verifiable.
 
 ## Two Padawan learning layers
 
-The developmental layer improves an individual student through bounded episodes, treatment/control
-state forks, unseen transfer, lesson memory, and checkpoint evaluation. The PPRL layer consumes
-worker capabilities and improves project-scale behavior: planning, delegation, experimentation,
-evidence integration, recovery, and stopping.
+The developmental layer studies individual-student improvement through bounded episodes,
+treatment/control state forks, unseen transfer, lesson memory, and checkpoint evaluation. The PPRL
+layer studies how worker capabilities and persistent state might improve project-scale behavior:
+planning, delegation, experimentation, evidence integration, recovery, and stopping.
+
+The current implementation supplies persistent research, evidence, and data-generation
+infrastructure. Bounded continuity fixtures do not demonstrate policy optimization or a persistence
+advantage; no parameter-update backend is implemented and `parameter_training_ready` remains false.
+See [research status and evidence limits](research-status.md).
 
 The layers share research-control identities, artifacts, provenance, reward evidence, studies,
 training compilation, and checkpoint governance. They do not share lifecycle enums or overload one

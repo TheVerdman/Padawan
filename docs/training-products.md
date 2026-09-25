@@ -26,10 +26,12 @@ One bundle always manifests all of these views, including zero-row views:
 | exclusions | candidate, product, lane, reason codes, details, and evidence lineage |
 
 The evidence and normalized views retain baseline and teacher records with their research roles.
-Baseline outputs, teacher interventions, and target prompts directly influenced by a teacher are
-excluded from target-training products by default. A later policy cannot recover them by deleting
-the exclusion evidence; it needs a separately versioned decision and, where applicable, a
-teacherless successful replay.
+Baseline outputs, teacher interventions, and target attempts detected through explicit influence
+references, revision records, or treatment-transfer records are excluded from target-training
+products by default. These checks do not cover all inherited teacher influence; see the
+[exported-input limitation](#teacher-influence-and-exported-inputs) below. A later policy cannot
+recover excluded records by deleting the exclusion evidence; it needs a separately versioned
+decision and, where applicable, a teacherless successful replay.
 
 Authored demonstrations use a separate append-only admission path and product. Each row cites its
 curriculum item, canonical multi-turn transcript, target event, final answer, deterministic verifier
@@ -52,6 +54,37 @@ checkpoint material is structurally excluded from target-training views. A regis
 supplies both model and tokenizer identity. Episode output is never silently reclassified as
 continued-pretraining text.
 
+## Teacher influence and exported inputs
+
+The algebra workflow copies a teacher lesson into memory's `general_rule` and retrieves its text
+into later student prompts, including later cold/control attempts. Here, "cold" means before the
+current intervention, not free of inherited teaching. Retrieved lessons are not automatically
+added to the attempt's `influence_refs`; the compiler's detector checks those references plus
+revision and treatment-transfer IDs. See the [lesson copy](../padawan/domains/algebra/workflow.py#L906),
+[prompt and retrieval assembly](../padawan/domains/algebra/workflow.py#L1285),
+[attempt construction](../padawan/domains/algebra/workflow.py#L1480), and
+[influence detector](../padawan/training/compiler.py#L2165).
+
+The separate 2026-09-24 release audit reproduced one synthetic, explicitly PROCESS-eligible
+`negative_process` row whose exported `prompt` contained an inherited teacher lesson; bundle
+verification passed. This demonstrated teacher text in an **exported training input**; it did not
+test loss targets. The independent fixture without explicit eligibility exported **zero training rows**.
+No model was trained. These audit checks were not rerun for this documentation follow-up.
+
+[PROCESS](../padawan/training/compiler.py#L1710),
+[SFT](../padawan/training/compiler.py#L1645), and
+[preference](../padawan/training/compiler.py#L1797) rows copy rendered input. SFT/preference exposure
+is a source inference conditional on their additional success/pair, rights, checkpoint, and
+eligibility gates; those routes were not reproduced by the PROCESS check.
+
+The separate [Heirloom structural export](../padawan/adapters/heirloom/exporter.py#L121) retains
+teacher lesson/repair and declares `teacher_tokens_masked_from_loss=true`, while setting training
+eligibility flags false and SFT weight to zero. That metadata is not an executable loss mask or
+proof about a downstream trainer. Role-based exclusions, input provenance, loss targets, and
+evidence retention are distinct boundaries. The current implementation does not establish that
+training products are free of teacher text. See [research status](research-status.md) for the
+evidence scope and future work.
+
 ## Rights manifests
 
 `SourceRights` replaces a free-text `license` label as the governing contract. The legacy database
@@ -73,9 +106,10 @@ fair-use determination must be established for the particular source and intende
 research” alone does not set those facts. Federal material may also contain embedded third-party
 content, so source-level review still matters.
 
-OpenAI and Anthropic baseline/teacher outputs are retained as restricted evidence and excluded from
-target-training products by role. This preserves the baseline and teacher record without treating
-provider output ownership language as training authorization.
+Records labeled as OpenAI or Anthropic baseline/teacher outputs are retained as restricted evidence
+and excluded from target-training products by role. This does not exclude their lesson text when
+inherited inside a later target prompt, as described above. Provider output ownership language is
+not treated as training authorization.
 
 New target attempts also carry their own versioned output-rights declaration. A legacy attempt
 without that declaration remains available in evidence but is reason-coded out of every target

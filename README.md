@@ -1,9 +1,10 @@
 # Padawan
 
-Padawan is a research system for improving smaller open-weight models. It connects controlled
-experiments, evidence-citing teaching, lesson memory, capability measurement, and governed training
-products. The research spans individual developmental episodes and persistent institutions with
-replaceable workers. Domains supply their own task semantics and grading authorities.
+Padawan is research infrastructure for studying how to improve smaller open-weight models through
+in-context teaching and transfer experiments. It connects controlled experiments, evidence-citing
+teaching, lesson memory, capability measurement, and governed training products. The research spans
+individual developmental episodes and persistent institutions with replaceable workers. Domains
+supply their own task semantics and grading authorities.
 
 The developmental loop measures revision and fresh-task transfer before admitting a lesson.
 Capability Atlas measures fixed model/harness conditions and feeds explicitly bound studies.
@@ -11,6 +12,11 @@ Persistent-process reinforcement learning (**PPRL**) studies distributions of lo
 processes; **PPRL-VR** is reserved for verifiable outcomes. The Interaction Lab provides a separate
 exploratory surface. These paths share evidence infrastructure, with explicit boundaries for what
 may enter worker context, memory, comparisons, or training.
+
+**Current evidence and limits (2026-09-24):** early algebra results are mixed, no parameter-update
+backend is implemented, and inherited teacher lessons can enter exported training inputs. See
+[research status and publication scope](docs/research-status.md) for the pilot results, exact export
+limitation, PPRL evidence limits, and pending request-echo disclosure decision.
 
 ## Start here
 
